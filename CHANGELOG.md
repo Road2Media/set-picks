@@ -15,6 +15,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.81.2] — 2026-10-09
+
+### Fixed
+- **Huntsville Saturday postponed to Monday** — the emergency show-calendar fallback and the picks-lock time seed use October 12 at The Orion Amphitheater (7:00pm, doors 5:30pm) instead of October 10. Sunday, October 11, stays. The daily Phish.net sync already drops October 10 (`exclude_from_stats`) and adds October 12; Phish.com has not published a Monday date page, so the seed keeps the lock at 7:20pm Central until that page exists.
+
+---
+
 ## [1.81.1] — 2026-10-08
 
 ### Added

@@ -256,6 +256,48 @@ test("parseTourOverridesDoc", () => {
   assert.equal(m.get("2026-09-04"), "Summer Tour 2026");
 });
 
+test("normalizePhishShows: drops excluded postponed dates and keeps the reschedule", () => {
+  const out = normalizePhishShows([
+    {
+      artistid: 1,
+      showdate: "2026-10-10",
+      venue: "Orion Amphitheater",
+      city: "Huntsville",
+      state: "AL",
+      country: "USA",
+      tour_name: "2026 Fall Tour",
+      exclude_from_stats: 1,
+    },
+    {
+      artistid: 1,
+      showdate: "2026-10-11",
+      venue: "Orion Amphitheater",
+      city: "Huntsville",
+      state: "AL",
+      country: "USA",
+      tour_name: "2026 Fall Tour",
+      exclude_from_stats: 0,
+    },
+    {
+      artistid: 1,
+      showdate: "2026-10-12",
+      venue: "Orion Amphitheater",
+      city: "Huntsville",
+      state: "AL",
+      country: "USA",
+      tour_name: "2026 Fall Tour",
+      exclude_from_stats: 0,
+    },
+  ]);
+
+  assert.deepEqual(
+    out.map((show) => show.date),
+    ["2026-10-11", "2026-10-12"]
+  );
+  assert.equal(out[1].venue, "Orion Amphitheater, Huntsville, AL");
+  assert.equal(out[1].timeZone, "America/Chicago");
+});
+
 test("normalizePhishShows: stamps per-show IANA timezone from location", () => {
   const out = normalizePhishShows([
     {

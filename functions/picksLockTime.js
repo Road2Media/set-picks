@@ -22,6 +22,7 @@ const SHOW_DOORS_LOCAL_BY_DATE = Object.freeze({
   "2026-09-04": "18:00",
   "2026-09-05": "18:00",
   "2026-09-06": "18:00",
+  "2026-10-12": "17:30",
 });
 
 const SHOW_SCHEDULED_START_LOCAL_BY_DATE = Object.freeze({
@@ -38,6 +39,7 @@ const SHOW_SCHEDULED_START_LOCAL_BY_DATE = Object.freeze({
   "2026-09-04": "19:30",
   "2026-09-05": "19:30",
   "2026-09-06": "19:30",
+  "2026-10-12": "19:00",
 });
 
 /**

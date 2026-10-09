@@ -58,6 +58,16 @@ describe('resolvePicksLockHm (#522)', () => {
     });
   });
 
+  it('locks the rescheduled Orion show at 7:20pm when the calendar has no show time', () => {
+    expect(resolvePicksLockHm({ date: '2026-10-12' })).toMatchObject({
+      hour: 19,
+      minute: 20,
+      source: 'scheduledStart',
+      scheduledStartLocal: '19:00',
+      doorsLocal: '17:30',
+    });
+  });
+
   it('falls back to 19:30 when show time unknown', () => {
     expect(resolvePicksLockHm({ date: '2099-01-01' })).toEqual({
       ...DEFAULT_PICKS_LOCK_HM,

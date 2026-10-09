@@ -61,8 +61,8 @@ export const FALLBACK_SHOW_DATES_BY_TOUR = [
       { date: '2026-10-06', venue: 'Allianz Amphitheater at Riverfront, Richmond, VA' },
       { date: '2026-10-07', venue: 'Allianz Amphitheater at Riverfront, Richmond, VA' },
       { date: '2026-10-09', venue: 'VyStar Veterans Memorial Arena, Jacksonville, FL' },
-      { date: '2026-10-10', venue: 'The Orion Amphitheater, Huntsville, AL' },
       { date: '2026-10-11', venue: 'The Orion Amphitheater, Huntsville, AL' },
+      { date: '2026-10-12', venue: 'The Orion Amphitheater, Huntsville, AL' },
     ],
   },
 ];

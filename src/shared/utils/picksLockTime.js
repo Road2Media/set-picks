@@ -36,6 +36,7 @@ export const SHOW_DOORS_LOCAL_BY_DATE = Object.freeze({
   '2026-09-04': '18:00', // Dick's
   '2026-09-05': '18:00',
   '2026-09-06': '18:00',
+  '2026-10-12': '17:30', // Orion; Sat 10/10 postponed, Phish.com page not moved yet
 });
 
 /**
@@ -59,6 +60,7 @@ export const SHOW_SCHEDULED_START_LOCAL_BY_DATE = Object.freeze({
   '2026-09-04': '19:30', // Dick's
   '2026-09-05': '19:30',
   '2026-09-06': '19:30',
+  '2026-10-12': '19:00', // Orion; rescheduled from 10/10, show time 7:00pm
 });
 
 /**
