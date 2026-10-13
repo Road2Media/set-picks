@@ -247,7 +247,8 @@ test("copy: debut leads with You're on the board", () => {
     is_debut: true,
   });
   assert.equal(paras[0], "You're on the board!");
-  assert.match(paras[1], /2026-07-07 — Kohl Center/);
+  assert.match(paras[1], /after Kohl Center, Madison, WI you're ranked/);
+  assert.doesNotMatch(paras[1], /2026-07-07/);
   assert.match(paras[1], /ranked #1 of 11 on tour with 10 points/);
   assert.match(paras.join(" "), /Night one sets the tour leaderboard/);
 });
@@ -286,7 +287,8 @@ test("copy: combined email prose avoids repeating venue/city and uses same-venue
 
   const text = paras.join(" ");
   assert.match(text, /After last night's show you climbed 2 spots\./);
-  assert.match(text, /Back at MSG 2026-07-20\./);
+  assert.match(text, /Back at MSG 07\/20\/26\./);
+  assert.doesNotMatch(text, /2026-07-20/);
   assert.doesNotMatch(text, /After New York, NY/);
   assert.doesNotMatch(text, /2026-07-19 — MSG/);
 });

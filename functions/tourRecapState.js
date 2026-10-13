@@ -6,7 +6,9 @@
  * already run (or after an archive tour is explicitly closed).
  *
  * Collection: `comms_tour_recap_state/{tourId}`
- *   tourId — calendar tour key (doc id)
+ *   tourId — calendar tour key, with `/` stored as `-` so the id stays one
+ *   path segment (`2026/2027 NYE Run` → `2026-2027 NYE Run`). Keys that are
+ *   already a legal id are unchanged.
  *   status — `sent` | `skipped_archive` | `closed`
  *   finalDate — YYYY-MM-DD when known
  *   completedAt — server timestamp
@@ -14,6 +16,8 @@
  */
 
 "use strict";
+
+const { toFirestoreDocumentId } = require("./firestoreDocId");
 
 const TOUR_RECAP_STATE_COLLECTION = "comms_tour_recap_state";
 
@@ -29,7 +33,7 @@ const TERMINAL_TOUR_RECAP_STATUSES = new Set([
  * @returns {string}
  */
 function tourRecapStateDocId(tourKey) {
-  return String(tourKey || "").trim();
+  return toFirestoreDocumentId(tourKey);
 }
 
 /**

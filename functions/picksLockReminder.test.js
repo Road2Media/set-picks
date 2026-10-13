@@ -21,6 +21,22 @@ test("findReminderTonightShow returns null before T-3h window", () => {
   assert.equal(findReminderTonightShow(shows, now), null);
 });
 
+test("findReminderTonightShow skips an invalid timezone and still finds tonight", () => {
+  const shows = [
+    { date: "2099-06-15", timeZone: "Not/A/Zone", venue: "Bad" },
+    {
+      date: "2099-06-15",
+      timeZone: "America/Los_Angeles",
+      venue: "MSG",
+      city: "New York, NY",
+    },
+  ];
+  const now = new Date("2099-06-16T00:30:00.000Z");
+  const out = findReminderTonightShow(shows, now);
+  assert.ok(out);
+  assert.equal(out.venue_name, "MSG");
+});
+
 test("findReminderTonightShow returns show in T-3h–lock window with venue metadata", () => {
   const shows = [
     {

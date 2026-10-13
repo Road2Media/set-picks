@@ -12,6 +12,7 @@ const {
   leaderUidFromScores,
   deliverTourRecapIfFinalShow,
   deliverPendingTourRecaps,
+  runScheduledTourRankingsDaily,
   shouldSkipTourRankingsOnTourRecapMorning,
   isSphereArchiveTourKey,
   shouldAttemptPendingTourRecap,
@@ -148,6 +149,23 @@ test("findTourCountdownTargets: multi-tour snapshot hits Summer T-1 only (#514)"
   assert.equal(hits[0].tourId, "Summer Tour 2026");
   assert.equal(hits[0].days_remaining, 1);
   assert.equal(hits[0].first_show_date, "2026-07-07");
+});
+
+test("findTourCountdownTargets skips a tour whose timezone is not a real IANA name", () => {
+  const now = new Date("2026-04-06T18:00:00Z");
+  const shows = [
+    { date: "2026-04-16", timeZone: "Not/A/Zone", tour: "Bad Tour", venue: "X" },
+    {
+      date: "2026-04-11",
+      timeZone: "America/Los_Angeles",
+      tour: "Good Tour",
+      venue: "Y",
+    },
+  ];
+  const hits = findTourCountdownTargets(shows, now);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].tour_name, "Good Tour");
+  assert.equal(hits[0].days_remaining, 5);
 });
 
 test("findTourCountdownTargets: unlabeled flat list with past dates is a no-op (#514)", () => {
@@ -355,6 +373,76 @@ test("deliverTourRecapIfFinalShow no-ops without a tour key or when not the fina
     }),
     null
   );
+});
+
+test("deliverPendingTourRecaps does not read in-progress, future, or ancient tours", async () => {
+  const reads = [];
+  const db = {
+    collection(name) {
+      if (name === "comms_tour_recap_state") {
+        return {
+          doc(id) {
+            reads.push(id);
+            assert.equal(String(id).includes("/"), false);
+            return {
+              async get() {
+                return { exists: false, data: () => null };
+              },
+              async set() {},
+            };
+          },
+        };
+      }
+      return emptyPicksDb().collection(name);
+    },
+  };
+  const summaries = await deliverPendingTourRecaps({
+    db,
+    admin: { firestore: { FieldValue: { serverTimestamp: () => "TS" } } },
+    runtime: { deliver: async () => ({ ok: true, delivered: 1 }) },
+    showDatesByTour: [
+      { tour: "2024 Mexico", shows: [{ date: "2024-02-21" }, { date: "2024-02-24" }] },
+      { tour: "2026 Fall Tour", shows: [{ date: "2026-10-02" }, { date: "2026-10-11" }] },
+      { tour: "2026/2027 NYE Run", shows: [{ date: "2026-12-30" }, { date: "2027-01-02" }] },
+      { tour: "2026 Sphere", shows: [{ date: "2026-04-16" }, { date: "2026-05-02" }] },
+    ],
+    now: new Date("2026-10-08T15:00:00Z"),
+  });
+  assert.deepEqual(summaries, []);
+  assert.deepEqual([...new Set(reads)], ["2026 Sphere"]);
+});
+
+test("deliverPendingTourRecaps reads a slash tour only inside the post-finale window", async () => {
+  const reads = [];
+  const db = {
+    collection(name) {
+      if (name === "comms_tour_recap_state") {
+        return {
+          doc(id) {
+            reads.push(id);
+            return {
+              async get() {
+                return { exists: false, data: () => null };
+              },
+              async set() {},
+            };
+          },
+        };
+      }
+      return emptyPicksDb().collection(name);
+    },
+  };
+  const summaries = await deliverPendingTourRecaps({
+    db,
+    runtime: { deliver: async () => ({ ok: true }) },
+    showDatesByTour: [
+      { tour: "2026/2027 NYE Run", shows: [{ date: "2026-12-30" }, { date: "2027-01-02" }] },
+    ],
+    now: new Date("2027-01-03T15:00:00Z"),
+  });
+  assert.deepEqual(reads, ["2026-2027 NYE Run"]);
+  assert.equal(summaries.length, 1);
+  assert.equal(summaries[0].tourKey, "2026/2027 NYE Run");
 });
 
 test("deliverPendingTourRecaps skips finales that are still today or upcoming", async () => {
@@ -637,4 +725,121 @@ test("shouldSkipTourRankingsOnTourRecapMorning only on the finale date", () => {
   assert.equal(shouldSkipTourRankingsOnTourRecapMorning(dates, "2026-09-06"), true);
   assert.equal(shouldSkipTourRankingsOnTourRecapMorning(dates, "2026-09-04"), false);
   assert.equal(shouldSkipTourRankingsOnTourRecapMorning(dates, "2026-07-11"), false);
+});
+
+test("deliverPendingTourRecaps continues after one tour throws", async () => {
+  const db = {
+    collection(name) {
+      if (name === "comms_tour_recap_state") {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                if (id === "Boom Tour") throw new Error("state read failed");
+                return { exists: false, data: () => null };
+              },
+              async set() {},
+            };
+          },
+        };
+      }
+      return emptyPicksDb().collection(name);
+    },
+  };
+  const summaries = await deliverPendingTourRecaps({
+    db,
+    runtime: { deliver: async () => ({ ok: true, delivered: 0 }) },
+    showDatesByTour: [
+      { tour: "Boom Tour", shows: [{ date: "2026-09-28" }, { date: "2026-10-01" }] },
+      { tour: "Next Tour", shows: [{ date: "2026-09-29" }, { date: "2026-10-02" }] },
+    ],
+    now: new Date("2026-10-08T15:00:00Z"),
+    logger: { info() {}, warn() {}, error() {} },
+  });
+  assert.equal(summaries.length, 1);
+  assert.equal(summaries[0].tourKey, "Next Tour");
+});
+
+test("runScheduledTourRankingsDaily still checks yesterday when a wrap tour throws", async () => {
+  const prev = process.env.COMMS_EVENT_ADAPTERS_ENABLED;
+  process.env.COMMS_EVENT_ADAPTERS_ENABLED = "true";
+  const picksQueries = [];
+  const db = {
+    collection(name) {
+      if (name === "show_calendar") {
+        return {
+          doc() {
+            return {
+              async get() {
+                return {
+                  exists: true,
+                  data: () => ({
+                    showDates: [
+                      { date: "2026-10-07", timeZone: "America/Los_Angeles", venue: "Chase Center" },
+                      { date: "2026-11-01", timeZone: "Not/A/Zone" },
+                    ],
+                    showDatesByTour: [
+                      {
+                        tour: "2026 Fall Tour",
+                        shows: [{ date: "2026-10-07" }, { date: "2026-10-11" }],
+                      },
+                      {
+                        tour: "Boom Tour",
+                        shows: [{ date: "2026-09-28" }, { date: "2026-10-01" }],
+                      },
+                    ],
+                  }),
+                };
+              },
+            };
+          },
+        };
+      }
+      if (name === "comms_tour_recap_state") {
+        return {
+          doc() {
+            return {
+              async get() {
+                throw new Error("state read failed");
+              },
+            };
+          },
+        };
+      }
+      if (name === "picks") {
+        return {
+          where(_field, _op, showDate) {
+            picksQueries.push(showDate);
+            return {
+              async get() {
+                return { empty: true, docs: [] };
+              },
+            };
+          },
+        };
+      }
+      return {
+        doc() {
+          return {
+            async get() {
+              return { exists: false, data: () => ({}) };
+            },
+          };
+        },
+      };
+    },
+  };
+  try {
+    const result = await runScheduledTourRankingsDaily({
+      db,
+      admin: { firestore: { FieldValue: { serverTimestamp: () => "TS" } } },
+      now: new Date("2026-10-08T15:00:00Z"),
+      logger: { info() {}, warn() {}, error() {} },
+    });
+    assert.ok(result);
+    assert.deepEqual(picksQueries, ["2026-10-07"]);
+  } finally {
+    if (prev === undefined) delete process.env.COMMS_EVENT_ADAPTERS_ENABLED;
+    else process.env.COMMS_EVENT_ADAPTERS_ENABLED = prev;
+  }
 });

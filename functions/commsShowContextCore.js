@@ -5,6 +5,8 @@
 
 "use strict";
 
+const { formatFanShowDate } = require("./fanShowDate.cjs");
+
 /**
  * @param {unknown} value
  * @returns {string}
@@ -382,7 +384,9 @@ function highlightClause(hit, lastPlayed) {
   }
   if (hit.kind === "bustout" && hit.gap == null) return `, highlighted by ${hit.title}`;
   const article = indefiniteArticleForGap(hit.gap);
-  const date = hit.gap != null && hit.gap >= 10 ? lastPlayedForTitle(hit.title, lastPlayed) : "";
+  const storedDate = hit.gap != null && hit.gap >= 10 ? lastPlayedForTitle(hit.title, lastPlayed) : "";
+  const formattedDate = storedDate ? formatFanShowDate(storedDate) : "";
+  const date = typeof formattedDate === "string" ? formattedDate : "";
   const dateBit = date ? `, last played on ${date}` : "";
   if (hit.kind === "rarity") {
     return ` featured a relative rarity of late: ${hit.title}, ${article} ${hit.gap} show gap${dateBit}`;

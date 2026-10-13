@@ -19,6 +19,7 @@ const {
   buildInviteSharePlainTextLines,
 } = require("./comms/inviteShareBlock.cjs");
 const { resolveCommsEmailHeader } = require("./comms/emailCommsHeader.cjs");
+const { fanDateBadge } = require("./fanShowDate.cjs");
 
 const SITE_URL = "https://www.setlistpickem.com";
 const APP_CTA_URL = `${SITE_URL}/dashboard`;
@@ -206,14 +207,48 @@ function appendCityIfNeeded(venue, city) {
  * @param {{ dateKey?: string, venueKey?: string, cityKey?: string }} [opts]
  * @returns {string}
  */
-function venueLine(payload, { dateKey = "show_date", venueKey = "venue_name", cityKey = "venue_city" } = {}) {
+/**
+ * Venue and city only. A sentence about this night names the room, not the storage date.
+ *
+ * @param {Record<string, unknown>} payload
+ * @param {{ venueKey?: string, cityKey?: string }} [opts]
+ * @returns {string}
+ */
+function placeLine(payload, { venueKey = "venue_name", cityKey = "venue_city" } = {}) {
   const venue = typeof payload?.[venueKey] === "string" ? payload[venueKey].trim() : "";
   const city =
     cityKey && cityKey !== "__none" && typeof payload?.[cityKey] === "string"
       ? payload[cityKey].trim()
       : "";
-  const place = appendCityIfNeeded(venue, city);
-  const date = typeof payload?.[dateKey] === "string" ? payload[dateKey].trim() : "";
+  return appendCityIfNeeded(venue, city);
+}
+
+/**
+ * @param {unknown} showDate
+ * @returns {string} `MM/DD/YY`, or empty when the value is not a storage date.
+ */
+/**
+ * Storage dates become `MM/DD/YY`. Other strings stay, so a freeform label is not dropped.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+function speechDate(value) {
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (!raw) return "";
+  return fanDateBadge(raw) || raw;
+}
+
+/**
+ * Compact label for a show that is not "this night": `MM/DD/YY — place`.
+ *
+ * @param {Record<string, unknown>} payload
+ * @param {{ dateKey?: string, venueKey?: string, cityKey?: string }} [opts]
+ * @returns {string}
+ */
+function datedPlace(payload, { dateKey = "show_date", venueKey = "venue_name", cityKey = "venue_city" } = {}) {
+  const place = placeLine(payload, { venueKey, cityKey });
+  const date = speechDate(payload?.[dateKey]);
   if (date && place) return `${date} — ${place}`;
   return place || date || "";
 }
@@ -270,7 +305,7 @@ function tourCountdownDeliveryPlan(recipients) {
  */
 function tourCountdownCloser(p) {
   const days = Number(p?.days_remaining);
-  const date = typeof p?.first_show_date === "string" ? p.first_show_date.trim() : "";
+  const date = speechDate(p?.first_show_date);
   const showtime = date ? `showtime on ${date}` : "showtime";
   if (tourCountdownIsConfirmation(p)) {
     if (days === 5) return `Your opener picks are in. You can edit them up to ${showtime}.`;
@@ -326,9 +361,12 @@ function assembleServiceEmail(bodyLines, { signOff = DEFAULT_EMAIL_SIGN_OFF, cta
 /** @type {Record<string, (payload: Record<string, any>) => { push: {title:string,body:string}, email: {subject:string,text:string} }>} */
 const BUILDERS = {
   "account-welcome": (p) => {
-    const nextShowLine = p.next_show_date
-      ? `Your next chance to play: ${p.next_show_date}${p.next_show_venue ? ` at ${p.next_show_venue}` : ""}.`
-      : "";
+    const nextShow = datedPlace(p, {
+      dateKey: "next_show_date",
+      venueKey: "next_show_venue",
+      cityKey: "__none",
+    });
+    const nextShowLine = nextShow ? `Your next chance to play: ${nextShow}.` : "";
     const assembled = assembleServiceEmail(
       [
         `Welcome, ${handleOf(p)}!`,
@@ -360,7 +398,7 @@ const BUILDERS = {
     const days = Number(p.days_remaining);
     const when =
       days === 0 ? "today" : days === 1 ? "tomorrow" : Number.isFinite(days) ? `in ${days} days` : "soon";
-    const firstShow = venueLine(p, {
+    const firstShow = datedPlace(p, {
       dateKey: "first_show_date",
       venueKey: "first_show_venue",
       cityKey: "first_show_city",
@@ -394,7 +432,7 @@ const BUILDERS = {
   "picks-confirmed": (p) => {
     const assembled = assembleServiceEmail(
       [
-        `${handleOf(p)}, your picks for ${p.show_date || ""}${p.venue_name ? ` at ${p.venue_name}` : ""} are confirmed.`,
+        `${handleOf(p)}, your picks for ${placeLine(p) || "the show"} are confirmed.`,
         "We'll score them live as the setlist comes in.",
       ],
       { signOff: "Good luck tonight!" }
@@ -402,7 +440,7 @@ const BUILDERS = {
     return {
       push: {
         title: "You're locked in",
-        body: `Picks for ${p.venue_name || p.show_date || "the show"} are confirmed. We'll score them live.`,
+        body: `Picks for ${placeLine(p) || "the show"} are confirmed. We'll score them live.`,
       },
       email: {
         subject: "Your picks are locked in",
@@ -463,7 +501,7 @@ const BUILDERS = {
 
   "show-recap": (p) => {
     const handle = handleOf(p);
-    const where = `${p.show_date || "the show"}${p.venue_name ? ` at ${p.venue_name}` : ""}`;
+    const where = placeLine(p) || "the show";
     const narrative =
       (typeof p.narrative_line === "string" && p.narrative_line.trim()) ||
       (typeof p.setlist_highlight === "string" && p.setlist_highlight.trim()) ||
@@ -503,7 +541,10 @@ const BUILDERS = {
 
   "tour-rankings-daily": (p) => {
     const handle = handleOf(p);
-    const venue = venueLine(p) || "the show";
+    const place = placeLine(p);
+    const venue = place || "the show";
+    const dateBadge = fanDateBadge(p.show_date);
+    const preheader = dateBadge && place ? `${dateBadge} · ${place}` : dateBadge || place || "";
     const narrative =
       (typeof p.narrative_line === "string" && p.narrative_line.trim()) ||
       (typeof p.setlist_highlight === "string" && p.setlist_highlight.trim()) ||
@@ -560,6 +601,7 @@ const BUILDERS = {
         ctaUrl: PICKS_CTA_URL,
         ctaLabel: "Make picks for next show",
         inviteBlockHtml: buildInviteShareHtmlBlock(inviteFields),
+        ...(preheader ? { preheader } : {}),
       },
     };
   },
