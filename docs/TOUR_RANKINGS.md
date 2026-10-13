@@ -8,7 +8,20 @@
 | **Code** | `functions/tourRankingsDailyCore.js` · `src/features/scoring/model/aggregateTourStandings.js` · `functions/tourRecapCore.js` · `src/features/tour-recap/ui/TourRecapInApp.jsx` |
 | **Related** | #510 · #1084 · [TOUR_RECAP_FACT_INVENTORY.md](./comms-triggers/TOUR_RECAP_FACT_INVENTORY.md) |
 
-This is the internal rule sheet for official tour rank, the list order inside a tie, and how rankings comms should speak both. A short player-facing page can be cut from the **Adopted rule** section after the standings screen and the recap use the same numbers. Do not publish the current screens as the rule. They disagree.
+This note is the shared case study for two workstreams. They ship separately. Ranking decides the place. Recap comms decides the paragraph. A short player-facing page can be cut from the **Adopted rule** section after the standings screen and the recap use the same numbers. Do not publish the current screens as the rule. They disagree.
+
+## Two workstreams
+
+| | Tour ranking refinement | Recap comms enhancements |
+|--|-------------------------|--------------------------|
+| **Question** | What is official place, and which screens show it? | What does the end-of-tour message say once that place is known? |
+| **Owns** | The rule below. Standings badges. Tie metadata on the rank (`tiedCount`, the other handles at that rank). | Podium labels, the personal rank sentence, the shared intro, canned podium lines, a second personal beat, spoken dates, band-fact color. |
+| **Leaves alone** | Recap prose, Phish.net essays, the one-sentence opening. | The points formula, the wins definition, and the wins-then-handle list order. |
+| **Done when** | A tie shares one rank on the tour standings screen and on the number the recap is given. List order inside the tie is still wins, then handle. | The Fall Tour case would name the three-way tie as one place, and the shared intro would carry the gap and the lead changes together. |
+
+Ranking goes first only for the place labels. The intro, the canned lines, and the extra personal beat do not need the badge change and can be drafted in parallel. Podium membership and “tied for #N” wait on the rule so comms does not invent a second place system.
+
+No scoring change is required for either stream. Points, wins, and the sort already produce the official rank and the list order. Ranking stops presenting that list order as the place. Comms stops spending the whole intro on a single fact.
 
 Numbers below are the live Fall Tour board on 2026-10-13: graded picks on the eight tour dates, same eligibility and sort as the recap fan-out. 20 players.
 
@@ -168,15 +181,19 @@ Already stored, and unused or barely used in this wrap:
 
 Not stored: Phish.net show recaps, jam charts, and editorial show notes. Show-note pages are still a gated product. Adding them means a new inventory row first: where the text lives, who wrote it, the source URL, and the attribution line. Then one slot on the wrap map. The practical version is a human-approved sentence or two per tour, written from those sources, reviewed like any other comms draft. A scraped recap paragraph in the live send is the wrong layer.
 
-## Implementation order
+## Workstream 1 — Tour ranking refinement
 
-1. Write the adopted rule into this doc’s status once product accepts it. Point the standings description at it when the badge matches.
+1. Accept the rule in this doc. Point the standings description at it when the badge matches.
 2. Standings badges use competition rank and mark a tie. List order inside the tie stays wins, then handle.
-3. Recap podium and honorable mentions group by that rank. Retire sole “Third Place” inside a tie. Generalize the 5th-place naming rule to every place.
-4. Personal sentence says “tied for #N with …” when `tiedCount` is greater than 1.
-5. Replace the one-slot opening and the two canned podium lines with a short multi-fact intro. Gap, lead changes, and the close can all be present. Drop a clause when its fact is missing.
-6. Allow the rare-hit beat and the lead beat in the same personal paragraph, still capped.
-7. Fold last-played / debut year into the gap clause from `public_tour_stats`.
-8. Leave Phish.net recap essays and show notes out until a sourced, human-approved fact is on the inventory.
+3. Hand comms a rank payload that already includes `tiedCount` and the other handles at that rank. The recap does not re-derive place from row order.
 
-No scoring change is required for this. Points, wins, and the sort already produce the official rank and the list order. The work is to stop presenting list order as the place.
+## Workstream 2 — Recap comms enhancements
+
+Depends on workstream 1 for place labels only.
+
+1. Podium and honorable mentions group by the official rank. Retire sole “Third Place” inside a tie. Generalize the 5th-place naming rule to every place.
+2. Personal sentence says “tied for #N with …” when `tiedCount` is greater than 1.
+3. Replace the one-slot opening and the two canned podium lines with a short multi-fact intro. Gap, lead changes, and the close can all be present. Drop a clause when its fact is missing.
+4. Allow the rare-hit beat and the lead beat in the same personal paragraph, still capped.
+5. Speak a short date and the venue. Fold last-played / debut year into the gap clause from `public_tour_stats`.
+6. Leave Phish.net recap essays and show notes out until a sourced, human-approved fact is on the inventory. That slice stays inside this workstream. It does not reopen the rank rule.
