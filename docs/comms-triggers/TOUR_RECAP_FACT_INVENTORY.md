@@ -15,6 +15,8 @@ The rank band is still `champion`, `top5`, `top10`, `full_run`, `partial`, or `f
 
 The shared opening keeps “{Tour} is officially in the books.” and “Before the next run, here is the final tape.” The middle sentence is the first fact below that exists. A fixture of that copy is [TOUR_RECAP_SAMPLE.md](./TOUR_RECAP_SAMPLE.md). Nothing in that file was sent.
 
+The 2026 Fall Tour send is the case study for ties and for this one-sentence opening: [TOUR_RANKINGS.md](../TOUR_RANKINGS.md). That note is a draft. It does not change this map until the rank rule is accepted.
+
 ## Facts this wrap may speak
 
 | Fact | Where | Sentence |
