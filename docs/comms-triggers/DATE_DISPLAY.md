@@ -1,9 +1,9 @@
 # Fan-facing show dates
 
-**Status:** decision, not yet implemented
+**Status:** shipped on staging in 1.81.3–1.81.6
 **Date:** 2026-10-09
 **Epic:** #1120
-**First child:** #1121 — morning recap, target the 8:00 AM Pacific `scheduledTourRankingsDailyComms` run on 2026-10-10
+**Shipped:** #1121 in 1.81.3, #1122 in 1.81.4, #1123 in 1.81.5, #1124 in 1.81.6. Production is still 1.81.2 until the next promote.
 
 Storage stays `YYYY-MM-DD`. That value is what Firestore, lock checks, dedup keys, and `?showDate=` links use. Fan-facing copy and labels do not print it.
 
@@ -81,14 +81,16 @@ One function, two runtimes (functions cannot import the web ESM module):
 - CJS in `functions/`
 - `formatFanShowDate` in `src/shared/utils/dateUtils.js`
 
-Both lock `2026-10-07` → `10/07/26`. Invalid input returns the original string. Later children import these. Do not add a fourth parser.
+Both lock `2026-10-07` → `10/07/26`. Invalid input returns the original string. Do not add a fourth parser.
 
 ## Sequence
 
-1. #1121 — morning recap email and the matching in-app paragraphs. Deploy `scheduledTourRankingsDailyComms` before 8:00 AM Pacific on 2026-10-10 if that morning's mail should use it. The run recaps 2026-10-09.
-2. #1122 — show labels in the app.
-3. #1123 — catalog last-played and tour stats column glyphs.
-4. #1124 — night-of show recap, picks confirmed, tour countdown, and the lock-reminder in-app line. Waits on the helper and the sentence rule from #1121. Night-of copy does not say "last night".
+These four landed on staging the same day as the decision.
+
+1. #1121 — morning recap email and the matching in-app paragraphs. Shipped in 1.81.3.
+2. #1122 — show labels in the app. Shipped in 1.81.4.
+3. #1123 — catalog last-played and tour stats column glyphs. Shipped in 1.81.5.
+4. #1124 — night-of show recap, picks confirmed, tour countdown, and the lock-reminder in-app line. Shipped in 1.81.6. Night-of copy does not say "last night".
 
 ## Out of scope
 
