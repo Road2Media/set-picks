@@ -8,6 +8,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.82.0] — 2026-10-13
+
+### Added
+- **Badge ladder (#712)** — the profile shelf adds Ten Night Wins, 1000 Club, Long Hauler (50 shows), Five Night Wins, 500 Club, Tour Regular (25 shows), three anniversary years, and Style Picker. Finalize awards them from counters, join date, and favorite song already on the user doc, and keeps earlier `awardedAt` values. `functions/scripts/backfillBadges.js` can write the same awards (dry-run unless `--apply`). Tour winner, top 5, category leads, triple crown, yearly winner, slugging leaders, and invite badges stay off the shelf until a ranking or invite snapshot exists.
+
+---
+
 ## [1.81.7] — 2026-10-10
 
 ### Fixed
