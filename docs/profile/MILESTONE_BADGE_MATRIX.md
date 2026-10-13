@@ -107,6 +107,25 @@ Ship the first award engine against fields that already exist and can be recompu
 
 Defer `podium_*`, `days_first_*`, invite, and pool-host badges until their source data is durable and documented.
 
+## Shipped in #712
+
+Career badges awarded at finalize from fields already on `users/{uid}`, then backfilled by `functions/scripts/backfillBadges.js` (dry-run unless `--apply`). Awards stay once written.
+
+| badgeId | Name | Rule | Tier |
+|---------|------|------|------|
+| `shows_played_25` | Tour Regular | `showsPlayed >= 25` | `rare` |
+| `shows_played_50` | Long Hauler | `showsPlayed >= 50` | `legendary` |
+| `win_5` | Five Night Wins | `wins >= 5` | `rare` |
+| `win_10` | Ten Night Wins | `wins >= 10` | `legendary` |
+| `points_500` | 500 Club | `totalPoints >= 500` | `rare` |
+| `points_1000` | 1000 Club | `totalPoints >= 1000` | `legendary` |
+| `anniversary_1` | First Anniversary | UTC calendar years from `createdAt` through the show date `>= 1` | `uncommon` |
+| `anniversary_2` | Two-Year Run | same, `>= 2` | `rare` |
+| `anniversary_3` | Three-Year Fan | same, `>= 3` | `rare` |
+| `style_picker` | Style Picker | `favoriteSong` set and not `Unknown` | `common` |
+
+Still deferred: tour winner and multiples, top-5 tour finish, tour-leading batting average / PPS / bustout boosts, triple crown, yearly winner, annual slugging leader and top 5, Pick 'em Evangelist. Those need a durable ranking or invite snapshot. Streaks, full-tour completion, bustout hits, and a perfect night need per-show grade context at finalize.
+
 ---
 
 ## Award Storage Recommendation
