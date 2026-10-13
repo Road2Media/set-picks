@@ -22,7 +22,7 @@ All collections live in the default `(default)` Firestore database for project `
 | `email` | string | Auth email — used for comms delivery |
 | `photoURL` | string? | Legacy optional URL field (unused by curated avatar picker) |
 | `avatarId` | string? | **v1.27.0+ (#567)** Curated avatar catalog id (e.g. `ticket`, `flame`). Missing/unknown → default `ticket` |
-| `badges` | map? | **v1.28.0+ (#568)** Earned milestone badges `{ [badgeId]: { awardedAt, scope, sourceThroughShow } }`. Written server-side at rollup; idempotent merge |
+| `badges` | map? | **v1.28.0+ (#568)** Earned milestone badges `{ [badgeId]: { awardedAt, scope, sourceThroughShow } }`. Written server-side at rollup; idempotent merge. **v1.82.0+ (#712)** also awards `shows_played_25`, `shows_played_50`, `win_5`, `win_10`, `points_500`, `points_1000`, `anniversary_1`, `anniversary_2`, `anniversary_3`, and `style_picker` from `showsPlayed`, `wins`, `totalPoints`, `createdAt`, and `favoriteSong`. Same map shape. |
 | `favoriteSong` | string? | Display favorite; empty/`Unknown` treated as unset in UI |
 | `termsPrivacyAcceptedAt` | Timestamp? | Legal consent gate |
 | `createdAt` | Timestamp | Account creation |

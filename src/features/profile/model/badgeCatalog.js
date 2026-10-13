@@ -1,5 +1,5 @@
 /**
- * Milestone badge catalog (#568) — v1 Participation + win_1.
+ * Milestone badge catalog (#568, expanded #712).
  * Assets under `/badges/{id}.svg`.
  *
  * `rank` is the explicit badge hierarchy (1 = most valuable). It drives which
@@ -7,6 +7,8 @@
  * on the Badges shelf. Ranks must be unique, contiguous from 1, and never
  * contradict tier order (a `common` badge cannot outrank an `uncommon` one) —
  * enforced by `badgeCatalog.test.js`.
+ *
+ * Award rules live in `functions/badgeAwards.js` and must use these same ids.
  */
 
 /** @typedef {{
@@ -21,27 +23,75 @@
 /** @type {readonly BadgeDefinition[]} */
 export const PROFILE_BADGES = Object.freeze([
   {
-    id: 'shows_played_1',
-    name: 'First Show Scored',
-    blurb: "Scored your first Setlist Pick 'Em show.",
-    tier: 'common',
-    rank: 4,
-    src: '/badges/shows_played_1.svg',
+    id: 'win_10',
+    name: 'Ten Night Wins',
+    blurb: 'Topped ten scored shows.',
+    tier: 'legendary',
+    rank: 1,
+    src: '/badges/win_10.svg',
   },
   {
-    id: 'shows_played_5',
-    name: 'Five on the Board',
-    blurb: 'Played five scored shows.',
-    tier: 'common',
+    id: 'points_1000',
+    name: '1000 Club',
+    blurb: 'Scored 1,000 lifetime points.',
+    tier: 'legendary',
+    rank: 2,
+    src: '/badges/points_1000.svg',
+  },
+  {
+    id: 'shows_played_50',
+    name: 'Long Hauler',
+    blurb: 'Played 50 scored shows.',
+    tier: 'legendary',
     rank: 3,
-    src: '/badges/shows_played_5.svg',
+    src: '/badges/shows_played_50.svg',
+  },
+  {
+    id: 'win_5',
+    name: 'Five Night Wins',
+    blurb: 'Topped five scored shows.',
+    tier: 'rare',
+    rank: 4,
+    src: '/badges/win_5.svg',
+  },
+  {
+    id: 'points_500',
+    name: '500 Club',
+    blurb: 'Scored 500 lifetime points.',
+    tier: 'rare',
+    rank: 5,
+    src: '/badges/points_500.svg',
+  },
+  {
+    id: 'shows_played_25',
+    name: 'Tour Regular',
+    blurb: 'Played 25 scored shows.',
+    tier: 'rare',
+    rank: 6,
+    src: '/badges/shows_played_25.svg',
+  },
+  {
+    id: 'anniversary_3',
+    name: 'Three-Year Fan',
+    blurb: 'Three years since you joined.',
+    tier: 'rare',
+    rank: 7,
+    src: '/badges/anniversary_3.svg',
+  },
+  {
+    id: 'anniversary_2',
+    name: 'Two-Year Run',
+    blurb: 'Two years since you joined.',
+    tier: 'rare',
+    rank: 8,
+    src: '/badges/anniversary_2.svg',
   },
   {
     id: 'shows_played_10',
     name: 'Ten-Show Run',
     blurb: 'Played ten scored shows.',
     tier: 'uncommon',
-    rank: 1,
+    rank: 9,
     src: '/badges/shows_played_10.svg',
   },
   {
@@ -49,8 +99,40 @@ export const PROFILE_BADGES = Object.freeze([
     name: 'First Night Win',
     blurb: 'Topped a scored show.',
     tier: 'uncommon',
-    rank: 2,
+    rank: 10,
     src: '/badges/win_1.svg',
+  },
+  {
+    id: 'anniversary_1',
+    name: 'First Anniversary',
+    blurb: 'One year since you joined.',
+    tier: 'uncommon',
+    rank: 11,
+    src: '/badges/anniversary_1.svg',
+  },
+  {
+    id: 'shows_played_5',
+    name: 'Five on the Board',
+    blurb: 'Played five scored shows.',
+    tier: 'common',
+    rank: 12,
+    src: '/badges/shows_played_5.svg',
+  },
+  {
+    id: 'shows_played_1',
+    name: 'First Show Scored',
+    blurb: "Scored your first Setlist Pick 'Em show.",
+    tier: 'common',
+    rank: 13,
+    src: '/badges/shows_played_1.svg',
+  },
+  {
+    id: 'style_picker',
+    name: 'Style Picker',
+    blurb: 'Set a favorite song on your profile.',
+    tier: 'common',
+    rank: 14,
+    src: '/badges/style_picker.svg',
   },
 ]);
 
