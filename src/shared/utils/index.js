@@ -1,4 +1,11 @@
-export { formatMonthYear, formatShowLabel, todayYmd, ymdInTimeZone } from './dateUtils';
+export {
+  formatFanShowDate,
+  formatFanShowMonthDay,
+  formatMonthYear,
+  formatShowLabel,
+  todayYmd,
+  ymdInTimeZone,
+} from './dateUtils';
 export {
   getNextShow,
   getShowStatus,

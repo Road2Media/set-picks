@@ -3,7 +3,11 @@
  *
  * Keep in sync with `functions/tourRankingsDailyCore.js` →
  * `buildTourRankingsDailyParagraphs` (functions cannot import this ESM module).
- *
+ */
+
+import { formatFanShowDate } from '../../../shared/utils/dateUtils';
+
+/**
  * @param {unknown} value
  * @returns {string}
  */
@@ -142,8 +146,7 @@ export function buildTourRankingsDailyParagraphs(p, opts = {}) {
   const standaloneShowRef = place;
   const combinedShowRef = "last night's show";
   const paragraphShowRef = omitHandle ? combinedShowRef : standaloneShowRef;
-  const date = cleanText(p.show_date);
-  const showLabel = date ? `${date} — ${place}` : place;
+  const showLabel = place;
   const paragraphShowLabel = omitHandle ? combinedShowRef : showLabel;
 
   const tourRank = p.tour_rank != null ? Number(p.tour_rank) : null;
@@ -238,7 +241,8 @@ export function buildTourRankingsDailyParagraphs(p, opts = {}) {
 
   if (p.next_show_date || p.next_show_venue) {
     const nextVenue = cleanText(p.next_show_venue);
-    const nextDate = cleanText(p.next_show_date);
+    const nextDateRaw = cleanText(p.next_show_date);
+    const nextDate = nextDateRaw ? formatFanShowDate(nextDateRaw) : '';
     const samePlace = isSamePlace(nextVenue, [venue, city, place].filter(Boolean));
     paras.push(
       samePlace && nextDate && nextVenue

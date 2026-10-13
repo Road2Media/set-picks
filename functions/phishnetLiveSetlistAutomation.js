@@ -122,6 +122,23 @@ function getEtHour(now = new Date()) {
   return Number.parseInt(String(hPart?.value ?? "0"), 10);
 }
 
+/**
+ * True when `timeZone` is an IANA name `Intl` will accept.
+ * An invalid name throws from `DateTimeFormat`, which would abort a calendar scan.
+ *
+ * @param {unknown} timeZone
+ * @returns {boolean}
+ */
+function isValidIanaTimeZone(timeZone) {
+  if (typeof timeZone !== "string" || !timeZone.trim()) return false;
+  try {
+    Intl.DateTimeFormat("en-CA", { timeZone: timeZone.trim() });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** YYYY-MM-DD in any IANA timezone. */
 function ymdInTimeZone(now = new Date(), timeZone = DEFAULT_SHOW_TIME_ZONE) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -373,6 +390,7 @@ function scheduledCandidateShowDates(now, calendarShows) {
       typeof show.timeZone === "string" && show.timeZone.trim()
         ? show.timeZone.trim()
         : DEFAULT_SHOW_TIME_ZONE;
+    if (!isValidIanaTimeZone(timeZone)) continue;
     if (!isWithinShowLocalPollWindow(now, timeZone)) continue;
     const localToday = ymdInTimeZone(now, timeZone);
     const localYesterday = ymdDaysAgo(localToday, 1);
@@ -1301,5 +1319,6 @@ module.exports = {
   set1TitleSignatureFromRows,
   setlistPayloadEqual,
   signatureFromRows,
+  isValidIanaTimeZone,
   ymdInTimeZone,
 };

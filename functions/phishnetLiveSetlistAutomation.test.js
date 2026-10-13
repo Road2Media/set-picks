@@ -222,6 +222,14 @@ test("scheduledCandidateShowDates: post-midnight only prior night when today not
   assert.deepEqual(dates, ["2026-07-03"]);
 });
 
+test("scheduledCandidateShowDates skips a show with an invalid timezone", () => {
+  const dates = scheduledCandidateShowDates(new Date("2026-07-04T22:00:00-04:00"), [
+    { date: "2026-07-04", timeZone: "America/New_York" },
+    { date: "2026-07-05", timeZone: "Not/A/Zone" },
+  ]);
+  assert.deepEqual(dates, ["2026-07-04"]);
+});
+
 test("scheduledCandidateShowDates: different zones evaluated independently", () => {
   const cal = parseShowCalendarSnapshotToShows({
     showDates: [

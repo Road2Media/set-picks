@@ -8,6 +8,41 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.81.7] — 2026-10-10
+
+### Fixed
+- **Morning comms no longer die on one bad calendar value** — a `/` in a tour name is stored as `-` in the wrap-state doc and the shared already-sent id. The 8:00 AM job skips future and long-finished tours while deciding on a wrap. If that wrap step throws, the daily recap still runs (a real finale morning still skips it). One failed recipient does not stop the rest of a send. A show with an invalid timezone is skipped. The lock reminder, countdown, and 8:00 AM job allow 300 seconds. Email, in-app, and phone rules are unchanged. (#1096)
+
+---
+
+## [1.81.6] — 2026-10-09
+
+### Changed
+- **Other comms** — show recap, picks confirmed, and the lock reminder name the venue and city. The short date sits on the eyebrow. Night-of copy does not say "last night". Tour countdown, welcome, and next-show lines use `MM/DD/YY`. Payload `show_date` stays `YYYY-MM-DD`. (#1124)
+
+---
+
+## [1.81.5] — 2026-10-09
+
+### Changed
+- **Song date columns** — catalog last-played is zero-padded `MM/DD/YY` (`07/19/24`). Tour stats this-tour dates are `MM/DD` and prior-play dates are `MM/DD/YY`. Year stays off this-tour dates. The column tracks are unchanged because slashes are the same length as the old hyphens. (#1123)
+
+---
+
+## [1.81.4] — 2026-10-09
+
+### Changed
+- **Show labels** — the tour date select, standings header, pool hub active show, picks scorecard, share text, and the too-early prior-show label print `MM/DD/YY`. `<option value>` stays `YYYY-MM-DD`. Pool archive spelled dates stay spelled. (#1122)
+
+---
+
+## [1.81.3] — 2026-10-09
+
+### Changed
+- **Morning recap** — the last-night sentence names the venue and city. The date moves to the email preheader (`10/07/26 · {venue}, {city}`) and the email and in-app eyebrow (`10/07/26 · Tour standings`). Next up, back at, and last played use `MM/DD/YY`. Debut and late-joiner lines drop the storage date. `show_date` on the payload stays `YYYY-MM-DD`. Subject and push are unchanged. (#1121)
+
+---
+
 ## [1.81.2] — 2026-10-09
 
 ### Fixed

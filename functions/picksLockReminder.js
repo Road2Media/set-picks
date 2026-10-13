@@ -4,6 +4,7 @@
  */
 
 const {
+  isValidIanaTimeZone,
   parseShowCalendarSnapshotToShows,
 } = require("./phishnetLiveSetlistAutomation");
 const { hasNonEmptyPicksObject } = require("./rollupSeasonAggregates");
@@ -128,6 +129,7 @@ function findReminderTonightShow(calendarShows, now) {
       typeof show.timeZone === "string" && show.timeZone.trim()
         ? show.timeZone.trim()
         : DEFAULT_SHOW_TIME_ZONE;
+    if (!isValidIanaTimeZone(tz)) continue;
     if (!isWithinReminderWindow(date, tz, now, show)) continue;
     const lockHm = resolvePicksLockHm(show);
     return {

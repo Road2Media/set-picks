@@ -1,5 +1,7 @@
 'use strict';
 
+const { fanDateBadge } = require('../fanShowDate.cjs');
+
 /**
  * In-app style email header (eyebrow + icon + title) — mirrors
  * `CommsTemplateBody` / `commsTemplateRegistry` without Lucide (email-safe emoji).
@@ -61,13 +63,15 @@ function resolveCommsEmailHeader(templateId, p = {}) {
         accentColor: ACCENT_AMBER,
       };
     }
-    case 'tour-rankings-daily':
+    case 'tour-rankings-daily': {
+      const dateBadge = fanDateBadge(p.show_date);
       return {
         icon: '📈',
-        eyebrow: 'Tour standings',
+        eyebrow: dateBadge ? `${dateBadge} · Tour standings` : 'Tour standings',
         title: 'Where you stand on tour',
         accentColor: ACCENT_TEAL,
       };
+    }
     case 'tour-recap': {
       const tourName =
         typeof p.tour_name === 'string' && p.tour_name.trim()
@@ -80,13 +84,15 @@ function resolveCommsEmailHeader(templateId, p = {}) {
         accentColor: ACCENT_TEAL,
       };
     }
-    case 'picks-lock-reminder':
+    case 'picks-lock-reminder': {
+      const dateBadge = fanDateBadge(p.show_date);
       return {
         icon: '⏰',
-        eyebrow: 'Picks lock soon',
+        eyebrow: dateBadge ? `${dateBadge} · Picks lock soon` : 'Picks lock soon',
         title: 'Lock in your picks',
         accentColor: ACCENT_AMBER,
       };
+    }
     case 'tour-engagement-reminder':
       return {
         icon: '✨',

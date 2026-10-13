@@ -391,6 +391,29 @@ test("tour_recap prefs_off and existing dedup skip send (#510)", async () => {
   assert.equal(inApp.calls.length, 0);
 });
 
+test("deliverCommsTrigger continues after one recipient throws", async () => {
+  const db = makeFakeDb();
+  const email = recordingWorker("email", (ctx) => {
+    if (ctx.uid === "u1") throw new Error("token lookup failed");
+    return { ok: true };
+  });
+  const summary = await deliverCommsTrigger({
+    db,
+    admin: fakeAdmin,
+    triggerId: "account_welcome",
+    recipients: [
+      { uid: "u1", userData: { email: "u1@example.com" } },
+      { uid: "u2", userData: { email: "u2@example.com" } },
+    ],
+    workers: { email },
+    dryRun: false,
+    logger: { info() {}, warn() {}, error() {} },
+  });
+  assert.equal(summary.delivered, 1);
+  assert.equal(summary.skips.recipient_error, 1);
+  assert.deepEqual(email.calls.map((ctx) => ctx.uid), ["u1", "u2"]);
+});
+
 test("delivery log copies a known fact label and drops an id that is not on the map", async () => {
   const db = makeFakeDb();
   const inApp = recordingWorker("inApp", { ok: true });

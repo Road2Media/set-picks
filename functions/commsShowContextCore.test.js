@@ -207,7 +207,7 @@ describe("gap bands (#1105)", () => {
     });
     assert.equal(
       flow.text,
-      "A 2-song first set featured a relative rarity of late: Hey Stranger, a 23 show gap, last played on 2026-07-10. A 2-song second set saw the return of Meatstick after an 18 show gap, last played on 2026-07-17. A 2-song encore featured The Lizards and Julius.",
+      "A 2-song first set featured a relative rarity of late: Hey Stranger, a 23 show gap, last played on 07/10/26. A 2-song second set saw the return of Meatstick after an 18 show gap, last played on 07/17/26. A 2-song encore featured The Lizards and Julius.",
     );
   });
 
@@ -520,7 +520,7 @@ describe("show_recap composer (#985)", () => {
     assert.doesNotMatch(ctx.set_flow_summary, /The Curtain(?! With)/);
     assert.match(
       ctx.set_flow_summary,
-      /A 3-song first set featured a relative rarity of late: Hey Stranger, a 23 show gap, last played on 2026-07-10/,
+      /A 3-song first set featured a relative rarity of late: Hey Stranger, a 23 show gap, last played on 07\/10\/26/,
     );
     assert.match(ctx.set_flow_summary, /A 2-song encore featured The Lizards and Julius/);
   });

@@ -11,6 +11,7 @@
 const {
   parseShowCalendarSnapshotToShows,
   parseShowCalendarSnapshotToShowsByTour,
+  isValidIanaTimeZone,
   ymdInTimeZone,
 } = require("./phishnetLiveSetlistAutomation");
 const { hasNonEmptyPicksObject, resolveTourKeyForDate } = require("./rollupSeasonAggregates");
@@ -265,6 +266,7 @@ function findTourCountdownTargets(calendarShows, now, countdownDays = COUNTDOWN_
   /** @type {typeof byTour extends Map<string, infer V> ? V[] : never} */
   const hits = [];
   for (const meta of byTour.values()) {
+    if (!isValidIanaTimeZone(meta.timeZone)) continue;
     const todayYmd = ymdInTimeZone(now, meta.timeZone);
     const first = meta.firstShowDate;
     if (!first || todayYmd >= first) continue;
@@ -688,6 +690,12 @@ async function deliverTourRecapIfFinalShow({
  * idempotency; the tour doc is the durable process so each tour only gets one
  * automatic end-of-tour send.
  *
+ * Firestore is read only for tours that can still send (finale already past,
+ * inside the 14-day lookback) and for Sphere archive labels, which are closed
+ * even outside that window. In-progress, future, and older non-Sphere tours
+ * are not the recap reference period and are not read. The morning rankings
+ * email is a later step in the same cron and keys off yesterday's show.
+ *
  * @param {{
  *   db: import("firebase-admin").firestore.Firestore,
  *   admin?: typeof import("firebase-admin"),
@@ -716,44 +724,13 @@ async function deliverPendingTourRecaps({
     if (!tourKey) continue;
     const tourDates = tourDatesForKey(showDatesByTour, tourKey);
     const finalDate = tourDates.length > 0 ? tourDates[tourDates.length - 1] : "";
-
-    // eslint-disable-next-line no-await-in-loop
-    const state = await readTourRecapState({ db, tourKey });
-    if (state.terminal) {
-      logger?.info?.("deliverPendingTourRecaps: skip tour (state terminal)", {
-        tourKey,
-        finalDate,
-        status: state.data?.status,
-      });
-      continue;
-    }
-
-    if (isSphereArchiveTourKey(tourKey)) {
-      if (admin) {
-        // eslint-disable-next-line no-await-in-loop
-        await writeTourRecapState({
-          db,
-          admin,
-          tourKey,
-          status: "skipped_archive",
-          finalDate: finalDate || null,
-          source: "cron",
-        });
-      }
-      logger?.info?.("deliverPendingTourRecaps: skip Sphere archive tour", {
-        tourKey,
-        finalDate,
-      });
-      continue;
-    }
-
-    if (
-      !shouldAttemptPendingTourRecap({
-        tourKey,
-        finalDate,
-        today,
-      })
-    ) {
+    const inRecapWindow = shouldAttemptPendingTourRecap({
+      tourKey,
+      finalDate,
+      today,
+    });
+    const sphereArchive = isSphereArchiveTourKey(tourKey);
+    if (!inRecapWindow && !sphereArchive) {
       if (finalDate && finalDate < today) {
         logger?.info?.("deliverPendingTourRecaps: skip tour", {
           tourKey,
@@ -765,36 +742,71 @@ async function deliverPendingTourRecaps({
       continue;
     }
 
-    // eslint-disable-next-line no-await-in-loop
-    const summary = await deliverTourRecapIfFinalShow({
-      db,
-      runtime,
-      showDate: finalDate,
-      tourKey,
-      showDatesByTour,
-      logger,
-    });
-    if (summary) out.push({ tourKey, finalDate, summary });
-
-    if (admin && tourRecapFanoutCompleted(summary)) {
+    try {
       // eslint-disable-next-line no-await-in-loop
-      await writeTourRecapState({
+      const state = await readTourRecapState({ db, tourKey });
+      if (state.terminal) {
+        logger?.info?.("deliverPendingTourRecaps: skip tour (state terminal)", {
+          tourKey,
+          finalDate,
+          status: state.data?.status,
+        });
+        continue;
+      }
+
+      if (isSphereArchiveTourKey(tourKey)) {
+        if (admin) {
+          // eslint-disable-next-line no-await-in-loop
+          await writeTourRecapState({
+            db,
+            admin,
+            tourKey,
+            status: "skipped_archive",
+            finalDate: finalDate || null,
+            source: "cron",
+          });
+        }
+        logger?.info?.("deliverPendingTourRecaps: skip Sphere archive tour", {
+          tourKey,
+          finalDate,
+        });
+        continue;
+      }
+
+      // eslint-disable-next-line no-await-in-loop
+      const summary = await deliverTourRecapIfFinalShow({
         db,
-        admin,
+        runtime,
+        showDate: finalDate,
         tourKey,
-        status: "sent",
-        finalDate,
-        source: "cron",
-        extra: {
-          delivered: Number(summary.delivered) || 0,
-          processed: Number(summary.processed) || 0,
-        },
+        showDatesByTour,
+        logger,
       });
-      logger?.info?.("deliverPendingTourRecaps: marked tour sent", {
-        tourKey,
-        finalDate,
-        delivered: summary.delivered,
-      });
+      if (summary) out.push({ tourKey, finalDate, summary });
+
+      if (admin && tourRecapFanoutCompleted(summary)) {
+        // eslint-disable-next-line no-await-in-loop
+        await writeTourRecapState({
+          db,
+          admin,
+          tourKey,
+          status: "sent",
+          finalDate,
+          source: "cron",
+          extra: {
+            delivered: Number(summary.delivered) || 0,
+            processed: Number(summary.processed) || 0,
+          },
+        });
+        logger?.info?.("deliverPendingTourRecaps: marked tour sent", {
+          tourKey,
+          finalDate,
+          delivered: summary.delivered,
+        });
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger?.error?.("deliverPendingTourRecaps: tour failed", { tourKey, finalDate, msg });
     }
   }
   return out;
@@ -1069,26 +1081,40 @@ async function runScheduledTourRankingsDaily({
     if (s?.date) showMetaByDate.set(s.date, s);
   }
 
-  const yesterdayCandidates = shows.filter((s) => {
-    if (!s?.date) return false;
+  const yesterdayCandidates = [];
+  for (const s of Array.isArray(shows) ? shows : []) {
+    if (!s?.date) continue;
     const tz =
       typeof s.timeZone === "string" && s.timeZone.trim()
         ? s.timeZone.trim()
         : DEFAULT_SHOW_TIME_ZONE;
+    if (!isValidIanaTimeZone(tz)) {
+      logger?.warn?.("runScheduledTourRankingsDaily: skip show with invalid timezone", {
+        date: s.date,
+        timeZone: tz,
+      });
+      continue;
+    }
     const today = ymdInTimeZone(now, tz);
     const yesterday = ymdInTimeZone(new Date(now.getTime() - 86400000), tz);
-    return s.date === yesterday && today > s.date;
-  });
+    if (s.date === yesterday && today > s.date) yesterdayCandidates.push(s);
+  }
 
   const runtime = createCommsAdapterRuntime({ db, admin, resendApiKey, logger });
-  const tourRecapSummaries = await deliverPendingTourRecaps({
-    db,
-    admin,
-    runtime,
-    showDatesByTour,
-    now,
-    logger,
-  });
+  let tourRecapSummaries = [];
+  try {
+    tourRecapSummaries = await deliverPendingTourRecaps({
+      db,
+      admin,
+      runtime,
+      showDatesByTour,
+      now,
+      logger,
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger?.error?.("runScheduledTourRankingsDaily.tourRecap failed", { msg });
+  }
 
   if (yesterdayCandidates.length === 0) {
     return { processed: 0, delivered: 0, tourRecapSummaries };
@@ -1097,135 +1123,149 @@ async function runScheduledTourRankingsDaily({
   const recipients = [];
 
   for (const show of yesterdayCandidates) {
-    const showDate = show.date;
-    const tourKey = resolveTourKeyForDate(showDate, showDatesByTour);
-    const tourDates = tourDatesForKey(showDatesByTour, tourKey);
-    if (shouldSkipTourRankingsOnTourRecapMorning(tourDates, showDate)) {
-      logger?.info?.("runScheduledTourRankingsDaily: skip finale morning (tour_recap day)", {
-        showDate,
-        tourKey,
-      });
-      continue;
-    }
-    // eslint-disable-next-line no-await-in-loop
-    const picksSnap = await db.collection("picks").where("showDate", "==", showDate).get();
-    if (picksSnap.empty) continue;
-    const datesThrough = tourDates.length > 0 ? tourDatesThrough(tourDates, showDate) : [showDate];
-    const priorDate = priorTourShowDate(tourDates, showDate);
-    const nextDate = nextTourShowDate(tourDates, showDate);
-    const nextMeta = nextDate ? showMetaByDate.get(nextDate) : null;
-    const isTourNightOne = !priorDate;
-
-    // #451: night-of show rank for the folded-in "your night" section.
-    const globalRanks = computeGlobalRankByUid(picksSnap.docs, new Map());
-
-    // #544: full tour board through last night (+ prior night for rank_change).
-    // eslint-disable-next-line no-await-in-loop
-    const picksByDate = await loadPicksByDates(db, datesThrough);
-    const currentBoard = assignDisplayRanks(aggregateTourStandings(picksByDate));
-    let priorBoard = null;
-    if (priorDate) {
-      const priorPicksByDate = picksByDate.filter((e) => e.date <= priorDate);
-      priorBoard = assignDisplayRanks(aggregateTourStandings(priorPicksByDate));
-    }
-
-    /** @type {Set<string>} */
-    const lastNightUids = new Set();
-    /** @type {Map<string, object>} */
-    const picksByUid = new Map();
-    for (const pickDoc of picksSnap.docs) {
-      const pickData = pickDoc.data() || {};
-      const uid = typeof pickData.userId === "string" ? pickData.userId.trim() : "";
-      if (!uid || pickData.isGraded !== true) continue;
-      lastNightUids.add(uid);
-      picksByUid.set(uid, pickData);
-    }
-
-    // #572 — night-of narrative for email “Tonight” block (soft-fail).
-    let showLevel = {};
-    let actualSetlist = null;
     try {
-      // eslint-disable-next-line no-await-in-loop
-      const setlistSnap = await db.collection("official_setlists").doc(showDate).get();
-      const setlistDoc = setlistSnap.exists ? setlistSnap.data() || {} : null;
-      actualSetlist = setlistDoc
-        ? persistableActualSetlistFromOfficialDoc(setlistDoc)
-        : null;
-      // eslint-disable-next-line no-await-in-loop
-      const context = await ensureCommsShowContext({
-        db,
-        admin,
-        showDate,
-        setlistDoc,
-        showDatesByTour,
-        logger,
-      });
-      showLevel = showLevelPayloadFields(context);
-    } catch (e) {
-      logger?.warn?.("runScheduledTourRankingsDaily.showContext failed", {
-        showDate,
-        msg: e instanceof Error ? e.message : String(e),
-      });
-    }
-
-    for (const uid of lastNightUids) {
-      // eslint-disable-next-line no-await-in-loop
-      const userSnap = await db.collection("users").doc(uid).get();
-      const userData = userSnap.exists ? userSnap.data() || {} : {};
-      const rankInfo = globalRanks.get(uid) || null;
-      const pickData = picksByUid.get(uid) || {};
-      const pickHandle = handleFromUser(pickData);
-      const enrichment = buildShowRecapEnrichment({
-        showLevel,
-        userPicks: pickData.picks,
-        actualSetlist,
-        show_score: rankInfo?.score ?? null,
-        global_rank: rankInfo?.rank ?? null,
-        global_total_pickers: rankInfo?.total ?? null,
-        showDate,
-      });
-      const payload = {
-        ...buildTourRankingsDailyPayloadFields({
-          uid,
-          handle: pickHandle || handleFromUser(userData),
+      const showDate = show.date;
+      const tourKey = resolveTourKeyForDate(showDate, showDatesByTour);
+      const tourDates = tourDatesForKey(showDatesByTour, tourKey);
+      if (shouldSkipTourRankingsOnTourRecapMorning(tourDates, showDate)) {
+        logger?.info?.("runScheduledTourRankingsDaily: skip finale morning (tour_recap day)", {
           showDate,
-          venueName: show.venue || "",
-          venueCity: show.city || "",
-          showScore: rankInfo?.score ?? null,
-          globalRank: rankInfo?.rank ?? null,
-          globalTotalPickers: rankInfo?.total ?? null,
-          currentBoard,
-          priorBoard,
-          isTourNightOne,
-          nextShowDate: nextDate,
-          nextShowVenue: nextMeta?.venue || "",
-        }),
-        ...enrichment,
-      };
+          tourKey,
+        });
+        continue;
+      }
       // eslint-disable-next-line no-await-in-loop
-      const { inviteCode, poolName } = await inviteContextForUser(db, userData);
-      const inviterHandle =
-        pickHandle ||
-        (typeof userData.handle === "string" ? userData.handle.trim() : "");
-      const inviteFields =
-        buildInviteEmailFields({
-          baseUrl: SITE_URL,
-          inviterHandle,
-          inviteCode,
-          poolName,
-          campaign: "tour_rankings_daily",
-        }) || {};
-      Object.assign(payload, inviteFields);
-      recipients.push({
-        uid,
-        userData,
-        payload,
-        vars: { uid, showDate },
+      const picksSnap = await db.collection("picks").where("showDate", "==", showDate).get();
+      if (picksSnap.empty) continue;
+      const datesThrough = tourDates.length > 0 ? tourDatesThrough(tourDates, showDate) : [showDate];
+      const priorDate = priorTourShowDate(tourDates, showDate);
+      const nextDate = nextTourShowDate(tourDates, showDate);
+      const nextMeta = nextDate ? showMetaByDate.get(nextDate) : null;
+      const isTourNightOne = !priorDate;
+
+      // #451: night-of show rank for the folded-in "your night" section.
+      const globalRanks = computeGlobalRankByUid(picksSnap.docs, new Map());
+
+      // #544: full tour board through last night (+ prior night for rank_change).
+      // eslint-disable-next-line no-await-in-loop
+      const picksByDate = await loadPicksByDates(db, datesThrough);
+      const currentBoard = assignDisplayRanks(aggregateTourStandings(picksByDate));
+      let priorBoard = null;
+      if (priorDate) {
+        const priorPicksByDate = picksByDate.filter((e) => e.date <= priorDate);
+        priorBoard = assignDisplayRanks(aggregateTourStandings(priorPicksByDate));
+      }
+
+      /** @type {Set<string>} */
+      const lastNightUids = new Set();
+      /** @type {Map<string, object>} */
+      const picksByUid = new Map();
+      for (const pickDoc of picksSnap.docs) {
+        const pickData = pickDoc.data() || {};
+        const uid = typeof pickData.userId === "string" ? pickData.userId.trim() : "";
+        if (!uid || pickData.isGraded !== true) continue;
+        lastNightUids.add(uid);
+        picksByUid.set(uid, pickData);
+      }
+
+      // #572 — night-of narrative for email “Tonight” block (soft-fail).
+      let showLevel = {};
+      let actualSetlist = null;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const setlistSnap = await db.collection("official_setlists").doc(showDate).get();
+        const setlistDoc = setlistSnap.exists ? setlistSnap.data() || {} : null;
+        actualSetlist = setlistDoc
+          ? persistableActualSetlistFromOfficialDoc(setlistDoc)
+          : null;
+        // eslint-disable-next-line no-await-in-loop
+        const context = await ensureCommsShowContext({
+          db,
+          admin,
+          showDate,
+          setlistDoc,
+          showDatesByTour,
+          logger,
+        });
+        showLevel = showLevelPayloadFields(context);
+      } catch (e) {
+        logger?.warn?.("runScheduledTourRankingsDaily.showContext failed", {
+          showDate,
+          msg: e instanceof Error ? e.message : String(e),
+        });
+      }
+
+      for (const uid of lastNightUids) {
+        // eslint-disable-next-line no-await-in-loop
+        const userSnap = await db.collection("users").doc(uid).get();
+        const userData = userSnap.exists ? userSnap.data() || {} : {};
+        const rankInfo = globalRanks.get(uid) || null;
+        const pickData = picksByUid.get(uid) || {};
+        const pickHandle = handleFromUser(pickData);
+        const enrichment = buildShowRecapEnrichment({
+          showLevel,
+          userPicks: pickData.picks,
+          actualSetlist,
+          show_score: rankInfo?.score ?? null,
+          global_rank: rankInfo?.rank ?? null,
+          global_total_pickers: rankInfo?.total ?? null,
+          showDate,
+        });
+        const payload = {
+          ...buildTourRankingsDailyPayloadFields({
+            uid,
+            handle: pickHandle || handleFromUser(userData),
+            showDate,
+            venueName: show.venue || "",
+            venueCity: show.city || "",
+            showScore: rankInfo?.score ?? null,
+            globalRank: rankInfo?.rank ?? null,
+            globalTotalPickers: rankInfo?.total ?? null,
+            currentBoard,
+            priorBoard,
+            isTourNightOne,
+            nextShowDate: nextDate,
+            nextShowVenue: nextMeta?.venue || "",
+          }),
+          ...enrichment,
+        };
+        // eslint-disable-next-line no-await-in-loop
+        const { inviteCode, poolName } = await inviteContextForUser(db, userData);
+        const inviterHandle =
+          pickHandle ||
+          (typeof userData.handle === "string" ? userData.handle.trim() : "");
+        const inviteFields =
+          buildInviteEmailFields({
+            baseUrl: SITE_URL,
+            inviterHandle,
+            inviteCode,
+            poolName,
+            campaign: "tour_rankings_daily",
+          }) || {};
+        Object.assign(payload, inviteFields);
+        recipients.push({
+          uid,
+          userData,
+          payload,
+          vars: { uid, showDate },
+        });
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger?.error?.("runScheduledTourRankingsDaily.show failed", {
+        showDate: show?.date || null,
+        msg,
       });
     }
   }
 
-  const rankingsSummary = await runtime.deliver("tour_rankings_daily", recipients);
+  let rankingsSummary = { processed: 0, delivered: 0, skipped: 0, results: [] };
+  try {
+    rankingsSummary = await runtime.deliver("tour_rankings_daily", recipients);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger?.error?.("runScheduledTourRankingsDaily.rankings failed", { msg });
+  }
   return { ...rankingsSummary, tourRecapSummaries };
 }
 
