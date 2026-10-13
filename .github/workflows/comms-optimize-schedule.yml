@@ -28,9 +28,18 @@ on:
           - weekly
           - post_show
       show_date:
-        description: "Optional YYYY-MM-DD for post_show"
+        description: "Optional YYYY-MM-DD for post_show, or the missed show for replay"
         required: false
         type: string
+      replay:
+        description: "off leaves the kickoff unchanged. dry-run or send replays tour_rankings_daily for show_date."
+        required: true
+        default: "off"
+        type: choice
+        options:
+          - off
+          - dry-run
+          - send
 
 permissions:
   contents: read
@@ -38,6 +47,7 @@ permissions:
 
 jobs:
   kickoff:
+    if: github.event_name == 'schedule' || inputs.replay == 'off' || inputs.replay == ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -62,3 +72,37 @@ jobs:
             ARGS+=(--show-date "$SHOW_DATE")
           fi
           node scripts/comms-optimize-kickoff.mjs "${ARGS[@]}"
+
+  replay-morning-rankings:
+    if: github.event_name == 'workflow_dispatch' && (inputs.replay == 'dry-run' || inputs.replay == 'send')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Install functions dependencies
+        working-directory: functions
+        run: npm ci
+
+      - name: Replay tour_rankings_daily
+        env:
+          GCP_CLIENT_EMAIL: ${{ secrets.GCP_CLIENT_EMAIL }}
+          GCP_PRIVATE_KEY: ${{ secrets.GCP_PRIVATE_KEY }}
+          SHOW_DATE: ${{ inputs.show_date }}
+          REPLAY_MODE: ${{ inputs.replay }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SHOW_DATE}" ]; then
+            echo "show_date is required for replay"
+            exit 1
+          fi
+          if [ "${REPLAY_MODE}" = "send" ]; then
+            node scripts/replay-tour-rankings-daily.mjs --show-date "${SHOW_DATE}" --confirm
+          else
+            node scripts/replay-tour-rankings-daily.mjs --show-date "${SHOW_DATE}"
+          fi

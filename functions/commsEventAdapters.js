@@ -1068,6 +1068,7 @@ async function runScheduledTourRankingsDaily({
   resendApiKey,
   logger,
   now = new Date(),
+  collectOnly = false,
 }) {
   if (!isCommsEventAdaptersEnabled()) return null;
 
@@ -1102,18 +1103,20 @@ async function runScheduledTourRankingsDaily({
 
   const runtime = createCommsAdapterRuntime({ db, admin, resendApiKey, logger });
   let tourRecapSummaries = [];
-  try {
-    tourRecapSummaries = await deliverPendingTourRecaps({
-      db,
-      admin,
-      runtime,
-      showDatesByTour,
-      now,
-      logger,
-    });
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger?.error?.("runScheduledTourRankingsDaily.tourRecap failed", { msg });
+  if (!collectOnly) {
+    try {
+      tourRecapSummaries = await deliverPendingTourRecaps({
+        db,
+        admin,
+        runtime,
+        showDatesByTour,
+        now,
+        logger,
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger?.error?.("runScheduledTourRankingsDaily.tourRecap failed", { msg });
+    }
   }
 
   if (yesterdayCandidates.length === 0) {
@@ -1257,6 +1260,10 @@ async function runScheduledTourRankingsDaily({
         msg,
       });
     }
+  }
+
+  if (collectOnly) {
+    return { processed: recipients.length, delivered: 0, recipients, tourRecapSummaries };
   }
 
   let rankingsSummary = { processed: 0, delivered: 0, skipped: 0, results: [] };
