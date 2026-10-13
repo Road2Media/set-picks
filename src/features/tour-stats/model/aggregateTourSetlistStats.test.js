@@ -15,7 +15,7 @@ describe('aggregateTourSetlistStats (#555)', () => {
     });
   });
 
-  it('counts unique songs once per show and ranks by frequency', () => {
+  it('counts every setlist row, including a same-night return, and ranks by plays', () => {
     const stats = aggregateTourSetlistStats(
       [
         {
@@ -41,7 +41,11 @@ describe('aggregateTourSetlistStats (#555)', () => {
     expect(stats.showsWithSetlist).toBe(2);
     expect(stats.tourShowCount).toBe(4);
     expect(stats.uniqueSongs).toBe(3);
-    expect(stats.totalSongPlays).toBe(4);
+    expect(stats.totalSongPlays).toBe(5);
+    expect(stats.topSongs.find((row) => row.title === 'Tweezer')).toMatchObject({
+      timesPlayed: 2,
+      showDates: ['2026-07-10'],
+    });
     expect(stats.topSongs[0]).toMatchObject({ title: 'Free', timesPlayed: 2 });
     expect(stats.bustouts).toEqual([
       { title: 'Ghost', showDate: '2026-07-11', gap: 40 },
