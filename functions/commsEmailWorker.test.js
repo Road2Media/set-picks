@@ -353,6 +353,20 @@ test("stripEmojiFromSubject keeps plain subjects and strips pictographs", () => 
   assert.equal(stripEmojiFromSubject("Tour standings ✨"), "Tour standings");
 });
 
+test("buildBrandedEmailHtml hides the preheader and escapes it", () => {
+  const html = buildBrandedEmailHtml({
+    siteUrl: "https://www.setlistpickem.com",
+    bodyText: "Body para.",
+    ctaUrl: "https://www.setlistpickem.com/dashboard/picks",
+    settingsUrl: "https://www.setlistpickem.com/dashboard/profile/account",
+    preheader: "10/07/26 · Allianz <Amphitheater>",
+  });
+  assert.match(
+    html,
+    /<body[^>]*>\s*<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">10\/07\/26 · Allianz &lt;Amphitheater&gt;<\/div>/,
+  );
+});
+
 test("buildBrandedEmailHtml renders in-app style header when provided", () => {
   const html = buildBrandedEmailHtml({
     siteUrl: "https://www.setlistpickem.com",

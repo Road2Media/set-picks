@@ -1,4 +1,27 @@
-const cityFromVenue = (venue) => venue.split(',')[0].trim();
+import { formatFanShowDate } from './dateUtils';
+
+const cityFromVenue = (venue) => String(venue ?? '').split(',')[0].trim();
+
+/**
+ * @param {unknown} date
+ * @returns {string}
+ */
+function fanLabelDate(date) {
+  const formatted = formatFanShowDate(date);
+  return typeof formatted === 'string' ? formatted : '';
+}
+
+/**
+ * @param {unknown} date
+ * @param {string} place
+ * @param {string} separator
+ * @returns {string}
+ */
+function joinShowLabel(date, place, separator) {
+  const fan = fanLabelDate(date);
+  if (fan && place) return `${fan}${separator}${place}`;
+  return fan || place || '';
+}
 
 /**
  * Full line for desktop <option>s and in-page cards/banners (Active Show,
@@ -6,7 +29,7 @@ const cityFromVenue = (venue) => venue.split(',')[0].trim();
  * at the call site when the surface is narrow.
  */
 export function showOptionLabelDesktop(show) {
-  return `${show.date} — ${cityFromVenue(show.venue)}`;
+  return joinShowLabel(show?.date, cityFromVenue(show?.venue), ' — ');
 }
 
 /**
@@ -15,12 +38,12 @@ export function showOptionLabelDesktop(show) {
  * Do not use for roomy card titles — prefer {@link showOptionLabelDesktop}.
  */
 export function showOptionLabelCompact(show, maxChars = 40) {
-  const base = `${show.date} ${cityFromVenue(show.venue)}`;
+  const base = joinShowLabel(show?.date, cityFromVenue(show?.venue), ' ');
   if (base.length <= maxChars) return base;
   return `${base.slice(0, maxChars - 1)}…`;
 }
 
 /** Tooltip / accessible hint with full venue. */
 export function showOptionTitle(show) {
-  return `${show.date} — ${show.venue}`;
+  return joinShowLabel(show?.date, String(show?.venue ?? ''), ' — ');
 }

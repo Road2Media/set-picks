@@ -108,6 +108,8 @@ void ga4MeasurementId;
 
 /** Secrets bound on every export that can call `deliverCommsTrigger`. */
 const commsDeliverySecrets = [resendApiKey, resendWebhookSecret, ga4MpApiSecret];
+/** Fan-out crons walk people one at a time. Match the other batch jobs so a one-minute cutoff cannot end a send. */
+const COMMS_SCHEDULE_TIMEOUT_SECONDS = 300;
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -1307,6 +1309,7 @@ exports.scheduledPicksLockReminder = onSchedule(
     schedule: "*/15 * * * *",
     timeZone: "America/Los_Angeles",
     region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: COMMS_SCHEDULE_TIMEOUT_SECONDS,
     secrets: commsDeliverySecrets,
   },
   async () => {
@@ -1336,6 +1339,7 @@ exports.scheduledTourCountdownComms = onSchedule(
     schedule: "0 9 * * *",
     timeZone: "America/Los_Angeles",
     region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: COMMS_SCHEDULE_TIMEOUT_SECONDS,
     secrets: commsDeliverySecrets,
   },
   async () => {
@@ -1365,6 +1369,7 @@ exports.scheduledTourRankingsDailyComms = onSchedule(
     schedule: "0 8 * * *",
     timeZone: "America/Los_Angeles",
     region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: COMMS_SCHEDULE_TIMEOUT_SECONDS,
     secrets: commsDeliverySecrets,
   },
   async () => {

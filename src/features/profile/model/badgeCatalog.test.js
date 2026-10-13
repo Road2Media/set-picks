@@ -3,24 +3,43 @@ import { describe, expect, it } from 'vitest';
 import {
   BADGE_TIER_ORDER,
   PROFILE_BADGES,
+  groupBadgeLadder,
   resolveBadgeLadder,
   resolveEarnedBadges,
 } from './badgeCatalog';
 
 describe('badgeCatalog', () => {
-  it('includes v1 participation + win badges', () => {
+  it('lists the ladder in rank order with a matching asset path', () => {
     const ids = PROFILE_BADGES.map((b) => b.id);
     expect(ids).toEqual([
-      'shows_played_1',
-      'shows_played_5',
+      'win_10',
+      'points_1000',
+      'shows_played_50',
+      'win_5',
+      'points_500',
+      'shows_played_25',
+      'anniversary_3',
+      'anniversary_2',
       'shows_played_10',
       'win_1',
+      'anniversary_1',
+      'shows_played_5',
+      'shows_played_1',
+      'style_picker',
     ]);
+    for (const badge of PROFILE_BADGES) {
+      expect(badge.src).toBe(`/badges/${badge.id}.svg`);
+    }
   });
 
   it('has unique contiguous ranks starting at 1', () => {
     const ranks = PROFILE_BADGES.map((b) => b.rank).sort((a, b) => a - b);
     expect(ranks).toEqual(PROFILE_BADGES.map((_, i) => i + 1));
+  });
+
+  it('has unique contiguous shelf positions starting at 1', () => {
+    const orders = PROFILE_BADGES.map((b) => b.shelfOrder).sort((a, b) => a - b);
+    expect(orders).toEqual(PROFILE_BADGES.map((_, i) => i + 1));
   });
 
   it('never lets a lower tier outrank a higher tier', () => {
@@ -50,24 +69,67 @@ describe('badgeCatalog', () => {
     expect(earned[0].id).toBe('shows_played_10');
   });
 
+  it('pins ten night wins over a 500 club and a ten-show run (#712)', () => {
+    const earned = resolveEarnedBadges({
+      shows_played_10: { awardedAt: null, scope: 'career' },
+      points_500: { awardedAt: null, scope: 'career' },
+      win_10: { awardedAt: null, scope: 'career' },
+    });
+    expect(earned.map((b) => b.id)).toEqual([
+      'win_10',
+      'points_500',
+      'shows_played_10',
+    ]);
+  });
+
   it('returns empty for missing map', () => {
     expect(resolveEarnedBadges(null)).toEqual([]);
     expect(resolveEarnedBadges(undefined)).toEqual([]);
   });
 
-  it('resolveBadgeLadder returns the full catalog in rank order with earned flags', () => {
+  it('resolveBadgeLadder returns the journey order with earned flags', () => {
     const ladder = resolveBadgeLadder({
       win_1: { awardedAt: 123, scope: 'career' },
     });
     expect(ladder.map((b) => b.id)).toEqual([
-      'shows_played_10',
-      'win_1',
-      'shows_played_5',
+      'style_picker',
       'shows_played_1',
+      'shows_played_5',
+      'shows_played_10',
+      'shows_played_25',
+      'shows_played_50',
+      'win_1',
+      'win_5',
+      'win_10',
+      'points_500',
+      'points_1000',
+      'anniversary_1',
+      'anniversary_2',
+      'anniversary_3',
     ]);
-    expect(ladder.map((b) => b.earned)).toEqual([false, true, false, false]);
-    expect(ladder[1].awardedAt).toBe(123);
-    expect(ladder[0].awardedAt).toBeUndefined();
+    expect(ladder.filter((b) => b.earned).map((b) => b.id)).toEqual(['win_1']);
+    expect(ladder.find((b) => b.id === 'win_1')?.awardedAt).toBe(123);
+    expect(ladder.find((b) => b.id === 'win_10')?.awardedAt).toBeUndefined();
+  });
+
+  it('groups the shelf into the journey headings', () => {
+    const groups = groupBadgeLadder(null);
+    expect(groups.map((group) => [group.group, group.badges.map((b) => b.id)])).toEqual([
+      ['Make it yours', ['style_picker']],
+      [
+        'Shows played',
+        [
+          'shows_played_1',
+          'shows_played_5',
+          'shows_played_10',
+          'shows_played_25',
+          'shows_played_50',
+        ],
+      ],
+      ['Night wins', ['win_1', 'win_5', 'win_10']],
+      ['Points', ['points_500', 'points_1000']],
+      ['Years on the board', ['anniversary_1', 'anniversary_2', 'anniversary_3']],
+    ]);
   });
 
   it('resolveBadgeLadder tolerates a missing badges map', () => {

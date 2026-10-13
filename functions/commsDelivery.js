@@ -69,6 +69,163 @@ function recipientAllowsChannel(userData, spec, channel) {
 }
 
 /**
+ * One person inside a fan-out. Throws are caught by the caller so the next person still runs.
+ *
+ * @param {object} params
+ */
+async function deliverOneCommsRecipient({
+  db,
+  admin,
+  spec,
+  triggerId,
+  recipient,
+  uid,
+  activeChannels,
+  workers,
+  dryRun,
+  forceResend,
+  bypassDailyCap,
+  fatigueCap,
+  variant,
+  perUserCount,
+  summary,
+  bumpSkip,
+  logger,
+  sendGa4Delivered,
+}) {
+  const userData = recipient.userData || {};
+
+  if ((perUserCount.get(uid) || 0) >= fatigueCap) {
+    bumpSkip("fatigue_cap");
+    summary.results.push({ uid, status: "skipped", reason: "fatigue_cap" });
+    return;
+  }
+
+  const vars = { uid, ...(recipient.vars || {}) };
+  const dedupId = resolveDedupKey(triggerId, vars);
+  const dedupRef = dedupId ? db.collection(DEDUP_COLLECTION).doc(dedupId) : null;
+
+  if (dedupRef && !forceResend) {
+    const existing = await dedupRef.get();
+    if (existing.exists) {
+      bumpSkip("deduped");
+      summary.results.push({ uid, status: "skipped", reason: "deduped", dedupId });
+      return;
+    }
+  }
+
+  const factLabel = sanitizeFactLabel(recipient.payload?.fact_label);
+  const payload = { ...(recipient.payload || {}) };
+  if (factLabel) payload.fact_label = factLabel;
+  else delete payload.fact_label;
+  const rendered = await renderCommsTemplate(spec.templateId, payload);
+
+  const campaignId =
+    typeof vars.campaignId === "string" && vars.campaignId.trim()
+      ? vars.campaignId.trim()
+      : null;
+
+  const ctxBase = {
+    db,
+    admin,
+    uid,
+    userData,
+    triggerId,
+    rendered,
+    dedupId,
+    dryRun,
+    forceResend,
+    bypassDailyCap,
+    campaignId,
+    logger,
+  };
+
+  const deliveredChannels = [];
+  const channelResults = {};
+  for (const channel of activeChannels) {
+    const worker = workers[channel];
+    if (typeof worker !== "function") {
+      channelResults[channel] = { ok: false, skipReason: "no_worker" };
+      continue;
+    }
+    if (!recipientAllowsChannel(userData, spec, channel)) {
+      channelResults[channel] = { ok: false, skipReason: "prefs_off" };
+      continue;
+    }
+    // eslint-disable-next-line no-await-in-loop
+    const res = await worker(ctxBase);
+    channelResults[channel] = res;
+    if (res?.ok && res.skipReason !== "dry_run") {
+      deliveredChannels.push(channel);
+      summary.byChannel[channel] = (summary.byChannel[channel] || 0) + 1;
+      logger?.info?.("comms_delivered", {
+        comms_trigger_id: triggerId,
+        comms_template_id: spec.templateId,
+        comms_channel: channel,
+        comms_variant: variant,
+        uid,
+      });
+      // Await MP so the request stays alive until the POST finishes.
+      // Fire-and-forget is unsafe on Cloud Functions (instance freezes after return).
+      // sendCommsDeliveredEvent never throws; failures only log + no-op.
+      // eslint-disable-next-line no-await-in-loop
+      await sendGa4Delivered(
+        {
+          uid,
+          triggerId,
+          templateId: spec.templateId,
+          channel,
+          variant,
+        },
+        { logger }
+      );
+    }
+  }
+
+  const anyDelivered = deliveredChannels.length > 0;
+  const anyDryRunOk =
+    dryRun && Object.values(channelResults).some((r) => r?.ok && r.skipReason === "dry_run");
+
+  if (anyDelivered && !dryRun && dedupRef) {
+    const resendEmailId =
+      typeof channelResults.email?.id === "string" && channelResults.email.id.trim()
+        ? channelResults.email.id.trim()
+        : null;
+    await dedupRef.set(
+      {
+        kind: "comms",
+        triggerId,
+        templateId: spec.templateId,
+        userId: uid,
+        channels: deliveredChannels,
+        delivered: true,
+        decidedAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...(campaignId ? { campaignId } : {}),
+        ...(resendEmailId ? { resendEmailId } : {}),
+        ...(factLabel ? { fact_label: factLabel } : {}),
+      },
+      { merge: true }
+    );
+  }
+
+  if (anyDelivered || anyDryRunOk) {
+    summary.delivered += 1;
+    perUserCount.set(uid, (perUserCount.get(uid) || 0) + 1);
+    summary.results.push({
+      uid,
+      status: dryRun ? "would_deliver" : "delivered",
+      channels: dryRun
+        ? activeChannels.filter((c) => channelResults[c]?.ok)
+        : deliveredChannels,
+      dedupId,
+    });
+  } else {
+    bumpSkip("no_channel_delivered");
+    summary.results.push({ uid, status: "skipped", reason: "no_channel_delivered", channelResults });
+  }
+}
+
+/**
  * @param {{
  *   db: import("firebase-admin").firestore.Firestore,
  *   admin: typeof import("firebase-admin"),
@@ -136,141 +293,32 @@ async function deliverCommsTrigger({
       continue;
     }
     summary.processed += 1;
-    const userData = recipient.userData || {};
-
-    // 1) Fatigue cap (per-user, this run)
-    if ((perUserCount.get(uid) || 0) >= fatigueCap) {
-      bumpSkip("fatigue_cap");
-      summary.results.push({ uid, status: "skipped", reason: "fatigue_cap" });
-      continue;
-    }
-
-    // 2) Dedup
-    const vars = { uid, ...(recipient.vars || {}) };
-    const dedupId = resolveDedupKey(triggerId, vars);
-    const dedupRef = dedupId ? db.collection(DEDUP_COLLECTION).doc(dedupId) : null;
-
-    if (dedupRef && !forceResend) {
-      const existing = await dedupRef.get();
-      if (existing.exists) {
-        bumpSkip("deduped");
-        summary.results.push({ uid, status: "skipped", reason: "deduped", dedupId });
-        continue;
-      }
-    }
-
-    // 3) Render. Drop a fact-slot id that is not on the message map (#1082).
-    const factLabel = sanitizeFactLabel(recipient.payload?.fact_label);
-    const payload = { ...(recipient.payload || {}) };
-    if (factLabel) payload.fact_label = factLabel;
-    else delete payload.fact_label;
-    const rendered = await renderCommsTemplate(spec.templateId, payload);
-
-    // 4) Dispatch to each declared channel that has a worker
-    const campaignId =
-      typeof vars.campaignId === "string" && vars.campaignId.trim()
-        ? vars.campaignId.trim()
-        : null;
-
-    const ctxBase = {
-      db,
-      admin,
-      uid,
-      userData,
-      triggerId,
-      rendered,
-      dedupId,
-      dryRun,
-      forceResend,
-      bypassDailyCap,
-      campaignId,
-      logger,
-    };
-
-    const deliveredChannels = [];
-    const channelResults = {};
-    for (const channel of activeChannels) {
-      const worker = workers[channel];
-      if (typeof worker !== "function") {
-        channelResults[channel] = { ok: false, skipReason: "no_worker" };
-        continue;
-      }
-      if (!recipientAllowsChannel(userData, spec, channel)) {
-        channelResults[channel] = { ok: false, skipReason: "prefs_off" };
-        continue;
-      }
-      // eslint-disable-next-line no-await-in-loop
-      const res = await worker(ctxBase);
-      channelResults[channel] = res;
-      if (res?.ok && res.skipReason !== "dry_run") {
-        deliveredChannels.push(channel);
-        summary.byChannel[channel] = (summary.byChannel[channel] || 0) + 1;
-        // 6) Measurement — structured server log + GA4 MP per channel (#461).
-        logger?.info?.("comms_delivered", {
-          comms_trigger_id: triggerId,
-          comms_template_id: spec.templateId,
-          comms_channel: channel,
-          comms_variant: variant,
-          uid,
-        });
-        // Await MP so the request stays alive until the POST finishes.
-        // Fire-and-forget is unsafe on Cloud Functions (instance freezes after return).
-        // sendCommsDeliveredEvent never throws; failures only log + no-op.
-        // eslint-disable-next-line no-await-in-loop
-        await sendGa4Delivered(
-          {
-            uid,
-            triggerId,
-            templateId: spec.templateId,
-            channel,
-            variant,
-          },
-          { logger }
-        );
-      }
-    }
-
-    const anyDelivered = deliveredChannels.length > 0;
-    const anyDryRunOk =
-      dryRun && Object.values(channelResults).some((r) => r?.ok && r.skipReason === "dry_run");
-
-    // 7) Persist dedup record (only on real delivery).
-    if (anyDelivered && !dryRun && dedupRef) {
-      const resendEmailId =
-        typeof channelResults.email?.id === "string" && channelResults.email.id.trim()
-          ? channelResults.email.id.trim()
-          : null;
-      await dedupRef.set(
-        {
-          kind: "comms",
-          triggerId,
-          templateId: spec.templateId,
-          userId: uid,
-          channels: deliveredChannels,
-          delivered: true,
-          decidedAt: admin.firestore.FieldValue.serverTimestamp(),
-          ...(campaignId ? { campaignId } : {}),
-          ...(resendEmailId ? { resendEmailId } : {}),
-          ...(factLabel ? { fact_label: factLabel } : {}),
-        },
-        { merge: true }
-      );
-    }
-
-    if (anyDelivered || anyDryRunOk) {
-      summary.delivered += 1;
-      perUserCount.set(uid, (perUserCount.get(uid) || 0) + 1);
-      summary.results.push({
+    try {
+      await deliverOneCommsRecipient({
+        db,
+        admin,
+        spec,
+        triggerId,
+        recipient,
         uid,
-        status: dryRun ? "would_deliver" : "delivered",
-        channels: dryRun
-          ? activeChannels.filter((c) => channelResults[c]?.ok)
-          : deliveredChannels,
-        dedupId,
+        activeChannels,
+        workers,
+        dryRun,
+        forceResend,
+        bypassDailyCap,
+        fatigueCap,
+        variant,
+        perUserCount,
+        summary,
+        bumpSkip,
+        logger,
+        sendGa4Delivered,
       });
-    } else {
-      bumpSkip("no_channel_delivered");
-      summary.results.push({ uid, status: "skipped", reason: "no_channel_delivered", channelResults });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger?.error?.("deliverCommsTrigger recipient failed", { triggerId, uid, msg });
+      bumpSkip("recipient_error");
+      summary.results.push({ uid, status: "skipped", reason: "recipient_error" });
     }
   }
 

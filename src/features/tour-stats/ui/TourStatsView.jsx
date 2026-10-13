@@ -9,6 +9,7 @@ import {
   formatAvgCorrectPicksPerShow,
   PROFILE_SLOTS_PER_SHOW,
 } from '../../profile/averages';
+import { formatFanShowDate, formatFanShowMonthDay } from '../../../shared/utils/dateUtils';
 import { SCORING_RULES } from '../../../shared/utils/scoring';
 import {
   DASHBOARD_CARD_EYEBROW as STANDINGS_BOX_EYEBROW,
@@ -24,14 +25,15 @@ const { BUSTOUT_MIN_GAP } = SCORING_RULES;
 /**
  * Fixed meta tracks (not `auto`) so the header grid and each data row share
  * the same column widths — independent `auto` grids were shifting Date/Gap/Last
- * headers left of their cells. `whitespace-nowrap` keeps mm-dd / mm-dd-yy on
- * one line at 11px.
+ * headers left of their cells. `whitespace-nowrap` keeps MM/DD / MM/DD/YY on
+ * one line at 11px. Slashes are the same character count as the old hyphens,
+ * so the 2.75rem and 4.75rem tracks still hold.
  */
 const TOP_SONGS_ROW_GRID =
   'grid grid-cols-[1.5rem_minmax(0,1fr)_2.75rem_2.5rem] items-center gap-x-2 min-h-[1.75rem]';
 
 /**
- * Bustouts / High gaps: Song | Date (mm-dd) | Gap | Last (mm-dd-yy).
+ * Bustouts / High gaps: Song | Date (MM/DD) | Gap | Last (MM/DD/YY).
  * Always shown (— when missing) so the column is discoverable even before
  * enrichment lands or when some history lookups 429.
  */
@@ -49,38 +51,15 @@ const LAST_PLAYED_THIS_TOUR_TITLE =
   'Most recent date this song was played on the selected tour';
 
 /**
- * Parse `YYYY-MM-DD` → parts, or null.
- * @param {unknown} iso
- * @returns {{ y: string, m: string, d: string } | null}
- */
-function parseIsoDateParts(iso) {
-  const raw = typeof iso === 'string' ? iso.trim() : '';
-  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!match) return null;
-  return { y: match[1], m: match[2], d: match[3] };
-}
-
-/**
- * Tour-scoped show date: `YYYY-MM-DD` → `MM-DD` (year implied by tour).
+ * Prior-play Last column. Non-dates stay trimmed.
  * @param {unknown} iso
  * @returns {string}
  */
-function formatTourShowMd(iso) {
-  const parts = parseIsoDateParts(iso);
-  if (!parts) return typeof iso === 'string' ? iso.trim() : '';
-  return `${parts.m}-${parts.d}`;
-}
-
-/**
- * Prior-play Last column: `YYYY-MM-DD` → `MM-DD-YY` (keeps decade signal
- * for bustouts without a full 4-digit year on mobile).
- * @param {unknown} iso
- * @returns {string}
- */
-function formatLastPlayedMdyy(iso) {
-  const parts = parseIsoDateParts(iso);
-  if (!parts) return typeof iso === 'string' ? iso.trim() : '';
-  return `${parts.m}-${parts.d}-${parts.y.slice(2)}`;
+function formatLastPlayed(iso) {
+  if (typeof iso !== 'string') return '';
+  const formatted = formatFanShowDate(iso);
+  if (typeof formatted === 'string' && /^\d{2}\/\d{2}\/\d{2}$/.test(formatted)) return formatted;
+  return iso.trim();
 }
 
 /**
@@ -329,7 +308,7 @@ export default function TourStatsView({
                           : LAST_PLAYED_THIS_TOUR_TITLE
                       }
                     >
-                      {lastIso ? formatTourShowMd(lastIso) : '—'}
+                      {lastIso ? formatFanShowMonthDay(lastIso) : '—'}
                     </span>
                     <span className={`${META_CELL} text-brand-primary`}>
                       {row.timesPlayed}
@@ -468,7 +447,7 @@ function GapPagedRows({ rows, label, gapClassName }) {
                   : undefined
               }
             >
-              {formatTourShowMd(row.showDate) || '—'}
+              {formatFanShowMonthDay(row.showDate) || '—'}
             </span>
             <span
               className={gapClassName}
@@ -488,7 +467,7 @@ function GapPagedRows({ rows, label, gapClassName }) {
                   : LAST_PLAYED_BEFORE_NIGHT_TITLE
               }
             >
-              {lastIso ? formatLastPlayedMdyy(lastIso) : '—'}
+              {lastIso ? formatLastPlayed(lastIso) : '—'}
             </span>
           </li>
         );

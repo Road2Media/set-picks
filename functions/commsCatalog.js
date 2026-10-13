@@ -13,6 +13,8 @@
 
 "use strict";
 
+const { toFirestoreDocumentId } = require("./firestoreDocId");
+
 /**
  * @typedef {object} TriggerSpec
  * @property {string} triggerId
@@ -182,7 +184,7 @@ function interpolate(template, vars = {}) {
 function resolveDedupKey(triggerId, vars) {
   const spec = getTriggerSpec(triggerId);
   if (!spec) return "";
-  return interpolate(spec.dedupKey, vars);
+  return toFirestoreDocumentId(interpolate(spec.dedupKey, vars));
 }
 
 module.exports = {

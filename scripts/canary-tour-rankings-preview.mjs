@@ -265,6 +265,7 @@ for (const branch of BRANCHES) {
     // from HTML and the invite card never appears in the preview.
     inviteBlockHtml: rendered.email.inviteBlockHtml,
     header: rendered.email.header,
+    preheader: rendered.email.preheader,
   });
 
   const subject = `[#544 ${branch.name}] ${rendered.email.subject}`;

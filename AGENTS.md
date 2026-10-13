@@ -19,6 +19,10 @@
   | `QA_APPCHECK_DEBUG_TOKEN` | all Playwright QA | Optional; defaults to registered localhost UUID |
   | `QA_GOOGLE_TEST_EMAIL` / `QA_GOOGLE_TEST_PASSWORD` | `qa:google-signup` OAuth phase | Dedicated Google account **not** in Firebase; add to enable new-user Google E2E |
   | `VITE_FIREBASE_*` | app + materialize script | Already injected |
+  | `GCP_CLIENT_EMAIL` / `GCP_PRIVATE_KEY` | admin Firestore, `runCommsTrigger`, morning-rankings replay | Same values as the GitHub Actions secrets. Without them an agent can sign in as the QA user and cannot mint an admin token, replay a comms send, or deploy functions. |
+  | `GITHUB_PAT` | `workflow_dispatch` | Fine-grained. Default `gh` uses the Cursor GitHub App token, which cannot start workflows. For Actions, run `GH_TOKEN="$GITHUB_PAT"`. The PAT must have repository **Actions: Read and write** or dispatch returns 403 `Resource not accessible by personal access token`. |
+
+New secrets apply to the next agent boot. A running agent does not see them.
 
 ### Running the application
 

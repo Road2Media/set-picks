@@ -2,11 +2,68 @@
 
 **Parent epic:** [#565](https://github.com/pat792/set-picks/issues/565)  
 **Phase:** 0 / product matrix for [#566](https://github.com/pat792/set-picks/issues/566)  
-**Status:** Locked for implementation planning; badge art and award code ship in later phases.
+**Status:** Career ladder is on staging (#1116 / #712, 2026-10-13). Snapshot and invite badges remain #1115. Shelf order is the journey below; the standings pin still uses prestige `rank`.
 
 This matrix defines the first engagement badge system for Profile and public profile surfaces. It is intentionally conservative: badges reward verified play, streaks, and competitive outcomes from existing scoring data, while clearly calling out any rollup gaps before implementation.
 
 ---
+
+## Where this stands
+
+Fourteen career badges award at finalize from fields already on `users/{uid}` and render on the profile shelf. PR [#1116](https://github.com/pat792/set-picks/pull/1116) merged that expansion to `staging`. [#712](https://github.com/pat792/set-picks/issues/712) stays open until that train reaches `main`.
+
+| On the shelf | Name | Award |
+|--------------|------|-------|
+| `shows_played_1` | First Show Scored | `showsPlayed >= 1` |
+| `shows_played_5` | Five on the Board | `showsPlayed >= 5` |
+| `shows_played_10` | Ten-Show Run | `showsPlayed >= 10` |
+| `shows_played_25` | Tour Regular | `showsPlayed >= 25` |
+| `shows_played_50` | Long Hauler | `showsPlayed >= 50` |
+| `win_1` | First Night Win | `wins >= 1` |
+| `win_5` | Five Night Wins | `wins >= 5` |
+| `win_10` | Ten Night Wins | `wins >= 10` |
+| `points_500` | 500 Club | `totalPoints >= 500` |
+| `points_1000` | 1000 Club | `totalPoints >= 1000` |
+| `anniversary_1` | First Anniversary | UTC years from `createdAt` `>= 1` |
+| `anniversary_2` | Two-Year Run | `>= 2` |
+| `anniversary_3` | Three-Year Fan | `>= 3` |
+| `style_picker` | Style Picker | `favoriteSong` set and not `Unknown` |
+
+`win_3` was in the original competitive list and was not shipped. The win ladder is 1, then 5, then 10.
+
+The shelf lists those fourteen by `shelfOrder` inside the groups below ([#1150](https://github.com/pat792/set-picks/issues/1150)). `rank` chooses the standings avatar pin. Those two jobs stay separate.
+
+## Shelf journey
+
+The profile shelf reads as a path, earliest step first, inside named groups. A higher step never appears before a lower step of the same ladder. Unearned tiles stay shadowed.
+
+`rank` is unchanged. It stays unique, contiguous from 1, and consistent with tier order. `resolveEarnedBadges` still sorts by `rank` so the pin is the highest earned badge. The shelf uses `shelfOrder` (and a group label), not `rank`.
+
+| Group | Order on the shelf |
+|-------|--------------------|
+| Make it yours | Style Picker |
+| Shows played | First Show Scored, Five on the Board, Ten-Show Run, Tour Regular, Long Hauler |
+| Night wins | First Night Win, Five Night Wins, Ten Night Wins |
+| Points | 500 Club, 1000 Club |
+| Years on the board | First Anniversary, Two-Year Run, Three-Year Fan |
+
+Later badges join the end of the group they belong to. A second tour win follows the first tour win. It does not jump to the top of the shelf because it is rarer. The pin can still feature it.
+
+## Remaining work
+
+Do not put the rest of the list on the journey PR. [#1115](https://github.com/pat792/set-picks/issues/1115) needs frozen snapshots and an invite record the live boards do not provide.
+
+| Next | What | Why it is separate |
+|------|------|--------------------|
+| 1 | [#1150](https://github.com/pat792/set-picks/issues/1150) shelf journey | Display only. `shelfOrder` plus group headings in `BadgeShelf`. Pin `rank` stays. PATCH. |
+| 2 | [#1115](https://github.com/pat792/set-picks/issues/1115) §1 | Tour rank snapshot, then Tour Winner and Top 5, including a second and third tour. Hook the finished-tour moment, not the recap email. |
+| 3 | [#1115](https://github.com/pat792/set-picks/issues/1115) §2 | Store or recount bustout boosts, then tour-leading average, points per show, bustouts, and Triple Crown. Depends on the §1 snapshot. |
+| 4 | [#1115](https://github.com/pat792/set-picks/issues/1115) §3 | Year snapshot after 31 December. Yearly winner, annual slugging leader, annual slugging top 5. Pick a minimum show count before awarding slugging. |
+| 5 | [#1115](https://github.com/pat792/set-picks/issues/1115) §4 | Pick 'em Evangelist. Forward-only. Signup must store the inviter. A click is not a join. |
+
+Each of 2–5 is its own PR to `staging`, MINOR, because it adds badge ids on `users.badges`.
+
+[#1115](https://github.com/pat792/set-picks/issues/1115) points back here. When that work starts, consider these as options: tour show counts (`tour_shows_5`, `tour_shows_10`), tour night wins (`tour_win_1`, `tour_win_3`), streaks, full-tour completion, personal bustout hits, a perfect night, podium count, days at tour #1, pool host, and `avatar_set`. Tour show counts and tour night wins can be awarded from `seasonStats` without a new snapshot. The win ladder stays 1, then 5, then 10.
 
 ## Product Principles
 
@@ -36,7 +93,7 @@ This matrix defines the first engagement badge system for Profile and public pro
 | `picks/{showDate}_{uid}` | Yes | Per-show participation, score, `isGraded`, `winCredited`, picked songs/slots | Source of truth for recompute and backfills |
 | `users/{uid}.showsPlayed` | Yes | Career participation count | Written by rollup/backfill; mirrors graded non-empty picks |
 | `users/{uid}.wins` | Yes | Career global show wins | Tie-aware via global max; not pool-scoped |
-| `users/{uid}.totalPoints` | Yes | Career score total | Useful for future point thresholds; not in v1 badge set |
+| `users/{uid}.totalPoints` | Yes | Career score total | Awards `points_500` and `points_1000`. |
 | `users/{uid}.seasonStats.{tourKey}` | Yes | Tour-scoped points, shows, wins | Supports tour-scoped participation and win badges |
 | `users/{uid}.seasonStatsThroughShow` | Yes | Snapshot freshness | Use to avoid awarding from stale aggregate snapshots |
 | `show_calendar/snapshot` and `showDatesByTour` | Yes | Tour date order and full-tour attendance | Consecutive-show streaks must follow scheduled tour dates, not calendar days |
@@ -107,6 +164,25 @@ Ship the first award engine against fields that already exist and can be recompu
 
 Defer `podium_*`, `days_first_*`, invite, and pool-host badges until their source data is durable and documented.
 
+## Shipped in #712
+
+Career badges awarded at finalize from fields already on `users/{uid}`, then backfilled by `functions/scripts/backfillBadges.js` (dry-run unless `--apply`). Awards stay once written.
+
+| badgeId | Name | Rule | Tier |
+|---------|------|------|------|
+| `shows_played_25` | Tour Regular | `showsPlayed >= 25` | `rare` |
+| `shows_played_50` | Long Hauler | `showsPlayed >= 50` | `legendary` |
+| `win_5` | Five Night Wins | `wins >= 5` | `rare` |
+| `win_10` | Ten Night Wins | `wins >= 10` | `legendary` |
+| `points_500` | 500 Club | `totalPoints >= 500` | `rare` |
+| `points_1000` | 1000 Club | `totalPoints >= 1000` | `legendary` |
+| `anniversary_1` | First Anniversary | UTC calendar years from `createdAt` through the show date `>= 1` | `uncommon` |
+| `anniversary_2` | Two-Year Run | same, `>= 2` | `rare` |
+| `anniversary_3` | Three-Year Fan | same, `>= 3` | `rare` |
+| `style_picker` | Style Picker | `favoriteSong` set and not `Unknown` | `common` |
+
+Still deferred: tour winner and multiples, top-5 tour finish, tour-leading batting average / PPS / bustout boosts, triple crown, yearly winner, annual slugging leader and top 5, Pick 'em Evangelist. Those need a durable ranking or invite snapshot. Streaks, full-tour completion, bustout hits, and a perfect night need per-show grade context at finalize.
+
 ---
 
 ## Award Storage Recommendation
@@ -147,7 +223,7 @@ Adding this field is a Firestore schema change and should be documented in `docs
 
 ## Implementation Questions To Resolve
 
-- Should badge display order be fixed by this matrix or computed by rarity + awarded date?
+- Badge display order is the shelf journey in this doc. Prestige `rank` is only the standings pin. Do not sort the shelf by rarity or by `awardedAt`.
 - Should self-profile show locked future badges, or only earned badges plus a small "next up" hint?
 - Should public profile hide common onboarding badges when the user has rare/legendary badges?
 - Should career stats include beta-era data if a user's historical picks were regraded after schema changes?

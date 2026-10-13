@@ -1,0 +1,27 @@
+---
+description: "Preview email" means a Resend review copy only — never a production comms send
+alwaysApply: true
+---
+
+# Preview email means preview only
+
+When the user says **preview email**, **preview emails**, **run a preview**, or **send me a preview**:
+
+Send a review copy to the named inbox (default `pat@road2media.com`) through a **local Resend preview script**. That send does not go through production delivery.
+
+Use one of:
+
+- `scripts/send-local-email-preview.mjs`
+- `scripts/canary-tour-rankings-preview.mjs`
+- `scripts/canary-show-recap-narrative-preview.mjs`
+
+## Never on that request
+
+A single admin address does not make a live send a preview. Do not:
+
+- Call `runCommsTrigger` with `dryRun: false`, including `scripts/canary-comms-preview.mjs`
+- Run a replay or scheduler with `--confirm` (for example `scripts/replay-tour-rankings-daily.mjs --confirm`)
+- Fan out a real payload, even to one uid
+- Write `fcm_notification_log`, `commsInbox`, or the daily email cap
+
+A dry run that sends nothing is not a preview email. Wait for an explicit live-send instruction (`send it`, `send the live recap`, `--confirm`) before any production delivery.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * One-time / ops backfill for #568 v1 career badges from existing
- * `users.{uid}.showsPlayed` / `wins` counters.
+ * Ops backfill for career badges (#568, #712) from fields already on
+ * `users/{uid}`: shows, wins, points, createdAt, favoriteSong.
  *
  * Usage (from `functions/`):
  *   node scripts/backfillBadges.js
@@ -15,6 +15,7 @@ const path = require("node:path");
 const {
   computeUnlockedBadgeIds,
   badgeIdsToAward,
+  statsFromUserDoc,
 } = require("../badgeAwards");
 
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -57,8 +58,13 @@ async function main() {
   admin.initializeApp({ projectId });
   const db = admin.firestore();
 
+  const through =
+    typeof args.through === "string" && args.through.trim()
+      ? args.through.trim()
+      : new Date().toISOString().slice(0, 10);
+
   console.log(
-    `\nbackfill-badges (#568)\n  project: ${projectId}\n  mode: ${apply ? "APPLY" : "DRY RUN"}\n`
+    `\nbackfill-badges (#568, #712)\n  project: ${projectId}\n  through: ${through}\n  mode: ${apply ? "APPLY" : "DRY RUN"}\n`
   );
 
   const snap = await db.collection("users").get();
@@ -66,10 +72,7 @@ async function main() {
   const plan = [];
   for (const doc of snap.docs) {
     const data = doc.data() || {};
-    const unlocked = computeUnlockedBadgeIds({
-      showsPlayed: data.showsPlayed,
-      wins: data.wins,
-    });
+    const unlocked = computeUnlockedBadgeIds(statsFromUserDoc(data, through));
     const toAward = badgeIdsToAward(unlocked, data.badges);
     if (toAward.length) plan.push({ uid: doc.id, toAward });
   }
@@ -94,11 +97,6 @@ async function main() {
     batch = db.batch();
     ops = 0;
   };
-
-  const through =
-    typeof args.through === "string" && args.through.trim()
-      ? args.through.trim()
-      : new Date().toISOString().slice(0, 10);
 
   for (const row of plan) {
     if (ops >= MAX_OPS) await flush();

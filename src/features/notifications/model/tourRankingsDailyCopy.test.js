@@ -28,6 +28,8 @@ describe('buildTourRankingsDailyParagraphs', () => {
     });
     expect(paras[0]).toBe("You're on the board!");
     expect(paras.join(' ')).toMatch(/Night one sets the tour leaderboard/);
+    expect(paras[1]).toMatch(/after Kohl Center you're ranked/);
+    expect(paras[1]).not.toMatch(/2026-07-07/);
     expect(paras[1]).toMatch(/ranked #1 of 11 on tour with 10 points/);
   });
 

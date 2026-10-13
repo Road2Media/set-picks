@@ -17,6 +17,14 @@ test("tourRecapStateDocId trims tour key", () => {
   assert.equal(tourRecapStateDocId(""), "");
 });
 
+test("tourRecapStateDocId keeps legal ids and neutralizes path characters", () => {
+  assert.equal(tourRecapStateDocId("Oct 25–27, 2024"), "Oct 25–27, 2024");
+  assert.equal(tourRecapStateDocId("2026/2027 NYE Run"), "2026-2027 NYE Run");
+  assert.equal(tourRecapStateDocId("."), "");
+  assert.equal(tourRecapStateDocId(".."), "");
+  assert.equal(tourRecapStateDocId("__reserved__"), "reserved");
+});
+
 test("isTerminalTourRecapStatus covers sent / skipped_archive / closed", () => {
   assert.equal(isTerminalTourRecapStatus({ status: "sent" }), true);
   assert.equal(isTerminalTourRecapStatus({ status: "skipped_archive" }), true);
