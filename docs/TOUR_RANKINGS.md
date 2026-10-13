@@ -6,13 +6,13 @@
 | **Date** | 2026-10-13 |
 | **Case** | Live `tour_recap` for `2026 Fall Tour` (final show 2026-10-12, Orion Amphitheater, Huntsville). Read against the in-app message the same day. |
 | **Code** | `functions/tourRankingsDailyCore.js` · `src/features/scoring/model/aggregateTourStandings.js` · `functions/tourRecapCore.js` · `src/features/tour-recap/ui/TourRecapInApp.jsx` |
-| **Related** | #510 · #1084 · [TOUR_RECAP_FACT_INVENTORY.md](./comms-triggers/TOUR_RECAP_FACT_INVENTORY.md) |
+| **Related** | #1135 · #1136 · parent epic #1109 · #510 · #1084 · [TOUR_RECAP_FACT_INVENTORY.md](./comms-triggers/TOUR_RECAP_FACT_INVENTORY.md) |
 
 This note is the shared case study for two workstreams. They ship separately. Ranking decides the place. Recap comms decides the paragraph. A short player-facing page can be cut from the **Adopted rule** section after the standings screen and the recap use the same numbers. Do not publish the current screens as the rule. They disagree.
 
 ## Two workstreams
 
-| | Tour ranking refinement | Recap comms enhancements |
+| | Tour ranking refinement (#1135) | Recap comms enhancements (#1136) |
 |--|-------------------------|--------------------------|
 | **Question** | What is official place, and which screens show it? | What does the end-of-tour message say once that place is known? |
 | **Owns** | The rule below. Standings badges. Tie metadata on the rank (`tiedCount`, the other handles at that rank). | Podium labels, the personal rank sentence, the shared intro, canned podium lines, a second personal beat, spoken dates, band-fact color. |
@@ -181,13 +181,13 @@ Already stored, and unused or barely used in this wrap:
 
 Not stored: Phish.net show recaps, jam charts, and editorial show notes. Show-note pages are still a gated product. Adding them means a new inventory row first: where the text lives, who wrote it, the source URL, and the attribution line. Then one slot on the wrap map. The practical version is a human-approved sentence or two per tour, written from those sources, reviewed like any other comms draft. A scraped recap paragraph in the live send is the wrong layer.
 
-## Workstream 1 — Tour ranking refinement
+## Workstream 1 — Tour ranking refinement (#1135)
 
 1. Accept the rule in this doc. Point the standings description at it when the badge matches.
 2. Standings badges use competition rank and mark a tie. List order inside the tie stays wins, then handle.
 3. Hand comms a rank payload that already includes `tiedCount` and the other handles at that rank. The recap does not re-derive place from row order.
 
-## Workstream 2 — Recap comms enhancements
+## Workstream 2 — Recap comms enhancements (#1136)
 
 Depends on workstream 1 for place labels only.
 

@@ -15,7 +15,7 @@ The rank band is still `champion`, `top5`, `top10`, `full_run`, `partial`, or `f
 
 The shared opening keeps “{Tour} is officially in the books.” and “Before the next run, here is the final tape.” The middle sentence is the first fact below that exists. A fixture of that copy is [TOUR_RECAP_SAMPLE.md](./TOUR_RECAP_SAMPLE.md). Nothing in that file was sent.
 
-The 2026 Fall Tour send is the case study for two later workstreams in [TOUR_RANKINGS.md](../TOUR_RANKINGS.md): tour ranking refinement, then recap comms enhancements. That note is a draft. It does not change this map.
+The 2026 Fall Tour send is the case study for two later workstreams in [TOUR_RANKINGS.md](../TOUR_RANKINGS.md): tour ranking refinement (#1135) and recap comms enhancements (#1136), both children of #1109. That note is a draft. It does not change this map.
 
 ## Facts this wrap may speak
 
