@@ -2,11 +2,13 @@
  * Milestone badge catalog (#568, expanded #712).
  * Assets under `/badges/{id}.svg`.
  *
- * `rank` is the explicit badge hierarchy (1 = most valuable). It drives which
- * badge shows on standings avatar pins (highest earned) and the ladder order
- * on the Badges shelf. Ranks must be unique, contiguous from 1, and never
- * contradict tier order (a `common` badge cannot outrank an `uncommon` one) —
- * enforced by `badgeCatalog.test.js`.
+ * `rank` is the prestige hierarchy (1 = most valuable). It chooses the badge
+ * on standings avatar pins (highest earned). Ranks must be unique, contiguous
+ * from 1, and never contradict tier order (a `common` badge cannot outrank
+ * an `uncommon` one) — enforced by `badgeCatalog.test.js`.
+ *
+ * `shelfOrder` is the profile journey (1 = first step). `group` is the shelf
+ * heading. The shelf sorts by `shelfOrder`, not by `rank` (#1150).
  *
  * Award rules live in `functions/badgeAwards.js` and must use these same ids.
  */
@@ -17,6 +19,8 @@
  *   blurb: string,
  *   tier: 'common' | 'uncommon' | 'rare' | 'legendary',
  *   rank: number,
+ *   group: string,
+ *   shelfOrder: number,
  *   src: string,
  * }} BadgeDefinition */
 
@@ -28,6 +32,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Topped ten scored shows.',
     tier: 'legendary',
     rank: 1,
+    group: 'Night wins',
+    shelfOrder: 9,
     src: '/badges/win_10.svg',
   },
   {
@@ -36,6 +42,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Scored 1,000 lifetime points.',
     tier: 'legendary',
     rank: 2,
+    group: 'Points',
+    shelfOrder: 11,
     src: '/badges/points_1000.svg',
   },
   {
@@ -44,6 +52,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Played 50 scored shows.',
     tier: 'legendary',
     rank: 3,
+    group: 'Shows played',
+    shelfOrder: 6,
     src: '/badges/shows_played_50.svg',
   },
   {
@@ -52,6 +62,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Topped five scored shows.',
     tier: 'rare',
     rank: 4,
+    group: 'Night wins',
+    shelfOrder: 8,
     src: '/badges/win_5.svg',
   },
   {
@@ -60,6 +72,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Scored 500 lifetime points.',
     tier: 'rare',
     rank: 5,
+    group: 'Points',
+    shelfOrder: 10,
     src: '/badges/points_500.svg',
   },
   {
@@ -68,6 +82,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Played 25 scored shows.',
     tier: 'rare',
     rank: 6,
+    group: 'Shows played',
+    shelfOrder: 5,
     src: '/badges/shows_played_25.svg',
   },
   {
@@ -76,6 +92,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Three years since you joined.',
     tier: 'rare',
     rank: 7,
+    group: 'Years on the board',
+    shelfOrder: 14,
     src: '/badges/anniversary_3.svg',
   },
   {
@@ -84,6 +102,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Two years since you joined.',
     tier: 'rare',
     rank: 8,
+    group: 'Years on the board',
+    shelfOrder: 13,
     src: '/badges/anniversary_2.svg',
   },
   {
@@ -92,6 +112,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Played ten scored shows.',
     tier: 'uncommon',
     rank: 9,
+    group: 'Shows played',
+    shelfOrder: 4,
     src: '/badges/shows_played_10.svg',
   },
   {
@@ -100,6 +122,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Topped a scored show.',
     tier: 'uncommon',
     rank: 10,
+    group: 'Night wins',
+    shelfOrder: 7,
     src: '/badges/win_1.svg',
   },
   {
@@ -108,6 +132,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'One year since you joined.',
     tier: 'uncommon',
     rank: 11,
+    group: 'Years on the board',
+    shelfOrder: 12,
     src: '/badges/anniversary_1.svg',
   },
   {
@@ -116,6 +142,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Played five scored shows.',
     tier: 'common',
     rank: 12,
+    group: 'Shows played',
+    shelfOrder: 3,
     src: '/badges/shows_played_5.svg',
   },
   {
@@ -124,6 +152,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: "Scored your first Setlist Pick 'Em show.",
     tier: 'common',
     rank: 13,
+    group: 'Shows played',
+    shelfOrder: 2,
     src: '/badges/shows_played_1.svg',
   },
   {
@@ -132,6 +162,8 @@ export const PROFILE_BADGES = Object.freeze([
     blurb: 'Set a favorite song on your profile.',
     tier: 'common',
     rank: 14,
+    group: 'Make it yours',
+    shelfOrder: 1,
     src: '/badges/style_picker.svg',
   },
 ]);
@@ -183,9 +215,9 @@ export function resolveEarnedBadges(badgesMap) {
 }
 
 /**
- * Full catalog ladder in hierarchy order (most valuable first), flagging what
- * this user has earned — unearned entries render as shadow/locked tiles on
- * the Badges shelf.
+ * Full catalog in journey order (`shelfOrder` ascending), flagging what this
+ * user has earned — unearned entries render as shadow/locked tiles on the
+ * Badges shelf.
  *
  * @param {unknown} badgesMap users/{uid}.badges
  * @returns {Array<BadgeDefinition & {
@@ -201,7 +233,7 @@ export function resolveBadgeLadder(badgesMap) {
       : {};
 
   return [...PROFILE_BADGES]
-    .sort((a, b) => a.rank - b.rank)
+    .sort((a, b) => a.shelfOrder - b.shelfOrder)
     .map((def) => {
       const entry = map[def.id];
       const earned = Boolean(entry && typeof entry === 'object');
@@ -209,4 +241,25 @@ export function resolveBadgeLadder(badgesMap) {
         ? { ...def, earned: true, ...toAwardMeta(entry) }
         : { ...def, earned: false };
     });
+}
+
+/**
+ * Shelf sections in journey order. A group stays together because
+ * `shelfOrder` is contiguous inside each group.
+ *
+ * @param {unknown} badgesMap
+ * @returns {Array<{ group: string, badges: ReturnType<typeof resolveBadgeLadder> }>}
+ */
+export function groupBadgeLadder(badgesMap) {
+  /** @type {Array<{ group: string, badges: ReturnType<typeof resolveBadgeLadder> }>} */
+  const groups = [];
+  for (const badge of resolveBadgeLadder(badgesMap)) {
+    const last = groups[groups.length - 1];
+    if (!last || last.group !== badge.group) {
+      groups.push({ group: badge.group, badges: [badge] });
+    } else {
+      last.badges.push(badge);
+    }
+  }
+  return groups;
 }

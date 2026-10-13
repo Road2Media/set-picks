@@ -8,6 +8,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.82.1] — 2026-10-13
+
+### Changed
+- **Badge shelf journey (#1150)** — profile and public profile list the 14 career badges earliest step first, under Make it yours, Shows played, Night wins, Points, and Years on the board. The standings avatar pin still uses prestige rank.
+
+---
+
 ## [1.82.0] — 2026-10-13
 
 ### Added
