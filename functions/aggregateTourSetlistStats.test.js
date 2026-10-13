@@ -30,6 +30,27 @@ describe("tourLabelToSlug", () => {
 });
 
 describe("aggregateTourSetlistStats", () => {
+  it("counts a same-night return as another play and one unique title", () => {
+    const stats = aggregateTourSetlistStats(
+      [
+        {
+          showDate: "2026-10-09",
+          setlist: {
+            officialSetlist: ["Tweezer", "Plasma", "Tweezer", "Plasma", "Tweezer"],
+            bustouts: ["Tweezer"],
+            songGaps: { tweezer: 40, plasma: 2 },
+          },
+        },
+      ],
+      { tourShowCount: 1 }
+    );
+    assert.equal(stats.uniqueSongs, 2);
+    assert.equal(stats.totalSongPlays, 5);
+    assert.equal(stats.topSongs.find((r) => r.title === "Tweezer").timesPlayed, 3);
+    assert.equal(stats.bustouts.length, 1);
+    assert.equal(stats.bustouts[0].title, "Tweezer");
+  });
+
   it("returns ALL songs and gap highlights — no top-N truncation (#709)", () => {
     const titles = Array.from({ length: 40 }, (_, i) => `Song ${String(i).padStart(2, "0")}`);
     const songGaps = Object.fromEntries(

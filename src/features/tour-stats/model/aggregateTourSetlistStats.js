@@ -127,17 +127,22 @@ export function aggregateTourSetlistStats(docs, options = {}) {
     if (titles.length === 0) continue;
     showsWithSetlist += 1;
 
-    /** Normalized keys of songs actually played this show (the display guard). */
+    // Presence is once per title per show (bustouts / gaps). Plays count every
+    // officialSetlist row, including a title that returns later the same night.
+    // That matches Phish.net's song-row total. A segue between two different
+    // songs is already two rows.
+    /** @type {Set<string>} */
     const playedThisShow = new Set();
     for (const title of titles) {
       const key = normalizeTitle(title);
-      if (!key || playedThisShow.has(key)) continue;
+      if (!key) continue;
+      const firstThisShow = !playedThisShow.has(key);
       playedThisShow.add(key);
       totalSongPlays += 1;
       const existing = bySong.get(key);
       if (existing) {
         existing.timesPlayed += 1;
-        if (showDate) existing.showDates.push(showDate);
+        if (showDate && firstThisShow) existing.showDates.push(showDate);
       } else {
         bySong.set(key, {
           title,

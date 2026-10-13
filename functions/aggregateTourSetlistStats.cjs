@@ -56,10 +56,13 @@ function aggregateTourSetlistStats(docs, options = {}) {
     if (titles.length === 0) continue;
     showsWithSetlist += 1;
 
+    // Presence is once per title per show (bustouts / gaps). Plays count every
+    // officialSetlist row, including a title that returns later the same night
+    // (Phish.net song-row total). Keep in sync with the client model.
     const playedThisShow = new Set();
     for (const title of titles) {
       const key = normalizeTitle(title);
-      if (!key || playedThisShow.has(key)) continue;
+      if (!key) continue;
       playedThisShow.add(key);
       totalSongPlays += 1;
       const existing = bySong.get(key);

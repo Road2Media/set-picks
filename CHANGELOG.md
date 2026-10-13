@@ -8,6 +8,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.82.2] — 2026-10-13
+
+### Fixed
+- **Tour stats song count** — Songs played and each song's Plays count every setlist row, including a title that returns later the same night. Unique songs and bustouts still count a title once per show. Fall Tour 2026 is 137 songs played and 109 unique, matching Phish.net's setlist rows. The public page keeps the old total until the tour-stats refresh runs.
+
+---
+
 ## [1.82.1] — 2026-10-13
 
 ### Changed
