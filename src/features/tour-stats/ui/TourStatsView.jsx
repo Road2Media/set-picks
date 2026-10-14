@@ -29,8 +29,22 @@ const { BUSTOUT_MIN_GAP } = SCORING_RULES;
  * one line at 11px. Slashes are the same character count as the old hyphens,
  * so the 2.75rem and 4.75rem tracks still hold.
  */
+/** Last track is wider than the metric so Tour Dates sits a bit clear of Last. */
+const TOP_SONGS_COLUMNS = 'grid-cols-[1.5rem_minmax(0,1fr)_2.75rem_4.95rem]';
+
 const TOP_SONGS_ROW_GRID =
-  'grid grid-cols-[1.5rem_minmax(0,1fr)_2.75rem_2.5rem] items-center gap-x-2 min-h-[1.75rem]';
+  `grid ${TOP_SONGS_COLUMNS} items-center gap-x-2 min-h-[1.75rem]`;
+
+const TOP_SONGS_HEADER_GRID =
+  `grid ${TOP_SONGS_COLUMNS} items-end gap-x-2`;
+
+/**
+ * Date count in a fixed track, play-count note in the track to its right.
+ * The note track stays reserved when empty so the dates share one vertical edge.
+ * The box is narrower than the grid track and pinned to the end, which is the
+ * gap between Last and Tour Dates.
+ */
+const DATES_METRIC_GRID = 'grid w-[4.2rem] justify-self-end grid-cols-[2.35rem_1.85rem] items-baseline';
 
 /**
  * Bustouts / High gaps: Song | Date (MM/DD) | Gap | Last (MM/DD/YY).
@@ -81,10 +95,18 @@ function lastPlayedDisplayForTopSong(row) {
 }
 
 const COL_HEADER =
-  'mb-0.5 border-b border-brand-primary/20 pb-1 text-[10px] font-black uppercase tracking-wider text-slate-300';
+  'mb-0.5 border-b border-brand-primary/20 pb-1 text-[10px] font-black uppercase leading-none tracking-wider text-slate-300';
 
-const TOUR_FREQUENCY_DEF =
+const COL_HEADER_END = 'justify-self-end whitespace-nowrap text-right';
+
+const DATES_COLUMN_TITLE =
+  'Ranked by how many times each song appears on this tour. Played more than once in the same night? Phish.net’s full count is in parentheses.';
+
+const TOUR_FREQUENCY_DEF_PLAYS =
   'All songs this tour, ranked by number of times played. Ties break by total # of times played all-time.';
+
+const TOUR_FREQUENCY_DEF_DATES =
+  'Ranked by how many times each song appears on this tour. Played more than once in the same night? Phish.net’s full count is in parentheses.';
 
 const HIGH_GAPS_DEF = `Gap = shows since last played before that night. Listed when gap ≥ ${TOUR_STATS_GAP_HIGHLIGHT_MIN} and below the bustout threshold.`;
 
@@ -201,6 +223,10 @@ export default function TourStatsView({
     );
   }
 
+  const frequencyUsesShows = (stats.topSongs || []).some((row) =>
+    Number.isFinite(Number(row?.showAppearances)),
+  );
+
   return (
     <InfoTooltipProvider>
       <div className="space-y-4">
@@ -261,7 +287,9 @@ export default function TourStatsView({
         <TourStatsSectionCard
           title={frequencyTitle}
           titleAs={sectionHeading}
-          definition={TOUR_FREQUENCY_DEF}
+          definition={
+            frequencyUsesShows ? TOUR_FREQUENCY_DEF_DATES : TOUR_FREQUENCY_DEF_PLAYS
+          }
         >
           {isPublic ? (
             <p className="mb-3 text-sm leading-relaxed text-content-secondary">
@@ -277,20 +305,31 @@ export default function TourStatsView({
               label="song frequency"
               listAs="ol"
               header={
-                <div className={`${TOP_SONGS_ROW_GRID} ${COL_HEADER}`} aria-hidden>
+                <div className={`${TOP_SONGS_HEADER_GRID} ${COL_HEADER}`} aria-hidden>
                   <span className="tabular-nums">#</span>
                   <span>Song</span>
-                  <span
-                    className={META_CELL}
-                    title={LAST_PLAYED_THIS_TOUR_TITLE}
-                  >
+                  <span className={COL_HEADER_END} title={LAST_PLAYED_THIS_TOUR_TITLE}>
                     Last
                   </span>
-                  <span className={META_CELL}>Plays</span>
+                  {frequencyUsesShows ? (
+                    <span
+                      className="block w-[4.2rem] justify-self-end text-center leading-[1.15]"
+                      title={DATES_COLUMN_TITLE}
+                    >
+                      <span className="block">Tour</span>
+                      <span className="block">Dates</span>
+                    </span>
+                  ) : (
+                    <span className={COL_HEADER_END} title="Times played this tour">
+                      Plays
+                    </span>
+                  )}
                 </div>
               }
               renderRow={(row, absoluteIdx) => {
                 const lastIso = lastPlayedDisplayForTopSong(row);
+                const shows = showAppearancesFor(row);
+                const extraPlays = extraPlaysFor(row, shows);
                 return (
                   <li key={row.title} className={TOP_SONGS_ROW_GRID}>
                     <span className="tabular-nums text-brand-primary/80">
@@ -310,8 +349,30 @@ export default function TourStatsView({
                     >
                       {lastIso ? formatFanShowMonthDay(lastIso) : '—'}
                     </span>
-                    <span className={`${META_CELL} text-brand-primary`}>
-                      {row.timesPlayed}
+                    <span
+                      className={
+                        frequencyUsesShows
+                          ? `${DATES_METRIC_GRID} text-[11px] tabular-nums tracking-tight text-brand-primary`
+                          : `${META_CELL} text-brand-primary`
+                      }
+                      title={
+                        extraPlays
+                          ? `Appeared ${shows} times on this tour. Phish.net counts ${extraPlays} plays.`
+                          : frequencyUsesShows
+                            ? DATES_COLUMN_TITLE
+                            : 'Times played this tour'
+                      }
+                    >
+                      {frequencyUsesShows ? (
+                        <>
+                          <span className="justify-self-end tabular-nums leading-none">{shows}</span>
+                          <span className="justify-self-start pl-0.5 font-semibold leading-none text-teal-200">
+                            {extraPlays != null ? `(${extraPlays}x)` : null}
+                          </span>
+                        </>
+                      ) : (
+                        shows
+                      )}
                     </span>
                   </li>
                 );
@@ -382,13 +443,30 @@ export default function TourStatsView({
 }
 
 /**
- * Lifetime context from phish.net enrichment (#666) — present only on
- * `public_tour_stats` rows written by an enriched refresh. Dashboard rows
- * (client-side aggregation) never carry these fields, so the private
- * explorer renders unchanged.
- *
- * @param {{ row: { debutYear?: number | null, lifetimePlays?: number | null } }} props
+ * Nights the title appeared. Falls back to times played when an older public
+ * doc has not been refreshed with `showAppearances`.
+ * @param {{ showAppearances?: unknown, timesPlayed?: unknown }} row
+ * @returns {number}
  */
+function showAppearancesFor(row) {
+  const shows = Number(row?.showAppearances);
+  if (Number.isFinite(shows)) return shows;
+  const plays = Number(row?.timesPlayed);
+  return Number.isFinite(plays) ? plays : 0;
+}
+
+/**
+ * Setlist-row count, only when it is higher than nights appeared.
+ * @param {{ timesPlayed?: unknown }} row
+ * @param {number} shows
+ * @returns {number | null}
+ */
+function extraPlaysFor(row, shows) {
+  const plays = Number(row?.timesPlayed);
+  if (!Number.isFinite(plays) || plays <= shows) return null;
+  return plays;
+}
+
 function SongEnrichmentLine({ row }) {
   const bits = [];
   if (typeof row.debutYear === 'number') bits.push(`Debut ${row.debutYear}`);
@@ -421,9 +499,9 @@ function GapPagedRows({ rows, label, gapClassName }) {
       header={
         <div className={`${GAP_ROW_GRID} ${COL_HEADER}`} aria-hidden>
           <span>Song</span>
-          <span className={META_CELL}>Date</span>
-          <span className={META_CELL}>Gap</span>
-          <span className={META_CELL} title={LAST_PLAYED_BEFORE_NIGHT_TITLE}>
+          <span className={COL_HEADER_END}>Date</span>
+          <span className={COL_HEADER_END}>Gap</span>
+          <span className={COL_HEADER_END} title={LAST_PLAYED_BEFORE_NIGHT_TITLE}>
             Last
           </span>
         </div>

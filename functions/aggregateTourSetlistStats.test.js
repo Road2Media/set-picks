@@ -47,6 +47,8 @@ describe("aggregateTourSetlistStats", () => {
     assert.equal(stats.uniqueSongs, 2);
     assert.equal(stats.totalSongPlays, 5);
     assert.equal(stats.topSongs.find((r) => r.title === "Tweezer").timesPlayed, 3);
+    assert.equal(stats.topSongs.find((r) => r.title === "Tweezer").showAppearances, 1);
+    assert.equal(stats.topSongs.find((r) => r.title === "Plasma").showAppearances, 1);
     assert.equal(stats.bustouts.length, 1);
     assert.equal(stats.bustouts[0].title, "Tweezer");
   });
