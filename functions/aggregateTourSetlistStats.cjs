@@ -1,6 +1,7 @@
 /**
  * Pure tour setlist aggregation for Cloud Functions (#665).
- * Mirrors `src/features/tour-stats/model/aggregateTourSetlistStats.js` (no lifetime tiebreak).
+ * Mirrors `src/features/tour-stats/model/aggregateTourSetlistStats.js`.
+ * The public payload re-sorts with the all-time tie-break once enrichment exists.
  * Keep in sync when changing private explorer math.
  */
 
@@ -257,6 +258,41 @@ function enrichmentFor(enrichmentByTitle, title) {
 }
 
 /**
+ * All-time total used only to order songs that already appeared on this tour.
+ * Missing or non-positive catalog totals sort as 0. They do not add a row.
+ * @param {{ lifetimePlays?: unknown }} row
+ */
+function lifetimePlaysForSort(row) {
+  const n = Number(row?.lifetimePlays);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+}
+
+/**
+ * Nights on this tour, then all-time plays, then setlist rows, then title.
+ * Matches the logged-in aggregator. A song must have been played in the tour
+ * window; this comparator never invents a row.
+ * @param {{ showAppearances?: unknown, lifetimePlays?: unknown, timesPlayed?: unknown, title?: unknown }} a
+ * @param {{ showAppearances?: unknown, lifetimePlays?: unknown, timesPlayed?: unknown, title?: unknown }} b
+ */
+function compareTourFrequencyRows(a, b) {
+  const showsA = Number(a?.showAppearances) || 0;
+  const showsB = Number(b?.showAppearances) || 0;
+  if (showsB !== showsA) return showsB - showsA;
+  const lifeB = lifetimePlaysForSort(b);
+  const lifeA = lifetimePlaysForSort(a);
+  if (lifeB !== lifeA) return lifeB - lifeA;
+  const playsA = Number(a?.timesPlayed) || 0;
+  const playsB = Number(b?.timesPlayed) || 0;
+  if (playsB !== playsA) return playsB - playsA;
+  return String(a?.title ?? "").localeCompare(String(b?.title ?? ""));
+}
+
+/** @param {{ timesPlayed?: unknown, showAppearances?: unknown }} row */
+function playedDuringTour(row) {
+  return Number(row?.timesPlayed) > 0 && Number(row?.showAppearances) > 0;
+}
+
+/**
  * Public payload — aggregates only (no officialSetlist arrays, no per-song showDates lists).
  * Bustout/gap rows may include a single showDate (song event), never a full night setlist.
  *
@@ -264,6 +300,11 @@ function enrichmentFor(enrichmentByTitle, title) {
  * `lifetimePlays` + `debutYear` (null when phish.net has no data for the
  * title). Omitted entirely when enrichment is unavailable so consumers can
  * distinguish "not enriched" from "unknown song".
+ *
+ * `topSongs` is then ordered like the logged-in page: nights on this tour,
+ * then all-time plays, then setlist rows, then title. Rows that were not
+ * played during the tour are dropped. A missing all-time total sorts as 0
+ * and does not remove a song that was played.
  *
  * @param {ReturnType<typeof aggregateTourSetlistStats>} stats
  * @param {Map<string, { lifetimePlays: number | null, debutYear: number | null }> | null} [enrichmentByTitle]
@@ -289,15 +330,18 @@ function toPublicTourStatsPayload(stats, enrichmentByTitle = null) {
     showsWithSetlist: stats.showsWithSetlist,
     uniqueSongs: stats.uniqueSongs,
     totalSongPlays: stats.totalSongPlays,
-    topSongs: (stats.topSongs || []).map((r) =>
-      withEnrichment(r, {
-        title: r.title,
-        timesPlayed: r.timesPlayed,
-        showAppearances: r.showAppearances,
-        // Tour-local last play (not phish.net lifetime last).
-        lastPlayed: r.lastPlayed || null,
-      })
-    ),
+    topSongs: (stats.topSongs || [])
+      .filter(playedDuringTour)
+      .map((r) =>
+        withEnrichment(r, {
+          title: r.title,
+          timesPlayed: r.timesPlayed,
+          showAppearances: r.showAppearances,
+          // Tour-local last play (not phish.net lifetime last).
+          lastPlayed: r.lastPlayed || null,
+        })
+      )
+      .sort(compareTourFrequencyRows),
     bustouts: (stats.bustouts || []).map((r) =>
       withEnrichment(r, {
         title: r.title,

@@ -170,4 +170,26 @@ describe('aggregateTourSetlistStats (#555)', () => {
       'Rare Bird',
     ]);
   });
+
+  it('does not list a catalog song that was not played on the tour', () => {
+    const stats = aggregateTourSetlistStats(
+      [
+        {
+          showDate: '2026-10-02',
+          setlist: {
+            officialSetlist: ['Alumni Blues'],
+            bustouts: [],
+            songGaps: {},
+          },
+        },
+      ],
+      {
+        lifetimePlaysByKey: new Map([
+          ['alumni blues', 12],
+          ['tweezer', 421],
+        ]),
+      },
+    );
+    expect(stats.topSongs.map((r) => r.title)).toEqual(['Alumni Blues']);
+  });
 });

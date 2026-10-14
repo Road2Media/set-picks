@@ -167,6 +167,61 @@ describe("toPublicTourStatsPayload enrichment (#666)", () => {
     assert.equal(pub.gapHighlights[0].debutYear, null);
   });
 
+  it("ranks equal tour dates by all-time plays and omits songs not played on the tour", () => {
+    const stats = aggregateTourSetlistStats(
+      [
+        {
+          showDate: "2026-10-02",
+          setlist: {
+            officialSetlist: ["Rare Bird", "You Enjoy Myself", "Free"],
+            bustouts: [],
+            songGaps: {},
+          },
+        },
+        {
+          showDate: "2026-10-03",
+          setlist: {
+            officialSetlist: ["Free", "Free"],
+            bustouts: [],
+            songGaps: {},
+          },
+        },
+      ],
+      { tourShowCount: 2 }
+    );
+    const map = buildSongEnrichmentByTitle([
+      { name: "Rare Bird", total: "1", debut: "1991" },
+      { name: "You Enjoy Myself", total: "623", debut: "1986" },
+      { name: "Free", total: "50", debut: "1995" },
+      { name: "Tweezer", total: "421", debut: "1990" },
+    ]);
+    const pub = toPublicTourStatsPayload(stats, map);
+    assert.deepEqual(
+      pub.topSongs.map((r) => r.title),
+      ["Free", "You Enjoy Myself", "Rare Bird"]
+    );
+    assert.equal(pub.topSongs.find((r) => r.title === "Tweezer"), undefined);
+    const noCatalog = aggregateTourSetlistStats(
+      [
+        {
+          showDate: "2026-10-02",
+          setlist: {
+            officialSetlist: ["Rare Bird", "No Catalog"],
+            bustouts: [],
+            songGaps: {},
+          },
+        },
+      ],
+      { tourShowCount: 1 }
+    );
+    const withGap = toPublicTourStatsPayload(noCatalog, map);
+    assert.deepEqual(
+      withGap.topSongs.map((r) => r.title),
+      ["Rare Bird", "No Catalog"]
+    );
+    assert.equal(withGap.topSongs.find((r) => r.title === "No Catalog").lifetimePlays, null);
+  });
+
   it("omits enrichment fields entirely when no map is provided", () => {
     const pub = toPublicTourStatsPayload(stats);
     assert.ok(pub.topSongs.every((r) => !("lifetimePlays" in r)));

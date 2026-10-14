@@ -205,6 +205,7 @@ export function aggregateTourSetlistStats(docs, options = {}) {
   // #709: full ranked list — no top-N cap. The UI paginates at
   // TOUR_STATS_TOP_N rows/page instead of truncating.
   const topSongs = [...bySong.entries()]
+    .filter(([, row]) => row.timesPlayed > 0 && row.showAppearances > 0)
     .sort(([keyA, a], [keyB, b]) => {
       if (b.showAppearances !== a.showAppearances) return b.showAppearances - a.showAppearances;
       const lifetimeA = lifetimePlaysFor(lifetimePlaysByKey, keyA);
