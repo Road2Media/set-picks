@@ -8,6 +8,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.83.1] — 2026-10-14
+
+### Fixed
+- **Public tour frequency order (#1156)** — the public list uses the same order as the logged-in page: nights on this tour, then all-time plays, then setlist rows, then title. A song that was not played during the tour stays off the list. A played song with no all-time total stays on the list, at the bottom of its date group.
+
+---
+
 ## [1.83.0] — 2026-10-14
 
 ### Added
