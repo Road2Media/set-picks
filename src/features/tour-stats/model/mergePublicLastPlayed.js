@@ -15,10 +15,45 @@
  * @param {unknown} showDate
  * @returns {string}
  */
-function rowKey(title, showDate) {
-  return `${String(title ?? '')
+function titleKey(title) {
+  return String(title ?? '')
     .trim()
-    .toLowerCase()}|${String(showDate ?? '').trim()}`;
+    .toLowerCase();
+}
+
+function rowKey(title, showDate) {
+  return `${titleKey(title)}|${String(showDate ?? '').trim()}`;
+}
+
+/**
+ * Debut year and lifetime plays already stored on the public frequency rows.
+ * The dashboard aggregates setlists itself, so it borrows this line for the
+ * subtitle under each title.
+ *
+ * @param {null | undefined | { topSongs?: Array<{ title?: string, debutYear?: unknown, lifetimePlays?: unknown }> }} publicDoc
+ * @returns {Map<string, { debutYear?: number, lifetimePlays?: number }>}
+ */
+export function buildSongEnrichmentByTitle(publicDoc) {
+  const map = new Map();
+  if (!publicDoc || typeof publicDoc !== 'object' || !Array.isArray(publicDoc.topSongs)) {
+    return map;
+  }
+  for (const row of publicDoc.topSongs) {
+    if (!row || typeof row !== 'object') continue;
+    const key = titleKey(row.title);
+    if (!key) continue;
+    /** @type {{ debutYear?: number, lifetimePlays?: number }} */
+    const enrichment = {};
+    if (typeof row.debutYear === 'number' && Number.isFinite(row.debutYear)) {
+      enrichment.debutYear = row.debutYear;
+    }
+    if (typeof row.lifetimePlays === 'number' && Number.isFinite(row.lifetimePlays)) {
+      enrichment.lifetimePlays = row.lifetimePlays;
+    }
+    if (enrichment.debutYear == null && enrichment.lifetimePlays == null) continue;
+    map.set(key, enrichment);
+  }
+  return map;
 }
 
 /**
@@ -56,7 +91,8 @@ export function buildLastPlayedByRowKey(publicDoc) {
  */
 export function mergeLastPlayedIntoStats(stats, publicDoc) {
   const byKey = buildLastPlayedByRowKey(publicDoc);
-  if (byKey.size === 0) return stats;
+  const enrichment = buildSongEnrichmentByTitle(publicDoc);
+  if (byKey.size === 0 && enrichment.size === 0) return stats;
 
   let changed = false;
   const stamp = (rows) =>
@@ -67,7 +103,18 @@ export function mergeLastPlayedIntoStats(stats, publicDoc) {
       return { ...row, lastPlayed };
     });
 
-  const bustouts = stamp(stats.bustouts);
-  const gapHighlights = stamp(stats.gapHighlights);
-  return changed ? { ...stats, bustouts, gapHighlights } : stats;
+  const bustouts = byKey.size > 0 ? stamp(stats.bustouts) : stats.bustouts;
+  const gapHighlights = byKey.size > 0 ? stamp(stats.gapHighlights) : stats.gapHighlights;
+
+  let topSongs = stats.topSongs;
+  if (enrichment.size > 0 && Array.isArray(stats.topSongs)) {
+    topSongs = stats.topSongs.map((row) => {
+      const extra = enrichment.get(titleKey(row.title));
+      if (!extra) return row;
+      changed = true;
+      return { ...row, ...extra };
+    });
+  }
+
+  return changed ? { ...stats, topSongs, bustouts, gapHighlights } : stats;
 }

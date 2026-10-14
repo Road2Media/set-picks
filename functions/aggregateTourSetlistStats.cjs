@@ -34,7 +34,7 @@ function aggregateTourSetlistStats(docs, options = {}) {
         ? docs.length
         : 0;
 
-  /** @type {Map<string, { title: string, timesPlayed: number, lastTourDate: string | null }>} */
+  /** @type {Map<string, { title: string, timesPlayed: number, showAppearances: number, lastTourDate: string | null }>} */
   const bySong = new Map();
   /** @type {Array<{ title: string, showDate: string, gap: number | null }>} */
   const bustouts = [];
@@ -63,11 +63,13 @@ function aggregateTourSetlistStats(docs, options = {}) {
     for (const title of titles) {
       const key = normalizeTitle(title);
       if (!key) continue;
+      const firstThisShow = !playedThisShow.has(key);
       playedThisShow.add(key);
       totalSongPlays += 1;
       const existing = bySong.get(key);
       if (existing) {
         existing.timesPlayed += 1;
+        if (firstThisShow) existing.showAppearances += 1;
         if (
           showDate &&
           (!existing.lastTourDate || showDate > existing.lastTourDate)
@@ -78,6 +80,7 @@ function aggregateTourSetlistStats(docs, options = {}) {
         bySong.set(key, {
           title,
           timesPlayed: 1,
+          showAppearances: 1,
           lastTourDate: showDate || null,
         });
       }
@@ -133,12 +136,14 @@ function aggregateTourSetlistStats(docs, options = {}) {
   // (before that night) stamped later from phish.net history.
   const topSongs = [...bySong.values()]
     .sort((a, b) => {
+      if (b.showAppearances !== a.showAppearances) return b.showAppearances - a.showAppearances;
       if (b.timesPlayed !== a.timesPlayed) return b.timesPlayed - a.timesPlayed;
       return a.title.localeCompare(b.title);
     })
     .map((row) => ({
       title: row.title,
       timesPlayed: row.timesPlayed,
+      showAppearances: row.showAppearances,
       lastPlayed: row.lastTourDate || null,
     }));
 
@@ -288,6 +293,7 @@ function toPublicTourStatsPayload(stats, enrichmentByTitle = null) {
       withEnrichment(r, {
         title: r.title,
         timesPlayed: r.timesPlayed,
+        showAppearances: r.showAppearances,
         // Tour-local last play (not phish.net lifetime last).
         lastPlayed: r.lastPlayed || null,
       })

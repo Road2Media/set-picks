@@ -15,7 +15,7 @@ describe('aggregateTourSetlistStats (#555)', () => {
     });
   });
 
-  it('counts every setlist row, including a same-night return, and ranks by plays', () => {
+  it('counts every setlist row, ranks by nights, and keeps same-night returns as plays', () => {
     const stats = aggregateTourSetlistStats(
       [
         {
@@ -44,9 +44,14 @@ describe('aggregateTourSetlistStats (#555)', () => {
     expect(stats.totalSongPlays).toBe(5);
     expect(stats.topSongs.find((row) => row.title === 'Tweezer')).toMatchObject({
       timesPlayed: 2,
+      showAppearances: 1,
       showDates: ['2026-07-10'],
     });
-    expect(stats.topSongs[0]).toMatchObject({ title: 'Free', timesPlayed: 2 });
+    expect(stats.topSongs[0]).toMatchObject({
+      title: 'Free',
+      timesPlayed: 2,
+      showAppearances: 2,
+    });
     expect(stats.bustouts).toEqual([
       { title: 'Ghost', showDate: '2026-07-11', gap: 40 },
     ]);

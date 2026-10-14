@@ -8,6 +8,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.83.0] — 2026-10-14
+
+### Added
+- **Tour dates on song frequency (#1156)** — the frequency list ranks by nights a song appeared on the tour. The column is Tour Dates. When Phish.net counts more setlist rows than dates, that total hangs beside the number, like Tweezer **2 (5x)** on Fall Tour 2026. Songs played stays every setlist row (137). `public_tour_stats.topSongs.showAppearances` is the date count. The public page shows Tour Dates after the stats refresh writes that field.
+
+---
+
 ## [1.82.2] — 2026-10-13
 
 ### Fixed

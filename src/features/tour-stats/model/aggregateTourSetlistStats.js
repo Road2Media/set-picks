@@ -40,6 +40,7 @@ function lifetimePlaysFor(lifetime, key) {
  * @typedef {{
  *   title: string,
  *   timesPlayed: number,
+ *   showAppearances: number,
  *   showDates: string[],
  * }} TourSongFrequencyRow
  *
@@ -105,7 +106,7 @@ export function aggregateTourSetlistStats(docs, options = {}) {
         ? docs.length
         : 0;
 
-  /** @type {Map<string, { title: string, timesPlayed: number, showDates: string[] }>} */
+  /** @type {Map<string, { title: string, timesPlayed: number, showAppearances: number, showDates: string[] }>} */
   const bySong = new Map();
   /** @type {TourBustoutRow[]} */
   const bustouts = [];
@@ -142,11 +143,13 @@ export function aggregateTourSetlistStats(docs, options = {}) {
       const existing = bySong.get(key);
       if (existing) {
         existing.timesPlayed += 1;
+        if (firstThisShow) existing.showAppearances += 1;
         if (showDate && firstThisShow) existing.showDates.push(showDate);
       } else {
         bySong.set(key, {
           title,
           timesPlayed: 1,
+          showAppearances: 1,
           showDates: showDate ? [showDate] : [],
         });
       }
@@ -203,15 +206,17 @@ export function aggregateTourSetlistStats(docs, options = {}) {
   // TOUR_STATS_TOP_N rows/page instead of truncating.
   const topSongs = [...bySong.entries()]
     .sort(([keyA, a], [keyB, b]) => {
-      if (b.timesPlayed !== a.timesPlayed) return b.timesPlayed - a.timesPlayed;
+      if (b.showAppearances !== a.showAppearances) return b.showAppearances - a.showAppearances;
       const lifetimeA = lifetimePlaysFor(lifetimePlaysByKey, keyA);
       const lifetimeB = lifetimePlaysFor(lifetimePlaysByKey, keyB);
       if (lifetimeB !== lifetimeA) return lifetimeB - lifetimeA;
+      if (b.timesPlayed !== a.timesPlayed) return b.timesPlayed - a.timesPlayed;
       return a.title.localeCompare(b.title);
     })
     .map(([, row]) => ({
       title: row.title,
       timesPlayed: row.timesPlayed,
+      showAppearances: row.showAppearances,
       showDates: [...row.showDates],
     }));
 
