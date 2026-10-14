@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildLastPlayedByRowKey,
+  buildSongEnrichmentByTitle,
   mergeLastPlayedIntoStats,
 } from './mergePublicLastPlayed';
 
@@ -36,6 +37,19 @@ describe('buildLastPlayedByRowKey', () => {
   });
 });
 
+describe('buildSongEnrichmentByTitle', () => {
+  it('keeps debut year and lifetime plays keyed by title', () => {
+    const map = buildSongEnrichmentByTitle({
+      topSongs: [
+        { title: ' Tweezer ', debutYear: 1990, lifetimePlays: 421 },
+        { title: 'Free', debutYear: null, lifetimePlays: null },
+      ],
+    });
+    expect(map.get('tweezer')).toEqual({ debutYear: 1990, lifetimePlays: 421 });
+    expect(map.has('free')).toBe(false);
+  });
+});
+
 describe('mergeLastPlayedIntoStats', () => {
   it('stamps lastPlayed onto matching rows and leaves others untouched', () => {
     const stats = baseStats();
@@ -63,6 +77,20 @@ describe('mergeLastPlayedIntoStats', () => {
       ],
     });
     expect(merged.bustouts[0].lastPlayed).toBeUndefined();
+  });
+
+  it('copies debut and lifetime onto matching frequency rows', () => {
+    const stats = baseStats();
+    const merged = mergeLastPlayedIntoStats(stats, {
+      topSongs: [{ title: 'Ghost', debutYear: 1997, lifetimePlays: 200 }],
+    });
+    expect(merged.topSongs[0]).toMatchObject({
+      title: 'Ghost',
+      timesPlayed: 3,
+      debutYear: 1997,
+      lifetimePlays: 200,
+    });
+    expect(merged.bustouts).toBe(stats.bustouts);
   });
 
   it('returns the same stats object when the public doc contributes nothing', () => {
