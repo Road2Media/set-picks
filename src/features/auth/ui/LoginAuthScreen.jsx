@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import Button from '../../../shared/ui/Button';
 import Input from '../../../shared/ui/Input';
-import { StatusBanner } from '../../../shared';
+import AuthFormPrepend from './AuthFormPrepend';
 import OpenInBrowserBanner from './OpenInBrowserBanner';
 import PasswordRevealToggle, {
   shouldShowPasswordReveal,
@@ -15,7 +15,6 @@ import {
   scheduleNeutralLoginFocus,
   useDeferPasswordManagerAutofill,
 } from '../model/deferPasswordManagerAutofill';
-import { passwordResetNoticeBannerType } from '../model/passwordResetNoticeCopy';
 import { useLoginAuthSurfaceReady } from '../model/useLoginAuthSurfaceReady';
 import { useSplashSignIn } from '../model/useSplashSignIn';
 import { useSplashSignUp } from '../model/useSplashSignUp';
@@ -108,8 +107,7 @@ function LoginSignInPanel({
     setPassword,
     busy,
     googleBusy,
-    error,
-    resetLinkNotice,
+    notice,
     handleGoogle,
     handleEmailSignIn,
     handleSendPasswordResetEmail,
@@ -119,19 +117,11 @@ function LoginSignInPanel({
   const googlePreparing = !authSurfaceReady;
 
   const prependContent =
-    poolInvitePending || error ? (
-      <div className="space-y-3">
-        {poolInvitePending ? (
-          <StatusBanner
-            type="info"
-            message="You're joining a pool — sign in to continue."
-            className="text-left"
-          />
-        ) : null}
-        {error ? (
-          <StatusBanner type="error" message={error} className="text-left" />
-        ) : null}
-      </div>
+    poolInvitePending || notice.text ? (
+      <AuthFormPrepend
+        poolMessage={poolInvitePending ? "You're joining a pool — sign in to continue." : ''}
+        notice={notice}
+      />
     ) : null;
 
   return (
@@ -151,7 +141,7 @@ function LoginSignInPanel({
         })}
         prependContent={prependContent}
       >
-      <form onSubmit={handleEmailSignIn} className="space-y-4 text-left">
+      <form onSubmit={handleEmailSignIn} noValidate className="space-y-4 text-left">
         <div>
           <label
             htmlFor="si-email"
@@ -206,12 +196,6 @@ function LoginSignInPanel({
           >
             Forgot password
           </button>
-          {resetLinkNotice.text ? (
-            <StatusBanner
-              type={passwordResetNoticeBannerType(resetLinkNotice.type)}
-              message={resetLinkNotice.text}
-            />
-          ) : null}
         </div>
         <button type="submit" disabled={busy} className={AUTH_EMAIL_CTA}>
           {busy ? 'Signing in…' : 'Continue with email'}
@@ -259,7 +243,7 @@ function LoginSignUpPanel({
     setLegalAccepted,
     busy,
     googleBusy,
-    error,
+    notice,
     handleGoogle,
     handleEmailSignUp,
   } = useSplashSignUp(true, onClose, { seedError });
@@ -281,7 +265,7 @@ function LoginSignUpPanel({
           onChange={(e) => setLegalAccepted(e.target.checked)}
           className="mt-1 h-4 w-4 shrink-0 rounded border-slate-500 bg-surface-panel text-brand-primary focus-visible:ring-2 focus-visible:ring-brand"
           aria-describedby={
-            fieldsLocked
+            fieldsLocked && !notice.text
               ? 'signup-legal-hint signup-legal-gate-hint'
               : 'signup-legal-hint'
           }
@@ -312,7 +296,7 @@ function LoginSignUpPanel({
           .
         </span>
       </label>
-      {fieldsLocked ? (
+      {fieldsLocked && !notice.text ? (
         <p
           id="signup-legal-gate-hint"
           className="px-0.5 text-center text-xs font-semibold leading-snug text-brand-primary"
@@ -325,16 +309,14 @@ function LoginSignUpPanel({
   );
 
   const prependContent = (
-    <div className="space-y-4">
-      {poolInvitePending ? (
-        <StatusBanner
-          type="info"
-          message="You're joining a pool — create an account to continue."
-          className="text-left"
-        />
-      ) : null}
+    <AuthFormPrepend
+      poolMessage={
+        poolInvitePending ? "You're joining a pool — create an account to continue." : ''
+      }
+      notice={notice}
+    >
       {consentBlock}
-    </div>
+    </AuthFormPrepend>
   );
 
   return (
@@ -355,7 +337,7 @@ function LoginSignUpPanel({
         prependContent={prependContent}
         googleFootnote="You'll set your username/handle on the next page. Your email address is never shared or visible to other users."
       >
-      <form onSubmit={handleEmailSignUp} className="space-y-4 text-left">
+      <form onSubmit={handleEmailSignUp} noValidate className="space-y-4 text-left">
         <fieldset
           disabled={fieldsLocked || busy}
           className="min-w-0 space-y-4 border-0 p-0 disabled:opacity-100"
@@ -434,7 +416,6 @@ function LoginSignUpPanel({
               />
             </div>
           </div>
-          {error ? <StatusBanner type="error" message={error} /> : null}
           <button
             type="submit"
             disabled={busy || fieldsLocked}

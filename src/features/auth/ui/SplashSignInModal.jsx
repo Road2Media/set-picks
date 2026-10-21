@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import Button from '../../../shared/ui/Button';
 import Input from '../../../shared/ui/Input';
-import { StatusBanner } from '../../../shared';
+import AuthFormPrepend from './AuthFormPrepend';
 import { AUTH_EMAIL_CTA, AUTH_FORGOT_CTA } from './authCtaClasses';
 import GoogleAuthContinueOverlay from './GoogleAuthContinueOverlay';
 import { resolveGoogleCtaLabel } from './googleCtaLabel';
@@ -10,7 +10,6 @@ import PasswordRevealToggle, {
   shouldShowPasswordReveal,
 } from './PasswordRevealToggle';
 import SplashAuthModalShell from './SplashAuthModalShell';
-import { passwordResetNoticeBannerType } from '../model/passwordResetNoticeCopy';
 import { useSplashSignIn } from '../model/useSplashSignIn';
 
 export default function SplashSignInModal({
@@ -29,8 +28,7 @@ export default function SplashSignInModal({
     setPassword,
     busy,
     googleBusy,
-    error,
-    resetLinkNotice,
+    notice,
     closeModal,
     handleGoogle,
     handleEmailSignIn,
@@ -40,19 +38,11 @@ export default function SplashSignInModal({
   const revealVisible = shouldShowPasswordReveal(email, password);
 
   const prependContent =
-    poolInvitePending || error ? (
-      <div className="space-y-3">
-        {poolInvitePending ? (
-          <StatusBanner
-            type="info"
-            message="You're joining a pool — sign in to continue."
-            className="text-left"
-          />
-        ) : null}
-        {error ? (
-          <StatusBanner type="error" message={error} className="text-left" />
-        ) : null}
-      </div>
+    poolInvitePending || notice.text ? (
+      <AuthFormPrepend
+        poolMessage={poolInvitePending ? "You're joining a pool — sign in to continue." : ''}
+        notice={notice}
+      />
     ) : null;
 
   return (
@@ -70,7 +60,7 @@ export default function SplashSignInModal({
         prependContent={prependContent}
         closeOnBackdropClick={false}
       >
-      <form onSubmit={handleEmailSignIn} className="space-y-4 text-left">
+      <form onSubmit={handleEmailSignIn} noValidate className="space-y-4 text-left">
         <div>
           <label
             htmlFor="si-email"
@@ -123,12 +113,6 @@ export default function SplashSignInModal({
           >
             Forgot password
           </button>
-          {resetLinkNotice.text ? (
-            <StatusBanner
-              type={passwordResetNoticeBannerType(resetLinkNotice.type)}
-              message={resetLinkNotice.text}
-            />
-          ) : null}
         </div>
         <button type="submit" disabled={busy} className={AUTH_EMAIL_CTA}>
           {busy ? 'Signing in…' : 'Continue with email'}

@@ -24,6 +24,7 @@ export const AUTH_FLOW_COPY = {
   accountDisabled: 'This account is disabled. Contact support.',
   generic: 'Something went wrong. Try again.',
   enterEmailFirst: 'Enter your email address first.',
+  enterEmailAndPassword: 'Enter your email and password.',
   resetSendFailed: 'Could not send the reset email. Try again later.',
   resetLinkInvalid: 'This reset link is invalid or expired. Request a new one.',
   resetUpdateFailed: 'Could not update your password. Request a new reset email.',
