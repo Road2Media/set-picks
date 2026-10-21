@@ -23,3 +23,27 @@ export function trackLiveSetlistView({ show_date, setlist_status } = {}) {
     setlist_status: setlist_status ?? 'waiting',
   });
 }
+
+/**
+ * Player saw the delayed-update banner (#644). No error body.
+ *
+ * @param {{ show_date?: string, activated_by?: string }} [payload]
+ */
+export function trackLiveSetlistDegradedBannerView({ show_date, activated_by } = {}) {
+  ga4Event('live_setlist_degraded_banner_view', {
+    show_date: show_date ?? '',
+    activated_by: activated_by === 'admin' ? 'admin' : 'automation',
+  });
+}
+
+/**
+ * Banner left the screen after recovery or an admin clear (#644).
+ *
+ * @param {{ show_date?: string, activated_by?: string }} [payload]
+ */
+export function trackLiveSetlistDegradedBannerCleared({ show_date, activated_by } = {}) {
+  ga4Event('live_setlist_degraded_banner_cleared', {
+    show_date: show_date ?? '',
+    activated_by: activated_by === 'admin' ? 'admin' : 'automation',
+  });
+}

@@ -258,6 +258,41 @@ Server-only Resend open/click plane. Document ID is the Resend `email_id`. Writt
 
 Idempotent: duplicate webhook deliveries do not overwrite first-write timestamps. The `fcm_notification_log` dedup doc may also carry `resendEmailId` + `campaignId` after a successful email send.
 
+### 1.16 `live_setlist_automation/{showDate}` outage fields (**v1.84.0 / #644**)
+
+Admin-read, client-write denied. The scheduled poller and `pollLiveSetlistNow` write these fields. Existing pause/timing fields are unchanged.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `failureCount` | number | Consecutive upstream failures. Reset to `0` on `changed`, `no-change`, and valid `no-rows`, including Force poll. |
+| `nextPollAt` | Timestamp | Skip scheduled ticks until this time. Success, including Force poll, replaces it with the normal 90–150s cadence. Failures use exponential backoff capped at a jittered **3–5 minutes** inside the venue-local 4pm–4am window and **30 minutes** outside it. |
+| `lastError` / `lastErrorAt` | string / Timestamp | Sanitized upstream summary (status kept, HTML and secrets stripped, max 240 chars). Cleared on success. |
+| `previousError` / `previousErrorAt` | string / Timestamp | Archived copy of the last error when a success clears it. |
+| `outageStartedAt` | Timestamp | Start of the open incident. Reset when a new incident starts. |
+| `outageAlertedAt` / `outageAlertMessageId` | Timestamp / string | Set when the one-time admin alert is sent (3 consecutive live-window failures). |
+| `outageEscalatedAt` | Timestamp | Optional one-time escalation after the incident has lasted 30 minutes. |
+| `recoveredAt` / `recoveryAlertedAt` | Timestamp | First successful upstream response after an alerted outage, and the one-time recovery alert. |
+| `lastSuccessfulPollAt` / `lastSuccessfulPollMode` | Timestamp / `"scheduled"` \| `"force"` | Last upstream success. Force is a Phish.net poll, not a manual Save. |
+
+Ops inbox + email go to `SUPER_ADMIN_UIDS` (and optional `LIVE_SETLIST_OPS_ALERT_EMAILS`). They do not use player prefs, fatigue caps, or `fcm_notification_log`. Dedup lives in server-only `live_setlist_ops_alerts/{messageId}` (client read and write denied). Inbox template id is `live-setlist-ops`.
+
+### 1.17 `public_service_status/{docId}` (**v1.84.0 / #644**)
+
+Sanitized player projection. Document id for live setlist is `live-setlist-{showDate}`. Signed-in clients may read. Client writes are denied, including admins. Admin SDK and `setLiveSetlistServiceStatus` write it.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `service` | `"live_setlist"` | |
+| `showDate` | string | `YYYY-MM-DD` |
+| `status` | `"degraded"` \| `"operational"` | Standings shows the banner only while `degraded` and `resolvedAt` is empty, and only for a known `messageKey`. |
+| `messageKey` | string | Allow-list. v1.84.0: `phishnet_stalled`. |
+| `message` | string | Approved sentence stored for operators. Players render the client copy for `messageKey`, not raw HTML. |
+| `activatedAt` | Timestamp | |
+| `activatedBy` | `"automation"` \| `"admin"` | Automation publishes after 3 live-window failures. |
+| `clearOnRecovery` | boolean | Automation sets `true`. A manual pin stays until cleared unless the admin checked this. |
+| `resolvedAt` | Timestamp? | Set when the banner is cleared. |
+| `updatedAt` | Timestamp | |
+
 ---
 
 ## 2. Cloud Function Callables
@@ -386,9 +421,17 @@ When `alreadyLocked` is `true`, the doc already carried `lockReason: admin_overr
 
 **Ops CLI (no War Room):** `cd functions && node scripts/lockPicksForShowNow.js --showDate=YYYY-MM-DD`
 
-### 2.3 `getPhishnetSetlist`, `scheduledPhishnetShowCalendar`, `refreshPhishnetShowCalendar`, `refreshLiveScoresForShow`, `scheduledPhishnetSongCatalog`, `refreshPhishnetSongCatalog`, `scheduledPickRecommendations`, `refreshPickRecommendations`, `scheduledPickRecommendationHistory`, `refreshPickRecommendationHistory`, `scheduledPhishnetLiveSetlistPoll`, `setLiveSetlistAutomationState`, `pollLiveSetlistNow`, `sendPushCanary`, `scheduledPublicTourStatsRefresh`, `refreshPublicTourStats`
+### 2.3 `getPhishnetSetlist`, `scheduledPhishnetShowCalendar`, `refreshPhishnetShowCalendar`, `refreshLiveScoresForShow`, `scheduledPhishnetSongCatalog`, `refreshPhishnetSongCatalog`, `scheduledPickRecommendations`, `refreshPickRecommendations`, `scheduledPickRecommendationHistory`, `refreshPickRecommendationHistory`, `scheduledPhishnetLiveSetlistPoll`, `setLiveSetlistAutomationState`, `pollLiveSetlistNow`, `setLiveSetlistServiceStatus`, `sendPushCanary`, `scheduledPublicTourStatsRefresh`, `refreshPublicTourStats`
 
 Phish.net integration, live scoring, and public tour-stats refresh. Deployed via `npm run deploy:functions:phishnet`. Internal admin use — request/response shapes documented in `docs/PHISHNET_CALLABLE_RUNBOOK.md`.
+
+**`setLiveSetlistServiceStatus` (v1.84.0 / #644, admin claim):** publish or clear the player delay banner for one show.
+
+```json
+{ "showDate": "2026-07-17", "action": "publish", "messageKey": "phishnet_stalled", "clearOnRecovery": false }
+```
+
+`action` is `publish` or `clear`. `messageKey` must be an allow-listed key (`phishnet_stalled` in v1.84.0). `clearOnRecovery: true` lets the next successful Phish.net poll remove a manual pin. Response: `{ ok, showDate, status, messageKey?, clearOnRecovery? }`.
 
 **`public_tour_stats` (#665):** `scheduledPublicTourStatsRefresh` (daily 07:30 ET) and admin callable `refreshPublicTourStats` rebuild aggregate docs. Calendar sync also triggers a refresh after writing `show_calendar/snapshot`.
 
@@ -606,6 +649,8 @@ Set in Firebase Functions config or Cloud Secret Manager. Adding one is a MINOR 
 | `GA4_MP_API_SECRET` | For server `comms_delivered` MP | GA4 Measurement Protocol API secret (Secret Manager); bound on all `deliverCommsTrigger` hosts; unset → no-op |
 | `COMMS_EVENT_ADAPTERS_ENABLED` | No | Must be `"true"` for v1 event adapters to fire; default off |
 | `PHISHNET_API_KEY` | For Phish.net callables | Phish.net API key (Secret Manager) |
+| `SUPER_ADMIN_UIDS` | For ops alerts | Existing comma-separated Firebase uids. Live-setlist outage inbox is written to these uids (#644). |
+| `LIVE_SETLIST_OPS_ALERT_EMAILS` | No | **v1.84.0 / #644.** Optional comma-separated inboxes for the live-setlist ops email, in addition to each super-admin's `users/{uid}.email`. Not a player address and not read by the client. |
 
 ### 4.2 Build-time tour-stats SEO auto-expand (#959)
 

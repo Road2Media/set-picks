@@ -8,6 +8,16 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.84.0] — 2026-10-21
+
+### Added
+- **Live setlist upstream recovery (#644)** — during a show, polling retries on a jittered 3–5 minute cap instead of waiting out a 30 minute backoff. A successful Phish.net response, including Force poll and an empty setlist, clears the failure count and the old next-poll time. Three live-window failures send one super-admin inbox message and one email; recovery sends one follow-up. Standings shows an approved delay sentence for that show date only. War Room can pin or clear it, and shows whether the poller is healthy, backing off, paused, or recovered.
+
+### Changed
+- **War Room Force poll copy** — the poll result says Phish.net Force poll, separate from Save Official Setlist.
+
+---
+
 ## [1.83.1] — 2026-10-14
 
 ### Fixed

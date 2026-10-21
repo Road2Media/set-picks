@@ -35,10 +35,10 @@ const COMMS_DEPLOY_GROUPS = {
     { export: "refreshLiveScoresForShow", commsPath: "deliverLiveScoreComms", secretExpectation: "resend" },
     {
       export: "scheduledPhishnetLiveSetlistPoll",
-      commsPath: "deliverPostRollupComms (auto-finalize)",
+      commsPath: "deliverPostRollupComms (auto-finalize); liveSetlistOpsAlert",
       secretExpectation: "resend",
     },
-    { export: "pollLiveSetlistNow", commsPath: "deliverLiveScoreComms", secretExpectation: "resend" },
+    { export: "pollLiveSetlistNow", commsPath: "deliverLiveScoreComms; liveSetlistOpsAlert", secretExpectation: "resend" },
   ],
 
   /**

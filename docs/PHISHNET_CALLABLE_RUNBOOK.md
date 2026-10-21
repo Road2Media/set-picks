@@ -126,16 +126,23 @@ Deploy with **`npm run deploy:functions:phishnet`**, which deploys: `getPhishnet
 | Item | Location / value |
 |------|------------------|
 | Scheduled poller | `scheduledPhishnetLiveSetlistPoll` (`functions/index.js`) |
-| ET window | **4:00 PM–4:00 AM** `America/New_York` (hour ≥ 16 or hour < 4). Outside the window the job **no-ops** with **no** Phish.net HTTP calls. |
-| Cron wake | Every **3** minutes (`*/3 * * * *`, `America/New_York`). Actual spacing vs Phish.net is **3–5 minutes** per show date via `live_setlist_automation/{showDate}.nextPollAt` jitter after each **scheduled** fetch (success, no-change, or empty rows). |
+| Active window | **4:00 PM–4:00 AM** in the show's venue timezone (calendar `timeZone`, default `America/Los_Angeles`). The cron timezone is `America/New_York`. If no show is inside its local window, the job makes **no** Phish.net calls. |
+| Cron wake | Every **2** minutes (`*/2 * * * *`, `America/New_York`). Actual spacing vs Phish.net is **90–150 seconds** per show date via `live_setlist_automation/{showDate}.nextPollAt` after each successful fetch (`changed`, `no-change`, or `no-rows`), including Force poll. |
 | Calendar (scheduled only) | **`show_calendar/snapshot.showDates`** — scheduled polling **only** considers dates in this set (strict). Missing/empty/unreadable snapshot → scheduled path skips (**no** Phish.net). |
-| Target dates (scheduled) | `scheduledCandidateShowDates` in `functions/phishnetLiveSetlistAutomation.js`: ET **today** if a show date; ET **yesterday** only in the **0:00–3:59 AM** ET slice **and** only if that date is still in the calendar (late encore / post-midnight updates). **Not** “compare two setlists” — each date is still diffed only against its own last saved payload/signature. |
+| Target dates (scheduled) | `scheduledCandidateShowDates` in `functions/phishnetLiveSetlistAutomation.js`: venue-local **today** when that show is inside the window; venue-local **yesterday** only from local midnight until 4:00 AM, and only if that date is still on the calendar. **Not** “compare two setlists” — each date is still diffed only against its own last saved payload/signature. |
 | Admin / force poll | `pollLiveSetlistNow` stays **unrestricted**: default still uses ET today + yesterday (`candidateShowDates`) with **no** calendar gate — recovery when the calendar is stale, you’re outside the ET window, or scheduled strict mode would skip. Optional explicit `showDate` unchanged. |
 | Pause/resume callable | `setLiveSetlistAutomationState` |
-| Manual recovery callable | `pollLiveSetlistNow` (forces one poll + one score recompute) |
-| Per-show state doc | `live_setlist_automation/{showDate}` |
+| Manual recovery callable | `pollLiveSetlistNow` (forces one poll + one score recompute). A success clears `failureCount`, `lastError`, and any stale `nextPollAt`, then resumes the 90–150s cadence. |
+| Player banner callable | `setLiveSetlistServiceStatus` — publish or clear `public_service_status/live-setlist-{showDate}` |
+| Per-show state doc | `live_setlist_automation/{showDate}` (admin read). Player copy is the separate sanitized doc. |
 
-**Rate limit triage (Phish.net `error: 4`):** Watch Cloud Logging for `live setlist poll failed` and Phish.net logical errors. Existing **exponential backoff** on failures still stamps `nextPollAt`. If `error: 4` appears often, widen spacing (code: `randomScheduledPollDelayMs` / cron) or pause automation for the date until traffic cools. See [Phish.net errors](https://docs.phish.net/errors) and [API terms](https://api.phish.net/).
+**Upstream failures (#644):** Backoff stays exponential. Inside the venue-local 4:00 PM–4:00 AM window the cap is a jittered **3–5 minutes**, so a live show is probed again within 5 minutes. Outside that window the cap stays **30 minutes**. The `*/2` scheduler still skips until `nextPollAt`.
+
+Three consecutive failures **in the live window** send one super-admin inbox message (`live-setlist-ops`) and one transactional email. A second tick in the same incident does not send again. If the incident is still open 30 minutes after `outageStartedAt`, one escalation is sent. The first successful upstream response after an alert sends one recovery note (downtime, last failure count, whether the setlist changed, picks refreshed when Force poll recomputed them). These alerts do not use player notification prefs or the daily email cap.
+
+The same third failure publishes `public_service_status/live-setlist-{showDate}` with `messageKey: phishnet_stalled`. Standings for that date shows the approved delay sentence. A successful poll clears an automatic banner. A War Room pin stays up unless **Clear automatically when Phish.net recovers** was checked, or an admin clears it.
+
+**Rate limit triage (Phish.net `error: 4`):** Watch Cloud Logging for `live setlist poll failed` and Phish.net logical errors. Failures stamp `nextPollAt` with the capped backoff above. If `error: 4` appears often, widen spacing (code: `randomScheduledPollDelayMs` / cron) or pause automation for the date until traffic cools. See [Phish.net errors](https://docs.phish.net/errors) and [API terms](https://api.phish.net/).
 
 **Admin UI vs global show picker:** The dashboard “Select Show” list only includes dates from `show_calendar`. War Room uses **War Room show date** (`<input type="date">`) so you can load or poll **any** `YYYY-MM-DD` that exists in Firestore / Phish.net (e.g. Mexico) even when that date is missing from the global picker.
 
@@ -153,14 +160,15 @@ Without this, the admin console shows **Missing or insufficient permissions** on
 
 ### CORS / “No Access-Control-Allow-Origin” on new Gen2 callables
 
-`pollLiveSetlistNow` and `setLiveSetlistAutomationState` each get their own **Cloud Run** service name (lowercase). If the browser reports a **CORS** failure on `…cloudfunctions.net/pollLiveSetlistNow`, treat it like **`getPhishnetSetlist`** (README §CORS): redeploy with `invoker: "public"` in `functions/index.js`, then if needed grant **`roles/run.invoker`** for **`allUsers`** on the **`polllivesetlistnow`** (and **`setlivesetlistautomationstate`**) service in `us-central1`, same as `getphishnetsetlist`.
+`pollLiveSetlistNow`, `setLiveSetlistAutomationState`, and `setLiveSetlistServiceStatus` each get their own **Cloud Run** service name (lowercase). If the browser reports a **CORS** failure on `…cloudfunctions.net/pollLiveSetlistNow`, treat it like **`getPhishnetSetlist`** (README §CORS): redeploy with `invoker: "public"` in `functions/index.js`, then if needed grant **`roles/run.invoker`** for **`allUsers`** on the **`polllivesetlistnow`**, **`setlivesetlistautomationstate`**, and **`setlivesetlistservicestatus`** services in `us-central1`, same as `getphishnetsetlist`.
 
 ### Live-night SOP
 
 1. Keep automation **enabled** for active show date in admin panel.
 2. Monitor function logs for `live setlist poll cycle` and per-date result (`changed`, `no-change`, `paused`, `backoff`).
-3. If API turbulence occurs, exponential backoff is stamped in `live_setlist_automation/{showDate}.nextPollAt`.
-4. For incident recovery (stale score or missed update), run **Force poll + score refresh** from admin panel or call `pollLiveSetlistNow`.
+3. If API turbulence occurs, backoff is stamped in `live_setlist_automation/{showDate}.nextPollAt` (3–5 minutes while the show is in the local window, otherwise up to 30). War Room health reads **Backing off**, and after three live-window failures super-admins get one inbox item and one email.
+4. For incident recovery (stale score or missed update), run **Force poll + score refresh** from admin panel or call `pollLiveSetlistNow`. That is not the same as **Save Official Setlist**. A successful Force poll clears the stale backoff so the scheduler does not wait out the old deadline.
+5. Players on that show's Standings see the delay banner while `public_service_status` is `degraded`. Clear a manual pin from War Room, or let recovery clear an automatic banner.
 
 ### Rollback
 

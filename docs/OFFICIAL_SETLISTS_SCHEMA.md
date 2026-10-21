@@ -83,6 +83,12 @@ Additional automation-doc state used by auto-finalize:
 
 Admin "Poll Now" (`pollLiveSetlistNow`) does **not** inject the rollup core — auto-finalize is a no-op on that path by design so admins retain full control over finalize timing when they're actively monitoring a show.
 
+### Upstream outage and player status (#644)
+
+Polling failures and recovery are stored on `live_setlist_automation/{showDate}` (`failureCount`, `nextPollAt`, `lastError`, `outageStartedAt`, `outageAlertedAt`, `recoveredAt`, `lastSuccessfulPollMode`). Field meanings and the 3–5 minute live-window cap are declared in [`docs/API.md`](./API.md) §1.16.
+
+Players never read that doc. Standings reads `public_service_status/live-setlist-{showDate}` (§1.17), which carries an allow-listed `messageKey` and no upstream body. **Save Official Setlist** does not change polling health. **Force poll** does, and it now replaces a stale `nextPollAt` on success.
+
 ---
 
 ## How scoring uses `setlist` + `officialSetlist`

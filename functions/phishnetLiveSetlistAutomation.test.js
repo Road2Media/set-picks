@@ -945,8 +945,12 @@ function buildFakeFirestoreHarness(initialDocs = {}) {
       },
       async set(value, opts) {
         const merge = Boolean(opts?.merge);
-        const prev = docs.get(key) || {};
-        const next = merge ? { ...prev, ...value } : { ...value };
+        const prev = merge ? docs.get(key) || {} : {};
+        const next = { ...prev };
+        for (const [field, fieldValue] of Object.entries(value || {})) {
+          if (fieldValue && fieldValue._sentinel === "delete") delete next[field];
+          else next[field] = fieldValue;
+        }
         docs.set(key, next);
         writes.push({ path: key, data: { ...value }, merge });
       },
