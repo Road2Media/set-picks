@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import Button from '../../../shared/ui/Button';
 import Input from '../../../shared/ui/Input';
@@ -12,6 +12,7 @@ import GoogleAuthContinueOverlay from './GoogleAuthContinueOverlay';
 import { resolveGoogleCtaLabel } from './googleCtaLabel';
 import SplashAuthPanel from './SplashAuthPanel';
 import {
+  ensureNeutralLoginFocusGuards,
   scheduleNeutralLoginFocus,
   useDeferPasswordManagerAutofill,
 } from '../model/deferPasswordManagerAutofill';
@@ -39,8 +40,12 @@ export default function LoginAuthScreen({
 }) {
   const isSignup = mode === 'signup';
 
-  // #909: Safari private often focuses email after hydrate — retry neutralize.
-  useEffect(() => scheduleNeutralLoginFocus(), []);
+  // #909 / #1050: install before paint so the first tap is not inside a gap
+  // where neutralize timers exist but the gesture listener does not.
+  useLayoutEffect(() => {
+    ensureNeutralLoginFocusGuards();
+    return scheduleNeutralLoginFocus();
+  }, []);
 
   // #908: warm legal documents while the visitor is on signup (hard-nav next).
   useEffect(() => {

@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 
 import {
+  ensureNeutralLoginFocusGuards,
   scheduleNeutralLoginFocus,
   useDeferPasswordManagerAutofill,
 } from '../model/deferPasswordManagerAutofill';
@@ -14,7 +15,7 @@ import SignupAccountBenefits from './SignupAccountBenefits';
 export default function LoginFormShellFallback() {
   const [signup, setSignup] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     try {
       const q = new URLSearchParams(window.location.search);
       const mode = (q.get('mode') || '').toLowerCase();
@@ -22,6 +23,7 @@ export default function LoginFormShellFallback() {
     } catch {
       setSignup(false);
     }
+    ensureNeutralLoginFocusGuards();
     return scheduleNeutralLoginFocus();
   }, []);
 

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect } from 'react'
+import React, { Suspense, useEffect, useLayoutEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 
 import {
@@ -8,8 +8,7 @@ import {
   scheduleNeutralLoginFocus,
 } from '../features/auth/login'
 import AppBackground from '../shared/ui/AppBackground'
-
-const LoginPage = lazy(() => import('../pages/auth/LoginPage'))
+import LoginPage from '../pages/auth/LoginPage'
 
 /**
  * Soft-nav safety net for the auth-door document (#892).
@@ -30,12 +29,14 @@ function LeaveLoginDocument() {
 
 /**
  * Login-only router surface — no dashboard / marketing / invite routes.
- * Suspense fallback keeps real form chrome visible (anti-#881 hang: never
- * replace HTML-first form with a blank spinner).
+ * LoginPage is static so the first React form is the final one. A lazy
+ * boundary swapped a focused field for a new readOnly input and iOS dropped
+ * the keyboard (#1050). Suspense stays for any later suspend, with real form
+ * chrome instead of a blank spinner (anti-#881).
  */
 export default function LoginApp() {
-  // #909: document guards + post-mount retries (Safari private refocuses late).
-  useEffect(() => {
+  // #909 / #1050: guards before paint; retries still catch late Safari autofocus.
+  useLayoutEffect(() => {
     ensureNeutralLoginFocusGuards()
     return scheduleNeutralLoginFocus()
   }, [])
