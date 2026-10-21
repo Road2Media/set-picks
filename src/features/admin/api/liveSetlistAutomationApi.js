@@ -76,10 +76,39 @@ export function subscribeLiveSetlistAutomationState(showDate, onChange, onError)
  */
 export function subscribeLiveSetlistPlayerStatus(showDate, onChange, onError) {
   const value = assertShowDate(showDate);
+  const publish = (data) => {
+    try {
+      onChange(data && typeof data === 'object' ? data : null);
+    } catch (error) {
+      console.error('live setlist player status callback failed', error);
+      try {
+        onChange(null);
+      } catch {
+        // A throw here is outside React, but still must not escape the listener.
+      }
+    }
+  };
   return onSnapshot(
     doc(db, 'public_service_status', `live-setlist-${value}`),
-    (snap) => onChange(snap.exists() ? snap.data() || {} : null),
-    (error) => onError?.(error),
+    (snap) => {
+      try {
+        const exists = Boolean(snap && typeof snap.exists === 'function' && snap.exists());
+        const data = exists && typeof snap.data === 'function' ? snap.data() : null;
+        publish(data || null);
+      } catch (error) {
+        console.error('live setlist player status snapshot failed', error);
+        publish(null);
+      }
+    },
+    (error) => {
+      console.error('live setlist player status listener failed', error);
+      try {
+        onError?.(error);
+      } catch (callbackError) {
+        console.error('live setlist player status error callback failed', callbackError);
+      }
+      publish(null);
+    },
   );
 }
 

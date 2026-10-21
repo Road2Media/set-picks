@@ -107,10 +107,10 @@ export function useAdminSetlistForm({ user, selectedDate, showDates = [] }) {
     };
   }, []);
 
+  // Automation copy lives on the health panel. These setters were removed
+  // with that move; calling them threw after paint and unmounted War Room.
   useEffect(() => {
     setApiFetchError('');
-    setAutomationStatus('');
-    setAutomationError('');
   }, [selectedShow]);
 
   useEffect(() => {

@@ -16,6 +16,9 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 ### Changed
 - **War Room Force poll copy** — the poll result says Phish.net Force poll, separate from Save Official Setlist.
 
+### Fixed
+- **War Room blank after load (#644)** — opening War Room threw while clearing automation status that had moved onto the health panel, so the page unmounted after the first paint. A missing or permission-denied `public_service_status` doc now stays a hidden banner and leaves War Room on screen.
+
 ---
 
 ## [1.83.1] — 2026-10-14

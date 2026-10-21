@@ -14,6 +14,8 @@ import {
 import {
   deriveAutomationHealth,
   formatAutomationTimestamp,
+  listenWarRoomAutomation,
+  resolveWarRoomPlayerStatus,
   truncateAutomationError,
 } from './liveSetlistAutomationHealth';
 
@@ -45,30 +47,23 @@ export function useLiveSetlistAutomationPanel({ showDate, isAdmin }) {
     }
     setAutomation(null);
     setAutomationLoaded(false);
+    setPlayerStatus(null);
     setStatusText('');
     setErrorText('');
-    const unsubAutomation = subscribeLiveSetlistAutomationState(
+    return listenWarRoomAutomation({
       showDate,
-      (state) => {
+      subscribeAutomation: subscribeLiveSetlistAutomationState,
+      subscribeStatus: subscribeLiveSetlistPlayerStatus,
+      onAutomation: (state) => {
         setAutomation(state);
         setAutomationLoaded(true);
       },
-      (error) => {
+      onAutomationError: (error) => {
         console.error('Error loading automation state:', error);
         setErrorText(error instanceof Error ? error.message : 'Could not load automation health.');
       },
-    );
-    const unsubStatus = subscribeLiveSetlistPlayerStatus(
-      showDate,
-      setPlayerStatus,
-      (error) => {
-        console.error('Error loading player status:', error);
-      },
-    );
-    return () => {
-      unsubAutomation();
-      unsubStatus();
-    };
+      onPlayerStatus: setPlayerStatus,
+    });
   }, [isAdmin, showDate]);
 
   const handleToggle = async () => {
@@ -167,9 +162,7 @@ export function useLiveSetlistAutomationPanel({ showDate, isAdmin }) {
     }
   };
 
-  const bannerVisible = playerStatus?.status === 'degraded' && !playerStatus?.resolvedAt;
-  const bannerActivatedBy =
-    playerStatus?.activatedBy === 'admin' ? 'manual' : bannerVisible ? 'automatic' : '';
+  const { bannerVisible, bannerActivatedBy } = resolveWarRoomPlayerStatus(playerStatus);
 
   return {
     enabled: automation?.enabled !== false,
