@@ -256,5 +256,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    /**
+     * Password-reset rate limit (#1049). Doc ids are hashes of the address
+     * or caller IP. Written only by `requestPasswordResetEmail` (Admin SDK).
+     * Clients must not read counts or seed the window.
+     */
+    match /password_reset_rate/{docId} {
+      allow read, write: if false;
+    }
+
   }
 }

@@ -605,7 +605,7 @@ async function main() {
         await dialog.locator('#si-email').fill(email);
         await dialog.locator('#si-pass').fill('definitely-wrong-password-qa');
         await dialog.locator('button[type="submit"]').click();
-        await dialog.getByText(/sign-in failed/i).waitFor({ timeout: 15_000 });
+        await dialog.getByText(/don't match|google sign-in/i).waitFor({ timeout: 15_000 });
         await telemetry.waitFor('auth_error', {
           method: 'email',
           surface: 'sign_in',

@@ -57,6 +57,12 @@ const {
 const { evaluateManualFinalizeTimingGate } = require("./showFinalizationGate");
 const { applyLockPicksForShowNow } = require("./picksLockOverride");
 const { runAccountDeletionForCaller } = require("./accountDelete");
+const {
+  PASSWORD_RESET_ACTION_CODE_SETTINGS,
+  clientIpFromCallableRequest,
+  lookupSignInMethod,
+  sendPasswordResetWithResend,
+} = require("./passwordResetEmail");
 const { deliverCommsTrigger, buildDefaultWorkers, mergeCommsDeliverySummaries } = require("./commsDelivery");
 const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorker");
 const { getTriggerSpec } = require("./commsCatalog");
@@ -1273,6 +1279,60 @@ exports.deletePoolWithCleanup = onCall(
     });
 
     return { ok: true, poolId, memberUpdates };
+  }
+);
+
+/**
+ * Unauthenticated password reset (#1049).
+ * Admin `generatePasswordResetLink` issues the code. Resend mails
+ * https://www.setlistpickem.com/password-reset-complete?oobCode=…
+ * Unknown addresses get the same `{ ok: true }` as a sent reset.
+ * Google-only accounts (google.com, no password) get
+ * `{ ok: true, signIn: "google" }` and no mail.
+ */
+exports.requestPasswordResetEmail = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    secrets: [resendApiKey],
+  },
+  async (request) => {
+    return sendPasswordResetWithResend({
+      email: request.data?.email,
+      ip: clientIpFromCallableRequest(request),
+      db,
+      getUserByEmail: (normalized) => admin.auth().getUserByEmail(normalized),
+      generateLink: (normalized) =>
+        admin.auth().generatePasswordResetLink(
+          normalized,
+          PASSWORD_RESET_ACTION_CODE_SETTINGS
+        ),
+      resendClient: buildResendClient(process.env.RESEND_API_KEY, logger),
+      logger,
+    });
+  }
+);
+
+/**
+ * Unauthenticated sign-in method check (#1049).
+ * Same Google-only rule as password reset, but it never sends mail.
+ * Unknown and password accounts both return `{ ok: true }`.
+ */
+exports.lookupSignInMethod = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    return lookupSignInMethod({
+      email: request.data?.email,
+      ip: clientIpFromCallableRequest(request),
+      db,
+      getUserByEmail: (normalized) => admin.auth().getUserByEmail(normalized),
+      logger,
+    });
   }
 );
 

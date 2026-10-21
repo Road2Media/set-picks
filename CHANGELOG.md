@@ -8,6 +8,22 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.84.0] — 2026-10-21
+
+### Added
+- **Password reset mail (#1049)** — splash and account security call `requestPasswordResetEmail`. Firebase Admin still issues the code. Resend sends the only link, `https://www.setlistpickem.com/password-reset-complete?oobCode=…`, from `updates@setlistpickem.com`. Unknown addresses get the same success result. The callable is rate-limited. `password_reset_rate` is server-only. A human must deploy the function before the new buttons work. Old Firebase reset links keep working until they expire.
+
+### Changed
+- **Password reset confirmation** — after a reset email is requested, splash, sign-in, and account security say to check the spam or junk folder if it does not show up in a few minutes.
+- **Linked sign-in methods** — Preferences names Google and email & password when both are on the account. The password form stays, and the intro says Google is still linked. Google-only accounts still see the Google explanation.
+
+### Fixed
+- **Google-only password reset (#1049)** — `requestPasswordResetEmail` does not mail a reset when the account has `google.com` and no `password` provider. Splash, sign-in, and account security say: “This account uses Google sign-in. Use Continue with Google to sign in.” Unknown addresses still get the inbox notice. Redeploy `functions:requestPasswordResetEmail` or a Google-only request still sends mail.
+- **Sign-in and sign-up errors (#1049)** — a wrong email password says the email and password don't match. If `lookupSignInMethod` finds a Google-only account, splash, sign-in, and create-account say to use Continue with Google. Reset, Google, and account-security messages are short and do not mention Firebase. Forgot password is a full-width button on splash and sign-in. Redeploy `functions:lookupSignInMethod` or the Google sentence waits until that function exists.
+- **One sign-in message (#1049)** — splash, `/login`, and create-account keep a single notice above Continue with Google. Forgot password, Continue with email, Continue with Google, and editing the email or password each replace that notice. No Cloud Function redeploy.
+
+---
+
 ## [1.83.1] — 2026-10-14
 
 ### Fixed

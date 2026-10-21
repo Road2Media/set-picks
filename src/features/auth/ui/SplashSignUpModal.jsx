@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 import Button from '../../../shared/ui/Button';
 import Input from '../../../shared/ui/Input';
-import { StatusBanner } from '../../../shared';
+import AuthFormPrepend from './AuthFormPrepend';
 import { AUTH_EMAIL_CTA } from './authCtaClasses';
 import GoogleAuthContinueOverlay from './GoogleAuthContinueOverlay';
 import { resolveGoogleCtaLabel } from './googleCtaLabel';
@@ -37,7 +37,7 @@ export default function SplashSignUpModal({
     setLegalAccepted,
     busy,
     googleBusy,
-    error,
+    notice,
     closeModal,
     handleGoogle,
     handleEmailSignUp,
@@ -59,7 +59,7 @@ export default function SplashSignUpModal({
           onChange={(e) => setLegalAccepted(e.target.checked)}
           className="mt-1 h-4 w-4 shrink-0 rounded border-slate-500 bg-surface-panel text-brand-primary focus-visible:ring-2 focus-visible:ring-brand"
           aria-describedby={
-            fieldsLocked
+            fieldsLocked && !notice.text
               ? 'signup-legal-hint signup-legal-gate-hint'
               : 'signup-legal-hint'
           }
@@ -90,7 +90,7 @@ export default function SplashSignUpModal({
           .
         </span>
       </label>
-      {fieldsLocked ? (
+      {fieldsLocked && !notice.text ? (
         <p
           id="signup-legal-gate-hint"
           className="px-0.5 text-center text-xs font-semibold leading-snug text-brand-primary"
@@ -103,16 +103,14 @@ export default function SplashSignUpModal({
   );
 
   const prependContent = (
-    <div className="space-y-4">
-      {poolInvitePending ? (
-        <StatusBanner
-          type="info"
-          message="You're joining a pool — create an account to continue."
-          className="text-left"
-        />
-      ) : null}
+    <AuthFormPrepend
+      poolMessage={
+        poolInvitePending ? "You're joining a pool — create an account to continue." : ''
+      }
+      notice={notice}
+    >
       {consentBlock}
-    </div>
+    </AuthFormPrepend>
   );
 
   return (
@@ -132,7 +130,7 @@ export default function SplashSignUpModal({
         googleFootnote="You'll set your username/handle on the next page. Your email address is never shared or visible to other users."
         closeOnBackdropClick={false}
       >
-      <form onSubmit={handleEmailSignUp} className="space-y-4 text-left">
+      <form onSubmit={handleEmailSignUp} noValidate className="space-y-4 text-left">
         <fieldset
           disabled={fieldsLocked || busy}
           className="min-w-0 space-y-4 border-0 p-0 disabled:opacity-100"
@@ -208,7 +206,6 @@ export default function SplashSignUpModal({
               />
             </div>
           </div>
-          {error ? <StatusBanner type="error" message={error} /> : null}
           <button
             type="submit"
             disabled={busy || fieldsLocked}

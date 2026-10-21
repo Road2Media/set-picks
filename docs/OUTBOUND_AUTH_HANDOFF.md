@@ -38,7 +38,7 @@ After marketing cold opens stop booting `AuthProvider`, every outbound link must
 | `/?login=true` (+ optional `signup=1`) | Legacy deep links, older QA | `retarget-auth` | Compat hops: `marketingMain` + `SplashPage` → `/login` |
 | Unauth hard-open `/dashboard/*` or `/setup` | `DashboardRoute` / `SetupRoute` | `retarget-auth` | **#830 / #892:** hard-nav to `/login` (HTML-first `login.html` door; keeps `persistDashboardPath`) |
 | Account Log Out / delete → home | `useSignOut` | `public-static` | **#899 (v1.53.2):** mark post-sign-out → hard-nav marketing `/` (must not race unauth bounce to `/login`) |
-| Firebase Auth `%LINK%` → `/password-reset-complete` | Console email templates | `app-ok` | spa-boot / app path |
+| Password reset → `https://www.setlistpickem.com/password-reset-complete?oobCode=…` | `requestPasswordResetEmail` via Resend (#1049) | `app-ok` | spa-boot / app path. Not the Firebase action host. Verification and email-change still use Firebase `%LINK%`. |
 
 ### Production emitters — no URL rewrites required
 

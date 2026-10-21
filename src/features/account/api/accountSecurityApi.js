@@ -1,21 +1,16 @@
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
-  sendPasswordResetEmail,
   updateEmail,
   updatePassword,
 } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 
 import { auth, db } from '../../../shared/lib/firebase';
-import { getPasswordResetActionCodeSettings } from '../../auth';
+import { requestPasswordResetEmail } from '../../auth/passwordReset';
 
-export async function sendAccountPasswordResetEmail(email) {
-  return sendPasswordResetEmail(
-    auth,
-    email,
-    getPasswordResetActionCodeSettings()
-  );
+export function sendAccountPasswordResetEmail(email) {
+  return requestPasswordResetEmail(email);
 }
 
 export async function reauthenticateWithCurrentPassword(user, currentPassword) {
