@@ -6,6 +6,7 @@ import {
   sendAccountPasswordResetEmail,
 } from '../api/accountSecurityApi';
 import { getFirebaseAuthErrorMessage } from '../../auth';
+import { passwordResetSentNotice } from '../../auth/passwordReset';
 
 export function useAccountSecurity(user) {
   const [passwordResetSending, setPasswordResetSending] = useState(false);
@@ -36,7 +37,7 @@ export function useAccountSecurity(user) {
     try {
       await sendAccountPasswordResetEmail(user.email);
       setPasswordResetNotice({
-        text: `Check your inbox at ${user.email} for a password reset link.`,
+        text: passwordResetSentNotice(user.email),
         type: 'success',
       });
     } catch (error) {

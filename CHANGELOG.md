@@ -13,6 +13,9 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 ### Added
 - **Password reset mail (#1049)** — splash and account security call `requestPasswordResetEmail`. Firebase Admin still issues the code. Resend sends the only link, `https://www.setlistpickem.com/password-reset-complete?oobCode=…`, from `updates@setlistpickem.com`. Unknown addresses get the same success result. The callable is rate-limited. `password_reset_rate` is server-only. A human must deploy the function before the new buttons work. Old Firebase reset links keep working until they expire.
 
+### Changed
+- **Password reset confirmation** — after a reset email is requested, splash, sign-in, and account security say to check the spam or junk folder if it does not show up in a few minutes.
+
 ---
 
 ## [1.83.1] — 2026-10-14
