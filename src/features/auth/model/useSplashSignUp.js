@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ensureAuthReady } from '../../../shared/lib/ensureFirebase';
-import { getFirebaseAuthErrorMessage } from '../utils/firebaseAuthMessages';
+import {
+  AUTH_FLOW_COPY,
+  emailSignUpFailureMessage,
+  getFirebaseAuthErrorMessage,
+} from '../utils/firebaseAuthMessages';
 import {
   clearSplashGoogleModalInflight,
   setSplashGoogleModalInflight,
@@ -128,21 +132,24 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
         return;
       }
       if (password !== confirmPassword) {
-        setError('Passwords do not match.');
+        setError(AUTH_FLOW_COPY.passwordsDontMatch);
         return;
       }
       if (password.length < 6) {
-        setError('Password must be at least 6 characters.');
+        setError(AUTH_FLOW_COPY.weakPassword);
         return;
       }
       setBusy(true);
+      /** @type {(email: string) => Promise<'google' | 'other'>} */
+      let lookupEmailSignIn = async () => 'other';
       try {
         const { auth } = await ensureAuthReady();
-        const [{ registerWithEmail, deleteAuthUserIfPresent }, { recordTermsPrivacyConsent }] =
+        const [{ registerWithEmail, deleteAuthUserIfPresent, lookupEmailSignIn: lookup }, { recordTermsPrivacyConsent }] =
           await Promise.all([
             import('../api/splashAuthApi'),
             import('../api/legalConsentApi'),
           ]);
+        lookupEmailSignIn = lookup;
         const cred = await registerWithEmail(auth, email, password);
         try {
           await recordTermsPrivacyConsent(cred.user.uid);
@@ -160,7 +167,7 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
               rollback.errorCode
             );
           }
-          setError('Could not finish creating your account. Please try again.');
+          setError(AUTH_FLOW_COPY.signupIncomplete);
           return;
         }
         trackAuthSignUp('email', { surface: 'create_account' });
@@ -172,7 +179,9 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
           error_code: err.code,
           surface: 'create_account',
         });
-        setError(getFirebaseAuthErrorMessage(err.code));
+        const signIn =
+          err.code === 'auth/email-already-in-use' ? await lookupEmailSignIn(email) : 'other';
+        setError(emailSignUpFailureMessage(err.code, signIn));
       } finally {
         setBusy(false);
       }

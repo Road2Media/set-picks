@@ -7,6 +7,9 @@ const FUNCTIONS_REGION = 'us-central1';
 /** Cloud Function export. The mailed link is built on the server (#1049). */
 export const PASSWORD_RESET_CALLABLE = 'requestPasswordResetEmail';
 
+/** Cloud Function export. Provider check only — never sends mail. */
+export const SIGN_IN_LOOKUP_CALLABLE = 'lookupSignInMethod';
+
 /**
  * Ask the server to mail a password reset link.
  * Unknown addresses and sent resets are `{ ok: true }`.
@@ -55,4 +58,28 @@ function normalizePasswordResetRequestError(error) {
   );
   err.code = rateLimited ? 'auth/too-many-requests' : 'auth/internal-error';
   return err;
+}
+
+/**
+ * Ask whether this address is Google-only.
+ * Failures, including a function that is not deployed yet, return `other`
+ * so the caller can show a generic message.
+ *
+ * @param {string} email
+ * @returns {Promise<'google' | 'other'>}
+ */
+export async function lookupSignInMethod(email) {
+  const functions = getFunctions(app, FUNCTIONS_REGION);
+  const callable = httpsCallable(functions, SIGN_IN_LOOKUP_CALLABLE);
+  try {
+    const result = await callable({
+      email: typeof email === 'string' ? email.trim() : '',
+    });
+    const data = /** @type {{ ok?: boolean, signIn?: string } | undefined} */ (result?.data);
+    if (data?.ok === true && data.signIn === 'google') return 'google';
+    return 'other';
+  } catch (error) {
+    console.error('Sign-in method lookup:', error);
+    return 'other';
+  }
 }

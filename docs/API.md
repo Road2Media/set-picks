@@ -497,6 +497,16 @@ Any `origin` or `continueUrl` on the body is ignored. Preview and localhost rese
 
 Splash (`sendResetEmail`) and account security (`sendAccountPasswordResetEmail`) both use this callable. Email verification and email-address change still use Firebase `%LINK%`. Do not point Auth SMTP at Resend, do not edit Customize action URL, and do not add `www.setlistpickem.com` to Firebase Hosting.
 
+### 2.8 `lookupSignInMethod` (unauthenticated, v1.84.0, #1049)
+
+Provider check used after a failed email sign-in or a sign-up collision. It does not send mail and does not issue a reset code.
+
+**Request:** `{ "email": "fan@example.com" }`
+
+**Response:** `{ "ok": true, "signIn": "google" }` when the account has `google.com` and no `password` provider. `{ "ok": true }` for an unknown address, a disabled account, or any account that already has a password (including Google plus password). `resource-exhausted` when the address or caller IP is over the lookup cap (separate from the reset cap in §1.16). A failed lookup is not an account-existence signal.
+
+**Deploy:** `firebase deploy --only functions:lookupSignInMethod --project set-picks`. Until that deploy, email sign-in and sign-up keep the short generic copy and do not call out Google.
+
 ---
 
 ## 3. Public URL Routes

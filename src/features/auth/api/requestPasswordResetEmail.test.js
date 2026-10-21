@@ -12,7 +12,12 @@ vi.mock('../../../shared/lib/firebase', () => ({
 }));
 
 import { httpsCallable } from 'firebase/functions';
-import { requestPasswordResetEmail, PASSWORD_RESET_CALLABLE } from './requestPasswordResetEmail';
+import {
+  lookupSignInMethod,
+  requestPasswordResetEmail,
+  PASSWORD_RESET_CALLABLE,
+  SIGN_IN_LOOKUP_CALLABLE,
+} from './requestPasswordResetEmail';
 
 describe('requestPasswordResetEmail', () => {
   beforeEach(() => {
@@ -48,6 +53,19 @@ describe('requestPasswordResetEmail', () => {
     await expect(requestPasswordResetEmail('fan@example.com')).rejects.toMatchObject({
       code: 'auth/internal-error',
     });
+  });
+
+  it('returns google only when the lookup callable says so', async () => {
+    callableMock.mockResolvedValue({ data: { ok: true, signIn: 'google' } });
+    await expect(lookupSignInMethod('pat@road2media.com')).resolves.toBe('google');
+    expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), SIGN_IN_LOOKUP_CALLABLE);
+  });
+
+  it('treats a password account, an unknown address, and a failed lookup as other', async () => {
+    callableMock.mockResolvedValue({ data: { ok: true } });
+    await expect(lookupSignInMethod('fan@example.com')).resolves.toBe('other');
+    callableMock.mockRejectedValue(new Error('not deployed'));
+    await expect(lookupSignInMethod('fan@example.com')).resolves.toBe('other');
   });
 
   it('hides not-found and transport failures behind one generic error', async () => {

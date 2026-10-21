@@ -7,7 +7,7 @@ import OpenInBrowserBanner from './OpenInBrowserBanner';
 import PasswordRevealToggle, {
   shouldShowPasswordReveal,
 } from './PasswordRevealToggle';
-import { AUTH_EMAIL_CTA } from './authCtaClasses';
+import { AUTH_EMAIL_CTA, AUTH_FORGOT_CTA } from './authCtaClasses';
 import GoogleAuthContinueOverlay from './GoogleAuthContinueOverlay';
 import { resolveGoogleCtaLabel } from './googleCtaLabel';
 import SplashAuthPanel from './SplashAuthPanel';
@@ -198,16 +198,14 @@ function LoginSignInPanel({
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <Button
-            variant="link"
-            size="none"
+          <button
             type="button"
             onClick={handleSendPasswordResetEmail}
             disabled={busy}
-            className="w-fit px-0 py-0 text-left text-sm text-amber-400/90 decoration-amber-400/90 hover:text-amber-300 hover:decoration-amber-300 disabled:opacity-50"
+            className={AUTH_FORGOT_CTA}
           >
-            Forgot password? Send reset link to your email
-          </Button>
+            Forgot password
+          </button>
           {resetLinkNotice.text ? (
             <StatusBanner
               type={passwordResetNoticeBannerType(resetLinkNotice.type)}

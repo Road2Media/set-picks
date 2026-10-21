@@ -9,7 +9,10 @@ import {
   consumeGoogleRedirectIntent,
   peekGoogleRedirectIntent,
 } from '../utils/googleRedirectIntent';
-import { getFirebaseAuthErrorMessage } from '../utils/firebaseAuthMessages';
+import {
+  AUTH_FLOW_COPY,
+  getFirebaseAuthErrorMessage,
+} from '../utils/firebaseAuthMessages';
 import { trackAuthError } from './authAnalytics';
 
 /**
@@ -83,8 +86,7 @@ async function completePendingGoogleRedirect() {
   return inFlightCompletion;
 }
 
-const EMPTY_REDIRECT_MESSAGE =
-  'Google sign-in did not finish. Please try Continue with Google again.';
+const EMPTY_REDIRECT_MESSAGE = AUTH_FLOW_COPY.googleRedirectIncomplete;
 
 /**
  * Completes a pending Google `signInWithRedirect` on `/login`, splash, invite.

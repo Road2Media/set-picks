@@ -5,7 +5,7 @@ import {
   reauthenticateWithCurrentPassword,
   sendAccountPasswordResetEmail,
 } from '../api/accountSecurityApi';
-import { getFirebaseAuthErrorMessage } from '../../auth';
+import { AUTH_FLOW_COPY, getFirebaseAuthErrorMessage } from '../../auth';
 import {
   PASSWORD_RESET_GOOGLE_SIGN_IN_NOTICE,
   passwordResetSentNotice,
@@ -54,10 +54,10 @@ export function useAccountSecurity(user) {
       console.error('Password reset email:', error);
       const msg =
         error.code === 'auth/too-many-requests'
-          ? 'Too many requests. Wait a few minutes and try again.'
-          : getFirebaseAuthErrorMessage(error.code) === 'Something went wrong. Please try again.'
-            ? 'Could not send reset email. Try again later.'
-            : getFirebaseAuthErrorMessage(error.code);
+          ? AUTH_FLOW_COPY.tooManyAttempts
+          : error.code === 'auth/network-request-failed'
+            ? AUTH_FLOW_COPY.network
+            : AUTH_FLOW_COPY.resetSendFailed;
       setPasswordResetNotice({ text: msg, type: 'error' });
     } finally {
       setPasswordResetSending(false);
@@ -75,26 +75,26 @@ export function useAccountSecurity(user) {
     const wantsPasswordChange = newPassword.length > 0;
 
     if (!currentPassword.trim()) {
-      setAccountMessage({ text: 'Enter your current password to make changes.', type: 'error' });
+      setAccountMessage({ text: AUTH_FLOW_COPY.currentPasswordRequired, type: 'error' });
       return;
     }
     if (!wantsEmailChange && !wantsPasswordChange) {
       setAccountMessage({
-        text: 'Enter a new sign-in email and/or a new password, or use “Forgot password” below.',
+        text: AUTH_FLOW_COPY.accountNothingToChange,
         type: 'error',
       });
       return;
     }
     if (wantsEmailChange && trimmedNewEmail !== confirmNewEmail.trim()) {
-      setAccountMessage({ text: 'New email entries do not match.', type: 'error' });
+      setAccountMessage({ text: AUTH_FLOW_COPY.emailsDontMatch, type: 'error' });
       return;
     }
     if (wantsPasswordChange && newPassword !== confirmNewPassword) {
-      setAccountMessage({ text: 'New password entries do not match.', type: 'error' });
+      setAccountMessage({ text: AUTH_FLOW_COPY.passwordsDontMatch, type: 'error' });
       return;
     }
     if (wantsPasswordChange && newPassword.length < 6) {
-      setAccountMessage({ text: 'New password must be at least 6 characters.', type: 'error' });
+      setAccountMessage({ text: AUTH_FLOW_COPY.weakPassword, type: 'error' });
       return;
     }
 
@@ -109,28 +109,19 @@ export function useAccountSecurity(user) {
       setAccountMessage({
         text:
           wantsEmailChange && wantsPasswordChange
-            ? 'Sign-in email and password updated.'
+            ? AUTH_FLOW_COPY.accountUpdatedBoth
             : wantsEmailChange
-              ? 'Sign-in email updated. You may need to verify the new address if prompted.'
-              : 'Password updated.',
+              ? AUTH_FLOW_COPY.accountUpdatedEmail
+              : AUTH_FLOW_COPY.accountUpdatedPassword,
         type: 'success',
       });
       clearAccountSensitiveFields();
     } catch (error) {
       console.error('Account security update:', error);
-      let msg = getFirebaseAuthErrorMessage(error.code);
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        msg = 'Current password is incorrect.';
-      } else if (error.code === 'auth/email-already-in-use') {
-        msg = 'That email is already used by another account.';
-      } else if (error.code === 'auth/requires-recent-login') {
-        msg = 'Please sign out and sign in again, then try once more.';
-      } else if (error.code === 'auth/weak-password') {
-        msg = 'New password is too weak.';
-      } else if (msg === 'Something went wrong. Please try again.') {
-        msg = 'Could not update. Try again.';
-      }
-      setAccountMessage({ text: msg, type: 'error' });
+      setAccountMessage({
+        text: getFirebaseAuthErrorMessage(error.code, { surface: 'account' }),
+        type: 'error',
+      });
     } finally {
       setAccountBusy(false);
     }

@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ensureAuthReady } from '../../../shared/lib/ensureFirebase';
-import { getFirebaseAuthErrorMessage } from '../utils/firebaseAuthMessages';
+import {
+  AUTH_FLOW_COPY,
+  emailSignInFailureMessage,
+  getFirebaseAuthErrorMessage,
+  isEmailCredentialFailure,
+} from '../utils/firebaseAuthMessages';
 import {
   clearSplashGoogleModalInflight,
   setSplashGoogleModalInflight,
@@ -118,10 +123,13 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
       e.preventDefault();
       setError('');
       setBusy(true);
+      /** @type {(email: string) => Promise<'google' | 'other'>} */
+      let lookupEmailSignIn = async () => 'other';
       try {
         const { auth } = await ensureAuthReady();
-        const { signInWithEmail } = await import('../api/splashAuthApi');
-        await signInWithEmail(auth, email, password);
+        const api = await import('../api/splashAuthApi');
+        lookupEmailSignIn = api.lookupEmailSignIn;
+        await api.signInWithEmail(auth, email, password);
         trackAuthLogin('email', { surface: 'sign_in' });
         closeModal();
       } catch (err) {
@@ -131,7 +139,10 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
           error_code: err.code,
           surface: 'sign_in',
         });
-        setError(getFirebaseAuthErrorMessage(err.code));
+        const signIn = isEmailCredentialFailure(err.code)
+          ? await lookupEmailSignIn(email)
+          : 'other';
+        setError(emailSignInFailureMessage(err.code, signIn));
       } finally {
         setBusy(false);
       }
@@ -142,7 +153,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
   const handleSendPasswordResetEmail = useCallback(async () => {
     const em = email.trim();
     if (!em) {
-      setError('Enter your email address above first.');
+      setError(AUTH_FLOW_COPY.enterEmailFirst);
       setResetLinkNotice({ text: '', type: '' });
       return;
     }
@@ -168,8 +179,8 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
       trackAuthError({ method: 'password_reset', error_code: err.code });
       const msg =
         err.code === 'auth/too-many-requests'
-          ? 'Too many attempts. Wait a few minutes and try again.'
-          : 'Could not send reset email. Try again later.';
+          ? AUTH_FLOW_COPY.tooManyAttempts
+          : AUTH_FLOW_COPY.resetSendFailed;
       setResetLinkNotice({ text: msg, type: 'error' });
     } finally {
       setBusy(false);

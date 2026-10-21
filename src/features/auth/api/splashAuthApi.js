@@ -9,7 +9,7 @@ import {
   signInWithRedirect,
 } from 'firebase/auth';
 
-import { requestPasswordResetEmail } from './requestPasswordResetEmail';
+import { lookupSignInMethod, requestPasswordResetEmail } from './requestPasswordResetEmail';
 
 // Construct lazily on first Google sign-in attempt so the shared Firebase
 // boot module doesn't allocate it on splash load (issue #242).
@@ -101,4 +101,9 @@ export function signInWithEmail(auth, email, password) {
 /** Mail a password reset link. The server builds the www link (#1049). */
 export function sendResetEmail(email) {
   return requestPasswordResetEmail(email);
+}
+
+/** Google-only check. Does not send mail. */
+export function lookupEmailSignIn(email) {
+  return lookupSignInMethod(email);
 }

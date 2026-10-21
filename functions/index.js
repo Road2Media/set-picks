@@ -60,6 +60,7 @@ const { runAccountDeletionForCaller } = require("./accountDelete");
 const {
   PASSWORD_RESET_ACTION_CODE_SETTINGS,
   clientIpFromCallableRequest,
+  lookupSignInMethod,
   sendPasswordResetWithResend,
 } = require("./passwordResetEmail");
 const { deliverCommsTrigger, buildDefaultWorkers, mergeCommsDeliverySummaries } = require("./commsDelivery");
@@ -1308,6 +1309,28 @@ exports.requestPasswordResetEmail = onCall(
           PASSWORD_RESET_ACTION_CODE_SETTINGS
         ),
       resendClient: buildResendClient(process.env.RESEND_API_KEY, logger),
+      logger,
+    });
+  }
+);
+
+/**
+ * Unauthenticated sign-in method check (#1049).
+ * Same Google-only rule as password reset, but it never sends mail.
+ * Unknown and password accounts both return `{ ok: true }`.
+ */
+exports.lookupSignInMethod = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    return lookupSignInMethod({
+      email: request.data?.email,
+      ip: clientIpFromCallableRequest(request),
+      db,
+      getUserByEmail: (normalized) => admin.auth().getUserByEmail(normalized),
       logger,
     });
   }

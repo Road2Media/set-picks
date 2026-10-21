@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { confirmPasswordResetWithCode, verifyResetCodeAndGetEmail } from '../api/passwordResetApi';
-import { getFirebaseAuthErrorMessage } from '../utils/firebaseAuthMessages';
+import { AUTH_FLOW_COPY, getFirebaseAuthErrorMessage } from '../utils/firebaseAuthMessages';
 
 export function usePasswordReset(oobCode) {
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ export function usePasswordReset(oobCode) {
       } catch (err) {
         console.error('Password reset verify error:', err);
         if (!cancelled) {
-          setError(getFirebaseAuthErrorMessage(err.code) || 'Could not verify reset link.');
+          setError(getFirebaseAuthErrorMessage(err.code, { surface: 'reset-verify' }));
           setIsReady(false);
         }
       } finally {
@@ -57,7 +57,7 @@ export function usePasswordReset(oobCode) {
 
       const trimmed = newPassword;
       if (!trimmed || trimmed.length < 6) {
-        setError('New password must be at least 6 characters.');
+        setError(AUTH_FLOW_COPY.weakPassword);
         return;
       }
 
@@ -101,7 +101,7 @@ export function usePasswordReset(oobCode) {
         }
       } catch (err) {
         console.error('Password reset confirm error:', err);
-        setError(getFirebaseAuthErrorMessage(err.code) || 'Could not reset password. Try again.');
+        setError(getFirebaseAuthErrorMessage(err.code, { surface: 'reset-confirm' }));
         setIsSubmitting(false);
       }
     },

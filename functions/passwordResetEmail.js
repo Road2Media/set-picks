@@ -210,10 +210,22 @@ function snapData(snap) {
  * Throws resource-exhausted without revealing whether the address exists.
  *
  * @param {FirebaseFirestore.Firestore} db
- * @param {{ emailKey: string, ipKey: string | null, nowMs: number }} keys
+ * @param {{
+ *   emailKey: string,
+ *   ipKey: string | null,
+ *   nowMs: number,
+ *   emailMax?: number,
+ *   ipMax?: number,
+ * }} keys
  * @returns {Promise<void>}
  */
-async function assertWithinRateLimit(db, { emailKey, ipKey, nowMs }) {
+async function assertWithinRateLimit(db, {
+  emailKey,
+  ipKey,
+  nowMs,
+  emailMax = PASSWORD_RESET_EMAIL_MAX,
+  ipMax = PASSWORD_RESET_IP_MAX,
+}) {
   const emailRef = db.collection(PASSWORD_RESET_RATE_COLLECTION).doc(emailKey);
   const ipRef = ipKey
     ? db.collection(PASSWORD_RESET_RATE_COLLECTION).doc(ipKey)
@@ -222,13 +234,9 @@ async function assertWithinRateLimit(db, { emailKey, ipKey, nowMs }) {
   const limited = await db.runTransaction(async (tx) => {
     const emailSnap = await tx.get(emailRef);
     const ipSnap = ipRef ? await tx.get(ipRef) : null;
-    const emailSlot = takeRateSlot(
-      snapData(emailSnap),
-      nowMs,
-      PASSWORD_RESET_EMAIL_MAX
-    );
+    const emailSlot = takeRateSlot(snapData(emailSnap), nowMs, emailMax);
     const ipSlot = ipRef
-      ? takeRateSlot(snapData(ipSnap), nowMs, PASSWORD_RESET_IP_MAX)
+      ? takeRateSlot(snapData(ipSnap), nowMs, ipMax)
       : { ok: true, doc: null };
     if (!emailSlot.ok || !ipSlot.ok) return true;
     tx.set(emailRef, emailSlot.doc);
@@ -467,6 +475,60 @@ async function sendPasswordResetWithResend({
   return { ok: true };
 }
 
+/** Separate from reset mail so a wrong password does not burn the reset cap. */
+const SIGN_IN_LOOKUP_EMAIL_MAX = 30;
+const SIGN_IN_LOOKUP_IP_MAX = 60;
+
+/**
+ * Provider check for a failed email sign-in or a sign-up collision.
+ * Does not send mail and does not issue a reset code.
+ * `{ ok: true, signIn: "google" }` only for google.com with no password.
+ * Everything else is `{ ok: true }` so unknown and password accounts stay indistinguishable.
+ *
+ * @param {{
+ *   email: unknown,
+ *   ip?: string,
+ *   nowMs?: number,
+ *   db: FirebaseFirestore.Firestore,
+ *   getUserByEmail: (email: string) => Promise<unknown>,
+ *   logger?: { info?: Function, error?: Function },
+ * }} params
+ * @returns {Promise<{ ok: true, signIn?: "google" }>}
+ */
+async function lookupSignInMethod({
+  email,
+  ip = "",
+  nowMs = Date.now(),
+  db,
+  getUserByEmail,
+  logger,
+}) {
+  const normalized = normalizeEmail(email);
+  const callerIp = typeof ip === "string" ? ip.trim() : "";
+
+  if (!isPlausibleEmail(normalized)) {
+    return { ok: true };
+  }
+
+  await assertWithinRateLimit(db, {
+    emailKey: rateDocId("s", normalized),
+    ipKey: callerIp ? rateDocId("si", callerIp) : null,
+    nowMs,
+    emailMax: SIGN_IN_LOOKUP_EMAIL_MAX,
+    ipMax: SIGN_IN_LOOKUP_IP_MAX,
+  });
+
+  const userRecord = await lookupAuthUser(getUserByEmail, normalized, logger);
+  if (!userRecord || userRecord.disabled === true) {
+    return { ok: true };
+  }
+  if (isGoogleWithoutPassword(userRecord)) {
+    logger?.info?.("sign_in_lookup", { result: "google_only" });
+    return { ok: true, signIn: "google" };
+  }
+  return { ok: true };
+}
+
 module.exports = {
   PASSWORD_RESET_ACTION_CODE_SETTINGS,
   PASSWORD_RESET_EMAIL_MAX,
@@ -481,6 +543,9 @@ module.exports = {
   buildPasswordResetPageUrl,
   clientIpFromCallableRequest,
   extractOobCode,
+  lookupSignInMethod,
   renderPasswordResetMessage,
   sendPasswordResetWithResend,
+  SIGN_IN_LOOKUP_EMAIL_MAX,
+  SIGN_IN_LOOKUP_IP_MAX,
 };

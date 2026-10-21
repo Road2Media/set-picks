@@ -14,8 +14,10 @@ const {
   buildPasswordResetPageUrl,
   clientIpFromCallableRequest,
   extractOobCode,
+  lookupSignInMethod,
   renderPasswordResetMessage,
   sendPasswordResetWithResend,
+  SIGN_IN_LOOKUP_EMAIL_MAX,
 } = require("./passwordResetEmail");
 
 const FIREBASE_LINK =
@@ -392,6 +394,81 @@ test("a missing user lookup fails closed", async () => {
       }),
     (error) => error instanceof HttpsError && error.code === "internal"
   );
+});
+
+test("sign-in lookup reports google-only and does not need a mailer", async () => {
+  const result = await lookupSignInMethod({
+    email: "pat@road2media.com",
+    ip: "203.0.113.8",
+    nowMs: 1_000,
+    db: createMemoryDb(),
+    getUserByEmail: async () => passwordUser(["google.com"]),
+  });
+  assert.deepEqual(result, { ok: true, signIn: "google" });
+});
+
+test("sign-in lookup hides password, both, unknown, and disabled accounts", async () => {
+  const hidden = [
+    passwordUser(["password"]),
+    passwordUser(["google.com", "password"]),
+    passwordUser(["google.com"], { disabled: true }),
+  ];
+  for (const user of hidden) {
+    const result = await lookupSignInMethod({
+      email: "fan@example.com",
+      ip: "",
+      nowMs: 2_000,
+      db: createMemoryDb(),
+      getUserByEmail: async () => user,
+    });
+    assert.deepEqual(result, { ok: true });
+  }
+  const missing = await lookupSignInMethod({
+    email: "missing@example.com",
+    ip: "",
+    nowMs: 2_000,
+    db: createMemoryDb(),
+    getUserByEmail: async () => {
+      const error = new Error("no user");
+      error.code = "auth/user-not-found";
+      throw error;
+    },
+  });
+  assert.deepEqual(missing, { ok: true });
+});
+
+test("sign-in lookup rate limit is separate from password reset", async () => {
+  const db = createMemoryDb();
+  for (let i = 0; i < SIGN_IN_LOOKUP_EMAIL_MAX; i += 1) {
+    const result = await lookupSignInMethod({
+      email: "fan@example.com",
+      ip: "",
+      nowMs: 3_000,
+      db,
+      getUserByEmail: async () => passwordUser(["password"]),
+    });
+    assert.deepEqual(result, { ok: true });
+  }
+  await assert.rejects(
+    () =>
+      lookupSignInMethod({
+        email: "fan@example.com",
+        ip: "",
+        nowMs: 3_000,
+        db,
+        getUserByEmail: async () => passwordUser(["google.com"]),
+      }),
+    (error) => error instanceof HttpsError && error.code === "resource-exhausted"
+  );
+  const reset = await callReset({
+    email: "fan@example.com",
+    ip: "",
+    nowMs: 3_000,
+    db,
+    generateLink: async () => FIREBASE_LINK,
+    resendClient: fakeResend([]),
+  });
+  assert.deepEqual(reset, { ok: true });
 });
 
 test("client IP prefers the first forwarded hop", () => {

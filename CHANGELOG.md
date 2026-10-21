@@ -19,6 +19,7 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ### Fixed
 - **Google-only password reset (#1049)** — `requestPasswordResetEmail` does not mail a reset when the account has `google.com` and no `password` provider. Splash, sign-in, and account security say: “This account uses Google sign-in. Use Continue with Google to sign in.” Unknown addresses still get the inbox notice. Redeploy `functions:requestPasswordResetEmail` or a Google-only request still sends mail.
+- **Sign-in and sign-up errors (#1049)** — a wrong email password says the email and password don't match. If `lookupSignInMethod` finds a Google-only account, splash, sign-in, and create-account say to use Continue with Google. Reset, Google, and account-security messages are short and do not mention Firebase. Forgot password is a full-width button on splash and sign-in. Redeploy `functions:lookupSignInMethod` or the Google sentence waits until that function exists.
 
 ---
 

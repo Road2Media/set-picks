@@ -30,7 +30,10 @@ export {
   markPostSignOutHome,
 } from './model/postSignOutHome';
 
-export { getFirebaseAuthErrorMessage } from './utils/firebaseAuthMessages';
+export {
+  AUTH_FLOW_COPY,
+  getFirebaseAuthErrorMessage,
+} from './utils/firebaseAuthMessages';
 export {
   isSplashGoogleModalInflight,
   SPLASH_GOOGLE_MODAL_STORAGE_EVENT,

@@ -10,3 +10,6 @@ export const AUTH_GOOGLE_CTA = `${AUTH_CTA_BOX} bg-white text-slate-900 ring-1 r
 
 /** Ring (not border) so box size matches Google’s ring-1 CTA. */
 export const AUTH_EMAIL_CTA = `${AUTH_CTA_BOX} bg-transparent text-teal-300 ring-1 ring-teal-400/70 hover:bg-teal-400/10 hover:ring-teal-300`;
+
+/** Same box as the email CTA, quieter. Not an underlined text link. */
+export const AUTH_FORGOT_CTA = `${AUTH_CTA_BOX} bg-transparent text-slate-300 ring-1 ring-white/15 hover:bg-white/5 hover:text-white hover:ring-white/40`;
