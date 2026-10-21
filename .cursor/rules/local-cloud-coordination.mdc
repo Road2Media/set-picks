@@ -1,0 +1,54 @@
+---
+description: Local IDE agents must check cloud ownership and label issues blocked before starting work
+alwaysApply: true
+---
+
+# Local vs cloud agent coordination
+
+**Local Cursor IDE agents only.** Cloud agents auto-pick GitHub issues labeled `agent-queue`, skip any issue labeled `blocked`, and open PRs from `cursor/…` branches into `staging`. Do not run this claim protocol on a `cursor/` branch.
+
+Before starting work on any issue or epic, do these steps in order. For an epic, include every sub-issue (`gh issue view <epic> --json subIssues --jq '.subIssues[].number'`).
+
+## 1. Check labels, open PRs, and `cursor/*` branches
+
+```bash
+gh issue view <n> --json number,title,state,labels,subIssues
+gh pr list --state open --limit 100 --json number,title,body,headRefName,url
+git ls-remote --heads origin 'refs/heads/cursor/*'
+```
+
+A cloud agent already has `<n>` when either is true:
+
+- an open PR whose head ref starts with `cursor/` and whose title or body references `#<n>`
+- a remote `cursor/*` branch whose name includes `<n>`, or whose tip commit message references `#<n>` (fetch that ref, then `git log -1 --format=%s`)
+
+## 2. Stop when a cloud agent has it
+
+Do not edit labels, branch, or commit. Tell the user the issue number and the open PR and/or remote `cursor/*` branch you found.
+
+## 3. Otherwise claim with `blocked`
+
+Create the label if it is missing, then add it to each issue you are taking (the epic and its sub-issues):
+
+```bash
+gh label list --json name --jq '.[].name' | grep -qx blocked \
+  || gh label create blocked \
+    --description "Claimed by a local Cursor agent; cloud agent-queue skips it" \
+    --color B60205
+gh issue edit <n> --add-label blocked
+```
+
+Remove `blocked` from those same issues when the local PR is opened, or if the work is abandoned:
+
+```bash
+gh issue edit <n> --remove-label blocked
+```
+
+## 4. Update `staging`, then use a non-`cursor/` branch
+
+```bash
+git checkout staging && git pull origin staging
+git checkout -b feat/<issue#>-<kebab-slug>
+```
+
+Do not create a branch whose name starts with `cursor/`. That prefix belongs to cloud agents.
