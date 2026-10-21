@@ -15,7 +15,7 @@ Defined in `src/app/App.jsx`.
 | `/setup` | Signed-in only | Profile setup until Firestore user doc exists |
 | `/dashboard/*` | Signed-in + profile | App shell (`DashboardLayout`) |
 | `/user/:userId` | Public | Public player profile (no dashboard restore) |
-| `/password-reset-complete` | Public | Firebase password reset continuation URL |
+| `/password-reset-complete` | Public | Password reset page. Resend mail links here with `oobCode` on `www` (#1049) |
 
 ## Auth gates
 
@@ -146,7 +146,7 @@ If nothing is stored, stored JSON is invalid, or the path is ineligible → **`/
 | Visit `/join` without `:code` | `PoolInviteMissingCodePage` → `/` |
 | Visit `/invite/:handle` while signed in | `useInviteLanding` → `getDashboardEntryHref` (no pool storage) |
 | Visit `/user/:userId` | Public profile only; no `getDashboardEntryHref` |
-| Password reset completion | `/password-reset-complete` (public); flow continues per Firebase / app handling |
+| Password reset completion | `/password-reset-complete` (public). The mailed link is `https://www.setlistpickem.com/password-reset-complete?oobCode=…`. The page verifies the code and calls `confirmPasswordReset` |
 
 ## End-to-end flow (high level)
 

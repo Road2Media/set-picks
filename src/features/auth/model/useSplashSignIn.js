@@ -146,9 +146,8 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
     setError('');
     setResetLinkNotice({ text: '', type: '' });
     try {
-      const { auth } = await ensureAuthReady();
       const { sendResetEmail } = await import('../api/splashAuthApi');
-      await sendResetEmail(auth, em);
+      await sendResetEmail(em);
       setResetLinkNotice({
         text: `Check your inbox at ${em} for a password reset link. Then return here to sign in.`,
         type: 'success',

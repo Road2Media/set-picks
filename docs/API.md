@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.74.0  
+**Version:** 1.84.0  
 
 
 **SemVer:** https://semver.org  
@@ -258,11 +258,22 @@ Server-only Resend open/click plane. Document ID is the Resend `email_id`. Writt
 
 Idempotent: duplicate webhook deliveries do not overwrite first-write timestamps. The `fcm_notification_log` dedup doc may also carry `resendEmailId` + `campaignId` after a successful email send.
 
+### 1.16 `password_reset_rate/{docId}` (**v1.84.0 / #1049**)
+
+Server-only counters for `requestPasswordResetEmail`. Document id is `e_` or `i_` plus the SHA-256 hex of the normalized address or caller IP. No raw email is stored.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `windowStartMs` | number | Start of the current one-hour window |
+| `count` | number | Attempts in that window |
+
+Clients cannot read or write. Admin SDK only. Limits: 5 per address and 20 per IP per hour. Over the limit the callable throws `resource-exhausted` and does not say whether the address exists.
+
 ---
 
 ## 2. Cloud Function Callables
 
-All callables are in region `us-central1`. Requests must be authenticated Firebase users. Admin-only callables additionally require the `admin` custom claim.
+All callables are in region `us-central1`. Requests must be authenticated Firebase users, except `requestPasswordResetEmail` (§2.7), which is unauthenticated and rate-limited. Admin-only callables additionally require the `admin` custom claim.
 
 ### 2.1 `deliverSphere2026TourRecapInbox` (admin-only, replay / QA)
 
@@ -465,6 +476,25 @@ Authenticated callables backing the Preferences email section (`/dashboard/profi
 | `unsubscribeCommsEmail` | Signed-in user | Writes `email_suppression` with `reason: user_preferences` and opts out `notificationPrefs.lifecycle` |
 | `resubscribeCommsEmail` | Signed-in user | Clears self-serve suppressions (`one_click_unsubscribe`, `mailto_unsubscribe`, `user_preferences`) and re-enables `notificationPrefs.lifecycle`; hard bounces and spam complaints are rejected |
 
+### 2.7 `requestPasswordResetEmail` (unauthenticated, v1.84.0, #1049)
+
+Mails a password reset from Resend. Firebase Admin `generatePasswordResetLink` still issues the `oobCode`. The firebaseapp.com wrapper is discarded and is not the link in the mail.
+
+**Request:**
+```json
+{ "email": "fan@example.com" }
+```
+
+Any `origin` or `continueUrl` on the body is ignored. Preview and localhost resets still mail `www`.
+
+**Response:** `{ "ok": true }` when the address is missing, disabled, invalid, or the mail was sent. The body does not say which. `resource-exhausted` when the address or caller IP is over the hourly cap (§1.16). `internal` when the link cannot be built or Resend rejects the send. Those errors do not include the address or the code.
+
+**Link:** `https://www.setlistpickem.com/password-reset-complete?oobCode=…` (www, not the apex). From `Setlist Pick 'Em <updates@setlistpickem.com>`. Reply-To `support@setlistpickem.com`. Not a comms trigger: no suppression list, no daily cap, no unsubscribe.
+
+**Deploy:** `firebase deploy --only functions:requestPasswordResetEmail,firestore:rules --project set-picks`. Binds the existing `RESEND_API_KEY` secret. No new secret, DNS, or Resend dashboard change. The Vercel client calls this function; until the deploy lands, both reset buttons fail.
+
+Splash (`sendResetEmail`) and account security (`sendAccountPasswordResetEmail`) both use this callable. Email verification and email-address change still use Firebase `%LINK%`. Do not point Auth SMTP at Resend, do not edit Customize action URL, and do not add `www.setlistpickem.com` to Firebase Hosting.
+
 ---
 
 ## 3. Public URL Routes
@@ -487,7 +517,7 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/user/:userId` | None | Public player profile — **`noindex,follow`** (#661); not a sitemap target |
 | `/privacy` | None | Privacy policy. **v1.61.0 (#916):** HTML-first legal door — full policy body in first HTML; no marketing CSR / Auth / Firebase. Soft route remains on app SPA for Profile/account. |
 | `/terms` | None | Terms of service. **v1.61.0 (#916):** same HTML-first legal-door boot as `/privacy`. |
-| `/password-reset-complete` | None | Firebase Auth continue URL |
+| `/password-reset-complete` | None | Password reset page. **v1.84.0 (#1049):** Resend mail links here with `oobCode`. The page calls `verifyPasswordResetCode` / `confirmPasswordReset`. Older Firebase `/__/auth/action` links still open until they expire. |
 | `/setup` | Auth | Profile setup (new users) |
 | `/dashboard/*` | Auth | Full game dashboard |
 
@@ -599,7 +629,7 @@ Set in Firebase Functions config or Cloud Secret Manager. Adding one is a MINOR 
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `RESEND_API_KEY` | For email channel | Resend API key (Secret Manager); bound to `runCommsTrigger`, `deliverMarketingSummerTour2026Launch`, `deliverMarketingSummer2026AlmostEnd`, `scheduledMarketingSummer2026AlmostEnd`, and comms adapters |
+| `RESEND_API_KEY` | For email channel | Resend API key (Secret Manager); bound to `runCommsTrigger`, `deliverMarketingSummerTour2026Launch`, `deliverMarketingSummer2026AlmostEnd`, `scheduledMarketingSummer2026AlmostEnd`, comms adapters, and `requestPasswordResetEmail` (#1049). No new secret. |
 | `RESEND_WEBHOOK_SECRET` | For email deliverability | Resend/Svix webhook signing secret (`whsec_…`); also signs one-click unsubscribe URLs |
 | `RESEND_INBOUND_WEBHOOK_SECRET` | For inbound receiving | **v1.75.0:** Svix secret for `commsResendInboundWebhook` only (`whsec_…` from the `email.received` Resend webhook) |
 | `GA4_MEASUREMENT_ID` | For server `comms_delivered` MP | Same `G-…` id as `VITE_GA_MEASUREMENT_ID`; Functions `defineString` / `.env.set-picks` |

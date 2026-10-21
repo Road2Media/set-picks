@@ -31,7 +31,6 @@ export {
 } from './model/postSignOutHome';
 
 export { getFirebaseAuthErrorMessage } from './utils/firebaseAuthMessages';
-export { getPasswordResetActionCodeSettings } from './utils/passwordResetActionSettings';
 export {
   isSplashGoogleModalInflight,
   SPLASH_GOOGLE_MODAL_STORAGE_EVENT,

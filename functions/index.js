@@ -57,6 +57,11 @@ const {
 const { evaluateManualFinalizeTimingGate } = require("./showFinalizationGate");
 const { applyLockPicksForShowNow } = require("./picksLockOverride");
 const { runAccountDeletionForCaller } = require("./accountDelete");
+const {
+  PASSWORD_RESET_ACTION_CODE_SETTINGS,
+  clientIpFromCallableRequest,
+  sendPasswordResetWithResend,
+} = require("./passwordResetEmail");
 const { deliverCommsTrigger, buildDefaultWorkers, mergeCommsDeliverySummaries } = require("./commsDelivery");
 const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorker");
 const { getTriggerSpec } = require("./commsCatalog");
@@ -1273,6 +1278,35 @@ exports.deletePoolWithCleanup = onCall(
     });
 
     return { ok: true, poolId, memberUpdates };
+  }
+);
+
+/**
+ * Unauthenticated password reset (#1049).
+ * Admin `generatePasswordResetLink` issues the code. Resend mails
+ * https://www.setlistpickem.com/password-reset-complete?oobCode=…
+ * Unknown addresses get the same `{ ok: true }` as known ones.
+ */
+exports.requestPasswordResetEmail = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    secrets: [resendApiKey],
+  },
+  async (request) => {
+    return sendPasswordResetWithResend({
+      email: request.data?.email,
+      ip: clientIpFromCallableRequest(request),
+      db,
+      generateLink: (normalized) =>
+        admin.auth().generatePasswordResetLink(
+          normalized,
+          PASSWORD_RESET_ACTION_CODE_SETTINGS
+        ),
+      resendClient: buildResendClient(process.env.RESEND_API_KEY, logger),
+      logger,
+    });
   }
 );
 
