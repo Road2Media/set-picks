@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.84.1] — 2026-10-21
+
+### Fixed
+- **Email keyboard on first tap (#1050)** — a tap on the email field is no longer blurred by the login focus-park timers, and `readOnly` clears on touch/pointer down so iOS can open the keyboard on that tap. The login form is not swapped out from under that tap. Cold `/login` still does not keep an autofocused email field or open the Keychain chooser before a gesture.
+
 ## [1.84.0] — 2026-10-21
 
 ### Added
