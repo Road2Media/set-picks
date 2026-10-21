@@ -15,6 +15,7 @@ import {
   scheduleNeutralLoginFocus,
   useDeferPasswordManagerAutofill,
 } from '../model/deferPasswordManagerAutofill';
+import { passwordResetNoticeBannerType } from '../model/passwordResetNoticeCopy';
 import { useLoginAuthSurfaceReady } from '../model/useLoginAuthSurfaceReady';
 import { useSplashSignIn } from '../model/useSplashSignIn';
 import { useSplashSignUp } from '../model/useSplashSignUp';
@@ -209,7 +210,7 @@ function LoginSignInPanel({
           </Button>
           {resetLinkNotice.text ? (
             <StatusBanner
-              type={resetLinkNotice.type === 'error' ? 'error' : 'success'}
+              type={passwordResetNoticeBannerType(resetLinkNotice.type)}
               message={resetLinkNotice.text}
             />
           ) : null}

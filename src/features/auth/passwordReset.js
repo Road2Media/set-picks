@@ -5,4 +5,7 @@
  * barrel (splash, dashboard, login).
  */
 export { requestPasswordResetEmail } from './api/requestPasswordResetEmail';
-export { passwordResetSentNotice } from './model/passwordResetNoticeCopy';
+export {
+  PASSWORD_RESET_GOOGLE_SIGN_IN_NOTICE,
+  passwordResetSentNotice,
+} from './model/passwordResetNoticeCopy';

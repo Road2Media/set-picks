@@ -10,6 +10,7 @@ import PasswordRevealToggle, {
   shouldShowPasswordReveal,
 } from './PasswordRevealToggle';
 import SplashAuthModalShell from './SplashAuthModalShell';
+import { passwordResetNoticeBannerType } from '../model/passwordResetNoticeCopy';
 import { useSplashSignIn } from '../model/useSplashSignIn';
 
 export default function SplashSignInModal({
@@ -126,7 +127,7 @@ export default function SplashSignInModal({
           </Button>
           {resetLinkNotice.text ? (
             <StatusBanner
-              type={resetLinkNotice.type === 'error' ? 'error' : 'success'}
+              type={passwordResetNoticeBannerType(resetLinkNotice.type)}
               message={resetLinkNotice.text}
             />
           ) : null}

@@ -28,6 +28,12 @@ describe('requestPasswordResetEmail', () => {
     expect(result).toEqual({ ok: true });
   });
 
+  it('passes through a Google-only sign-in result without treating it as a send', async () => {
+    callableMock.mockResolvedValue({ data: { ok: true, signIn: 'google' } });
+    const result = await requestPasswordResetEmail('pat@road2media.com');
+    expect(result).toEqual({ ok: true, signIn: 'google' });
+  });
+
   it('maps rate limits onto the existing too-many-requests code', async () => {
     const error = new Error('Too many password reset requests. Try again later.');
     error.code = 'functions/resource-exhausted';

@@ -487,7 +487,9 @@ Mails a password reset from Resend. Firebase Admin `generatePasswordResetLink` s
 
 Any `origin` or `continueUrl` on the body is ignored. Preview and localhost resets still mail `www`.
 
-**Response:** `{ "ok": true }` when the address is missing, disabled, invalid, or the mail was sent. The body does not say which. `resource-exhausted` when the address or caller IP is over the hourly cap (§1.16). `internal` when the link cannot be built or Resend rejects the send. Those errors do not include the address or the code.
+**Response:** `{ "ok": true }` when the address is missing, disabled, invalid, or the mail was sent. The body does not say which of those. `{ "ok": true, "signIn": "google" }` when the account has `google.com` and no `password` provider. No mail is sent in that case. `confirmPasswordReset` would otherwise link `password` beside `google.com` on the same uid. An account that already has both still gets the reset mail and `{ "ok": true }`. `resource-exhausted` when the address or caller IP is over the hourly cap (§1.16). `internal` when the link cannot be built or Resend rejects the send. Those errors do not include the address or the code.
+
+**Redeploy after this response change:** `firebase deploy --only functions:requestPasswordResetEmail --project set-picks`. The previous deploy of this function does not return `signIn`. Until this deploy, a Google-only reset still mails a link.
 
 **Link:** `https://www.setlistpickem.com/password-reset-complete?oobCode=…` (www, not the apex). From `Setlist Pick 'Em <updates@setlistpickem.com>`. Reply-To `support@setlistpickem.com`. Not a comms trigger: no suppression list, no daily cap, no unsubscribe.
 

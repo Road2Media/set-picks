@@ -36,6 +36,8 @@ Splash and account security do **not** call `sendPasswordResetEmail`. They call 
 
 From `Setlist Pick 'Em <updates@setlistpickem.com>`. The Firebase password-reset template is not the message users get.
 
+A Google-only account (`google.com`, no `password` provider) does not get that mail. The callable returns `{ ok: true, signIn: "google" }` and the reset buttons say to use Continue with Google. An account that already has both providers still gets a reset. Unknown addresses still get the generic inbox notice. Redeploy with `firebase deploy --only functions:requestPasswordResetEmail --project set-picks` after this change.
+
 Do **not**:
 
 - Edit **Customize action URL** (it rejects `www.setlistpickem.com` because the site is on Vercel, not Firebase Hosting)

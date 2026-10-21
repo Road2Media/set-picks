@@ -8,7 +8,10 @@ import {
 } from '../utils/splashGoogleModalInflight';
 import { trackAuthError, trackAuthLogin } from './authAnalytics';
 import { markGoogleAuthClick } from './authLoginTiming';
-import { passwordResetSentNotice } from './passwordResetNoticeCopy';
+import {
+  PASSWORD_RESET_GOOGLE_SIGN_IN_NOTICE,
+  passwordResetSentNotice,
+} from './passwordResetNoticeCopy';
 import { shouldPreferGoogleRedirectAuth } from './preferGoogleRedirectAuth';
 import { runGoogleSplashAuth } from './runGoogleSplashAuth';
 
@@ -148,11 +151,18 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
     setResetLinkNotice({ text: '', type: '' });
     try {
       const { sendResetEmail } = await import('../api/splashAuthApi');
-      await sendResetEmail(em);
-      setResetLinkNotice({
-        text: passwordResetSentNotice(em, { returnToSignIn: true }),
-        type: 'success',
-      });
+      const result = await sendResetEmail(em);
+      if (result?.signIn === 'google') {
+        setResetLinkNotice({
+          text: PASSWORD_RESET_GOOGLE_SIGN_IN_NOTICE,
+          type: 'info',
+        });
+      } else {
+        setResetLinkNotice({
+          text: passwordResetSentNotice(em, { returnToSignIn: true }),
+          type: 'success',
+        });
+      }
     } catch (err) {
       console.error('Password reset:', err);
       trackAuthError({ method: 'password_reset', error_code: err.code });

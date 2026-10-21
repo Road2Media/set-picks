@@ -13,6 +13,12 @@ const { HttpsError } = require("firebase-functions/v2/https");
  * This is account mail, not a comms trigger. It does not check
  * email_suppression or the daily cap. A user who opted out of lifecycle
  * mail can still reset a password.
+ *
+ * A Google-only account (google.com, no password provider) does not get
+ * mail. Setting a password through the reset link would link `password`
+ * beside `google.com` on the same uid. The callable returns
+ * `{ ok: true, signIn: "google" }` instead. Unknown addresses stay
+ * `{ ok: true }` with no signIn field.
  */
 
 const PASSWORD_RESET_PUBLIC_ORIGIN = "https://www.setlistpickem.com";
@@ -257,7 +263,67 @@ function clientIpFromCallableRequest(request) {
 }
 
 /**
- * Same `{ ok: true }` for known and unknown addresses.
+ * @param {unknown} userRecord
+ * @returns {string[]}
+ */
+function providerIdsFromUser(userRecord) {
+  const list =
+    userRecord &&
+    typeof userRecord === "object" &&
+    Array.isArray(userRecord.providerData)
+      ? userRecord.providerData
+      : [];
+  return list
+    .map((entry) =>
+      entry && typeof entry.providerId === "string" ? entry.providerId : ""
+    )
+    .filter(Boolean);
+}
+
+/**
+ * google.com with no password provider. Password reset would link `password`
+ * onto this uid instead of resetting an existing password.
+ *
+ * @param {unknown} userRecord
+ * @returns {boolean}
+ */
+function isGoogleWithoutPassword(userRecord) {
+  const ids = providerIdsFromUser(userRecord);
+  return ids.includes("google.com") && !ids.includes("password");
+}
+
+/**
+ * @param {(email: string) => Promise<unknown>} getUserByEmail
+ * @param {string} email
+ * @param {{ info?: Function, error?: Function } | undefined} logger
+ * @returns {Promise<unknown | null>}
+ */
+async function lookupAuthUser(getUserByEmail, email, logger) {
+  if (typeof getUserByEmail !== "function") {
+    logger?.error?.("password_reset_no_user_lookup");
+    throw new HttpsError(
+      "internal",
+      "Could not send reset email. Try again later."
+    );
+  }
+  try {
+    const user = await getUserByEmail(email);
+    return user || null;
+  } catch (error) {
+    if (isSilentAuthMiss(error)) return null;
+    logger?.error?.("password_reset_lookup_failed", {
+      code: authErrorCode(error) || "unknown",
+    });
+    throw new HttpsError(
+      "internal",
+      "Could not send reset email. Try again later."
+    );
+  }
+}
+
+/**
+ * `{ ok: true }` for a sent reset and for an unknown address.
+ * `{ ok: true, signIn: "google" }` when the account is Google-only.
  * Rate limits and mailer failures throw. Those errors do not say if the address exists.
  *
  * @param {{
@@ -265,17 +331,19 @@ function clientIpFromCallableRequest(request) {
  *   ip?: string,
  *   nowMs?: number,
  *   db: FirebaseFirestore.Firestore,
+ *   getUserByEmail: (email: string) => Promise<unknown>,
  *   generateLink: (email: string) => Promise<string>,
  *   resendClient: { emails?: { send: (payload: object) => Promise<unknown> } } | null,
  *   logger?: { info?: Function, error?: Function },
  * }} params
- * @returns {Promise<{ ok: true }>}
+ * @returns {Promise<{ ok: true, signIn?: "google" }>}
  */
 async function sendPasswordResetWithResend({
   email,
   ip = "",
   nowMs = Date.now(),
   db,
+  getUserByEmail,
   generateLink,
   resendClient,
   logger,
@@ -299,6 +367,18 @@ async function sendPasswordResetWithResend({
     ipKey: callerIp ? rateDocId("i", callerIp) : null,
     nowMs,
   });
+
+  const userRecord = await lookupAuthUser(getUserByEmail, normalized, logger);
+  if (!userRecord || userRecord.disabled === true) {
+    logger?.info?.("password_reset_no_send", {
+      reason: userRecord ? "disabled" : "auth_miss",
+    });
+    return { ok: true };
+  }
+  if (isGoogleWithoutPassword(userRecord)) {
+    logger?.info?.("password_reset_no_send", { reason: "google_only" });
+    return { ok: true, signIn: "google" };
+  }
 
   let firebaseLink = "";
   try {

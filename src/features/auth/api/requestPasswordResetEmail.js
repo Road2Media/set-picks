@@ -9,10 +9,11 @@ export const PASSWORD_RESET_CALLABLE = 'requestPasswordResetEmail';
 
 /**
  * Ask the server to mail a password reset link.
- * The callable returns the same `{ ok: true }` whether or not the address has an account.
+ * Unknown addresses and sent resets are `{ ok: true }`.
+ * A Google-only account is `{ ok: true, signIn: 'google' }` and no mail is sent.
  *
  * @param {string} email
- * @returns {Promise<{ ok: boolean }>}
+ * @returns {Promise<{ ok: true, signIn?: 'google' }>}
  */
 export async function requestPasswordResetEmail(email) {
   const functions = getFunctions(app, FUNCTIONS_REGION);
@@ -21,10 +22,11 @@ export async function requestPasswordResetEmail(email) {
     const result = await callable({
       email: typeof email === 'string' ? email.trim() : '',
     });
-    const data = /** @type {{ ok?: boolean } | undefined} */ (result?.data);
+    const data = /** @type {{ ok?: boolean, signIn?: string } | undefined} */ (result?.data);
     if (data?.ok !== true) {
       throw normalizePasswordResetRequestError(new Error('reset_not_ok'));
     }
+    if (data.signIn === 'google') return { ok: true, signIn: 'google' };
     return { ok: true };
   } catch (error) {
     throw normalizePasswordResetRequestError(error);

@@ -1285,7 +1285,9 @@ exports.deletePoolWithCleanup = onCall(
  * Unauthenticated password reset (#1049).
  * Admin `generatePasswordResetLink` issues the code. Resend mails
  * https://www.setlistpickem.com/password-reset-complete?oobCode=…
- * Unknown addresses get the same `{ ok: true }` as known ones.
+ * Unknown addresses get the same `{ ok: true }` as a sent reset.
+ * Google-only accounts (google.com, no password) get
+ * `{ ok: true, signIn: "google" }` and no mail.
  */
 exports.requestPasswordResetEmail = onCall(
   {
@@ -1299,6 +1301,7 @@ exports.requestPasswordResetEmail = onCall(
       email: request.data?.email,
       ip: clientIpFromCallableRequest(request),
       db,
+      getUserByEmail: (normalized) => admin.auth().getUserByEmail(normalized),
       generateLink: (normalized) =>
         admin.auth().generatePasswordResetLink(
           normalized,

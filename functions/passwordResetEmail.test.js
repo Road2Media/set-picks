@@ -62,6 +62,22 @@ function fakeResend(captured) {
   };
 }
 
+function passwordUser(providerIds = ["password"], extra = {}) {
+  return {
+    email: "fan@example.com",
+    disabled: false,
+    providerData: providerIds.map((providerId) => ({ providerId })),
+    ...extra,
+  };
+}
+
+function callReset(overrides) {
+  return sendPasswordResetWithResend({
+    getUserByEmail: async () => passwordUser(),
+    ...overrides,
+  });
+}
+
 test("extractOobCode keeps the code and drops the firebaseapp.com wrapper", () => {
   assert.equal(extractOobCode(FIREBASE_LINK), "ABC123");
   assert.equal(extractOobCode("not a url"), "");
@@ -100,7 +116,7 @@ test("rendered mail has one www link and no firebase host", () => {
 
 test("known and unknown addresses return the same ok result", async () => {
   const sent = [];
-  const known = await sendPasswordResetWithResend({
+  const known = await callReset({
     email: "Fan@Example.com",
     ip: "203.0.113.8",
     nowMs: 1_000,
@@ -108,20 +124,30 @@ test("known and unknown addresses return the same ok result", async () => {
     generateLink: async () => FIREBASE_LINK,
     resendClient: fakeResend(sent),
   });
-  const unknown = await sendPasswordResetWithResend({
+  let unknownLookups = 0;
+  let unknownGenerated = 0;
+  const unknown = await callReset({
     email: "missing@example.com",
     ip: "203.0.113.9",
     nowMs: 1_000,
     db: createMemoryDb(),
-    generateLink: async () => {
+    getUserByEmail: async () => {
+      unknownLookups += 1;
       const error = new Error("no user");
       error.code = "auth/user-not-found";
       throw error;
+    },
+    generateLink: async () => {
+      unknownGenerated += 1;
+      return FIREBASE_LINK;
     },
     resendClient: fakeResend([]),
   });
   assert.deepEqual(known, { ok: true });
   assert.deepEqual(unknown, { ok: true });
+  assert.equal(unknown.signIn, undefined);
+  assert.equal(unknownLookups, 1);
+  assert.equal(unknownGenerated, 0);
   assert.equal(sent.length, 1);
   assert.deepEqual(sent[0].to, ["fan@example.com"]);
   assert.equal(sent[0].from, PASSWORD_RESET_FROM);
@@ -135,7 +161,7 @@ test("known and unknown addresses return the same ok result", async () => {
 test("disabled and invalid-email auth errors do not send and still return ok", async () => {
   for (const code of ["auth/user-disabled", "auth/invalid-email"]) {
     const sent = [];
-    const result = await sendPasswordResetWithResend({
+    const result = await callReset({
       email: "fan@example.com",
       ip: "",
       nowMs: 1_000,
@@ -154,12 +180,17 @@ test("disabled and invalid-email auth errors do not send and still return ok", a
 
 test("implausible addresses return ok and do not call Firebase or Resend", async () => {
   let generated = 0;
+  let lookups = 0;
   const sent = [];
-  const result = await sendPasswordResetWithResend({
+  const result = await callReset({
     email: "not-an-email",
     ip: "",
     nowMs: 1_000,
     db: createMemoryDb(),
+    getUserByEmail: async () => {
+      lookups += 1;
+      return passwordUser();
+    },
     generateLink: async () => {
       generated += 1;
       return FIREBASE_LINK;
@@ -167,6 +198,7 @@ test("implausible addresses return ok and do not call Firebase or Resend", async
     resendClient: fakeResend(sent),
   });
   assert.deepEqual(result, { ok: true });
+  assert.equal(lookups, 0);
   assert.equal(generated, 0);
   assert.equal(sent.length, 0);
 });
@@ -176,7 +208,7 @@ test("email rate limit blocks before a link is issued", async () => {
   let generated = 0;
   const sent = [];
   for (let i = 0; i < PASSWORD_RESET_EMAIL_MAX; i += 1) {
-    const result = await sendPasswordResetWithResend({
+    const result = await callReset({
       email: "fan@example.com",
       ip: `203.0.113.${i + 1}`,
       nowMs: 5_000,
@@ -191,7 +223,7 @@ test("email rate limit blocks before a link is issued", async () => {
   }
   await assert.rejects(
     () =>
-      sendPasswordResetWithResend({
+      callReset({
         email: "fan@example.com",
         ip: "203.0.113.50",
         nowMs: 5_000,
@@ -211,7 +243,7 @@ test("email rate limit blocks before a link is issued", async () => {
 test("IP rate limit applies across addresses", async () => {
   const db = createMemoryDb();
   for (let i = 0; i < PASSWORD_RESET_IP_MAX; i += 1) {
-    await sendPasswordResetWithResend({
+    await callReset({
       email: `fan${i}@example.com`,
       ip: "198.51.100.10",
       nowMs: 5_000,
@@ -226,7 +258,7 @@ test("IP rate limit applies across addresses", async () => {
   }
   await assert.rejects(
     () =>
-      sendPasswordResetWithResend({
+      callReset({
         email: "another@example.com",
         ip: "198.51.100.10",
         nowMs: 5_000,
@@ -242,7 +274,7 @@ test("rate window reopens after an hour", async () => {
   const db = createMemoryDb();
   const start = 10_000;
   for (let i = 0; i < PASSWORD_RESET_EMAIL_MAX; i += 1) {
-    await sendPasswordResetWithResend({
+    await callReset({
       email: "fan@example.com",
       ip: "",
       nowMs: start,
@@ -255,7 +287,7 @@ test("rate window reopens after an hour", async () => {
       resendClient: fakeResend([]),
     });
   }
-  const reopened = await sendPasswordResetWithResend({
+  const reopened = await callReset({
     email: "fan@example.com",
     ip: "",
     nowMs: start + PASSWORD_RESET_WINDOW_MS,
@@ -269,7 +301,7 @@ test("rate window reopens after an hour", async () => {
 test("resend failures throw a generic error and do not echo the firebase link", async () => {
   await assert.rejects(
     () =>
-      sendPasswordResetWithResend({
+      callReset({
         email: "fan@example.com",
         ip: "",
         nowMs: 1_000,
@@ -290,6 +322,75 @@ test("resend failures throw a generic error and do not echo the firebase link", 
       assert.equal(String(error.message).includes("ABC123"), false);
       return true;
     }
+  );
+});
+
+test("google-only accounts do not get a reset link", async () => {
+  let generated = 0;
+  const sent = [];
+  const result = await callReset({
+    email: "pat@road2media.com",
+    ip: "",
+    nowMs: 1_000,
+    db: createMemoryDb(),
+    getUserByEmail: async () => passwordUser(["google.com"]),
+    generateLink: async () => {
+      generated += 1;
+      return FIREBASE_LINK;
+    },
+    resendClient: fakeResend(sent),
+  });
+  assert.deepEqual(result, { ok: true, signIn: "google" });
+  assert.equal(generated, 0);
+  assert.equal(sent.length, 0);
+});
+
+test("google plus password still mails a reset", async () => {
+  const sent = [];
+  const result = await callReset({
+    email: "fan@example.com",
+    ip: "",
+    nowMs: 1_000,
+    db: createMemoryDb(),
+    getUserByEmail: async () => passwordUser(["google.com", "password"]),
+    generateLink: async () => FIREBASE_LINK,
+    resendClient: fakeResend(sent),
+  });
+  assert.deepEqual(result, { ok: true });
+  assert.equal(sent.length, 1);
+});
+
+test("a disabled account stays a generic ok and does not say Google", async () => {
+  let generated = 0;
+  const result = await callReset({
+    email: "fan@example.com",
+    ip: "",
+    nowMs: 1_000,
+    db: createMemoryDb(),
+    getUserByEmail: async () =>
+      passwordUser(["google.com"], { disabled: true }),
+    generateLink: async () => {
+      generated += 1;
+      return FIREBASE_LINK;
+    },
+    resendClient: fakeResend([]),
+  });
+  assert.deepEqual(result, { ok: true });
+  assert.equal(generated, 0);
+});
+
+test("a missing user lookup fails closed", async () => {
+  await assert.rejects(
+    () =>
+      sendPasswordResetWithResend({
+        email: "fan@example.com",
+        ip: "",
+        nowMs: 1_000,
+        db: createMemoryDb(),
+        generateLink: async () => FIREBASE_LINK,
+        resendClient: fakeResend([]),
+      }),
+    (error) => error instanceof HttpsError && error.code === "internal"
   );
 });
 

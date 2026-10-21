@@ -6,7 +6,11 @@ import {
   sendAccountPasswordResetEmail,
 } from '../api/accountSecurityApi';
 import { getFirebaseAuthErrorMessage } from '../../auth';
-import { passwordResetSentNotice } from '../../auth/passwordReset';
+import {
+  PASSWORD_RESET_GOOGLE_SIGN_IN_NOTICE,
+  passwordResetSentNotice,
+} from '../../auth/passwordReset';
+import { readSignInProviderIds } from './signInProviders';
 
 export function useAccountSecurity(user) {
   const [passwordResetSending, setPasswordResetSending] = useState(false);
@@ -19,8 +23,7 @@ export function useAccountSecurity(user) {
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountMessage, setAccountMessage] = useState({ text: '', type: '' });
 
-  const hasEmailPasswordProvider =
-    user?.providerData?.some((p) => p.providerId === 'password') ?? false;
+  const hasEmailPasswordProvider = readSignInProviderIds(user).includes('password');
 
   const clearAccountSensitiveFields = () => {
     setCurrentPassword('');
@@ -35,11 +38,18 @@ export function useAccountSecurity(user) {
     setPasswordResetNotice({ text: '', type: '' });
     setPasswordResetSending(true);
     try {
-      await sendAccountPasswordResetEmail(user.email);
-      setPasswordResetNotice({
-        text: passwordResetSentNotice(user.email),
-        type: 'success',
-      });
+      const result = await sendAccountPasswordResetEmail(user.email);
+      if (result?.signIn === 'google') {
+        setPasswordResetNotice({
+          text: PASSWORD_RESET_GOOGLE_SIGN_IN_NOTICE,
+          type: 'info',
+        });
+      } else {
+        setPasswordResetNotice({
+          text: passwordResetSentNotice(user.email),
+          type: 'success',
+        });
+      }
     } catch (error) {
       console.error('Password reset email:', error);
       const msg =

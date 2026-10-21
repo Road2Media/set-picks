@@ -15,6 +15,10 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ### Changed
 - **Password reset confirmation** — after a reset email is requested, splash, sign-in, and account security say to check the spam or junk folder if it does not show up in a few minutes.
+- **Linked sign-in methods** — Preferences names Google and email & password when both are on the account. The password form stays, and the intro says Google is still linked. Google-only accounts still see the Google explanation.
+
+### Fixed
+- **Google-only password reset (#1049)** — `requestPasswordResetEmail` does not mail a reset when the account has `google.com` and no `password` provider. Splash, sign-in, and account security say: “This account uses Google sign-in. Use Continue with Google to sign in.” Unknown addresses still get the inbox notice. Redeploy `functions:requestPasswordResetEmail` or a Google-only request still sends mail.
 
 ---
 
