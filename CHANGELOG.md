@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.91.1] — 2026-10-22
+
+### Fixed
+- **Stale bustout and song-gap snapshots (#626)** — a live poll that still has the full played list drops `bustouts` and `songGaps` titles that are no longer in that list, and adds every played song whose frozen gap is still 30 or more. A shorter in-progress feed still keeps the prior snapshot so a partial Phish.net payload cannot erase set 2. Firestore map merges do not keep deleted gap keys. Admin save applies the same played-list rule. After a show is auto-finalized, a bustout change on a song that was actually played re-runs rollup. A title that was never played does not change scores. `songGaps` stays display-only.
+
+### Added
+- **Snapshot reconcile backfill (#626)** — `npm run backfill:reconcile-snapshots -- --showDates=YYYY-MM-DD` from `functions/` re-fetches those shows and overwrites `bustouts` and `songGaps` (dry-run unless `--apply`). It does not scan the whole collection. `--apply` recomputes pick scores and graded point totals only when a played song's bustout membership changes. Do not run it against production from CI. Existing shows stay stale until a human runs it, and the live poller change does not apply until Cloud Functions are deployed.
+
 ## [1.91.0] — 2026-10-22
 
 ### Added

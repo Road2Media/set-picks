@@ -24,7 +24,10 @@ const {
   parseShowCalendarSnapshotToShowsByTour,
   pollSingleShowDate,
   randomScheduledPollDelayMs,
+  readPlayedSongHighWater,
+  resolveLiveSnapshotMode,
   scheduledCandidateShowDates,
+  songGapsMergePatch,
   set1TitleSignatureFromRows,
   setlistPayloadEqual,
   signatureFromRows,
@@ -455,7 +458,30 @@ test("deriveSongGapsFromRows keeps first occurrence for a repeated normalized ti
   assert.deepEqual(deriveSongGapsFromRows(rows), { tweezer: 12 });
 });
 
-test("buildSetlistDocFromRows emits songGaps and keeps songs absent from this poll", () => {
+test("buildSetlistDocFromRows partial mode keeps songs absent from this poll", () => {
+  const rows = normalizeSetlistRows({
+    error: false,
+    data: [
+      { set: "1", idx: 1, song: "AC/DC Bag", gap: 8 },
+      { set: "2", idx: 1, song: "Colonel Forbin's Ascent", gap: 98 },
+    ],
+  });
+  const out = buildSetlistDocFromRows(
+    rows,
+    {
+      songGaps: { "bathtub gin": 14 },
+    },
+    null,
+    { mode: "partial" }
+  );
+  assert.deepEqual(out.songGaps, {
+    "ac/dc bag": 8,
+    "colonel forbin's ascent": 98,
+    "bathtub gin": 14,
+  });
+});
+
+test("buildSetlistDocFromRows authoritative mode drops songs absent from the played list (#626)", () => {
   const rows = normalizeSetlistRows({
     error: false,
     data: [
@@ -465,12 +491,13 @@ test("buildSetlistDocFromRows emits songGaps and keeps songs absent from this po
   });
   const out = buildSetlistDocFromRows(rows, {
     songGaps: { "bathtub gin": 14 },
+    bustouts: ["Bathtub Gin"],
   });
   assert.deepEqual(out.songGaps, {
     "ac/dc bag": 8,
     "colonel forbin's ascent": 98,
-    "bathtub gin": 14,
   });
+  assert.deepEqual(out.bustouts, ["Colonel Forbin's Ascent"]);
 });
 
 test("buildSetlistDocFromRows keeps the first positive gap and ignores a live 0", () => {
@@ -496,7 +523,7 @@ test("buildSetlistDocFromRows keeps the first positive gap and ignores a live 0"
   assert.equal(out.songGaps["melt the guns"], 2051);
   assert.equal(out.songGaps["ac/dc bag"], 8);
   assert.equal(out.songGaps.oblivion, 3);
-  assert.equal(out.songGaps["bathtub gin"], 14);
+  assert.equal(out.songGaps["bathtub gin"], undefined);
   assert.equal(out.songGaps["down with disease"], 4);
   assert.equal(out.songGaps.ghost, undefined);
   assert.deepEqual(out.bustouts, ["Melt the Guns"]);
@@ -541,11 +568,101 @@ test("buildSetlistDocFromRows merges prior bustouts as a superset (partial feed 
       // an earlier partial poll. We must preserve it.
     ],
   });
-  const out = buildSetlistDocFromRows(rows, {
-    bustouts: ["Colonel Forbin's Ascent"],
-  });
+  const out = buildSetlistDocFromRows(
+    rows,
+    {
+      bustouts: ["Colonel Forbin's Ascent"],
+      songGaps: { "colonel forbin's ascent": 98 },
+    },
+    null,
+    { mode: "partial" }
+  );
   // Prior bustout preserved even though it is not in the current rows slice.
   assert.ok(out.bustouts.includes("Colonel Forbin's Ascent"));
+  assert.equal(out.songGaps["colonel forbin's ascent"], 98);
+});
+
+test("buildSetlistDocFromRows corrects a replaced title instead of unioning it (#626)", () => {
+  const rows = normalizeSetlistRows({
+    error: false,
+    data: [
+      { set: "1", idx: 1, song: "The Curtain With", gap: 11 },
+      { set: "1", idx: 2, song: "Tweezer", gap: 40 },
+    ],
+  });
+  const out = buildSetlistDocFromRows(rows, {
+    officialSetlist: ["The Curtain", "Tweezer"],
+    bustouts: ["The Curtain"],
+    songGaps: { "the curtain": 197, "the curtain with": 11, tweezer: 40 },
+  });
+  assert.deepEqual(out.officialSetlist, ["The Curtain With", "Tweezer"]);
+  assert.deepEqual(out.bustouts, ["Tweezer"]);
+  assert.deepEqual(out.songGaps, { "the curtain with": 11, tweezer: 40 });
+});
+
+test("resolveLiveSnapshotMode keeps a shorter in-progress feed partial (#626)", () => {
+  const midShow = resolveLiveSnapshotMode({
+    incomingSongCount: 8,
+    playedSongHighWater: 18,
+    alreadyAutoFinalized: false,
+  });
+  assert.equal(midShow.mode, "partial");
+  assert.equal(midShow.nextHighWater, 18);
+
+  const correction = resolveLiveSnapshotMode({
+    incomingSongCount: 18,
+    playedSongHighWater: 18,
+    alreadyAutoFinalized: false,
+  });
+  assert.equal(correction.mode, "authoritative");
+  assert.equal(correction.nextHighWater, 18);
+
+  const settledShrink = resolveLiveSnapshotMode({
+    incomingSongCount: 17,
+    playedSongHighWater: 18,
+    alreadyAutoFinalized: true,
+  });
+  assert.equal(settledShrink.mode, "authoritative");
+  assert.equal(settledShrink.nextHighWater, 17);
+});
+
+test("readPlayedSongHighWater seeds from the stored played list", () => {
+  assert.equal(
+    readPlayedSongHighWater({}, { officialSetlist: ["A", "B", ""] }),
+    2
+  );
+  assert.equal(
+    readPlayedSongHighWater({ playedSongHighWater: 20 }, { officialSetlist: ["A"] }),
+    20
+  );
+});
+
+test("songGapsMergePatch marks removed keys for Firestore delete (#626)", () => {
+  const patch = songGapsMergePatch(
+    { "the curtain": 197, "the curtain with": 11, tweezer: 40 },
+    { "the curtain with": 11, tweezer: 40 },
+    () => ({ _sentinel: "delete" })
+  );
+  assert.equal(patch["the curtain with"], 11);
+  assert.equal(patch.tweezer, 40);
+  assert.deepEqual(patch["the curtain"], { _sentinel: "delete" });
+});
+
+test("buildSetlistDocFromRows promotes a played song whose frozen gap clears the bustout threshold (#626)", () => {
+  const rows = normalizeSetlistRows({
+    error: false,
+    data: [
+      { set: "1", idx: 1, song: "Tweezer", gap: 0 },
+      { set: "1", idx: 2, song: "Farmhouse", gap: 4 },
+    ],
+  });
+  const out = buildSetlistDocFromRows(rows, {
+    bustouts: [],
+    songGaps: { tweezer: 40, farmhouse: 4 },
+  });
+  assert.equal(out.songGaps.tweezer, 40);
+  assert.equal(out.songGaps.farmhouse, 4);
+  assert.deepEqual(out.bustouts, ["Tweezer"]);
 });
 
 test("setlistPayloadEqual detects bustouts membership change, ignores casing/order", () => {
@@ -947,9 +1064,30 @@ function buildFakeFirestoreHarness(initialDocs = {}) {
         const merge = Boolean(opts?.merge);
         const prev = merge ? docs.get(key) || {} : {};
         const next = { ...prev };
+        // One-level deep merge matches Firestore `set` + `merge: true` for
+        // map fields such as `songGaps`. Nested `FieldValue.delete()` sentinels
+        // remove keys; a plain replacement would hide a stale-key bug.
+        const isPlain = (v) =>
+          Boolean(v) &&
+          typeof v === "object" &&
+          !Array.isArray(v) &&
+          !v._sentinel &&
+          typeof v.toMillis !== "function";
         for (const [field, fieldValue] of Object.entries(value || {})) {
-          if (fieldValue && fieldValue._sentinel === "delete") delete next[field];
-          else next[field] = fieldValue;
+          if (fieldValue && fieldValue._sentinel === "delete") {
+            delete next[field];
+            continue;
+          }
+          if (isPlain(fieldValue) && isPlain(next[field])) {
+            const merged = { ...next[field] };
+            for (const [child, childValue] of Object.entries(fieldValue)) {
+              if (childValue && childValue._sentinel === "delete") delete merged[child];
+              else merged[child] = childValue;
+            }
+            next[field] = merged;
+            continue;
+          }
+          next[field] = fieldValue;
         }
         docs.set(key, next);
         writes.push({ path: key, data: { ...value }, merge });
@@ -1291,6 +1429,158 @@ test("pollSingleShowDate: runRollup not injected → auto-finalize is a no-op", 
       undefined,
       "no stamp should be written when runRollup absent"
     );
+  } finally {
+    globalThis.fetch = originalFetch;
+    Date.now = originalNow;
+  }
+});
+
+test("pollSingleShowDate drops a corrected bustout title and its gap (#626)", async () => {
+  const showDate = "2026-10-07";
+  const nowMs = 1_000_000_000_000;
+  const rows = [{ set: "1", position: 1, song: "The Curtain With", gap: 11 }];
+  const normalized = normalizeSetlistRows({ data: rows });
+  const realSignature = signatureFromRows(normalized);
+  const harness = buildFakeFirestoreHarness({
+    [`official_setlists/${showDate}`]: {
+      showDate,
+      sourceMeta: { signature: realSignature, songCount: 1 },
+      setlist: { s1o: "The Curtain With", s1c: "", s2o: "", s2c: "", enc: "" },
+      officialSetlist: ["The Curtain With"],
+      encoreSongs: [],
+      bustouts: ["The Curtain"],
+      songGaps: { "the curtain": 197, "the curtain with": 11 },
+    },
+    [`live_setlist_automation/${showDate}`]: {
+      showDate,
+      enabled: true,
+      playedSongHighWater: 1,
+      autoFinalizedAt: { _millis: nowMs - 60_000, toMillis: () => nowMs - 60_000 },
+    },
+  });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = makeFakeFetch(rows);
+  const originalNow = Date.now;
+  Date.now = () => nowMs;
+  let rollupCalls = 0;
+  try {
+    const result = await pollSingleShowDate({
+      db: harness.db,
+      admin: harness.admin,
+      showDate,
+      apiKey: "test-key",
+      logger: { info() {}, warn() {}, error() {} },
+      runRollup: async () => {
+        rollupCalls += 1;
+        return { processedPicks: 0, skippedPicks: 0, totalPicks: 0, setlistExists: true };
+      },
+    });
+    assert.equal(result.changed, true);
+    assert.equal(rollupCalls, 0, "a bustout that was not played does not rescore");
+    const saved = harness.docs.get(`official_setlists/${showDate}`);
+    assert.deepEqual(saved.bustouts, []);
+    assert.deepEqual(saved.songGaps, { "the curtain with": 11 });
+    assert.equal(
+      harness.docs.get(`live_setlist_automation/${showDate}`).playedSongHighWater,
+      1
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    Date.now = originalNow;
+  }
+});
+
+test("pollSingleShowDate keeps snapshot titles when the live feed shrinks (#626)", async () => {
+  const showDate = "2026-10-07";
+  const nowMs = 1_000_000_000_000;
+  const rows = [{ set: "1", position: 1, song: "AC/DC Bag", gap: 8 }];
+  const harness = buildFakeFirestoreHarness({
+    [`official_setlists/${showDate}`]: {
+      showDate,
+      sourceMeta: { signature: "longer-feed", songCount: 4 },
+      setlist: { s1o: "AC/DC Bag", s1c: "", s2o: "Tweezer", s2c: "", enc: "" },
+      officialSetlist: ["AC/DC Bag", "Bathtub Gin", "Tweezer", "Fluffhead"],
+      encoreSongs: [],
+      bustouts: ["Fluffhead"],
+      songGaps: { "ac/dc bag": 8, fluffhead: 200 },
+    },
+    [`live_setlist_automation/${showDate}`]: {
+      showDate,
+      enabled: true,
+      playedSongHighWater: 4,
+    },
+  });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = makeFakeFetch(rows);
+  const originalNow = Date.now;
+  Date.now = () => nowMs;
+  try {
+    await pollSingleShowDate({
+      db: harness.db,
+      admin: harness.admin,
+      showDate,
+      apiKey: "test-key",
+      logger: { info() {}, warn() {}, error() {} },
+    });
+    const saved = harness.docs.get(`official_setlists/${showDate}`);
+    assert.ok(saved.bustouts.includes("Fluffhead"));
+    assert.equal(saved.songGaps.fluffhead, 200);
+    assert.equal(saved.songGaps["ac/dc bag"], 8);
+    assert.equal(
+      harness.docs.get(`live_setlist_automation/${showDate}`).playedSongHighWater,
+      4
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+    Date.now = originalNow;
+  }
+});
+
+test("pollSingleShowDate reconciles a played bustout after finalize without a row edit (#626)", async () => {
+  const showDate = "2026-10-07";
+  const nowMs = 1_000_000_000_000;
+  const rows = [{ set: "1", position: 1, song: "Tweezer", gap: 0 }];
+  const normalized = normalizeSetlistRows({ data: rows });
+  const realSignature = signatureFromRows(normalized);
+  const harness = buildFakeFirestoreHarness({
+    [`official_setlists/${showDate}`]: {
+      showDate,
+      sourceMeta: { signature: realSignature, songCount: 1 },
+      setlist: { s1o: "Tweezer", s1c: "", s2o: "", s2c: "", enc: "" },
+      officialSetlist: ["Tweezer"],
+      encoreSongs: [],
+      bustouts: [],
+      songGaps: { tweezer: 40 },
+    },
+    [`live_setlist_automation/${showDate}`]: {
+      showDate,
+      enabled: true,
+      playedSongHighWater: 1,
+      autoFinalizedAt: { _millis: nowMs - 60_000, toMillis: () => nowMs - 60_000 },
+    },
+  });
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = makeFakeFetch(rows);
+  const originalNow = Date.now;
+  Date.now = () => nowMs;
+  let rollupCalled = null;
+  try {
+    const result = await pollSingleShowDate({
+      db: harness.db,
+      admin: harness.admin,
+      showDate,
+      apiKey: "test-key",
+      logger: { info() {}, warn() {}, error() {} },
+      runRollup: async ({ showDate: sd, trigger }) => {
+        rollupCalled = { showDate: sd, trigger };
+        return { processedPicks: 1, skippedPicks: 0, totalPicks: 1, setlistExists: true };
+      },
+    });
+    assert.equal(result.changed, true);
+    assert.deepEqual(rollupCalled, { showDate, trigger: "auto-reconcile" });
+    const saved = harness.docs.get(`official_setlists/${showDate}`);
+    assert.deepEqual(saved.bustouts, ["Tweezer"]);
+    assert.equal(saved.songGaps.tweezer, 40);
   } finally {
     globalThis.fetch = originalFetch;
     Date.now = originalNow;

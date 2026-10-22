@@ -202,8 +202,8 @@ Per-show official results. Document ID is the show date (`YYYY-MM-DD`). Full sch
 |-------|------|-------|
 | `setlist` | Record<string,string> | Slot answers keyed by `FORM_FIELDS` id (`s1o`, `s1c`, …). |
 | `officialSetlist` | string[] | Ordered full-show song list. |
-| `bustouts` | string[] | Per-show bustout snapshot (pre-show gap ≥ 30). Scoring source of truth (#214). |
-| `songGaps` | Record<string,number> | **v1.29.0 (#587 Phase B)** — frozen pre-show gap per dated row, keyed by normalized title. Display-only (Standings “Gap N” signal); not read by scoring. Absent on pre-Phase-B shows. **v1.76.4** — the first positive gap sticks. A live row gap of 0 is not stored and does not replace a positive gap. Songs absent from a partial poll keep their stored gap. |
+| `bustouts` | string[] | Per-show bustout snapshot (pre-show gap ≥ 30). Scoring source of truth (#214). **v1.91.1 (#626)** — once the played list is authoritative, every played song whose frozen gap is still ≥ 30 is included, and titles that were not played are removed. A shorter in-progress live feed still unions with the prior list. |
+| `songGaps` | Record<string,number> | **v1.29.0 (#587 Phase B)** — frozen pre-show gap per dated row, keyed by normalized title. Display-only (Standings “Gap N” signal); not read by scoring. Absent on pre-Phase-B shows. **v1.76.4** — the first positive gap sticks. A live row gap of 0 is not stored and does not replace a positive gap. Songs absent from a partial poll keep their stored gap. **v1.91.1 (#626)** — an authoritative poll or admin save drops keys for songs that are not in the played list. The live writer deletes those keys explicitly because a merged map would keep them. |
 
 ### 1.13 `public_tour_stats/{tourSlug}` (**v1.33.0 / #665**)
 
@@ -316,6 +316,7 @@ Admin-read, client-write denied. The scheduled poller and `pollLiveSetlistNow` w
 | `outageEscalatedAt` | Timestamp | Optional one-time escalation after the incident has lasted 30 minutes. |
 | `recoveredAt` / `recoveryAlertedAt` | Timestamp | First successful upstream response after an alerted outage, and the one-time recovery alert. |
 | `lastSuccessfulPollAt` / `lastSuccessfulPollMode` | Timestamp / `"scheduled"` \| `"force"` | Last upstream success. Force is a Phish.net poll, not a manual Save. |
+| `playedSongHighWater` | number | **v1.91.1 (#626).** Most songs seen on an authoritative poll for this show. A later poll with fewer songs, before auto-finalize, keeps the prior `bustouts` / `songGaps` instead of treating the short payload as the whole show. After `autoFinalizedAt` is set, a shorter feed is authoritative and this number follows it. |
 
 Ops inbox + email go to `SUPER_ADMIN_UIDS` (and optional `LIVE_SETLIST_OPS_ALERT_EMAILS`). They do not use player prefs, fatigue caps, or `fcm_notification_log`. Dedup lives in server-only `live_setlist_ops_alerts/{messageId}` (client read and write denied). Inbox template id is `live-setlist-ops`.
 
