@@ -913,6 +913,7 @@ Current rules version is not independently versioned — it is tied to the app r
 3. Open a PR to `staging`, merge, then promote `staging → main`.
 4. After the `main` merge: `git tag vX.Y.Z -m "Release X.Y.Z" && git push origin vX.Y.Z`.
 5. Update this document if any API surface changed.
+6. Publishing the GitHub Release runs `.github/workflows/close-shipped-issues.yml`. It closes issues referenced with `Closes` / `Fixes` / `Resolves` on the staging PRs in that promote, and comments `Shipped in <tag> (#<promote PR>) via #<source PR>`. `Part of` and other plain mentions stay open. Issues labeled `keep-open` stay open. To preview without closing: Actions → **Close shipped issues** → Run workflow, set `tag` to the release tag, leave `dry_run` checked. The job logs the list and comments it on the promote PR. Run the same workflow with `dry_run` unchecked to close again; a repeat run does not add a second comment. The workflow is active only after it is on `main`. Pre-release tags do not close issues.
 
 ---
 

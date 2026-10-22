@@ -22,6 +22,17 @@ That runs release-gate → annotated tag `vX.Y.Z` → push tag → `gh release c
 - Never retag or move an existing `vX.Y.Z`; ship a new version instead.
 - Sync `staging` to `main` after promote when that is already part of the promote workflow.
 
+## Closing issues
+
+GitHub applies `Closes` / `Fixes` / `Resolves` when a pull request merges into the default branch (`main`). Feature PRs merge into `staging`, so those keywords stay open until the release that contains them is published.
+
+- Use `Closes #N` on a feature PR only when that PR fully finishes the issue.
+- Use `Part of #N` when the PR is a slice of a larger issue or epic. `Related #N` and `Slice A of #N` stay open too. A closing keyword is the only phrase that closes.
+- Label an issue `keep-open` when it must stay open even if a shipped PR uses a closing keyword (epics and partial ships).
+- `.github/workflows/close-shipped-issues.yml` runs on `release: published`. It comments `Shipped in <tag> (#<promote>) via #<source PR>` and closes the issue with `state_reason: completed`. Already-closed issues, pull request numbers, and `keep-open` issues are skipped. A second run for the same tag does not comment again and does not reopen anything.
+- Dry run: Actions → **Close shipped issues** → Run workflow. Set `tag` (for example `v1.96.0`) and leave `dry_run` checked. The job logs the would-close list and comments it on the promote PR. Uncheck `dry_run` to close for real. The workflow file is read from `main`, so the dispatch exists only after this change is promoted.
+- Pre-release tags (`vX.Y.Z-rc.N`) do not close issues.
+
 ## Related
 
-- `.cursorrules` §10 (SemVer) · `.cursor/rules/versioning.mdc` · `npm run release:gate`
+- `.cursorrules` §10 (SemVer) · `.cursor/rules/versioning.mdc` · `npm run release:gate` · `docs/API.md` §7

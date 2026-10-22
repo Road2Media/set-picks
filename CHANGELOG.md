@@ -15,6 +15,9 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 - **Dark by default** — Player routes render a closed shell unless `VITE_ENABLE_REWIND_MODE=true` at build time. The Rewind segment on the Picks tab is hidden until then. `/rewind` is `noindex` while the flag is off and is not in the sitemap.
 - **War Room** — Admins save the week (MSG NYE dates are suggestions) and refresh one show into `rewind_answers`. A daily job refreshes that cache when it is older than 24 hours and the week is open. No archive crawl.
 
+### Changed
+- **Shipped-issue close (#1149, #1174)** — Publishing a GitHub Release closes issues named with `Closes` / `Fixes` / `Resolves` on the staging pull requests in that promote. The comment names the tag, the promote PR, and the source PR. `Part of` and the `keep-open` label stay open. Actions → Close shipped issues, with `dry_run` checked, lists the same set and does not close anything.
+
 ## [1.95.0] — 2026-10-22
 
 ### Added
