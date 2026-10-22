@@ -23,6 +23,7 @@
 
 const {
   calculateTotalScore,
+  countBustoutBoosts,
   countCorrectSlots,
   persistableActualSetlistFromOfficialDoc,
   setlistHasAnyPlayedSong,
@@ -38,6 +39,7 @@ const {
 } = require("./postShowRollupPush");
 const { deliverPostRollupComms } = require("./commsEventAdapters");
 const { awardBadgesForUsers } = require("./badgeAwards");
+const { freezeRankSnapshotsAfterShow } = require("./badgeSnapshotJobs");
 const {
   rebuildGlobalStatsLeaderboardsSafe,
 } = require("./globalStatsLeaderboards");
@@ -145,6 +147,14 @@ async function runRollupForShow({
       tourKey: tourAudit.tourKey,
       tourKeyMissing: tourAudit.tourKeyMissing,
     });
+    await freezeSnapshotsSafe({
+      db,
+      admin,
+      showDate,
+      showDatesByTour,
+      tourKey,
+      logger,
+    });
     return {
       processedPicks: 0,
       skippedPicks: 0,
@@ -198,11 +208,13 @@ async function runRollupForShow({
     const newScore = newScoresById.get(pickDoc.id) || 0;
     const userPicks = pickData.picks || {};
     const newCorrectSlots = countCorrectSlots(userPicks, actualSetlist);
+    const newBustoutBoosts = countBustoutBoosts(userPicks, actualSetlist);
     const plan = computePerPickRollup({
       pickData,
       newScore,
       newGlobalMax,
       newCorrectSlots,
+      newBustoutBoosts,
     });
 
     if (pickData.userId && plan.isFirstGrade) {
@@ -234,6 +246,7 @@ async function runRollupForShow({
       isGraded: true,
       winCredited: plan.newIsWin,
       correctSlotsCredited: plan.newCorrectSlots,
+      bustoutBoostsCredited: plan.newBustoutBoosts,
     };
     if (plan.isFirstGrade) {
       pickUpdate.gradedAt = admin.firestore.FieldValue.serverTimestamp();
@@ -266,6 +279,7 @@ async function runRollupForShow({
           correctSlots: admin.firestore.FieldValue.increment(
             plan.countsTowardSeason ? plan.correctSlotsDiff : 0
           ),
+          bustoutBoosts: admin.firestore.FieldValue.increment(plan.bustoutBoostsDiff),
         },
       };
     }
@@ -372,6 +386,15 @@ async function runRollupForShow({
     });
   }
 
+  await freezeSnapshotsSafe({
+    db,
+    admin,
+    showDate,
+    showDatesByTour,
+    tourKey,
+    logger,
+  });
+
   return {
     processedPicks,
     skippedPicks,
@@ -452,6 +475,31 @@ async function writeRollupAuditDoc({
     logger?.warn?.("runRollupForShow.auditWrite failed", {
       showDate,
       trigger,
+      msg,
+    });
+  }
+}
+
+/**
+ * Tour and year badge snapshots. A failure here must not undo the rollup.
+ *
+ * @param {{
+ *   db: import("firebase-admin").firestore.Firestore,
+ *   admin: typeof import("firebase-admin"),
+ *   showDate: string,
+ *   showDatesByTour: unknown,
+ *   tourKey: string | null,
+ *   logger?: { info?: Function, warn?: Function },
+ * }} params
+ */
+async function freezeSnapshotsSafe(params) {
+  try {
+    await freezeRankSnapshotsAfterShow(params);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    params.logger?.warn?.("runRollupForShow.rankSnapshots failed", {
+      showDate: params.showDate,
+      tourKey: params.tourKey,
       msg,
     });
   }

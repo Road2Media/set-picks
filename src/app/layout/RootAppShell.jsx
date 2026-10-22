@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import { useAcceptedInviteAttribution } from '../../features/invite';
 import { isDashboardEntryPath } from '../../shared/lib/appBootPath';
 import { usePushNavigationBridge } from '../../shared/lib/usePushNavigationBridge';
 import { useServiceWorkerUpdate } from '../../shared/lib/useServiceWorkerUpdate';
@@ -27,6 +28,7 @@ export default function RootAppShell() {
   const transitionKey = shellTransitionKey(pathname);
   const { updateAvailable, applyUpdate } = useServiceWorkerUpdate();
   usePushNavigationBridge();
+  useAcceptedInviteAttribution();
 
   return (
     <>

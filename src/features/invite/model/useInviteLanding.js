@@ -12,13 +12,17 @@ import {
   getInviteLandingHeadline,
   getInviteLandingSubcopy,
 } from './inviteLandingCopy';
+import {
+  rememberPendingInviter,
+  shouldRememberPendingInviter,
+} from './pendingInviter';
 
 /**
  * @param {{ inviteKind: 'site' | 'pool', handle?: string | null }} options
  */
 export function useInviteLanding({ inviteKind, handle: rawHandle }) {
   const handle = normalizeInviteHandle(rawHandle);
-  const { user, isAdmin: isAdminUser } = useAuth();
+  const { user, loading, isAdmin: isAdminUser } = useAuth();
   const [authModal, setAuthModal] = useState(null);
   const [redirectAuthError, setRedirectAuthError] = useState('');
   const [inviter, setInviter] = useState(null);
@@ -60,6 +64,20 @@ export function useInviteLanding({ inviteKind, handle: rawHandle }) {
   }, [handle]);
 
   const resolvedHandle = inviter?.handle?.trim() || null;
+
+  useEffect(() => {
+    if (
+      !shouldRememberPendingInviter({
+        authReady: !loading,
+        signedIn: Boolean(user),
+        resolveState,
+        handle: resolvedHandle,
+      })
+    ) {
+      return;
+    }
+    rememberPendingInviter(resolvedHandle);
+  }, [loading, user, resolveState, resolvedHandle]);
   const headline = useMemo(
     () => getInviteLandingHeadline({ inviteKind, resolvedHandle }),
     [inviteKind, resolvedHandle],

@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.91.2  
+**Version:** 1.93.0  
 
 
 **SemVer:** https://semver.org  
@@ -22,7 +22,7 @@ All collections live in the default `(default)` Firestore database for project `
 | `email` | string | Auth email — used for comms delivery |
 | `photoURL` | string? | Legacy optional URL field (unused by curated avatar picker) |
 | `avatarId` | string? | **v1.27.0+ (#567)** Curated avatar catalog id (e.g. `ticket`, `flame`). Optional. **v1.89.1 (#643)** Profile save writes this field only after an explicit catalog pick, including `ticket`. A missing field stays missing. Public profile display may still resolve a missing id to the `ticket` mark. Standings treats a missing or unknown id as unset: other players get an initial chip, and your own row shows the add control. |
-| `badges` | map? | **v1.28.0+ (#568)** Earned milestone badges `{ [badgeId]: { awardedAt, scope, sourceThroughShow } }`. Written server-side at rollup; idempotent merge. **v1.82.0+ (#712)** also awards `shows_played_25`, `shows_played_50`, `win_5`, `win_10`, `points_500`, `points_1000`, `anniversary_1`, `anniversary_2`, `anniversary_3`, and `style_picker` from `showsPlayed`, `wins`, `totalPoints`, `createdAt`, and `favoriteSong`. Same map shape. |
+| `badges` | map? | **v1.28.0+ (#568)** Earned milestone badges `{ [badgeId]: { awardedAt, scope, sourceThroughShow } }`. Written server-side at rollup; idempotent merge. **v1.82.0+ (#712)** also awards `shows_played_25`, `shows_played_50`, `win_5`, `win_10`, `points_500`, `points_1000`, `anniversary_1`, `anniversary_2`, `anniversary_3`, and `style_picker` from `showsPlayed`, `wins`, `totalPoints`, `createdAt`, and `favoriteSong`. Same map shape. **v1.93.0+ (#1115)** also awards tour winner / top 5 (including a second and third), tour-leading batting average, points per show, and bustout boosts, Triple Crown, year winner (including a second and third), annual slugging leader and top 5 (including a second and third), and Pick 'em Evangelist. Scope is `tour:{tourKey}`, `year:{YYYY}`, or `career`. Clients cannot create or change `badges`. A later regrade does not clear `awardedAt`. |
 | `favoriteSong` | string? | Display favorite; empty/`Unknown` treated as unset in UI |
 | `termsPrivacyAcceptedAt` | Timestamp? | Legal consent gate |
 | `createdAt` | Timestamp | Account creation |
@@ -34,7 +34,9 @@ All collections live in the default `(default)` Firestore database for project `
 | `careerCorrectSlots` | number? | **v1.26.0+ (#554)** Sum of pick slots that scored > 0 across graded shows. Used for avg correct / show. Absent until rollup/backfill. |
 | `seasonStatsThroughShow` | string? | YYYY-MM-DD freshness watermark for materialized career/tour stats |
 | `seasonStatsSnapshotAt` | Timestamp? | Last rollup write time |
-| `seasonStats.{tourKey}` | map | Per-tour aggregated scoring (`totalPoints`, `shows`, `wins`, and **v1.26.0+** `correctSlots`) |
+| `seasonStats.{tourKey}` | map | Per-tour aggregated scoring (`totalPoints`, `shows`, `wins`, **v1.26.0+** `correctSlots`, and **v1.93.0+** `bustoutBoosts`) |
+| `acceptedInviteCount` | number? | **v1.93.0+ (#1115)** Server-owned count of people who finished signup from this user's invite. Clients cannot write it. Profile invites and pool `?from=` invites both count. A link click does not. There is no backfill of old joins. |
+| `invitedBy` | map? | **v1.93.0+ (#1115)** `{ uid, handle }` set once on the new user when an accepted invite is recorded. Clients cannot write it. |
 
 ### 1.2 `users/{uid}` — `notificationPrefs` shape
 
@@ -88,6 +90,7 @@ Stores per-user, per-show slot picks and computed scores.
 | Field | Type | Notes |
 |-------|------|-------|
 | `correctSlotsCredited` | number? | **v1.26.0+ (#554)** Slots that scored > 0 on last finalize; used for regrade diffs into `users.careerCorrectSlots` |
+| `bustoutBoostsCredited` | number? | **v1.93.0+ (#1115)** Slots whose bustout boost fired on last finalize. Regrade diffs this into `seasonStats.{tourKey}.bustoutBoosts` so a second finalize does not double-count. |
 | `winCredited` | boolean? | Whether this pick currently counts as a global night win |
 
 ### 1.7 `fcm_notification_log/{dedupId}`
@@ -357,6 +360,18 @@ Global `totalPoints`, `showsPlayed`, and `wins` still update when `tourKeyMissin
 
 Rollup and `backfillSeasonAggregates.js` also `FieldValue.delete()` the legacy undeclared `users/{uid}.stats` map (`{ showsPlayed, totalPoints }` from launch-day docs). It was never part of this schema. `cleanupLegacyUserStats.js` is the one-shot that removes it from docs those writers do not touch. Production cleanup is a manual `--apply`, not a client or rules change.
 
+### 1.20 `tour_rank_snapshots/{tourKey}` (**v1.93.0 / #1115**)
+
+Full-field points board for one finished tour, plus batting average, points per show, and bustout-boost ranks. Written once by Cloud Functions when every date on that tour has a rollup audit (the finale included). A `/` in the tour key is stored as `-`. Clients cannot read or write (`allow read, write: if false`). This is not `global_stats_leaderboards`, which stays top 50 and keeps moving.
+
+Points rank matches tour standings and the year board (#1110): competition rank on total points, ties share a place. Batting average and points per show use the same tie rule and the 3-show gate. Bustout rank counts slots whose boost fired. A count of 0 is not ranked. `awardsAppliedAt` means the badge pass for this snapshot finished. A later regrade does not rewrite the doc.
+
+### 1.21 `year_rank_snapshots/{YYYY}` (**v1.93.0 / #1115**)
+
+Full-field points and slugging board for one calendar year of show dates. A Dec 31 show stays in that year. A Jan 1 show is the next year. Written once after 31 December UTC, when every show dated in that year has a rollup audit. Clients cannot read or write.
+
+Points rank uses the same aggregation and tie rule as the Standings year view. Slugging is `totalPoints / (shows × 30)`. The annual slugging badges require **10** graded shows. That is lower than the all-time floor of 15 and higher than the in-progress tour gate of 3. Players under 10 stay on the points board and do not receive a slugging rank. The all-time Global Stats doc is not an input.
+
 ---
 
 ## 2. Cloud Function Callables
@@ -604,6 +619,21 @@ Provider check used after a failed email sign-in or a sign-up collision. It does
 **Response:** `{ "ok": true, "signIn": "google" }` when the account has `google.com` and no `password` provider. `{ "ok": true }` for an unknown address, a disabled account, or any account that already has a password (including Google plus password). `resource-exhausted` when the address or caller IP is over the lookup cap (separate from the reset cap in §1.16). A failed lookup is not an account-existence signal.
 
 **Deploy:** `firebase deploy --only functions:lookupSignInMethod --project set-picks`. Until that deploy, email sign-in and sign-up keep the short generic copy and do not call out Google.
+
+### 2.9 `recordAcceptedInvite` and `scheduledBadgeRankSnapshots` (v1.93.0, #1115)
+
+`recordAcceptedInvite` is an authenticated callable (`us-central1`). Body: `{ handle: string }`. It resolves that handle to one user, and only then may set `invitedBy` on the caller and increment the inviter's `acceptedInviteCount`. It counts a finished signup from a profile invite or a pool invite `?from=`. It does not count a click, a self-invite, an account older than 48 hours, or an account that already has `showsPlayed > 0`. At 5 it awards `pickem_evangelist` once. There is no invite backfill.
+
+`scheduledBadgeRankSnapshots` runs daily at 9:15 `America/Los_Angeles`. It freezes any finished tour or closed calendar year that does not yet have a snapshot, then awards badges. The first run after deploy writes historical snapshots and badges. That write is the backfill. Preview it with `node scripts/backfillRankSnapshots.js` from `functions/` (dry-run). `--apply` writes. Do not run `--apply` until the dry-run is reviewed.
+
+Taking effect in production requires a rules deploy and a functions deploy, in this order:
+
+1. `firebase deploy --only firestore:rules --project set-picks`
+2. `firebase deploy --only functions:rollupScoresForShow,functions:revertRollupForShow,functions:scheduledPhishnetLiveSetlistPoll,functions:recordAcceptedInvite --project set-picks`
+3. From `functions/`: `node scripts/backfillRankSnapshots.js` (dry-run; reads production, writes nothing)
+4. After that dry-run is reviewed, either `node scripts/backfillRankSnapshots.js --apply` or `firebase deploy --only functions:scheduledBadgeRankSnapshots --project set-picks`. The scheduler's first tick is the same historical write. Deploy it after the dry-run so the first write is reviewed.
+
+Until those deploys, signup does not increment the counter and finished tours do not freeze.
 
 ---
 

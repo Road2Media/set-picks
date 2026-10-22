@@ -162,6 +162,8 @@ function resolveTourKeyForDate(showDate, showDatesByTour) {
  *   countsTowardSeason: boolean,
  *   newCorrectSlots: number,
  *   correctSlotsDiff: number,
+ *   newBustoutBoosts: number,
+ *   bustoutBoostsDiff: number,
  * }}
  */
 function computePerPickRollup({
@@ -169,6 +171,7 @@ function computePerPickRollup({
   newScore,
   newGlobalMax,
   newCorrectSlots = 0,
+  newBustoutBoosts = 0,
 }) {
   const oldScore = typeof pickData?.score === "number" ? pickData.score : 0;
   const isFirstGrade = pickData?.isGraded !== true;
@@ -196,6 +199,19 @@ function computePerPickRollup({
     ? creditedCorrect
     : creditedCorrect - oldCorrectSlots;
 
+  const creditedBustouts =
+    typeof newBustoutBoosts === "number" && Number.isFinite(newBustoutBoosts)
+      ? Math.max(0, Math.trunc(newBustoutBoosts))
+      : 0;
+  const newBustout = countsTowardSeason ? creditedBustouts : 0;
+  const oldBustout = isFirstGrade
+    ? 0
+    : typeof pickData?.bustoutBoostsCredited === "number" &&
+        Number.isFinite(pickData.bustoutBoostsCredited)
+      ? Math.max(0, Math.trunc(pickData.bustoutBoostsCredited))
+      : 0;
+  const bustoutBoostsDiff = newBustout - oldBustout;
+
   return {
     scoreDiff,
     isFirstGrade,
@@ -205,6 +221,8 @@ function computePerPickRollup({
     countsTowardSeason,
     newCorrectSlots: creditedCorrect,
     correctSlotsDiff,
+    newBustoutBoosts: newBustout,
+    bustoutBoostsDiff,
   };
 }
 
