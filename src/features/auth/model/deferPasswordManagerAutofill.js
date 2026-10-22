@@ -8,22 +8,45 @@ import { useState } from 'react';
  * Strategy:
  * - Credential fields start `readOnly` until a real user gesture
  * - Reject pre-gesture autofocus (blur + park on a non-input)
+ * - A pointer/touch/key gesture unlocks that field before focus and cancels
+ *   the neutralize timers, so the first tap keeps focus and iOS can open the
+ *   keyboard (#1050). Clearing `readOnly` in `focus` is too late — iOS decides
+ *   the keyboard at touch start.
  * - Document-level listeners survive React replacing `#root`
+ *
+ * The same rules are inlined in `scripts/login-boot-shell.mjs` (first HTML,
+ * before this module loads). Keep both in sync.
  */
 
 export const LOGIN_FOCUS_PARK_ID = 'login-focus-park';
 
+/** `documentElement.dataset` key shared with the login boot shell. */
+export const LOGIN_FOCUS_GESTURE_DATASET_KEY = 'loginFocusGestured';
+
 /**
  * Per-field hook — call once per credential input (do not share across fields).
- * @returns {{ readOnly: boolean, onFocus: () => void }}
+ * Unlock on pointer/touch, not only focus, so the field is editable before iOS
+ * chooses whether to show the keyboard.
+ * @returns {{ readOnly: boolean, onPointerDown: (event: unknown) => void, onTouchStart: (event: unknown) => void, onFocus: (event: unknown) => void }}
  */
 export function useDeferPasswordManagerAutofill() {
   const [editable, setEditable] = useState(false);
+  const unlock = (event) => {
+    const el = event?.currentTarget;
+    if (el && el.readOnly) el.readOnly = false;
+    setEditable(true);
+  };
+  // Pointer/touch only. `onFocus` must not count as a gesture — Safari
+  // autofocus (#909) would otherwise cancel the neutralize timers.
+  const unlockFromPointer = (event) => {
+    markLoginFocusGesture();
+    unlock(event);
+  };
   return {
     readOnly: !editable,
-    onFocus() {
-      setEditable(true);
-    },
+    onPointerDown: unlockFromPointer,
+    onTouchStart: unlockFromPointer,
+    onFocus: unlock,
   };
 }
 
@@ -72,11 +95,56 @@ export function isCredentialAutofillTarget(el) {
 }
 
 /**
+ * @returns {boolean}
+ */
+export function hasLoginFocusGesture() {
+  if (typeof document === 'undefined') return false;
+  return document.documentElement?.dataset?.[LOGIN_FOCUS_GESTURE_DATASET_KEY] === '1';
+}
+
+export function markLoginFocusGesture() {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  if (root?.dataset) root.dataset[LOGIN_FOCUS_GESTURE_DATASET_KEY] = '1';
+}
+
+/**
+ * Label taps focus the linked input after pointerdown. Unlock that input
+ * before the browser moves focus.
+ * @param {EventTarget | null | undefined} target
+ * @returns {Element | null}
+ */
+export function credentialFieldFromGestureTarget(target) {
+  if (isCredentialAutofillTarget(target)) return target;
+  if (!target || target.tagName !== 'LABEL' || typeof document === 'undefined') return null;
+  const id = typeof target.getAttribute === 'function' ? target.getAttribute('for') : '';
+  if (!id) return null;
+  const el = document.getElementById(id);
+  return isCredentialAutofillTarget(el) ? el : null;
+}
+
+/**
+ * Make a credential field editable before iOS samples `readOnly` for the keyboard.
+ * @param {Element | null | undefined} el
+ */
+export function unlockCredentialField(el) {
+  if (!isCredentialAutofillTarget(el)) return;
+  try {
+    el.readOnly = false;
+    if (typeof el.removeAttribute === 'function') el.removeAttribute('readonly');
+  } catch {
+    // Ignore detached or cross-origin targets.
+  }
+}
+
+/**
  * Move focus off credential fields onto a non-editable park node.
+ * No-ops after a real user gesture so a first tap is not treated as autofocus (#1050).
  * @returns {boolean} true if a credential field was neutralized
  */
 export function blurAutofocusedCredentialField() {
   if (typeof document === 'undefined') return false;
+  if (hasLoginFocusGesture()) return false;
   try {
     const ae = document.activeElement;
     if (!isCredentialAutofillTarget(ae)) return false;
@@ -93,13 +161,16 @@ export function blurAutofocusedCredentialField() {
 
 /**
  * After hydrate: retry neutralize — Safari private often focuses after paint.
- * Stops early once focus is no longer on a credential field.
+ * Each pass no-ops once the user has gestured (#1050) or focus is not on a
+ * credential field.
  */
 export function scheduleNeutralLoginFocus() {
   if (typeof window === 'undefined') return () => {};
   const delays = [0, 50, 150, 400];
   const ids = [];
   const run = () => {
+    // A tap inside this window is intentional. Do not steal it (#1050).
+    if (hasLoginFocusGesture()) return;
     blurAutofocusedCredentialField();
   };
   run();
@@ -125,12 +196,19 @@ export function ensureNeutralLoginFocusGuards() {
   if (document.documentElement.dataset.loginFocusGuard === '1') return;
   document.documentElement.dataset.loginFocusGuard = '1';
 
-  let gestured = false;
   const markGesture = () => {
-    gestured = true;
+    markLoginFocusGesture();
   };
-  document.addEventListener('pointerdown', markGesture, true);
-  document.addEventListener('touchstart', markGesture, true);
+  const onPointerGesture = (ev) => {
+    // Only a tap on a credential field (or its label) is intentional focus.
+    // A tap on Google or the page must keep the autofocus killer armed (#909).
+    const field = credentialFieldFromGestureTarget(ev.target);
+    if (!field) return;
+    markGesture();
+    unlockCredentialField(field);
+  };
+  document.addEventListener('pointerdown', onPointerGesture, true);
+  document.addEventListener('touchstart', onPointerGesture, true);
   document.addEventListener('keydown', markGesture, true);
 
   document.addEventListener(
@@ -138,8 +216,8 @@ export function ensureNeutralLoginFocusGuards() {
     (ev) => {
       const t = ev.target;
       if (!isCredentialAutofillTarget(t)) return;
-      if (gestured) {
-        if (t.readOnly) t.readOnly = false;
+      if (hasLoginFocusGesture()) {
+        unlockCredentialField(t);
         return;
       }
       // Autofocus before any user gesture — keep neutral door.

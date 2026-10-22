@@ -1,18 +1,19 @@
 import React from 'react';
 
 import { dashboardPageTitleGradientClasses } from '../../../shared/config/dashboardHeadingTypography';
+import { accountSecurityMode } from '../model/signInProviders';
 import { useAccountSecurity } from '../model/useAccountSecurity';
 import AccountSecurityForm from './AccountSecurityForm';
 
 /**
- * Email/password credential management for accounts that use the password provider.
+ * Email/password credential management when the account has a password provider.
  * Google-only accounts see a short explanation (no form).
+ * Google plus password keeps the form and says both methods are linked.
  *
  * @param {{ user: import('firebase/auth').User | null | undefined, showHeading?: boolean }} props
  */
 export default function AccountSecurity({ user, showHeading = true }) {
   const {
-    hasEmailPasswordProvider,
     passwordResetSending,
     passwordResetNotice,
     currentPassword,
@@ -31,7 +32,9 @@ export default function AccountSecurity({ user, showHeading = true }) {
     handleAccountSecuritySubmit,
   } = useAccountSecurity(user);
 
-  if (!hasEmailPasswordProvider || !user?.email) {
+  const mode = accountSecurityMode(user);
+
+  if (mode === 'google-only') {
     return (
       <div className="rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
         <h3 className="text-sm font-black uppercase tracking-widest text-content-secondary">
@@ -54,17 +57,38 @@ export default function AccountSecurity({ user, showHeading = true }) {
             Sign-in &amp; password
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            You sign in as{' '}
-            <span className="font-bold text-brand-primary">{user.email}</span>. Enter your{' '}
-            <strong className="text-slate-300">current password</strong> below to change your email
-            and/or password.
+            {mode === 'both' ? (
+              <>
+                You sign in with Google and with email and password as{' '}
+                <span className="font-bold text-brand-primary">{user.email}</span>. Enter your{' '}
+                <strong className="text-slate-300">current password</strong> below to change your
+                email and/or password.
+              </>
+            ) : (
+              <>
+                You sign in as{' '}
+                <span className="font-bold text-brand-primary">{user.email}</span>. Enter your{' '}
+                <strong className="text-slate-300">current password</strong> below to change your
+                email and/or password.
+              </>
+            )}
           </p>
         </div>
       ) : (
         <p className="mb-4 text-sm leading-relaxed text-content-secondary">
-          You sign in as{' '}
-          <span className="font-bold text-brand-primary">{user.email}</span>. Enter your current
-          password to change email and/or password.
+          {mode === 'both' ? (
+            <>
+              You sign in with Google and with email and password as{' '}
+              <span className="font-bold text-brand-primary">{user.email}</span>. Enter your current
+              password to change email and/or password.
+            </>
+          ) : (
+            <>
+              You sign in as{' '}
+              <span className="font-bold text-brand-primary">{user.email}</span>. Enter your current
+              password to change email and/or password.
+            </>
+          )}
         </p>
       )}
 

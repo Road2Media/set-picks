@@ -116,6 +116,26 @@ EVENT (Firestore onCreate/onUpdate · scheduler cron · post-grade hook · live-
 - **Rollout** — canary uid → cohort % → full audience, by enabling event adapters / schedules (not by manual sends).
 - **Measurement** — log `comms_delivered` server-side with `trigger_id`, `template_id`, `channel`, `variant: control`.
 
+### One-shot / pending-scanner checklist (#1035)
+
+Per-uid `fcm_notification_log` is channel idempotency. It is not a process gate. A completed moment (end of tour, archive edition, superseded template) is stored once and read **before** `deliverCommsTrigger`, so email, push, and in-app share one skip.
+
+Incident: [INCIDENT_2026-09-09_SPHERE_TOUR_RECAP.md](./INCIDENT_2026-09-09_SPHERE_TOUR_RECAP.md). The 2026-09-09 Sphere blast happened because the first live `tour_recap` tick treated “no `tour_recap:{tour}:{uid}` doc” as “never sent,” including an archive edition that had already wrapped under `sphere-2026-inaugural`.
+
+| Check | Required |
+|-------|----------|
+| Time bound | Lookback or “yesterday / T-N / lock window.” Never unbounded history. |
+| Process state | Skip when `comms_process_state/{triggerId}:{scope}` is `sent`, `skipped_archive`, or `closed`. `tour_recap` also honors the `comms_tour_recap_state` mirror. |
+| Edition status | Skip `show_calendar` tour groups with `editionStatus` `archive` or `closed`. A tour name is not a gate. |
+| Dedup key stability | Changing `triggerId` or template requires `supersedes` on the process doc, or a seed. Do not mint a trigger id per tour. |
+| Channel fan-out | The gate runs before `deliverCommsTrigger`. |
+
+`show_recap` stays event-scoped: per-uid dedup is the retry lock for a **live** edition. Re-rollup of an archive show, or of a tour whose process is `skipped_archive` / `closed`, does not start `show_recap`. A `sent` tour process does not block night `show_recap`. Explicit `runCommsTrigger` replay is still allowed and defaults to `dryRun: true`.
+
+`campaignId` is the edition analytics slug (`2026-summer`, `2026-sphere`). `triggerId` stays the catalog intent.
+
+Email join keys: catalog sends go through `commsEmailWorker` (`uid`, `triggerId`, optional `campaignId`) and the orchestrator writes `resendEmailId` on the dedup doc. Marketing batches use that same orchestrator. `deliverSphere2026TourRecapInbox` is inbox + push only (no Resend). Password-reset mail and inbound support forward are not catalog fan-outs and do not write `fcm_notification_log`.
+
 ### Email channel — Resend
 
 - **Secret:** `RESEND_API_KEY` via Functions v2 `defineSecret` (`firebase functions:secrets:set RESEND_API_KEY`). Cloud Functions only; never client-side.

@@ -8,7 +8,7 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
-## [1.84.0] — 2026-10-21
+## [1.89.0] — 2026-10-22
 
 ### Added
 - **Live setlist upstream recovery (#644)** — during a show, polling retries on a jittered 3–5 minute cap instead of waiting out a 30 minute backoff. A successful Phish.net response, including Force poll and an empty setlist, clears the failure count and the old next-poll time. Three live-window failures send one super-admin inbox message and one email; recovery sends one follow-up. Standings shows an approved delay sentence for that show date only. War Room can pin or clear it, and shows whether the poller is healthy, backing off, paused, or recovered.
@@ -18,6 +18,65 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ### Fixed
 - **War Room blank after load (#644)** — opening War Room threw while clearing automation status that had moved onto the health panel, so the page unmounted after the first paint. A missing or permission-denied `public_service_status` doc now stays a hidden banner and leaves War Room on screen.
+
+## [1.88.0] — 2026-10-22
+
+### Added
+- **Finished-tour wrap on `/tour-stats/{slug}` (#1140)** — a closed tour (every post-launch date has a setlist, and the last show is before today in Pacific time) gets a short wrap under the title: shows, unique songs, songs played, the same most-played song the frequency list already ranks, bustout count plus the longest gap, and the Bustout Boost line. Fall, summer, and Sphere use the same block. The counts are the public tour-stats fields, and the block is in the prerendered HTML. A 1200×630 JPEG at `/tour-stats-share/{slug}.jpg` is the Open Graph image. Share copies a `utm_campaign=seo_geo` link. A slug that is not in the static SEO registry (Fall) uses the live tour label for the H1, title, and canonical. Sphere and Summer keep their registry titles.
+- **`public_tour_stats.tourWinners` (#1140)** — optional `{ handles, points, tied }` for rank 1. Display handles and points only. Empty and Anonymous handles are dropped. No uid. Written when the tour is finished. `schemaVersion` stays `2` so the existing version `1`/`2` list query still sees the docs. A Cloud Functions deploy plus a public tour-stats refresh is required before the winner line appears. Until then the wrap still shows the song facts.
+
+## [1.87.0] — 2026-10-22
+
+### Added
+- **Tour wrap places (#1136)** — `tour_recap` payload `podium.places` is one entry per official rank from 1 through 5. A tie is one place that names everyone at that rank. `email_board` includes every player at those ranks, so a tie can make the grid longer than five rows.
+
+### Changed
+- **Tour wrap copy (#1136)** — the shared intro can say the field, the rarest hit, the lead changes, and the close in the same paragraph. A missing fact drops its clause. The personal line says “tied for #N with …” when `tiedCount` is greater than 1, and it can carry both the rare-hit beat and the lead beat (two beats at most). Dates are the short fan date. Last played and debut year fold into the gap clause from `public_tour_stats`. New sends skip the canned “dominant performance” and “incredibly tight down the stretch” lines. Messages that already shipped, including the Sphere archive, have no `places` array and keep the older podium. A Cloud Functions deploy is required before the next wrap uses this copy. Do not resend the 2026 Fall Tour wrap.
+
+## [1.86.0] — 2026-10-22
+
+### Added
+- **Shared tour rank on the comms payload (#1135)** — `tour_rankings_daily` includes `tour_tied_handles`. `tour_recap` includes `tiedCount` and `tiedHandles`. Both are the other players at that official rank, in list order. A Cloud Functions deploy is required before a live send writes them.
+
+### Changed
+- **Tour standings description (#1135)** — the tour screen says players with the same points share a rank, the next rank skips, and nightly wins then name only order a tie.
+
+### Fixed
+- **Tour standings badges (#1135)** — official place is competition rank on total points. On the 2026 Fall Tour board, HotDog Billy, ArmenianMan, and TheManMulcahy all show rank 3, marked as a tie. Jeff shows 6. Nightly wins, then name, still order the list inside the tie. Shows played do not.
+
+## [1.85.0] — 2026-10-22
+
+### Added
+- **Process once-ever gate (#1035)** — `comms_process_state/{triggerId}:{scope}` is the scanner gate for a completed moment (`sent` / `skipped_archive` / `closed`). `tour_recap` writes that doc and still mirrors `comms_tour_recap_state`, so the Summer `sent` and Sphere `skipped_archive` seed stays one gate. Rules deny client access. Seed: `node functions/scripts/seedCommsProcessState.js` (`seedTourRecapState.js` is the same command).
+- **Calendar `editionStatus` (#1035)** — tour groups may carry `editionStatus` (`live` | `archive` | `closed`), `campaignId`, and `commsProcessId`. Pending `tour_recap` and `show_recap` re-rollups skip `archive` / `closed` before they build recipients. Phish.net calendar sync copies those fields forward. Seed Sphere with `node functions/scripts/seedCalendarEditionStatus.js` (dry-run unless `--confirm`).
+- **Inbox `triggerId` (#1035)** — new `commsInbox` writes store the catalog `triggerId` next to `templateId`. The message id is still the dedup id. `campaignId`, when the send has one, is copied onto the inbox payload.
+
+### Changed
+- **`tour_recap` campaign slug (#1035)** — sends tag `campaignId` from the tour group or from the tour key (`2026 Summer Tour` → `2026-summer`, `2026 Sphere` → `2026-sphere`, `Fall Tour 2026` → `2026-fall`). The catalog trigger id stays `tour_recap`.
+- **Archive replay identity (#1035)** — `deliverSphere2026TourRecapInbox` still uses template `sphere-2026-inaugural` and the same inbox doc id. New rows also store `triggerId: tour_recap` and `campaignId: 2026-sphere`. That path does not send email.
+- **Sphere name is not a send gate (#1035)** — the 8am scanner no longer skips `/\bsphere\b/i`. A tour is skipped for a terminal process doc or for `editionStatus` `archive` / `closed`.
+
+### Fixed
+- **Stale / duplicate fan-out class (#1035)** — a scanner no longer treats “no live per-uid dedup doc” as “never sent” for an archive edition or a process that already closed. Re-grading an archive show does not start modern `show_recap`.
+
+## [1.84.1] — 2026-10-21
+
+### Fixed
+- **Email keyboard on first tap (#1050)** — a tap on the email field is no longer blurred by the login focus-park timers, and `readOnly` clears on touch/pointer down so iOS can open the keyboard on that tap. The login form is not swapped out from under that tap. Cold `/login` still does not keep an autofocused email field or open the Keychain chooser before a gesture.
+
+## [1.84.0] — 2026-10-21
+
+### Added
+- **Password reset mail (#1049)** — splash and account security call `requestPasswordResetEmail`. Firebase Admin still issues the code. Resend sends the only link, `https://www.setlistpickem.com/password-reset-complete?oobCode=…`, from `updates@setlistpickem.com`. Unknown addresses get the same success result. The callable is rate-limited. `password_reset_rate` is server-only. A human must deploy the function before the new buttons work. Old Firebase reset links keep working until they expire.
+
+### Changed
+- **Password reset confirmation** — after a reset email is requested, splash, sign-in, and account security say to check the spam or junk folder if it does not show up in a few minutes.
+- **Linked sign-in methods** — Preferences names Google and email & password when both are on the account. The password form stays, and the intro says Google is still linked. Google-only accounts still see the Google explanation.
+
+### Fixed
+- **Google-only password reset (#1049)** — `requestPasswordResetEmail` does not mail a reset when the account has `google.com` and no `password` provider. Splash, sign-in, and account security say: “This account uses Google sign-in. Use Continue with Google to sign in.” Unknown addresses still get the inbox notice. Redeploy `functions:requestPasswordResetEmail` or a Google-only request still sends mail.
+- **Sign-in and sign-up errors (#1049)** — a wrong email password says the email and password don't match. If `lookupSignInMethod` finds a Google-only account, splash, sign-in, and create-account say to use Continue with Google. Reset, Google, and account-security messages are short and do not mention Firebase. Forgot password is a full-width button on splash and sign-in. Redeploy `functions:lookupSignInMethod` or the Google sentence waits until that function exists.
+- **One sign-in message (#1049)** — splash, `/login`, and create-account keep a single notice above Continue with Google. Forgot password, Continue with email, Continue with Google, and editing the email or password each replace that notice. No Cloud Function redeploy.
 
 ---
 

@@ -18,7 +18,7 @@ Standing rules for marketing, the **auth door** (`/login`), and the app SPA. Lea
 2. **Auth door `/login`: form in first HTML; auth-only hydrate (Phase 2 / #892).**  
    - **Today (v1.54.0):** `/login` boots `login.html` with **real form controls** in the first document; `loginMain.jsx` hydrates Auth + form wiring (not `app-*.js` / react-query). Suspense fallback keeps form chrome (anti-#881 blank hang). Session hint and Google redirect return stay eager. Success → hard-navigate to `/setup` or `/dashboard`.  
    - Do **not** reintroduce a skeleton-only / empty-`#root` CSR door as the prod strategy.
-   - **Neutral first focus (#909):** do not autofocus email/password on cold open (Safari Keychain / Face ID steals method choice). Credential fields start `readOnly` until a real user gesture; pre-gesture autofocus is blurred and parked on a non-editable target (no blinking cursor).
+   - **Neutral first focus (#909, #1050):** do not autofocus email/password on cold open (Safari Keychain / Face ID steals method choice). Credential fields start `readOnly` until a real user gesture; pre-gesture autofocus is blurred and parked on a non-editable target (no blinking cursor). A pointer, touch, or key gesture unlocks the field before focus and cancels those blur timers (0 / 50 / 150 / 400ms). Do not blur a credential field after that gesture — iOS will not open the keyboard if the first tap is stolen or if `readOnly` is still set when the touch starts.
 
 2b. **Google CTA must not be enabled until Auth surface is ready (#858).** Disable Continue with Google (brief “Preparing sign-in…” OK) until Auth + click-path modules are ready. Ready click path: `signInWithPopup` / redirect with **no** `await ensureAuthReady()` or dynamic-import on the hot path.
 

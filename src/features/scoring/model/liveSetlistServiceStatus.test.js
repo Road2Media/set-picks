@@ -44,5 +44,18 @@ describe('live setlist player status (#644)', () => {
 
   it('scopes the projection doc id to the show date', () => {
     expect(liveSetlistServiceStatusDocId('2026-07-17')).toBe('live-setlist-2026-07-17');
+    expect(liveSetlistServiceStatusDocId('2026-12-30')).toBe('live-setlist-2026-12-30');
+  });
+
+  it('shows a manual pin for a future show date', () => {
+    expect(
+      isDegradedPlayerStatus({
+        status: 'degraded',
+        messageKey: 'phishnet_stalled',
+        showDate: '2026-12-30',
+        activatedBy: 'admin',
+        clearOnRecovery: false,
+      }),
+    ).toBe(true);
   });
 });

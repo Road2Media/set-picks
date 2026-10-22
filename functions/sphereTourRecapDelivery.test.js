@@ -4,6 +4,9 @@ const {
   aggregateTourStandings,
   recapPushLogDocId,
   userWantsRecapPush,
+  sphereRecapInboxBody,
+  COMMS_INBOX_DOC_ID,
+  SPHERE_RECAP_CATALOG_TRIGGER_ID,
 } = require("./sphereTourRecapDelivery");
 
 test("aggregateTourStandings: sums points, wins, shows like tour leaderboard", () => {
@@ -93,4 +96,15 @@ test("userWantsRecapPush: defaults on, honors results=false", () => {
     userWantsRecapPush({ notificationPrefs: { results: false } }),
     false
   );
+});
+
+test("archive replay inbox keeps the fixed doc id and catalog triggerId", () => {
+  assert.equal(COMMS_INBOX_DOC_ID, "sphere-2026-inaugural");
+  const body = sphereRecapInboxBody({ rank: 1, points: 10 }, "TS");
+  assert.equal(body.templateId, "sphere-2026-inaugural");
+  assert.equal(body.triggerId, SPHERE_RECAP_CATALOG_TRIGGER_ID);
+  assert.equal(body.triggerId, "tour_recap");
+  assert.equal(body.payload.campaignId, "2026-sphere");
+  assert.equal(body.payload.rank, 1);
+  assert.equal(body.createdAt, "TS");
 });

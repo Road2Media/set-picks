@@ -148,7 +148,10 @@
       "templateId": "show-recap",
       "implementationModule": "functions/commsEventAdapters.js",
       "githubIssue": 572,
-      "note": "Email channel folded into tour_rankings_daily's next-morning send to remove the dominant same-day fatigue collision (#451). inApp/push retain immediate night-of delivery. Narrative vars from comms_show_context (#572).",
+      "processScope": "show_recap:{showDate}",
+      "lookbackDays": null,
+      "archivePolicy": "Event-scoped. Per-uid dedup is the retry lock for a live edition. Skip the automated fan-out when the tour group's editionStatus is archive or closed, when that tour's process status is skipped_archive or closed, or when show_recap:{showDate} is already terminal. A sent tour_recap process does not block night show_recap. Re-rollup of an archive show does not send. runCommsTrigger replay is not this scanner.",
+      "note": "Email channel folded into tour_rankings_daily's next-morning send to remove the dominant same-day fatigue collision (#451). inApp/push retain immediate night-of delivery. Narrative vars from comms_show_context (#572). Archive re-rollup policy: editionStatus / comms_process_state (#1035).",
       "variables": [
         { "name": "handle", "source": "users/{uid}.handle", "fallback": "Picker" },
         { "name": "show_date", "source": "show_calendar", "fallback": null },
@@ -236,6 +239,7 @@
         { "name": "is_late_joiner", "source": "true when recipient has no prior-board row mid-tour", "fallback": false },
         { "name": "tour_rank_tied", "source": "true when display rank is shared", "fallback": false },
         { "name": "tour_tied_count", "source": "count of players sharing display rank", "fallback": 1 },
+        { "name": "tour_tied_handles", "source": "other handles at that rank, list order (wins, then handle); excludes this player (#1135)", "fallback": [] },
         { "name": "tour_tier", "source": "leader | top5 | null", "fallback": null },
         { "name": "shows_played", "source": "count of graded shows this tour", "fallback": null },
         { "name": "pool_tour_rank", "source": "pool tour leaderboard (not populated in v1)", "fallback": null },
@@ -256,7 +260,10 @@
       "family": "results_recap",
       "priority": "P1",
       "automation": "automated",
-      "event": "8am PT morning-after cron (scheduledTourRankingsDailyComms) once the tour's final show date is in the past and within a 14-day lookback; Sphere calendar labels hard-skipped; not same-tick as night show_recap; not War Room on the prod happy path",
+      "processScope": "tour_recap:{tourId}",
+      "lookbackDays": 14,
+      "archivePolicy": "Skip editionStatus archive or closed before building recipients, including finales outside the lookback (write skipped_archive or closed). A tour name is not a gate. Terminal comms_process_state, including a terminal comms_tour_recap_state mirror, hard-skips every channel. campaignId is the edition slug (2026-summer, 2026-sphere); triggerId stays tour_recap.",
+      "event": "8am PT morning-after cron (scheduledTourRankingsDailyComms) once the tour's final show date is in the past and within a 14-day lookback, unless editionStatus is archive or closed; not same-tick as night show_recap; not War Room on the prod happy path",
       "audience": "users_with_graded_picks_in_tour",
       "channels": ["inApp", "push", "email"],
       "prefKeys": ["results"],
@@ -265,10 +272,12 @@
       "implementationModule": "functions/commsEventAdapters.js",
       "githubIssue": 510,
       "inAppDeepLink": "/dashboard/profile/notifications",
-      "note": "Night show_recap ≠ this end-of-tour recap. Last night of tour still sends show_recap only; tour_recap waits until the next 8am PT cron. Pending scanner lookback = 14 days after finale (late grades before first send). After a successful fan-out, `comms_tour_recap_state/{tourId}` status `sent` hard-skips that tour forever (once-ever; #1033) — per-uid fcm_notification_log remains channel idempotency. Older / never-sent tours outside lookback need runCommsTrigger. Email CTA View Recap → Messages (abbreviated tease); in-app body CTA View tour standings → /dashboard/standings?view=tour. Sphere '26 / any tour key matching /\\bsphere\\b/i is archive/replay only (deliverSphere2026TourRecapInbox); cron writes status `skipped_archive`. Dedup + prefs + dry-run via deliverCommsTrigger.",
+      "note": "Night show_recap ≠ this end-of-tour recap. Last night of tour still sends show_recap only; tour_recap waits until the next 8am PT cron. Pending scanner lookback = 14 days after finale (late grades before first send). After a successful fan-out, `comms_process_state/tour_recap:{tourId}` status `sent` hard-skips that tour forever and mirrors `comms_tour_recap_state` (once-ever; #1033 / #1035) — per-uid fcm_notification_log remains channel idempotency. Older / never-sent tours outside lookback need runCommsTrigger. Email CTA View Recap → Messages (abbreviated tease); in-app body CTA View tour standings → /dashboard/standings?view=tour. Archive editions are `editionStatus: archive` on the calendar group (Sphere '26 seed), not a name regex and not a new trigger id. campaignId is the edition analytics slug. Dedup + prefs + dry-run via deliverCommsTrigger. #1136: podium.places is one place per official rank 1–5; a tie names everyone. The shared intro can hold the gap, the lead changes, and the close. The personal line can hold two beats and says tied for #N when tiedCount is greater than 1. A payload without places keeps the older podium. The next wrap needs a Cloud Functions deploy. Do not resend a tour that already sent.",
       "variables": [
         { "name": "handle", "source": "users/{uid}.handle", "fallback": "Picker" },
-        { "name": "rank", "source": "cumulative tour leaderboard", "fallback": null },
+        { "name": "rank", "source": "competition rank on tour points; a points tie shares one rank and the next rank skips (#1135)", "fallback": null },
+        { "name": "tiedCount", "source": "players sharing that official rank", "fallback": 1 },
+        { "name": "tiedHandles", "source": "other handles at that rank, list order (wins, then handle); excludes this player (#1135)", "fallback": [] },
         { "name": "points", "source": "cumulative tour score", "fallback": 0 },
         { "name": "wins", "source": "nightly wins this tour", "fallback": 0 },
         { "name": "showsPlayed", "source": "graded shows this tour", "fallback": 0 },
@@ -277,7 +286,7 @@
         { "name": "tour_name", "source": "tour metadata", "fallback": null },
         { "name": "show_count", "source": "count of dates in the tour", "fallback": null },
         { "name": "headline", "source": "edition draft / computed", "fallback": null },
-        { "name": "podium", "source": "top 3 + honorable mentions from tour standings", "fallback": null }
+        { "name": "podium", "source": "official ranks 1–5 from tour standings; places[] is one place per rank and a tie names everyone; rows and honorableMentions stay for payloads without places (#1136)", "fallback": null }
       ]
     },
     {

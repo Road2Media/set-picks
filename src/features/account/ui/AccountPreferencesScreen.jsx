@@ -9,6 +9,7 @@ import {
   PUBLIC_SUPPORT_LABEL,
   PUBLIC_SUPPORT_MAILTO,
 } from '../../../shared/config/supportContact';
+import { signInProviderLabel } from '../model/signInProviders';
 import AccountSecurity from './AccountSecurity';
 import DeleteAccountSection from './DeleteAccountSection';
 
@@ -34,13 +35,7 @@ export default function AccountPreferencesScreen({ user }) {
     }
   }, [searchParams, setSearchParams]);
 
-  const providerIds =
-    user?.providerData?.map((p) => p.providerId).filter(Boolean) ?? [];
-  const providerLabel = providerIds.includes('password')
-    ? 'Email & password'
-    : providerIds.includes('google.com')
-      ? 'Google'
-      : providerIds[0] || 'Unknown';
+  const providerLabel = signInProviderLabel(user);
 
   const handleLogout = async () => {
     try {

@@ -3,7 +3,14 @@ import { Link } from 'react-router-dom';
 
 import { AppDocumentAuthLink } from '../../landing';
 import TourStatsView from '../ui/TourStatsView';
+import TourWrapBlock from './TourWrapBlock';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
+
+const LIVE_TOUR_LEDE =
+  'Phish tour setlist statistics: most-played songs, song frequency, bustouts by tour, and gap highlights that keep you sharp between shows. Updated every night the band plays.';
+
+const FINISHED_TOUR_LEDE =
+  'Phish tour setlist statistics for a finished run: most-played songs, song frequency, bustouts by tour, and gap highlights.';
 
 /** Live SEO slug for the current summer run (#927 / #929). */
 const SUMMER_TOUR_SEO_PATH = '/tour-stats/2026-summer-tour';
@@ -25,6 +32,7 @@ export default function PublicTourStatsPanel({
   onSelectTour,
   routeHasSlug = false,
   defaultTourSlug = '',
+  wrap = null,
 }) {
   const h1 =
     heading ||
@@ -52,9 +60,7 @@ export default function PublicTourStatsPanel({
           {h1}
         </h1>
         <p className="text-base leading-snug text-slate-300">
-          Phish tour setlist statistics: most-played songs, song frequency,
-          bustouts by tour, and gap highlights that keep you sharp between
-          shows. Updated every night the band plays.
+          {wrap ? FINISHED_TOUR_LEDE : LIVE_TOUR_LEDE}
         </p>
         {isHub ? (
           <p className="text-sm leading-snug text-slate-400">
@@ -70,6 +76,8 @@ export default function PublicTourStatsPanel({
           </p>
         ) : null}
       </header>
+
+      <TourWrapBlock wrap={wrap} />
 
       {tours.length > 0 ? (
         <label className="mb-6 flex flex-col gap-2 sm:max-w-xs">

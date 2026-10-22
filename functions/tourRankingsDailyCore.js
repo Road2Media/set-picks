@@ -3,7 +3,9 @@
  *
  * Tour standings aggregation mirrors `sphereTourRecapDelivery.aggregateTourStandings`
  * / dashboard `aggregateTourStandings` (points → wins → handle). Display ranks use
- * competition ranking on totalPoints (ties share a rank).
+ * competition ranking on totalPoints (ties share a rank; the next rank skips).
+ * Wins, then handle, only order names inside a tie. `tiedHandles` is the other
+ * players at that rank, in list order. Shows played do not order a tie (#1135).
  */
 
 "use strict";
@@ -94,17 +96,32 @@ function aggregateTourStandings(picksByDate) {
 }
 
 /**
+ * Other handles at `rank`, in list order, excluding `uid`.
+ *
+ * @param {Map<number, Array<{ uid: string, handle: string }>>} handlesByRank
+ * @param {number} rank
+ * @param {string} uid
+ * @returns {string[]}
+ */
+function tiedHandlesAtRank(handlesByRank, rank, uid) {
+  const group = handlesByRank.get(rank) || [];
+  return group.filter((member) => member.uid !== uid).map((member) => member.handle);
+}
+
+/**
  * Competition (display) ranks on totalPoints — ties share a rank.
  *
  * @param {TourStandingsRow[]} sortedRows
- * @returns {Map<string, { rank: number, tiedCount: number, total: number, row: TourStandingsRow }>}
+ * @returns {Map<string, { rank: number, tiedCount: number, tiedHandles: string[], total: number, row: TourStandingsRow }>}
  */
 function assignDisplayRanks(sortedRows) {
-  /** @type {Map<string, { rank: number, tiedCount: number, total: number, row: TourStandingsRow }>} */
+  /** @type {Map<string, { rank: number, tiedCount: number, tiedHandles: string[], total: number, row: TourStandingsRow }>} */
   const out = new Map();
   const total = sortedRows.length;
   /** @type {Map<number, number>} */
   const tiedByRank = new Map();
+  /** @type {Map<number, Array<{ uid: string, handle: string }>>} */
+  const handlesByRank = new Map();
 
   let rank = 0;
   let prevPoints = null;
@@ -115,11 +132,15 @@ function assignDisplayRanks(sortedRows) {
       prevPoints = row.totalPoints;
     }
     tiedByRank.set(rank, (tiedByRank.get(rank) || 0) + 1);
-    out.set(row.uid, { rank, tiedCount: 1, total, row });
+    const group = handlesByRank.get(rank) || [];
+    group.push({ uid: row.uid, handle: row.handle || "Anonymous" });
+    handlesByRank.set(rank, group);
+    out.set(row.uid, { rank, tiedCount: 1, tiedHandles: [], total, row });
   }
 
   for (const entry of out.values()) {
     entry.tiedCount = tiedByRank.get(entry.rank) || 1;
+    entry.tiedHandles = tiedHandlesAtRank(handlesByRank, entry.rank, entry.row.uid);
   }
   return out;
 }
@@ -269,8 +290,8 @@ function isSamePlace(nextVenue, currentLabels) {
  *   showScore?: number | null,
  *   globalRank?: number | null,
  *   globalTotalPickers?: number | null,
- *   currentBoard: Map<string, { rank: number, tiedCount: number, total: number, row: TourStandingsRow }>,
- *   priorBoard: Map<string, { rank: number, tiedCount: number, total: number, row: TourStandingsRow }> | null,
+ *   currentBoard: Map<string, { rank: number, tiedCount: number, tiedHandles?: string[], total: number, row: TourStandingsRow }>,
+ *   priorBoard: Map<string, { rank: number, tiedCount: number, tiedHandles?: string[], total: number, row: TourStandingsRow }> | null,
  *   isTourNightOne: boolean,
  *   nextShowDate?: string | null,
  *   nextShowVenue?: string | null,
@@ -314,6 +335,7 @@ function buildTourRankingsDailyPayloadFields(args) {
     is_late_joiner: isLateJoiner,
     tour_rank_tied: isTied,
     tour_tied_count: tiedCount,
+    tour_tied_handles: Array.isArray(current?.tiedHandles) ? current.tiedHandles : [],
     tour_tier: tourTier(rankChange, tourRank),
     next_show_date: args.nextShowDate || null,
     next_show_venue: args.nextShowVenue || null,

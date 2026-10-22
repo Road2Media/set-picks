@@ -149,7 +149,11 @@ export default function AccountSecurityForm({
         {passwordResetNotice.text && (
           <p
             className={`text-center text-sm font-bold ${
-              passwordResetNotice.type === 'error' ? 'text-red-400' : 'text-brand-primary'
+              passwordResetNotice.type === 'error'
+                ? 'text-red-400'
+                : passwordResetNotice.type === 'info'
+                  ? 'text-sky-300'
+                  : 'text-brand-primary'
             }`}
           >
             {passwordResetNotice.text}

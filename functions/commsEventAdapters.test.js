@@ -12,9 +12,9 @@ const {
   leaderUidFromScores,
   deliverTourRecapIfFinalShow,
   deliverPendingTourRecaps,
+  deliverPostRollupComms,
   runScheduledTourRankingsDaily,
   shouldSkipTourRankingsOnTourRecapMorning,
-  isSphereArchiveTourKey,
   shouldAttemptPendingTourRecap,
   MAX_TOUR_RECAP_LOOKBACK_DAYS,
 } = require("./commsEventAdapters");
@@ -273,12 +273,16 @@ test("buildTourRecapPodium names a points tie in the last honorable mention", ()
   assert.equal(podium.honorableMentions.length, 2);
   assert.equal(podium.honorableMentions[0].handle, "D");
   assert.equal(podium.honorableMentions[1].handle, "E and F");
-  assert.match(podium.honorableMentions[1].note, /tied at 60 pts/);
+  assert.match(podium.honorableMentions[1].note, /tied for 5th at 60 pts/);
+  assert.equal(podium.places.find((place) => place.rank === 5).tied, true);
   const board = buildTourRecapEmailBoard(leaders);
-  assert.equal(board.length, 5);
+  assert.equal(board.length, 6);
   assert.equal(board[0].rank, 1);
   assert.equal(board[0].avg, ".500");
   assert.equal(board[4].handle, "E");
+  assert.equal(board[4].rank, 5);
+  assert.equal(board[5].handle, "F");
+  assert.equal(board[5].rank, 5);
   assert.equal(board[4].avg, "");
 });
 
@@ -318,7 +322,7 @@ test("buildTourRecapPayload uses tour metadata, not a Sphere live id", () => {
 function emptyPicksDb() {
   return {
     collection(name) {
-      if (name === "comms_tour_recap_state") {
+      if (name === "comms_tour_recap_state" || name === "comms_process_state") {
         return {
           doc() {
             return {
@@ -344,6 +348,9 @@ function emptyPicksDb() {
           return {
             async get() {
               return { exists: false, data: () => ({}) };
+            },
+            async set() {
+              /* process-ledger writes are no-ops unless a test records them */
             },
           };
         },
@@ -409,7 +416,7 @@ test("deliverPendingTourRecaps does not read in-progress, future, or ancient tou
     now: new Date("2026-10-08T15:00:00Z"),
   });
   assert.deepEqual(summaries, []);
-  assert.deepEqual([...new Set(reads)], ["2026 Sphere"]);
+  assert.deepEqual([...new Set(reads)], []);
 });
 
 test("deliverPendingTourRecaps reads a slash tour only inside the post-finale window", async () => {
@@ -479,15 +486,7 @@ test("deliverPendingTourRecaps attempts tour_recap the morning after the finale"
   assert.equal(summaries[0].summary.skipped, "no_eligible_players");
 });
 
-test("isSphereArchiveTourKey matches calendar Sphere labels (#1033)", () => {
-  assert.equal(isSphereArchiveTourKey("2026 Sphere"), true);
-  assert.equal(isSphereArchiveTourKey("Sphere Run"), true);
-  assert.equal(isSphereArchiveTourKey("Sphere '26"), true);
-  assert.equal(isSphereArchiveTourKey("2026 Summer Tour"), false);
-  assert.equal(isSphereArchiveTourKey("Fall Tour 2026"), false);
-});
-
-test("shouldAttemptPendingTourRecap enforces lookback and Sphere skip (#1033)", () => {
+test("shouldAttemptPendingTourRecap enforces lookback and does not name-match Sphere (#1035)", () => {
   assert.equal(MAX_TOUR_RECAP_LOOKBACK_DAYS, 14);
   assert.equal(
     shouldAttemptPendingTourRecap({
@@ -527,7 +526,7 @@ test("shouldAttemptPendingTourRecap enforces lookback and Sphere skip (#1033)", 
       finalDate: "2026-05-02",
       today: "2026-05-03",
     }),
-    false
+    true
   );
 });
 
@@ -590,7 +589,7 @@ test("deliverPendingTourRecaps skips archive Sphere and finales outside lookback
   assert.equal(summaries.length, 1);
   assert.equal(summaries[0].tourKey, "2026 Summer Tour");
   assert.deepEqual(delivered, []);
-  assert.equal(stateDocs.get("2026 Sphere")?.status, "skipped_archive");
+  assert.equal(stateDocs.get("2026 Sphere"), undefined);
 });
 
 test("deliverPendingTourRecaps hard-skips tours with terminal state (#1033 once-ever)", async () => {
@@ -838,6 +837,266 @@ test("runScheduledTourRankingsDaily still checks yesterday when a wrap tour thro
     });
     assert.ok(result);
     assert.deepEqual(picksQueries, ["2026-10-07"]);
+  } finally {
+    if (prev === undefined) delete process.env.COMMS_EVENT_ADAPTERS_ENABLED;
+    else process.env.COMMS_EVENT_ADAPTERS_ENABLED = prev;
+  }
+});
+
+test("first live tick skips an archive edition inside the lookback (#1035)", async () => {
+  const delivered = [];
+  /** @type {Map<string, object>} */
+  const legacy = new Map();
+  /** @type {Map<string, object>} */
+  const ledger = new Map();
+  const db = {
+    collection(name) {
+      const store = name === "comms_process_state" ? ledger : name === "comms_tour_recap_state" ? legacy : null;
+      if (store) {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = store.get(id);
+                return { exists: Boolean(data), data: () => data || null };
+              },
+              async set(payload, opts) {
+                assert.equal(opts?.merge, true);
+                store.set(id, { ...(store.get(id) || {}), ...payload });
+              },
+            };
+          },
+        };
+      }
+      return emptyPicksDb().collection(name);
+    },
+  };
+  const summaries = await deliverPendingTourRecaps({
+    db,
+    admin: { firestore: { FieldValue: { serverTimestamp: () => "TS" } } },
+    runtime: {
+      deliver: async (id) => {
+        delivered.push(id);
+        return { delivered: 5, processed: 5 };
+      },
+    },
+    showDatesByTour: [
+      {
+        tour: "2026 Sphere",
+        editionStatus: "archive",
+        campaignId: "2026-sphere",
+        commsProcessId: "sphere-2026-inaugural",
+        shows: [{ date: "2026-04-16" }, { date: "2026-05-02" }],
+      },
+    ],
+    now: new Date("2026-05-03T08:00:00-07:00"),
+  });
+  assert.deepEqual(summaries, []);
+  assert.deepEqual(delivered, []);
+  assert.equal(legacy.get("2026 Sphere")?.status, "skipped_archive");
+  assert.equal(ledger.get("tour_recap:2026 Sphere")?.status, "skipped_archive");
+  assert.deepEqual(ledger.get("tour_recap:2026 Sphere")?.supersedes, ["sphere-2026-inaugural"]);
+});
+
+test("seeded sent on the process ledger skips every channel (#1035)", async () => {
+  const delivered = [];
+  const db = {
+    collection(name) {
+      if (name === "comms_process_state") {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                if (id === "tour_recap:2026 Summer Tour") {
+                  return { exists: true, data: () => ({ status: "sent" }) };
+                }
+                return { exists: false, data: () => null };
+              },
+              async set() {
+                assert.fail("terminal process must not be rewritten");
+              },
+            };
+          },
+        };
+      }
+      if (name === "comms_tour_recap_state") {
+        return {
+          doc() {
+            return {
+              async get() {
+                return { exists: false, data: () => null };
+              },
+            };
+          },
+        };
+      }
+      return emptyPicksDb().collection(name);
+    },
+  };
+  const summaries = await deliverPendingTourRecaps({
+    db,
+    admin: { firestore: { FieldValue: { serverTimestamp: () => "TS" } } },
+    runtime: {
+      deliver: async () => {
+        delivered.push("sent");
+        return { delivered: 3 };
+      },
+    },
+    showDatesByTour: [
+      {
+        tour: "2026 Summer Tour",
+        shows: [{ date: "2026-07-11" }, { date: "2026-09-06" }],
+      },
+    ],
+    now: new Date("2026-09-09T08:00:00-07:00"),
+  });
+  assert.deepEqual(summaries, []);
+  assert.deepEqual(delivered, []);
+});
+
+test("tour_recap fan-out carries the edition campaignId (#1035)", async () => {
+  /** @type {Array<{ triggerId: string, campaignId?: string }>} */
+  const calls = [];
+  const picks = [
+    {
+      id: "p1",
+      data: () => ({
+        userId: "u1",
+        showDate: "2026-09-06",
+        handle: "A",
+        picks: { s1o: "Song" },
+        score: 10,
+        isGraded: true,
+      }),
+    },
+  ];
+  const db = {
+    collection(name) {
+      if (name === "picks") {
+        return {
+          where() {
+            return { async get() { return { empty: false, docs: picks }; } };
+          },
+        };
+      }
+      if (name === "users") {
+        return {
+          doc() {
+            return { async get() { return { exists: true, data: () => ({ handle: "A" }) }; } };
+          },
+        };
+      }
+      if (name === "official_setlists") {
+        return {
+          doc() {
+            return { async get() { return { exists: false, data: () => null }; } };
+          },
+        };
+      }
+      return emptyPicksDb().collection(name);
+    },
+  };
+  await deliverTourRecapIfFinalShow({
+    db,
+    runtime: {
+      deliver: async (triggerId, recipients) => {
+        calls.push({ triggerId, campaignId: recipients[0]?.vars?.campaignId });
+        return { delivered: 1, processed: 1, byChannel: { email: 1, inApp: 1, push: 1 } };
+      },
+    },
+    showDate: "2026-09-06",
+    tourKey: "2026 Summer Tour",
+    showDatesByTour: [
+      { tour: "2026 Summer Tour", shows: [{ date: "2026-07-11" }, { date: "2026-09-06" }] },
+    ],
+  });
+  assert.deepEqual(calls, [{ triggerId: "tour_recap", campaignId: "2026-summer" }]);
+});
+
+test("re-rollup of an archive show does not start show_recap (#1035)", async () => {
+  const prev = process.env.COMMS_EVENT_ADAPTERS_ENABLED;
+  process.env.COMMS_EVENT_ADAPTERS_ENABLED = "true";
+  /** @type {Map<string, object>} */
+  const ledger = new Map();
+  /** @type {Map<string, object>} */
+  const legacy = new Map([["2026 Sphere", { status: "skipped_archive" }]]);
+  const db = {
+    collection(name) {
+      if (name === "comms_process_state" || name === "comms_tour_recap_state") {
+        const store = name === "comms_process_state" ? ledger : legacy;
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = store.get(id);
+                return { exists: Boolean(data), data: () => data || null };
+              },
+              async set(payload) {
+                store.set(id, { ...(store.get(id) || {}), ...payload });
+              },
+            };
+          },
+        };
+      }
+      throw new Error(`unexpected read ${name}`);
+    },
+  };
+  const picksSnap = {
+    empty: false,
+    docs: [{ id: "p1", data: () => ({ userId: "u1", picks: { opener: "Tweezer" } }) }],
+  };
+  const admin = { firestore: { FieldValue: { serverTimestamp: () => "TS" } } };
+  try {
+    const archived = await deliverPostRollupComms({
+      db,
+      admin,
+      showDate: "2026-05-02",
+      picksSnap,
+      newScoresById: new Map(),
+      tourKey: "2026 Sphere",
+      showDatesByTour: [
+        {
+          tour: "2026 Sphere",
+          editionStatus: "archive",
+          shows: [{ date: "2026-05-02" }],
+        },
+      ],
+    });
+    assert.equal(archived.recapSummary.skipped, "edition_status");
+    assert.equal(ledger.get("show_recap:2026-05-02")?.status, "skipped_archive");
+
+    ledger.clear();
+    legacy.clear();
+    const seededTour = new Map([["2026 Sphere", { status: "skipped_archive" }]]);
+    legacy.set("2026 Sphere", seededTour.get("2026 Sphere"));
+    const seeded = await deliverPostRollupComms({
+      db,
+      admin,
+      showDate: "2026-05-02",
+      picksSnap,
+      newScoresById: new Map(),
+      tourKey: "2026 Sphere",
+      showDatesByTour: [{ tour: "2026 Sphere", shows: [{ date: "2026-05-02" }] }],
+    });
+    assert.equal(seeded.recapSummary.skipped, "tour_process");
+
+    ledger.clear();
+    legacy.clear();
+    await assert.rejects(
+      () =>
+        deliverPostRollupComms({
+          db,
+          admin,
+          showDate: "2026-09-06",
+          picksSnap,
+          newScoresById: new Map(),
+          tourKey: "2026 Summer Tour",
+          showDatesByTour: [
+            { tour: "2026 Summer Tour", editionStatus: "live", shows: [{ date: "2026-09-06" }] },
+          ],
+        }),
+      /unexpected read show_calendar/
+    );
   } finally {
     if (prev === undefined) delete process.env.COMMS_EVENT_ADAPTERS_ENABLED;
     else process.env.COMMS_EVENT_ADAPTERS_ENABLED = prev;

@@ -1,3 +1,5 @@
+import { AUTH_FLOW_COPY } from '../utils/firebaseAuthMessages';
+
 /**
  * Returns the action a sign-in-modal Google flow should take given the
  * resolved `isNewUser` flag from `signInWithGoogle`.
@@ -21,8 +23,7 @@ export function decideSignInModalGoogleAction(isNewUser) {
   if (isNewUser === true) {
     return {
       kind: 'block-new-user',
-      errorMessage:
-        "That Google account isn't registered yet. Tap “Create account” to sign up and accept the Terms.",
+      errorMessage: AUTH_FLOW_COPY.googleNotRegistered,
       telemetryErrorCode: 'signin_modal_new_user_blocked',
     };
   }

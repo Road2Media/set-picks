@@ -1,6 +1,8 @@
 # Firebase Auth Email Templates — Manual Configuration Runbook
 
-Firebase Authentication sends several transactional emails automatically (password reset, email address verification, email change). These templates **must be customized in the Firebase Console** — they cannot be configured via code or the Firebase CLI.
+Firebase Authentication still sends email address verification and email address change. Those templates **must be customized in the Firebase Console**. They cannot be configured via code or the Firebase CLI.
+
+Password reset mail is not one of those templates. See §1. The app calls `requestPasswordResetEmail` and Resend sends a `www.setlistpickem.com` link (#1049).
 
 ## Why This Is Manual
 
@@ -17,7 +19,7 @@ Related issue: [#120 — Custom communications for in-app actions](https://githu
 3. Navigate to **Authentication → Templates** (left sidebar, under "Build")
 
 You will see four template types:
-- **Password reset**
+- **Password reset** (legacy template only; live mail is Resend, see §1)
 - **Email address verification**
 - **Email address change**
 - **SMS verification** (not applicable — SMS not enabled)
@@ -26,37 +28,24 @@ You will see four template types:
 
 ## Templates to Customize
 
-### 1. Password Reset
+### 1. Password Reset — sent by Resend, not this template (#1049)
 
-**Trigger:** User clicks "Forgot password?" on the splash screen or in Account Security settings.
+Splash and account security do **not** call `sendPasswordResetEmail`. They call the `requestPasswordResetEmail` Cloud Function. Firebase Admin issues the `oobCode`. Resend mails the only link:
 
-| Field | Recommended value |
-|-------|------------------|
-| **Sender name** | `Setlist Pick 'Em` |
-| **From address** | `noreply@set-picks.firebaseapp.com` (or custom domain — see below) |
-| **Reply-to** | Leave empty or `support@<yourdomain>.com` |
-| **Subject** | `Reset your Setlist Pick 'Em password` |
-| **Message body** | See template text below |
+`https://www.setlistpickem.com/password-reset-complete?oobCode=…`
 
-**Suggested body:**
+From `Setlist Pick 'Em <updates@setlistpickem.com>`. The Firebase password-reset template is not the message users get.
 
-```
-Hi,
+A Google-only account (`google.com`, no `password` provider) does not get that mail. The callable returns `{ ok: true, signIn: "google" }` and the reset buttons say to use Continue with Google. An account that already has both providers still gets a reset. Unknown addresses still get the generic inbox notice. Redeploy with `firebase deploy --only functions:requestPasswordResetEmail --project set-picks` after this change.
 
-We received a request to reset the password for your Setlist Pick 'Em account.
+Do **not**:
 
-Click the link below to choose a new password. This link expires in 1 hour.
+- Edit **Customize action URL** (it rejects `www.setlistpickem.com` because the site is on Vercel, not Firebase Hosting)
+- Add `www.setlistpickem.com` to Firebase Hosting
+- Point Auth SMTP at Resend
+- Change `VITE_FIREBASE_AUTH_DOMAIN` or the Vercel `/__/auth/*` proxy to fix the mail host
 
-%LINK%
-
-If you didn't request a password reset, you can ignore this email — your account is still secure.
-
-— The Setlist Pick 'Em team
-```
-
-> `%LINK%` is a Firebase placeholder that gets replaced with the actual reset URL.
-
-**Action URL:** By default this redirects to `set-picks.firebaseapp.com`. The app uses `handleCodeInApp: true` with `url: window.location.origin + '/password-reset-complete'`, so the link should deep-link back into the app. Verify this is set correctly under **"Action URL"** in the template editor — it should reflect the production domain (e.g., `https://setlistpickem.com/password-reset-complete`).
+Leave the Firebase template in place so a link that was already sent can still open until it expires (about an hour). Deploy steps and the request shape are in `docs/API.md` §2.7.
 
 ---
 
@@ -136,8 +125,8 @@ To add a logo to Auth emails:
 
 ## Verification Checklist (after updating templates)
 
-- [ ] Trigger a password reset from the splash page and confirm the email arrives with correct sender name, subject, and body
-- [ ] Confirm `%LINK%` deep-links back to `https://setlistpickem.com/password-reset-complete` (or staging equivalent) and not to `set-picks.firebaseapp.com`
+- [ ] Trigger a password reset from the splash page and from account security. The link host is `www.setlistpickem.com`, path `/password-reset-complete`, with `oobCode`. It is not `set-picks.firebaseapp.com`
+- [ ] Confirm verification and email-change mail still use Firebase `%LINK%` (those templates are unchanged)
 - [ ] Check spam folder — SPF/DKIM records may need to be verified if using a custom domain
 - [ ] Test on mobile email clients (Gmail app, Apple Mail) for rendering
 

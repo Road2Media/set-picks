@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 
 import Button from '../../../shared/ui/Button';
 import Input from '../../../shared/ui/Input';
-import { StatusBanner } from '../../../shared';
+import AuthFormPrepend from './AuthFormPrepend';
 import OpenInBrowserBanner from './OpenInBrowserBanner';
 import PasswordRevealToggle, {
   shouldShowPasswordReveal,
 } from './PasswordRevealToggle';
-import { AUTH_EMAIL_CTA } from './authCtaClasses';
+import { AUTH_EMAIL_CTA, AUTH_FORGOT_CTA } from './authCtaClasses';
 import GoogleAuthContinueOverlay from './GoogleAuthContinueOverlay';
 import { resolveGoogleCtaLabel } from './googleCtaLabel';
 import SplashAuthPanel from './SplashAuthPanel';
 import {
+  ensureNeutralLoginFocusGuards,
   scheduleNeutralLoginFocus,
   useDeferPasswordManagerAutofill,
 } from '../model/deferPasswordManagerAutofill';
@@ -39,8 +40,12 @@ export default function LoginAuthScreen({
 }) {
   const isSignup = mode === 'signup';
 
-  // #909: Safari private often focuses email after hydrate — retry neutralize.
-  useEffect(() => scheduleNeutralLoginFocus(), []);
+  // #909 / #1050: install before paint so the first tap is not inside a gap
+  // where neutralize timers exist but the gesture listener does not.
+  useLayoutEffect(() => {
+    ensureNeutralLoginFocusGuards();
+    return scheduleNeutralLoginFocus();
+  }, []);
 
   // #908: warm legal documents while the visitor is on signup (hard-nav next).
   useEffect(() => {
@@ -107,8 +112,7 @@ function LoginSignInPanel({
     setPassword,
     busy,
     googleBusy,
-    error,
-    resetLinkNotice,
+    notice,
     handleGoogle,
     handleEmailSignIn,
     handleSendPasswordResetEmail,
@@ -118,19 +122,11 @@ function LoginSignInPanel({
   const googlePreparing = !authSurfaceReady;
 
   const prependContent =
-    poolInvitePending || error ? (
-      <div className="space-y-3">
-        {poolInvitePending ? (
-          <StatusBanner
-            type="info"
-            message="You're joining a pool — sign in to continue."
-            className="text-left"
-          />
-        ) : null}
-        {error ? (
-          <StatusBanner type="error" message={error} className="text-left" />
-        ) : null}
-      </div>
+    poolInvitePending || notice.text ? (
+      <AuthFormPrepend
+        poolMessage={poolInvitePending ? "You're joining a pool — sign in to continue." : ''}
+        notice={notice}
+      />
     ) : null;
 
   return (
@@ -150,7 +146,7 @@ function LoginSignInPanel({
         })}
         prependContent={prependContent}
       >
-      <form onSubmit={handleEmailSignIn} className="space-y-4 text-left">
+      <form onSubmit={handleEmailSignIn} noValidate className="space-y-4 text-left">
         <div>
           <label
             htmlFor="si-email"
@@ -197,22 +193,14 @@ function LoginSignInPanel({
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <Button
-            variant="link"
-            size="none"
+          <button
             type="button"
             onClick={handleSendPasswordResetEmail}
             disabled={busy}
-            className="w-fit px-0 py-0 text-left text-sm text-amber-400/90 decoration-amber-400/90 hover:text-amber-300 hover:decoration-amber-300 disabled:opacity-50"
+            className={AUTH_FORGOT_CTA}
           >
-            Forgot password? Send reset link to your email
-          </Button>
-          {resetLinkNotice.text ? (
-            <StatusBanner
-              type={resetLinkNotice.type === 'error' ? 'error' : 'success'}
-              message={resetLinkNotice.text}
-            />
-          ) : null}
+            Forgot password
+          </button>
         </div>
         <button type="submit" disabled={busy} className={AUTH_EMAIL_CTA}>
           {busy ? 'Signing in…' : 'Continue with email'}
@@ -260,7 +248,7 @@ function LoginSignUpPanel({
     setLegalAccepted,
     busy,
     googleBusy,
-    error,
+    notice,
     handleGoogle,
     handleEmailSignUp,
   } = useSplashSignUp(true, onClose, { seedError });
@@ -282,7 +270,7 @@ function LoginSignUpPanel({
           onChange={(e) => setLegalAccepted(e.target.checked)}
           className="mt-1 h-4 w-4 shrink-0 rounded border-slate-500 bg-surface-panel text-brand-primary focus-visible:ring-2 focus-visible:ring-brand"
           aria-describedby={
-            fieldsLocked
+            fieldsLocked && !notice.text
               ? 'signup-legal-hint signup-legal-gate-hint'
               : 'signup-legal-hint'
           }
@@ -313,7 +301,7 @@ function LoginSignUpPanel({
           .
         </span>
       </label>
-      {fieldsLocked ? (
+      {fieldsLocked && !notice.text ? (
         <p
           id="signup-legal-gate-hint"
           className="px-0.5 text-center text-xs font-semibold leading-snug text-brand-primary"
@@ -326,16 +314,14 @@ function LoginSignUpPanel({
   );
 
   const prependContent = (
-    <div className="space-y-4">
-      {poolInvitePending ? (
-        <StatusBanner
-          type="info"
-          message="You're joining a pool — create an account to continue."
-          className="text-left"
-        />
-      ) : null}
+    <AuthFormPrepend
+      poolMessage={
+        poolInvitePending ? "You're joining a pool — create an account to continue." : ''
+      }
+      notice={notice}
+    >
       {consentBlock}
-    </div>
+    </AuthFormPrepend>
   );
 
   return (
@@ -356,7 +342,7 @@ function LoginSignUpPanel({
         prependContent={prependContent}
         googleFootnote="You'll set your username/handle on the next page. Your email address is never shared or visible to other users."
       >
-      <form onSubmit={handleEmailSignUp} className="space-y-4 text-left">
+      <form onSubmit={handleEmailSignUp} noValidate className="space-y-4 text-left">
         <fieldset
           disabled={fieldsLocked || busy}
           className="min-w-0 space-y-4 border-0 p-0 disabled:opacity-100"
@@ -435,7 +421,6 @@ function LoginSignUpPanel({
               />
             </div>
           </div>
-          {error ? <StatusBanner type="error" message={error} /> : null}
           <button
             type="submit"
             disabled={busy || fieldsLocked}

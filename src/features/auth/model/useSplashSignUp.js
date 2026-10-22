@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ensureAuthReady } from '../../../shared/lib/ensureFirebase';
-import { getFirebaseAuthErrorMessage } from '../utils/firebaseAuthMessages';
 import {
   clearSplashGoogleModalInflight,
   setSplashGoogleModalInflight,
 } from '../utils/splashGoogleModalInflight';
+import { applyAuthFormAction, EMPTY_AUTH_NOTICE } from './authFormNotice';
 import {
   trackAuthError,
   trackAuthRollback,
@@ -15,29 +15,65 @@ import {
 import { markGoogleAuthClick } from './authLoginTiming';
 import { shouldPreferGoogleRedirectAuth } from './preferGoogleRedirectAuth';
 import { runGoogleSplashAuth } from './runGoogleSplashAuth';
-import { SIGNUP_LEGAL_REQUIRED_ERROR } from './signupLegalCopy';
+
 export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [email, setEmailState] = useState('');
+  const [password, setPasswordState] = useState('');
+  const [confirmPassword, setConfirmPasswordState] = useState('');
+  const [legalAccepted, setLegalAcceptedState] = useState(false);
   const [busy, setBusy] = useState(false);
   /** Google-only pending — keeps email busy from showing “Opening Google…”. */
   const [googleBusy, setGoogleBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [notice, setNotice] = useState(EMPTY_AUTH_NOTICE);
   const preferGoogleRedirect = shouldPreferGoogleRedirectAuth();
 
+  const replaceNotice = useCallback((action) => {
+    setNotice((prev) => applyAuthFormAction({ notice: prev }, action).notice);
+  }, []);
+
   useEffect(() => {
-    if (isOpen && seedError) setError(seedError);
+    if (isOpen && seedError) setNotice({ text: seedError, type: 'error' });
   }, [isOpen, seedError]);
 
   const resetForm = useCallback(() => {
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setLegalAccepted(false);
-    setError('');
+    setEmailState('');
+    setPasswordState('');
+    setConfirmPasswordState('');
+    setLegalAcceptedState(false);
+    setNotice(EMPTY_AUTH_NOTICE);
   }, []);
+
+  const setEmail = useCallback(
+    (value) => {
+      setEmailState(value);
+      replaceNotice({ kind: 'edit', field: 'email' });
+    },
+    [replaceNotice],
+  );
+
+  const setPassword = useCallback(
+    (value) => {
+      setPasswordState(value);
+      replaceNotice({ kind: 'edit', field: 'password' });
+    },
+    [replaceNotice],
+  );
+
+  const setConfirmPassword = useCallback(
+    (value) => {
+      setConfirmPasswordState(value);
+      replaceNotice({ kind: 'edit', field: 'confirmPassword' });
+    },
+    [replaceNotice],
+  );
+
+  const setLegalAccepted = useCallback(
+    (value) => {
+      setLegalAcceptedState(value);
+      replaceNotice({ kind: 'edit', field: 'legal' });
+    },
+    [replaceNotice],
+  );
 
   const closeModal = useCallback(() => {
     onClose?.();
@@ -64,11 +100,11 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
   }, [isOpen, resetForm]);
 
   const handleGoogle = useCallback(async () => {
-    setError('');
     if (!legalAccepted) {
-      setError(SIGNUP_LEGAL_REQUIRED_ERROR);
+      replaceNotice({ kind: 'create-account', legalAccepted: false });
       return;
     }
+    replaceNotice({ kind: 'clear' });
     setBusy(true);
     setGoogleBusy(true);
     setSplashGoogleModalInflight();
@@ -94,9 +130,9 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
             surface: 'create_account',
             auth_flow: result.authFlow,
           });
-          setError(getFirebaseAuthErrorMessage(result.errorCode));
+          replaceNotice({ kind: 'continue-google', code: result.errorCode });
         } else {
-          setError(result.message);
+          replaceNotice({ kind: 'continue-google', message: result.message });
         }
         return;
       }
@@ -109,7 +145,7 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
         surface: 'create_account',
         auth_flow: authFlow,
       });
-      setError(getFirebaseAuthErrorMessage(err.code));
+      replaceNotice({ kind: 'continue-google', code: err.code });
     } finally {
       if (!leftViaRedirect) {
         clearSplashGoogleModalInflight();
@@ -117,32 +153,43 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
         setGoogleBusy(false);
       }
     }
-  }, [closeModal, legalAccepted, preferGoogleRedirect]);
+  }, [closeModal, legalAccepted, preferGoogleRedirect, replaceNotice]);
 
   const handleEmailSignUp = useCallback(
     async (e) => {
       e.preventDefault();
-      setError('');
-      if (!legalAccepted) {
-        setError(SIGNUP_LEGAL_REQUIRED_ERROR);
+      const blocked = applyAuthFormAction(
+        { notice: EMPTY_AUTH_NOTICE },
+        {
+          kind: 'create-account',
+          email,
+          password,
+          confirmPassword,
+          legalAccepted,
+        },
+      ).notice;
+      if (blocked.text) {
+        replaceNotice({
+          kind: 'create-account',
+          email,
+          password,
+          confirmPassword,
+          legalAccepted,
+        });
         return;
       }
-      if (password !== confirmPassword) {
-        setError('Passwords do not match.');
-        return;
-      }
-      if (password.length < 6) {
-        setError('Password must be at least 6 characters.');
-        return;
-      }
+      replaceNotice({ kind: 'clear' });
       setBusy(true);
+      /** @type {(email: string) => Promise<'google' | 'other'>} */
+      let lookupEmailSignIn = async () => 'other';
       try {
         const { auth } = await ensureAuthReady();
-        const [{ registerWithEmail, deleteAuthUserIfPresent }, { recordTermsPrivacyConsent }] =
+        const [{ registerWithEmail, deleteAuthUserIfPresent, lookupEmailSignIn: lookup }, { recordTermsPrivacyConsent }] =
           await Promise.all([
             import('../api/splashAuthApi'),
             import('../api/legalConsentApi'),
           ]);
+        lookupEmailSignIn = lookup;
         const cred = await registerWithEmail(auth, email, password);
         try {
           await recordTermsPrivacyConsent(cred.user.uid);
@@ -160,7 +207,14 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
               rollback.errorCode
             );
           }
-          setError('Could not finish creating your account. Please try again.');
+          replaceNotice({
+            kind: 'create-account',
+            email,
+            password,
+            confirmPassword,
+            legalAccepted: true,
+            code: 'consent-failed',
+          });
           return;
         }
         trackAuthSignUp('email', { surface: 'create_account' });
@@ -172,12 +226,22 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
           error_code: err.code,
           surface: 'create_account',
         });
-        setError(getFirebaseAuthErrorMessage(err.code));
+        const signIn =
+          err.code === 'auth/email-already-in-use' ? await lookupEmailSignIn(email) : 'other';
+        replaceNotice({
+          kind: 'create-account',
+          email,
+          password,
+          confirmPassword,
+          legalAccepted: true,
+          code: err.code,
+          signIn,
+        });
       } finally {
         setBusy(false);
       }
     },
-    [closeModal, confirmPassword, email, legalAccepted, password]
+    [closeModal, confirmPassword, email, legalAccepted, password, replaceNotice]
   );
 
   return {
@@ -191,7 +255,7 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
     setLegalAccepted,
     busy,
     googleBusy,
-    error,
+    notice,
     closeModal,
     handleGoogle,
     handleEmailSignUp,

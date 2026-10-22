@@ -665,6 +665,25 @@ test("comms_email_engagement: no client read or write (even admin claim)", async
 
 // ─── account_deletion_reports/{reportId} ─────────────────────────────────────
 
+test("password_reset_rate: no client read or write (anon or admin claim)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "password_reset_rate", "e_hash"), {
+      count: 1,
+      windowStartMs: 1,
+    });
+  });
+  const signedIn = signedInAs("mod", { admin: true });
+  await assertFails(getDoc(doc(signedIn, "password_reset_rate", "e_hash")));
+  await assertFails(
+    setDoc(doc(signedIn, "password_reset_rate", "e_other"), { count: 9 })
+  );
+  const guest = anon();
+  await assertFails(getDoc(doc(guest, "password_reset_rate", "e_hash")));
+  await assertFails(
+    setDoc(doc(guest, "password_reset_rate", "e_guest"), { count: 1 })
+  );
+});
+
 test("account_deletion_reports: no client read or write (even admin claim)", async () => {
   await seed(async (adminDb) => {
     await setDoc(doc(adminDb, "account_deletion_reports", "r1"), {

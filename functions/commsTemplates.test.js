@@ -257,6 +257,34 @@ test("tour-recap push and email are rank-aware teasers without Sphere live IDs",
   assert.match(withBoard.email.boardHtml, /<table/);
   assert.match(withBoard.email.boardHtml, /Rivertranced/);
   assert.doesNotMatch(withBoard.email.text, /waiting in Messages/);
+
+  const tied = await renderCommsTemplate("tour-recap", {
+    handle: "ArmenianMan",
+    rank: 3,
+    tiedCount: 3,
+    points: 85,
+    wins: 1,
+    tour_name: "Sample Tour",
+    personal_clause: "You caught Twenty Years Later — a 36 show gap — on 10/11/26. You took the lead on 10/11/26.",
+    podium: {
+      places: [
+        {
+          rank: 1,
+          tied: true,
+          members: [{ handle: "Ada" }, { handle: "Bea" }],
+        },
+      ],
+    },
+    email_board: [
+      { rank: 1, handle: "Ada", points: 100, wins: 1, nights: 8, avg: ".200" },
+      { rank: 1, handle: "Bea", points: 100, wins: 1, nights: 8, avg: ".200" },
+    ],
+  });
+  assert.match(tied.push.body, /tied for #3/);
+  assert.doesNotMatch(tied.push.body, /You took #1/);
+  assert.match(tied.email.text, /tour winners, Ada and Bea/);
+  assert.match(tied.email.text, /You caught Twenty Years Later/);
+  assert.match(tied.email.text, /You took the lead on 10\/11\/26/);
 });
 
 test("show-recap push surfaces score + rank when present", async () => {

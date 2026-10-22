@@ -7,6 +7,7 @@ import {
 } from '../../../shared/config/dashboardVocabulary';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import { StandingsPlayerAvatar, usePlayerIdentityMap } from '../../profile';
+import { assignTourDisplayRanks, tourStandingsBadge } from '../model/tourStandingsRank';
 import {
   STANDINGS_BOX_BODY,
   STANDINGS_BOX_PAD,
@@ -34,7 +35,7 @@ const rankBadgeClass = (rank) => {
  *
  * @param {{
  *   tourName: string | null | undefined,
- *   leaders: Array<{ uid: string, handle: string, totalPoints: number, wins: number, shows: number }>,
+ *   leaders: Array<{ uid: string, handle: string, totalPoints: number, wins: number, shows: number, rank?: number, tiedCount?: number }>,
  *   loading: boolean,
  *   error?: Error | null,
  *   selfUserId?: string | null,
@@ -48,7 +49,9 @@ export default function TourStandingsSection({
   selfUserId = null,
 }) {
   const heading = TOUR_STANDINGS_HEADING;
-  const { identities } = usePlayerIdentityMap(leaders.map((r) => r.uid));
+  // Place is competition rank on points, not the row index (#1135).
+  const rankedLeaders = assignTourDisplayRanks(leaders);
+  const { identities } = usePlayerIdentityMap(rankedLeaders.map((r) => r.uid));
 
   return (
     <section
@@ -87,10 +90,10 @@ export default function TourStandingsSection({
         </p>
       ) : null}
 
-      {leaders.length > 0 ? (
+      {rankedLeaders.length > 0 ? (
         <ol className="space-y-2">
-          {leaders.map((row, idx) => {
-            const rank = idx + 1;
+          {rankedLeaders.map((row) => {
+            const badge = tourStandingsBadge(row);
             const isSelf = Boolean(selfUserId) && row.uid === selfUserId;
             const identity = identities[row.uid] || null;
             return (
@@ -99,12 +102,22 @@ export default function TourStandingsSection({
                 className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle/30 bg-surface-panel/80 px-3 py-2"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black tabular-nums ${rankBadgeClass(rank)}`}
-                    aria-label={`Rank ${rank}`}
-                  >
-                    {rank}
-                  </span>
+                  {badge ? (
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black tabular-nums ${rankBadgeClass(row.rank)}`}
+                      aria-label={badge.ariaLabel}
+                    >
+                      {badge.text}
+                    </span>
+                  ) : null}
+                  {badge?.tied ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex shrink-0 items-center rounded-full bg-surface-inset px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-content-secondary ring-1 ring-border-muted"
+                    >
+                      Tie
+                    </span>
+                  ) : null}
                   <StandingsPlayerAvatar
                     avatarId={identity?.avatarId}
                     badges={identity?.badges}
