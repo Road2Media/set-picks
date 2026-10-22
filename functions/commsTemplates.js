@@ -86,6 +86,37 @@ function tourRecapBoardHtml(board) {
  * @param {unknown} board
  * @returns {string}
  */
+/**
+ * @param {string[]} names
+ * @returns {string}
+ */
+function joinHandleList(names) {
+  const list = names.filter(Boolean);
+  if (list.length <= 1) return list[0] || "";
+  if (list.length === 2) return `${list[0]} and ${list[1]}`;
+  return `${list.slice(0, -1).join(", ")}, and ${list[list.length - 1]}`;
+}
+
+/**
+ * @param {Record<string, unknown>} p
+ * @param {Array<Record<string, unknown>>} board
+ * @returns {string}
+ */
+function tourRecapWinnerLine(p, board) {
+  const places = p?.podium && typeof p.podium === "object" && Array.isArray(p.podium.places)
+    ? p.podium.places
+    : [];
+  const first = places.find((place) => Number(place?.rank) === 1);
+  const names = (Array.isArray(first?.members) ? first.members : [])
+    .map((member) => (typeof member?.handle === "string" ? member.handle.trim() : ""))
+    .filter(Boolean);
+  if (first?.tied === true && names.length > 1) {
+    return `A huge congrats to our tour winners, ${joinHandleList(names)}.`;
+  }
+  const winner = names[0] || (board[0] && typeof board[0].handle === "string" ? board[0].handle.trim() : "");
+  return winner ? `A huge congrats to our tour winner, ${winner}.` : "";
+}
+
 function tourRecapBoardText(board) {
   const rows = Array.isArray(board) ? board : [];
   if (!rows.length) return "";
@@ -642,24 +673,26 @@ const BUILDERS = {
     const rank = p.rank != null ? Number(p.rank) : null;
     const points = p.points != null ? Number(p.points) : null;
     const wins = p.wins != null ? Number(p.wins) : null;
-    const teaser =
-      rank === 1
+    const clause = typeof p.personal_clause === "string" ? p.personal_clause.trim() : "";
+    const board = Array.isArray(p.email_board) ? p.email_board : [];
+    const winnerLine = tourRecapWinnerLine(p, board);
+    const tied = Number(p.tiedCount) > 1;
+    const placeWord = rank == null ? "" : tied ? `tied for #${rank}` : `#${rank}`;
+    const tiedTeaser =
+      rank === 1 && !tied
         ? `You took #1 overall${points != null ? ` with ${points} points` : ""}${
             wins != null ? ` and ${wins} nightly wins` : ""
           }.`
         : rank != null
-          ? `You finished #${rank}${points != null ? ` with ${points} points` : ""}${
+          ? `You finished ${placeWord}${points != null ? ` with ${points} points` : ""}${
               wins != null ? ` and ${wins} nightly wins` : ""
             }.`
           : "Your personalized tour recap is ready.";
-    const clause = typeof p.personal_clause === "string" ? p.personal_clause.trim() : "";
-    const board = Array.isArray(p.email_board) ? p.email_board : [];
-    const winner = board[0] && typeof board[0].handle === "string" ? board[0].handle.trim() : "";
     const boardText = tourRecapBoardText(board);
     const assembled = assembleServiceEmail(
       board.length
         ? [
-            winner ? `A huge congrats to our tour winner, ${winner}.` : `${handle}, ${tourName} is wrapped.`,
+            winnerLine || `${handle}, ${tourName} is wrapped.`,
             "",
             boardText,
             "",
@@ -668,7 +701,7 @@ const BUILDERS = {
           ].filter((line) => line !== undefined)
         : [
             `${handle}, ${tourName} is wrapped.`,
-            teaser,
+            tiedTeaser,
             clause,
             "The full podium, honorable mentions, and your personalized recap are waiting in Messages.",
           ].filter(Boolean),
@@ -680,12 +713,12 @@ const BUILDERS = {
           ? p.push_title.trim()
           : "Tour recap is in",
         body:
-          rank === 1
+          rank === 1 && !tied
             ? `You took #1${points != null ? ` with ${points} pts` : ""}${
                 wins != null ? ` and ${wins} nightly wins` : ""
               }. Open Messages for the full wrap-up.`
             : rank != null
-              ? `You finished #${rank}${points != null ? ` (${points} pts` : ""}${
+              ? `You finished ${placeWord}${points != null ? ` (${points} pts` : ""}${
                   wins != null ? `, ${wins} wins)` : points != null ? ")" : ""
                 }. Open Messages for your personalized recap.`
               : "Your tour recap is in. Open Messages to read it.",

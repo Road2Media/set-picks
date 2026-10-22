@@ -38,12 +38,14 @@ const {
 } = require("./commsShowContext");
 const { buildShowRecapEnrichment } = require("./showRecapNarrativeCore");
 const { persistableActualSetlistFromOfficialDoc } = require("./scoringCore");
+const { tourLabelToSlug } = require("./aggregateTourSetlistStats.cjs");
 const {
   isFinalShowOfTour,
   buildTourRecapPodium,
   buildTourRecapEmailBoard,
   buildTourRecapPayload,
   closingVenueForTour,
+  showsForTour,
   deriveSharedWrapFacts,
   derivePlayerWrapFacts,
 } = require("./tourRecapCore");
@@ -678,11 +680,22 @@ async function deliverTourRecapIfFinalShow({
       message: err?.message || String(err),
     });
   }
+  let songFacts = null;
+  try {
+    songFacts = await loadTourRecapSongFacts(db, tourKey);
+  } catch (err) {
+    logger?.warn?.("deliverTourRecapIfFinalShow: public tour stats read failed", {
+      tourKey,
+      message: err?.message || String(err),
+    });
+  }
   const shared = deriveSharedWrapFacts({
     setlists,
     picksByDate,
     showCount,
     closingVenue: closingVenueForTour(showDatesByTour, tourKey),
+    shows: showsForTour(showDatesByTour, tourKey),
+    songFacts,
   });
 
   /** @type {Array<{ uid: string, userData?: object, payload: object, vars: object }>} */
@@ -1116,6 +1129,34 @@ async function loadPicksByDates(db, dates) {
   }
 
   return dates.map((date) => ({ date, picks: byDate.get(date) || [] }));
+}
+
+/**
+ * Bustout last-played / debut year and the unique-song count from
+ * `public_tour_stats`. A missing doc drops those clauses. It does not drop the send.
+ *
+ * @param {import("firebase-admin").firestore.Firestore} db
+ * @param {string} tourKey
+ * @returns {Promise<{ uniqueSongs: number, bustouts: Array<{ title: string, showDate: string, lastPlayed: string, debutYear: number | null }> } | null>}
+ */
+async function loadTourRecapSongFacts(db, tourKey) {
+  if (!db || !tourKey) return null;
+  const snap = await db.collection("public_tour_stats").doc(tourLabelToSlug(tourKey)).get();
+  if (!snap.exists) return null;
+  const data = snap.data() || {};
+  const unique = Number(data.uniqueSongs);
+  const bustouts = Array.isArray(data.bustouts) ? data.bustouts : [];
+  return {
+    uniqueSongs: Number.isFinite(unique) && unique > 0 ? Math.trunc(unique) : 0,
+    bustouts: bustouts
+      .map((row) => ({
+        title: typeof row?.title === "string" ? row.title.trim() : "",
+        showDate: typeof row?.showDate === "string" ? row.showDate : "",
+        lastPlayed: typeof row?.lastPlayed === "string" ? row.lastPlayed : "",
+        debutYear: Number.isFinite(Number(row?.debutYear)) ? Math.trunc(Number(row.debutYear)) : null,
+      }))
+      .filter((row) => row.title),
+  };
 }
 
 /**

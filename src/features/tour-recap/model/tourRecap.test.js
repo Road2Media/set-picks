@@ -6,6 +6,7 @@ import {
   buildTourRecapEmailAbbreviatedPlainText,
   buildTourRecapEmailPlainText,
   buildTourRecapPushPayload,
+  formatTourRecapPlaceLine,
   getTourRecapEmailTeaserResultLine,
   getTourRecapPersonalParagraph,
   resolveTourRecapRankBranch,
@@ -132,6 +133,37 @@ describe('buildTourRecapPushPayload', () => {
       edition: PREVIEW_TOUR_EDITION,
     });
     expect(p.body).toContain('#5');
+  });
+});
+
+describe('formatTourRecapPlaceLine', () => {
+  it('names everyone in a three-way tie as one place', () => {
+    const line = formatTourRecapPlaceLine({
+      rank: 3,
+      label: 'Tied for third',
+      tied: true,
+      points: 85,
+      members: [
+        { handle: 'HotDog Billy', points: 85, wins: 2, shows: 7 },
+        { handle: 'ArmenianMan', points: 85, wins: 1, shows: 8 },
+        { handle: 'TheManMulcahy', points: 85, wins: 1, shows: 7 },
+      ],
+    });
+    expect(line).toBe(
+      'Tied for third at 85 points: HotDog Billy (2 nightly wins, 7 shows), ArmenianMan (1 nightly win, 8 shows), and TheManMulcahy (1 nightly win, 7 shows)',
+    );
+    expect(line).not.toMatch(/Third Place/);
+    expect(line).not.toMatch(/4th/);
+  });
+
+  it('says no nightly wins for a runner-up who has none', () => {
+    expect(formatTourRecapPlaceLine({
+      rank: 2,
+      label: 'Runner-up',
+      tied: false,
+      points: 90,
+      members: [{ handle: 'YarmouthMeg', points: 90, wins: 0, shows: 8 }],
+    })).toBe('Runner-up: YarmouthMeg (90 pts, no nightly wins)');
   });
 });
 

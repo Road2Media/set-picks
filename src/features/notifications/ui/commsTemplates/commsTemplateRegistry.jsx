@@ -871,6 +871,55 @@ export const COMMS_TEMPLATE_REGISTRY = {
         },
       },
       {
+        name: 'Tied for third',
+        payload: {
+          rank: 3,
+          tiedCount: 3,
+          points: 85,
+          wins: 1,
+          showsPlayed: 8,
+          participantCount: 20,
+          tour_name: 'Sample Tour',
+          show_count: 8,
+          personal_line:
+            'You finished tied for #3 of 20 with SilverPick and BronzeLane, with 85 points and 1 nightly win, playing 8 of 8 shows. You caught Tweezer — a 40 show gap — on 07/03/26 at Last Room. You took the lead on 07/02/26.',
+          opening_paras: [
+            'Sample Tour is officially in the books.',
+            '8 shows, 20 players, and 12 different songs. The rarest hit of the run was Tweezer, a 200 show gap, on opening night, 07/01/26, at First Room, last played 07/12/23, debut 1990. The tour lead changed hands once. ChampionPat took it on 07/02/26 and held it through the close at Last Room.',
+            'Before the next run, here is the final tape.',
+          ],
+          podium: {
+            places: [
+              {
+                rank: 1,
+                label: 'Tour Winner',
+                tied: false,
+                points: 115,
+                members: [{ handle: 'ChampionPat', points: 115, wins: 3, shows: 8 }],
+              },
+              {
+                rank: 2,
+                label: 'Runner-up',
+                tied: false,
+                points: 90,
+                members: [{ handle: 'SilverPick', points: 90, wins: 0, shows: 8 }],
+              },
+              {
+                rank: 3,
+                label: 'Tied for third',
+                tied: true,
+                points: 85,
+                members: [
+                  { handle: 'BronzeLane', points: 85, wins: 2, shows: 7 },
+                  { handle: 'LateJoiner', points: 85, wins: 1, shows: 8 },
+                  { handle: 'WildcardKid', points: 85, wins: 1, shows: 7 },
+                ],
+              },
+            ],
+          },
+        },
+      },
+      {
         name: 'Top 10',
         payload: {
           rank: 8,
