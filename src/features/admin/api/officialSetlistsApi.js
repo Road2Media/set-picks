@@ -6,6 +6,7 @@ import {
   sanitizeSetlistSlots,
   sanitizeSongGaps,
 } from '../../../shared/utils/officialSetlistSanitize.js';
+import { reconcileOfficialSetlistSnapshot } from './reconcileOfficialSetlistSnapshot.js';
 
 const OFFICIAL_SETLISTS_COLLECTION = 'official_setlists';
 
@@ -59,6 +60,10 @@ export async function fetchOfficialSetlistByDate(showDate, slotFields) {
  * `songGaps` (#587 Phase B) follows the same explicit-wins / preserve-prior
  * policy: because this write replaces the whole doc, omitting `songGaps`
  * preserves any gap map frozen by live automation or a prior ingest.
+ *
+ * Both fields are then reconciled to `officialSetlist` (#626). Titles that
+ * were not played are removed. A played song whose saved gap is still
+ * >= 30 is written into `bustouts` even if the caller omitted it.
  */
 export async function saveOfficialSetlistByDate({
   showDate,
@@ -93,19 +98,20 @@ export async function saveOfficialSetlistByDate({
     encoreSongs = [cleanedSlots.enc];
   }
 
-  // Bustouts policy: explicit caller value wins (even an empty array — that
-  // is the affirmative "no bustouts" signal). When the caller omits the field
-  // entirely (undefined), fall back to whatever was previously on the doc so
-  // we never silently clobber a good snapshot on an unrelated edit.
-  const bustouts =
-    bustoutsExplicit !== undefined
-      ? sanitizeBustouts(bustoutsExplicit)
-      : priorBustouts;
-
-  const songGaps =
-    songGapsExplicit !== undefined
-      ? sanitizeSongGaps(songGapsExplicit)
-      : priorSongGaps;
+  // Explicit bustouts/songGaps replace the prior snapshot. Omitting either
+  // field keeps the prior value. Reconciliation then drops titles that are
+  // not in officialSetlist and promotes played songs whose gap is still >= 30.
+  const bustoutsInput =
+    bustoutsExplicit !== undefined ? bustoutsExplicit : priorBustouts;
+  const songGapsInput =
+    songGapsExplicit !== undefined ? songGapsExplicit : priorSongGaps;
+  const reconciled = reconcileOfficialSetlistSnapshot({
+    playedTitles: cleanedOfficialSetlist,
+    bustouts: bustoutsInput,
+    songGaps: songGapsInput,
+  });
+  const bustouts = reconciled.bustouts;
+  const songGaps = reconciled.songGaps;
 
   await setDoc(docRef, {
     showDate,

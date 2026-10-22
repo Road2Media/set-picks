@@ -529,11 +529,16 @@ function normalizeSetlistRows(payload) {
  * @param {number} [timing.nowMs] — wall-clock "now" in epoch ms.
  * @param {number | null} [timing.firstRowObservedAtMs] — epoch ms of the first poll that saw any row for this show.
  * @param {number | null} [timing.lastSet1ChangeAtMs] — epoch ms of the most recent poll where the set-1 title list changed.
+ * @param {{ mode?: "partial" | "authoritative" }} [options]
  *
  * When `timing` is absent (or inputs are null), behavior falls back to
  * "set 2 started = confirmed", matching pre-#264.
+ *
+ * Snapshot mode (#626): `authoritative` (default) keeps `bustouts` and
+ * `songGaps` inside this poll's played list. `partial` is the live-poll
+ * escape hatch for a shorter feed than the show's high-water song count.
  */
-function buildSetlistDocFromRows(rows, existingDoc = {}, timing = null) {
+function buildSetlistDocFromRows(rows, existingDoc = {}, timing = null, options = {}) {
   const officialSetlist = rows.map((r) => r.title).filter(Boolean);
   const slots = {};
   for (const key of SLOT_KEYS) slots[key] = "";
@@ -602,23 +607,18 @@ function buildSetlistDocFromRows(rows, existingDoc = {}, timing = null) {
   // this show. Freezing that at save time decouples scoring from the weekly
   // `song-catalog.json` refresh cadence, which would reset to gap ≈ 0 after
   // this show plays and silently erase the bustout boost.
-  const bustoutsFromRows = deriveBustoutsFromRows(rows);
-  const prevBustouts = Array.isArray(existingDoc?.bustouts)
-    ? existingDoc.bustouts
-        .map((t) => String(t ?? "").trim())
-        .filter(Boolean)
-    : [];
-  // Live automation may see a partial feed (only set 1 so far). Preserve the
-  // wider `bustouts` superset so mid-show polls never shrink the list and
-  // erase a bustout captured in a prior poll. Rows that newly appear extend
-  // the list; rows that existed but no longer appear (very rare edit) remain.
-  const bustouts = mergeBustouts(prevBustouts, bustoutsFromRows);
-
-  // Frozen per-song pre-show gap snapshot (#587 Phase B). Same provenance as
-  // `bustouts` (Phish.net row `gap`). The first positive gap sticks. A live
-  // 0 is a placeholder and is not stored, and it must not wipe a gap already
-  // captured. Songs absent from this poll keep their stored gap.
-  const songGaps = mergeSongGaps(existingDoc?.songGaps, deriveSongGapsFromRows(rows));
+  // `partial` keeps titles the current rows do not list (a shorter live
+  // payload must not erase set 2). `authoritative` (default) drops titles
+  // that are not in this poll's played list and promotes every played song
+  // whose frozen gap is still >= BUSTOUT_MIN_GAP (#626).
+  const mode = options.mode === "partial" ? "partial" : "authoritative";
+  const { bustouts, songGaps } = reconcileStoredSnapshots({
+    rows,
+    officialSetlist,
+    prevBustouts: existingDoc?.bustouts,
+    prevSongGaps: existingDoc?.songGaps,
+    mode,
+  });
 
   return {
     setlist: slots,
@@ -733,6 +733,223 @@ function mergeBustouts(prev, next) {
     }
   }
   return out;
+}
+
+/**
+ * @param {unknown} list
+ * @returns {string[]}
+ */
+function cleanTitleList(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const out = [];
+  for (const raw of list) {
+    const title = typeof raw === "string" ? raw.trim() : "";
+    if (!title) continue;
+    const norm = normalizeSongTitle(title);
+    if (!norm || seen.has(norm)) continue;
+    seen.add(norm);
+    out.push(title);
+  }
+  return out;
+}
+
+/**
+ * Bustouts and songGaps for one poll.
+ *
+ * Partial mode unions with the stored snapshot so a shorter live payload
+ * cannot drop a song captured on an earlier, longer poll.
+ *
+ * Authoritative mode is the played list from `officialSetlist`:
+ * - `songGaps` keeps the first positive gap, then drops keys that were not played.
+ * - `bustouts` is every played song whose frozen gap is >= BUSTOUT_MIN_GAP.
+ * - A played song that is already a bustout but has no frozen gap stays
+ *   (legacy snapshot). A frozen gap below the threshold removes it.
+ *
+ * @param {object} args
+ * @param {Array<{ title?: string, gap?: number | null }>} args.rows
+ * @param {string[]} args.officialSetlist
+ * @param {unknown} args.prevBustouts
+ * @param {unknown} args.prevSongGaps
+ * @param {"partial" | "authoritative"} args.mode
+ * @returns {{ bustouts: string[], songGaps: Record<string, number> }}
+ */
+function reconcileStoredSnapshots({
+  rows,
+  officialSetlist,
+  prevBustouts,
+  prevSongGaps,
+  mode,
+}) {
+  const bustoutsFromRows = deriveBustoutsFromRows(rows);
+  const gapsFromRows = deriveSongGapsFromRows(rows);
+  if (mode === "partial") {
+    return {
+      bustouts: mergeBustouts(prevBustouts, bustoutsFromRows),
+      songGaps: mergeSongGaps(prevSongGaps, gapsFromRows),
+    };
+  }
+
+  const frozenGaps = mergeSongGaps(prevSongGaps, gapsFromRows);
+  /** @type {Record<string, number>} */
+  const songGaps = {};
+  /** @type {Array<{ title: string, norm: string }>} */
+  const played = [];
+  const seenPlayed = new Set();
+  for (const raw of officialSetlist) {
+    const title = typeof raw === "string" ? raw.trim() : "";
+    const norm = normalizeSongTitle(title);
+    if (!title || !norm || seenPlayed.has(norm)) continue;
+    seenPlayed.add(norm);
+    played.push({ title, norm });
+    if (Object.prototype.hasOwnProperty.call(frozenGaps, norm)) {
+      songGaps[norm] = frozenGaps[norm];
+    }
+  }
+
+  const priorBustoutByNorm = new Map();
+  for (const title of cleanTitleList(prevBustouts)) {
+    const norm = normalizeSongTitle(title);
+    if (norm && !priorBustoutByNorm.has(norm)) priorBustoutByNorm.set(norm, title);
+  }
+
+  const bustouts = [];
+  for (const { title, norm } of played) {
+    const gap = Object.prototype.hasOwnProperty.call(songGaps, norm)
+      ? songGaps[norm]
+      : null;
+    if (gap != null && gap >= BUSTOUT_MIN_GAP) {
+      bustouts.push(title);
+      continue;
+    }
+    if (gap == null && priorBustoutByNorm.has(norm)) {
+      bustouts.push(priorBustoutByNorm.get(norm));
+    }
+  }
+  return { bustouts, songGaps };
+}
+
+/**
+ * Firestore `set(..., { merge: true })` deep-merges maps, so a smaller
+ * `songGaps` object would leave stale keys in the document. Mark removed
+ * keys with `deleteField()` (Admin `FieldValue.delete`).
+ *
+ * @param {unknown} prior
+ * @param {unknown} next
+ * @param {() => unknown} deleteField
+ * @returns {Record<string, unknown>}
+ */
+function songGapsMergePatch(prior, next, deleteField) {
+  const nextMap =
+    next && typeof next === "object" && !Array.isArray(next) ? next : {};
+  /** @type {Record<string, unknown>} */
+  const out = {};
+  for (const [key, value] of Object.entries(nextMap)) out[key] = value;
+  if (prior && typeof prior === "object" && !Array.isArray(prior)) {
+    for (const key of Object.keys(prior)) {
+      if (!Object.prototype.hasOwnProperty.call(nextMap, key)) {
+        out[key] = deleteField();
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Highest played-song count the live poller is willing to shrink from.
+ * Missing automation state seeds from the stored setlist so the next
+ * same-length poll can still drop ghosts (#626).
+ *
+ * @param {Record<string, unknown> | null | undefined} automation
+ * @param {Record<string, unknown> | null | undefined} existingSetlist
+ * @returns {number}
+ */
+function readPlayedSongHighWater(automation, existingSetlist) {
+  const stored = Number(automation?.playedSongHighWater);
+  if (Number.isFinite(stored) && stored > 0) return stored;
+  const list = Array.isArray(existingSetlist?.officialSetlist)
+    ? existingSetlist.officialSetlist.filter((title) => String(title ?? "").trim())
+    : [];
+  const songCount = Number(
+    existingSetlist?.sourceMeta &&
+      typeof existingSetlist.sourceMeta === "object"
+      ? existingSetlist.sourceMeta.songCount
+      : NaN
+  );
+  return Math.max(list.length, Number.isFinite(songCount) && songCount > 0 ? songCount : 0);
+}
+
+/**
+ * A shorter feed during an unfinished show is partial: keep snapshot titles
+ * the payload does not list. Once the show has auto-finalized, or the feed
+ * is at least as long as the high-water count, the played list is
+ * authoritative and absent titles are removed.
+ *
+ * @param {object} args
+ * @param {number} args.incomingSongCount
+ * @param {number} args.playedSongHighWater
+ * @param {boolean} args.alreadyAutoFinalized
+ * @returns {{ mode: "partial" | "authoritative", nextHighWater: number }}
+ */
+function resolveLiveSnapshotMode({
+  incomingSongCount,
+  playedSongHighWater,
+  alreadyAutoFinalized,
+}) {
+  const highWater =
+    Number.isFinite(playedSongHighWater) && playedSongHighWater > 0
+      ? playedSongHighWater
+      : 0;
+  const incoming = Number.isFinite(incomingSongCount) ? incomingSongCount : 0;
+  const shortened = highWater > 0 && incoming < highWater;
+  const partial = shortened && !alreadyAutoFinalized;
+  return {
+    mode: partial ? "partial" : "authoritative",
+    nextHighWater: partial ? highWater : incoming,
+  };
+}
+
+/**
+ * Normalized bustout titles that scoring can actually boost: membership
+ * intersected with the played list. Titles outside that list do not change
+ * `calculateSlotScore` (a miss returns before the boost).
+ *
+ * @param {unknown} bustouts
+ * @param {Set<string>} playedNorms
+ * @returns {string}
+ */
+function scoringBustoutFingerprint(bustouts, playedNorms) {
+  const norms = [];
+  const seen = new Set();
+  for (const title of cleanTitleList(bustouts)) {
+    const norm = normalizeSongTitle(title);
+    if (!norm || seen.has(norm) || !playedNorms.has(norm)) continue;
+    seen.add(norm);
+    norms.push(norm);
+  }
+  norms.sort();
+  return norms.join("\n");
+}
+
+/**
+ * @param {{ setlist?: Record<string, unknown>, officialSetlist?: unknown, encoreSongs?: unknown }} payload
+ * @returns {Set<string>}
+ */
+function playedNormsFromSetlistPayload(payload) {
+  const played = new Set();
+  const add = (value) => {
+    const norm = normalizeSongTitle(value);
+    if (norm) played.add(norm);
+  };
+  if (Array.isArray(payload?.officialSetlist)) {
+    for (const title of payload.officialSetlist) add(title);
+  }
+  const slots = payload?.setlist || {};
+  for (const key of SLOT_KEYS) add(slots[key]);
+  if (Array.isArray(payload?.encoreSongs)) {
+    for (const title of payload.encoreSongs) add(title);
+  }
+  return played;
 }
 
 function signatureFromRows(rows) {
@@ -880,6 +1097,7 @@ async function maybeAutoFinalize({
   set2Count,
   prevAutoFinalizedAtMs,
   rowsChanged,
+  scoringSnapshotsChanged = false,
 }) {
   if (!runRollup) {
     return { fired: false, reason: "no-runner" };
@@ -887,9 +1105,13 @@ async function maybeAutoFinalize({
 
   const alreadyAutoFinalized = prevAutoFinalizedAtMs != null;
 
-  // Reconciliation: already finalized once, and Phish.net sent an edit
-  // (row-level change). Re-run rollup to reconcile users.totalPoints.
-  if (alreadyAutoFinalized && rowsChanged) {
+  // Reconciliation: already finalized once, and either Phish.net edited a
+  // row or the bustout snapshot of a played song changed (#626). Re-run
+  // rollup so `users.totalPoints` follows the per-pick score delta.
+  // Dropping a bustout title that is not in the played list does not change
+  // scores (`calculateSlotScore` returns before the boost) and does not
+  // set `scoringSnapshotsChanged`.
+  if (alreadyAutoFinalized && (rowsChanged || scoringSnapshotsChanged)) {
     try {
       const result = await runRollup({
         showDate,
@@ -1155,7 +1377,15 @@ async function pollSingleShowDate({
       firstRowObservedAtMs,
       lastSet1ChangeAtMs,
     };
-    const nextPayload = buildSetlistDocFromRows(rows, prev, timingForBuild);
+    const prevAutoFinalizedAtMs = timestampToMs(automation.autoFinalizedAt);
+    const snapshotMode = resolveLiveSnapshotMode({
+      incomingSongCount: rows.length,
+      playedSongHighWater: readPlayedSongHighWater(automation, prev),
+      alreadyAutoFinalized: prevAutoFinalizedAtMs != null,
+    });
+    const nextPayload = buildSetlistDocFromRows(rows, prev, timingForBuild, {
+      mode: snapshotMode.mode,
+    });
 
     // Full-rows change detection (distinct from set-1 signature; used for
     // #266 auto-finalize idle). A row-level change is any mismatch between
@@ -1229,11 +1459,15 @@ async function pollSingleShowDate({
           }
         : {}),
       ...set1CloserStateUpdate,
+      playedSongHighWater: snapshotMode.nextHighWater,
     };
 
     // Context for the #266 auto-finalize step (runs after either write
     // branch below). Computed once to keep the two call sites consistent.
-    const prevAutoFinalizedAtMs = timestampToMs(automation.autoFinalizedAt);
+    const playedNorms = playedNormsFromSetlistPayload(nextPayload);
+    const scoringSnapshotsChanged =
+      scoringBustoutFingerprint(prev.bustouts, playedNorms) !==
+      scoringBustoutFingerprint(nextPayload.bustouts, playedNorms);
     const encoreSongsCount = Array.isArray(nextPayload.encoreSongs)
       ? nextPayload.encoreSongs.length
       : 0;
@@ -1255,6 +1489,7 @@ async function pollSingleShowDate({
       set2Count,
       prevAutoFinalizedAtMs,
       rowsChanged,
+      scoringSnapshotsChanged,
     };
 
     // Use AND here (previously OR): once #264 timing can flip `s1c` without
@@ -1298,7 +1533,11 @@ async function pollSingleShowDate({
       officialSetlist: nextPayload.officialSetlist,
       encoreSongs: nextPayload.encoreSongs || [],
       bustouts: nextPayload.bustouts || [],
-      songGaps: nextPayload.songGaps || {},
+      songGaps: songGapsMergePatch(
+        prev.songGaps,
+        nextPayload.songGaps || {},
+        () => admin.firestore.FieldValue.delete()
+      ),
       updatedBy: requestorEmail || "setlist-automation",
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       sourceMeta: {
@@ -1473,8 +1712,14 @@ module.exports = {
   parseShowCalendarSnapshotToDateSet,
   parseShowCalendarSnapshotToShows,
   parseShowCalendarSnapshotToShowsByTour,
+  playedNormsFromSetlistPayload,
   pollSingleShowDate,
   randomScheduledPollDelayMs,
+  readPlayedSongHighWater,
+  reconcileStoredSnapshots,
+  resolveLiveSnapshotMode,
+  scoringBustoutFingerprint,
+  songGapsMergePatch,
   timeZoneForShowDate,
   scheduledCandidateShowDates,
   set1TitleSignatureFromRows,
