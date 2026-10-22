@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.91.0] — 2026-10-22
+
+### Added
+- **BIMI inbox logo (#498)** — `https://www.setlistpickem.com/bimi/logo.svg` is a square SVG Tiny PS mark traced from the site favicon. `comms/emailBranding.cjs` exports that URL and the `default._bimi.setlistpickem.com` TXT value (`v=BIMI1; l=…;` with no `a=` until a certificate exists). `vercel.json` serves `/bimi/*` as `image/svg+xml`.
+
+### Fixed
+- **Inbox sender badge asset (#498)** — the missing circle beside Setlist Pick'em is not an HTML logo bug. Inbox clients resolve BIMI on the From domain, and there was no Tiny PS logo at a non-redirecting HTTPS URL. The logo is now in the site. The badge stays generic until a human publishes that TXT after this file is on production. Gmail also needs a VMC or CMC. No Cloud Functions deploy. See `docs/comms-triggers/EMAIL_INBOX_BADGE.md`.
+
 ## [1.90.0] — 2026-10-22
 
 ### Added
