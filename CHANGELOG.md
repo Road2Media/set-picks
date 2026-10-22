@@ -8,6 +8,12 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.95.0] — 2026-10-22
+
+### Added
+- **2026 annual tour statistics (#1141)** — Public `/tour-stats/2026` (not a tour slug). Shows, unique songs, most-played songs, and bustouts across every 2026 tour. A show counts for the calendar year of its date: December 30 and December 31 stay in 2026, and January 1 and January 2 count for 2027 (#1109). Show counts and song-row totals add the tour pages. A song played on two tours counts once. The page links to the 2026 standings board (`/dashboard/standings?view=year&year=2026`). Prerender embeds the facts plus FAQ and ItemList JSON-LD. Sitemap and `llms.txt` include the URL. The hub links here.
+- **`public_tour_stats/_year_YYYY`** — The existing tour-stats refresh writes one doc per calendar year from the same setlist aggregator the tour pages use. `schemaVersion` is 3 so the tour picker does not list it. No new collection and no rules change. The page uses that doc when it exists. Until the functions deploy, it adds tour pages whose dates all sit inside the year and leaves a cross-year tour out of the song totals. Deploy `scheduledPublicTourStatsRefresh`, `refreshPublicTourStats`, `scheduledPhishnetShowCalendar`, and `refreshPhishnetShowCalendar` before 2027-01-01, then call `refreshPublicTourStats` once if the year doc is needed before the next nightly run. Search Console Request indexing on the new URL stays a human step after `main` is READY.
+
 ## [1.94.0] — 2026-10-22
 
 ### Added

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   fetchPublicTourStatsDoc,
   fetchPublicTourStatsIndex,
+  isPublicTourPickerDocId,
   normalizePublicTourStatsDoc,
   normalizePublicTourStatsIndex,
 } from './fetchPublicTourStats';
@@ -26,6 +27,14 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('isPublicTourPickerDocId', () => {
+  it('keeps year roll-up docs out of the tour picker', () => {
+    expect(isPublicTourPickerDocId('2026-summer-tour')).toBe(true);
+    expect(isPublicTourPickerDocId('_index')).toBe(false);
+    expect(isPublicTourPickerDocId('_year_2026')).toBe(false);
+  });
 });
 
 describe('normalizePublicTourStats*', () => {

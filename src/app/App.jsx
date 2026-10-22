@@ -42,6 +42,7 @@ const HowItWorksPage = lazy(() => import('../pages/marketing/HowItWorksPage'));
 const HowScoringWorksPage = lazy(() => import('../pages/marketing/HowScoringWorksPage'));
 const PublicTourStatsPage = lazy(() => import('../pages/marketing/PublicTourStatsPage'));
 const MsgGardenStatsPage = lazy(() => import('../pages/marketing/MsgGardenStatsPage'));
+const AnnualTourStatsPage = lazy(() => import('../pages/marketing/AnnualTourStatsPage'));
 const PhishSetlistPredictionGamePage = lazy(
   () => import('../pages/marketing/PhishSetlistPredictionGamePage'),
 );
@@ -71,6 +72,7 @@ function App() {
         <Route path="/how-scoring-works" element={<HowScoringWorksPage />} />
         <Route path="/tour-stats" element={<PublicTourStatsPage />} />
         <Route path="/tour-stats/msg" element={<MsgGardenStatsPage />} />
+        <Route path="/tour-stats/2026" element={<AnnualTourStatsPage />} />
         <Route path="/tour-stats/:tourSlug" element={<PublicTourStatsPage />} />
         <Route
           path="/phish-setlist-prediction-game"

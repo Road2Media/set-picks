@@ -25,6 +25,12 @@ export const TOUR_STATS_SEO_MIN_SHOWS_WITH_SETLIST = 4;
 /** Minimum unique titles — blocks a 4-night run that is still catalog-thin. */
 export const TOUR_STATS_SEO_MIN_UNIQUE_SONGS = 20;
 
+/**
+ * Paths that are not tour slugs. `/tour-stats/msg` and `/tour-stats/2026`
+ * are their own pages (#1139 / #1141). Auto-expand must not overwrite them.
+ */
+export const TOUR_STATS_RESERVED_SLUGS = new Set(['msg', '2026']);
+
 const FALSEY_ENV = new Set(['0', 'false', 'off', 'no']);
 
 /**
@@ -203,6 +209,7 @@ export async function resolveAutoExpandTourStatsRoutes({
     const slug =
       typeof entry?.tourSlug === 'string' ? entry.tourSlug.trim() : '';
     if (!slug || slug.startsWith('_') || already.has(slug)) continue;
+    if (TOUR_STATS_RESERVED_SLUGS.has(slug)) continue;
     if (denylist.has(slug)) continue;
     if (allowlist.size > 0 && !allowlist.has(slug)) continue;
 

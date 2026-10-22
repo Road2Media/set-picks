@@ -17,6 +17,9 @@ const {
   isFinishedPublicTour,
   loadPublicTourWinners,
 } = require("./publicTourWinners");
+const {
+  buildCalendarYearStatsWrites,
+} = require("./calendarYearTourStats");
 
 /** Game launch floor — keep aligned with `src/shared/config/gameLaunch.js`. */
 const GAME_LAUNCH_SHOW_DATE = "2026-04-16";
@@ -649,6 +652,7 @@ async function refreshPublicTourStats(db, opts = {}) {
       tourSlug,
       tourLabel,
       showDates,
+      docs,
       payload,
       priorLastPlayed: new Map(),
     });
@@ -803,6 +807,34 @@ async function refreshPublicTourStats(db, opts = {}) {
       return a.tourLabel.localeCompare(b.tourLabel);
     });
 
+  // #1141: calendar-year roll-up. Dec 31 stays in that year. Jan 1 is the
+  // next year. schemaVersion 3 keeps `_year_YYYY` out of the picker query,
+  // which only lists versions 1 and 2. The client also skips `_` doc ids.
+  const yearWrites = buildCalendarYearStatsWrites(
+    pendingWrites.map((w) => ({
+      tourSlug: w.tourSlug,
+      tourLabel: w.tourLabel,
+      docs: w.docs,
+    })),
+    enrichmentByTitle
+  );
+  for (const yearWrite of yearWrites) {
+    await db.collection("public_tour_stats").doc(yearWrite.docId).set(
+      {
+        ...yearWrite.body,
+        writtenAt,
+        schemaVersion: 3,
+      },
+      { merge: false }
+    );
+    logger.info("refreshPublicTourStats: wrote calendar year", {
+      docId: yearWrite.docId,
+      year: yearWrite.year,
+      showsWithSetlist: yearWrite.body.showsWithSetlist,
+      tours: yearWrite.body.tours.length,
+    });
+  }
+
   const defaultTourSlug = pickDefaultPublicTourSlug(indexTours);
 
   await db.collection("public_tour_stats").doc("_index").set(
@@ -815,7 +847,13 @@ async function refreshPublicTourStats(db, opts = {}) {
     { merge: false }
   );
 
-  return { toursWritten, today, indexCount: indexTours.length, defaultTourSlug };
+  return {
+    toursWritten,
+    today,
+    indexCount: indexTours.length,
+    defaultTourSlug,
+    yearsWritten: yearWrites.map((row) => row.year),
+  };
 }
 
 /**

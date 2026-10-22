@@ -204,6 +204,12 @@ const MSG_GARDEN_TITLE =
 const MSG_GARDEN_DESCRIPTION =
   'Phish at Madison Square Garden by the numbers: 96 shows through July 29, 2026, most-played songs, debuts, gaps, and New Year\'s Eve facts. January 2, 2027 is the 100th show.';
 const MSG_GARDEN_URL = `${SEO_CONFIG.siteUrl}/tour-stats/msg`;
+
+/** Annual roll-up (#1141). Not a tour slug. */
+const ANNUAL_2026_TITLE = "2026 Phish Tour Statistics | Setlist Pick'Em";
+const ANNUAL_2026_DESCRIPTION =
+  '2026 Phish tour setlist statistics across every tour that year: shows, unique songs, most-played songs, and bustouts. December 31 counts for 2026. January 1 counts for 2027.';
+const ANNUAL_2026_URL = `${SEO_CONFIG.siteUrl}/tour-stats/2026`;
 /**
  * Static opt-in slugs that always prerender facts (#928).
  * #959 auto-expand adds further slugs at build time without editing this list.
@@ -317,6 +323,45 @@ function buildMsgGardenJsonLdShell() {
             position: 3,
             name: 'Phish at MSG',
             item: MSG_GARDEN_URL,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function buildAnnual2026JsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': ANNUAL_2026_URL,
+        url: ANNUAL_2026_URL,
+        name: ANNUAL_2026_TITLE,
+        description: ANNUAL_2026_DESCRIPTION,
+        isPartOf: { '@id': `${SEO_CONFIG.siteUrl}/#website` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: `${SEO_CONFIG.siteUrl}/`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Tour Insights',
+            item: TOUR_STATS_HUB_URL,
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: '2026 tours',
+            item: ANNUAL_2026_URL,
           },
         ],
       },
@@ -649,6 +694,19 @@ export const PRERENDER_ROUTES = [
       'Not a night-by-night setlist archive. The New Year\'s Run is the next reason to lock a card.',
     ],
     buildJsonLd: buildMsgGardenJsonLdShell,
+  },
+  {
+    path: '/tour-stats/2026',
+    title: ANNUAL_2026_TITLE,
+    description: ANNUAL_2026_DESCRIPTION,
+    canonicalUrl: ANNUAL_2026_URL,
+    h1: '2026 Phish tour statistics',
+    paragraphs: [
+      'Every 2026 Phish tour on one page: shows played, unique songs, most-played songs, and bustouts.',
+      'A show counts for the calendar year of its date. December 30 and December 31, 2026 count for 2026. January 1 and January 2, 2027 count for 2027.',
+      'Show counts and song-row totals add the tour pages. A song played on two tours counts once among unique songs, and its plays add up. Not a night-by-night setlist archive.',
+    ],
+    buildJsonLd: buildAnnual2026JsonLd,
   },
   {
     path: KEYWORD_PAGE_PATH,
