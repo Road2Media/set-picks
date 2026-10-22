@@ -33,22 +33,39 @@ const rankBadgeClass = (rank) => {
  * Handle cells are `<Link to="/user/:uid">` for #222 parity with Show
  * standings rows and Pool hub leaderboard.
  *
+ * Year standings (#1110) reuse this list. Pass `heading` / `description` /
+ * empty and error copy; tour defaults stay in place for the tour view.
+ *
  * @param {{
- *   tourName: string | null | undefined,
+ *   tourName?: string | null | undefined,
+ *   scopeName?: string | null | undefined,
  *   leaders: Array<{ uid: string, handle: string, totalPoints: number, wins: number, shows: number, rank?: number, tiedCount?: number }>,
  *   loading: boolean,
  *   error?: Error | null,
  *   selfUserId?: string | null,
+ *   heading?: string,
+ *   description?: string,
+ *   scopeFallback?: string,
+ *   emptyMessage?: string,
+ *   errorMessage?: string,
+ *   loadingLabel?: string,
  * }} props
  */
 export default function TourStandingsSection({
   tourName,
+  scopeName,
   leaders,
   loading,
   error,
   selfUserId = null,
+  heading = TOUR_STANDINGS_HEADING,
+  description = TOUR_STANDINGS_DESCRIPTION,
+  scopeFallback = 'Current tour',
+  emptyMessage = 'No graded picks in this tour yet.',
+  errorMessage = "Couldn't load tour standings. Try refreshing.",
+  loadingLabel = 'Loading tour standings',
 }) {
-  const heading = TOUR_STANDINGS_HEADING;
+  const scopeLabel = scopeName || tourName || scopeFallback;
   // Place is competition rank on points, not the row index (#1135).
   const rankedLeaders = assignTourDisplayRanks(leaders);
   const { identities } = usePlayerIdentityMap(rankedLeaders.map((r) => r.uid));
@@ -64,29 +81,29 @@ export default function TourStandingsSection({
             {heading}
           </h2>
           <p className={`mt-0.5 ${STANDINGS_BOX_TITLE}`}>
-            {tourName || 'Current tour'}
+            {scopeLabel}
           </p>
           <p className={`mt-0.5 ${STANDINGS_BOX_BODY}`}>
-            {TOUR_STANDINGS_DESCRIPTION}
+            {description}
           </p>
         </div>
         {loading ? (
           <Loader2
             className="h-5 w-5 animate-spin text-brand-primary"
-            aria-label="Loading tour standings"
+            aria-label={loadingLabel}
           />
         ) : null}
       </div>
 
       {error ? (
         <p className={`rounded-xl border border-red-900/50 bg-red-900/20 px-3.5 py-3 ${STANDINGS_BOX_BODY} !text-red-200`}>
-          Couldn&apos;t load tour standings. Try refreshing.
+          {errorMessage}
         </p>
       ) : null}
 
       {!loading && !error && leaders.length === 0 ? (
         <p className={STANDINGS_BOX_BODY}>
-          No graded picks in this tour yet.
+          {emptyMessage}
         </p>
       ) : null}
 

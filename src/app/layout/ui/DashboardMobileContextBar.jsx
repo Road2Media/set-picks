@@ -4,7 +4,10 @@ import {
   dashboardMobileContextTitleGradientClasses,
   dashboardMobileContextTitleWarRoomClasses,
 } from '../../../shared/config/dashboardHeadingTypography';
-import { StandingsTourScopeSelect } from '../../../features/scoring';
+import {
+  StandingsTourScopeSelect,
+  StandingsYearScopeSelect,
+} from '../../../features/scoring';
 import { DASHBOARD_MOBILE_CONTEXT_TRAILING_ROOT_ID } from '../../../shared/hooks/useDashboardMobileChromePortal';
 import DashboardTourDateScope from './DashboardTourDateScope';
 
@@ -24,6 +27,7 @@ export default function DashboardMobileContextBar({
   showDates,
   showDatesByTour,
   tourScope = null,
+  yearScope = null,
 }) {
   const isWarRoom = contextTitleTone === 'warRoom';
 
@@ -56,6 +60,15 @@ export default function DashboardMobileContextBar({
             tours={tourScope.tours}
             selectedTourKey={tourScope.selectedTourKey}
             onSelectTour={tourScope.onSelectTour}
+          />
+        ) : null}
+
+        {yearScope ? (
+          <StandingsYearScopeSelect
+            variant="mobile"
+            years={yearScope.years}
+            selectedYearKey={yearScope.selectedYearKey}
+            onSelectYear={yearScope.onSelectYear}
           />
         ) : null}
       </div>

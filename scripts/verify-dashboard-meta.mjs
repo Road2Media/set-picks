@@ -118,6 +118,40 @@ const CASES = [
       layoutDetailEyebrow: null,
       isStandingsTourView: true,
       showTourScopePicker: true,
+      isStandingsYearView: false,
+      showYearScopePicker: false,
+    },
+  },
+  {
+    // #1110: Year view is cumulative. Hide the date picker; show the year picker.
+    path: '/dashboard/standings',
+    search: '?view=year',
+    expect: {
+      contextTitle: NAV_LABEL_STANDINGS,
+      showDatePicker: false,
+      layoutDesktopHeading: null,
+      ownsDesktopStickyChrome: true,
+      layoutDetailEyebrow: null,
+      isStandingsTourView: false,
+      showTourScopePicker: false,
+      isStandingsYearView: true,
+      showYearScopePicker: true,
+    },
+  },
+  {
+    // #1110: `?year=` remembers the calendar year and does not bring the date picker back.
+    path: '/dashboard/standings',
+    search: '?view=year&year=2026',
+    expect: {
+      contextTitle: NAV_LABEL_STANDINGS,
+      showDatePicker: false,
+      layoutDesktopHeading: null,
+      ownsDesktopStickyChrome: true,
+      layoutDetailEyebrow: null,
+      isStandingsTourView: false,
+      showTourScopePicker: false,
+      isStandingsYearView: true,
+      showYearScopePicker: true,
     },
   },
   {
