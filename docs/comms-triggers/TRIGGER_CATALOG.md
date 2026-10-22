@@ -567,7 +567,7 @@ Abbreviated recap + Standings / invite CTA. Forced to every inbox (no play filte
 
 `{{handle}}`, `{{rank}}`, `{{tiedCount}}`, `{{tiedHandles}}`, `{{points}}`, `{{wins}}`, `{{showsPlayed}}`, `{{participantCount}}`, `{{tour_id}}`, `{{tour_name}}`, `{{show_count}}`, `{{headline}}`, `{{podium}}`
 
-`rank` is competition rank on tour points (#1135). `tiedCount` is how many players share it. `tiedHandles` is the other handles at that rank, in list order (nightly wins, then handle). The personal sentence and the in-app podium still speak list order until #1136. These fields are what that copy should read.
+`rank` is competition rank on tour points (#1135). `tiedCount` is how many players share it. `tiedHandles` is the other handles at that rank, in list order (nightly wins, then handle). The personal sentence says “tied for #N with …” when `tiedCount` is greater than 1. The in-app board reads `podium.places`: one place per official rank from 1 through 5, and a tie names everyone at that rank (#1136). A payload without `places` keeps the older index labels.
 
 #### Rank branches (personalized)
 
@@ -576,19 +576,19 @@ champion · top 5 · top 10 · full-run outside top 10 · partial attendance · 
 #### Template — Push
 
 **Title:** `Tour recap is in`  
-**Body:** champion: `You took #1 with {{points}} pts and {{wins}} nightly wins. Open the app for the full wrap-up.` otherwise `You finished #{{rank}} ({{points}} pts, {{wins}} wins). Open the app for your personalized recap.`  
+**Body:** sole #1: `You took #1 with {{points}} pts and {{wins}} nightly wins. Open Messages for the full wrap-up.` A tie: `You finished tied for #{{rank}} ({{points}} pts, {{wins}} wins). Open Messages for your personalized recap.` Otherwise: `You finished #{{rank}} ({{points}} pts, {{wins}} wins). Open Messages for your personalized recap.`  
 **Deep link:** inbox / `/dashboard/standings`
 
 #### Template — In-App
 
 **Heading:** `{{headline}}` (edition flavor)
 
-Podium + honorable mentions + personalized rank-branch paragraph. CTA: standings (no “Open the app”).
+Places grouped by official rank, then the personalized paragraph. A tie is one place. Payloads without `podium.places` keep the older podium and the two canned lines. CTA: standings (no “Open the app”).
 
 #### Template — Email (abbreviated)
 
 **Subject:** `{{tour_name}} recap is in`  
-Teaser + champion one-liner + CTA to log in / standings. Full narrative stays in-app.
+Congrats line (every tied first-place handle when `podium.places` rank 1 is a tie), the rank 1–5 grid, then up to two personal beats. Full narrative stays in-app.
 
 ---
 

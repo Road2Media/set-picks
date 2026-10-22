@@ -42,6 +42,7 @@ const TOUR_SLOTS = [
   "best_night",
   "bustouts_caught",
   "shows_sat_out",
+  "tour_scale",
   "rarest_hit",
   "lead_changes",
   "closing_stand",

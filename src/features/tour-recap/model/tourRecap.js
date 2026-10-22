@@ -48,6 +48,43 @@ export const PREVIEW_TOUR_EDITION = {
   resultSectionLabel: 'Your final result',
   pushTitle: 'Tour recap is in',
   podium: {
+    places: [
+      {
+        rank: 1,
+        label: 'Tour Winner',
+        tied: false,
+        points: 180,
+        members: [{ handle: 'ChampionPat', points: 180, wins: 3, shows: 8 }],
+      },
+      {
+        rank: 2,
+        label: 'Runner-up',
+        tied: false,
+        points: 165,
+        members: [{ handle: 'SilverPick', points: 165, wins: 2, shows: 8 }],
+      },
+      {
+        rank: 3,
+        label: 'Third Place',
+        tied: false,
+        points: 150,
+        members: [{ handle: 'BronzeLane', points: 150, wins: 1, shows: 8 }],
+      },
+      {
+        rank: 4,
+        label: '4th',
+        tied: false,
+        points: 140,
+        members: [{ handle: 'LateJoiner', points: 140, wins: 0, shows: 6 }],
+      },
+      {
+        rank: 5,
+        label: '5th',
+        tied: false,
+        points: 120,
+        members: [{ handle: 'WildcardKid', points: 120, wins: 2, shows: 4 }],
+      },
+    ],
     rows: /** @type {TourRecapPodiumRow[]} */ ([
       { handle: 'ChampionPat', points: 180, wins: 3 },
       { handle: 'SilverPick', points: 165, wins: 2 },
@@ -59,6 +96,71 @@ export const PREVIEW_TOUR_EDITION = {
     ],
   },
 };
+
+/**
+ * Official-rank places on a new send. Already-sent messages and the Sphere
+ * archive have no `places` array and keep the older row layout.
+ *
+ * @param {{ places?: unknown } | null | undefined} podium
+ * @returns {Array<{ rank: number, label?: string, tied?: boolean, points?: number, members?: Array<{ handle?: string, points?: number, wins?: number, shows?: number }> }> | null}
+ */
+export function tourRecapRankedPlaces(podium) {
+  const places = podium?.places;
+  if (!Array.isArray(places) || places.length === 0) return null;
+  return places.filter((place) => place && Number(place.rank) >= 1);
+}
+
+/**
+ * @param {string[]} names
+ * @returns {string}
+ */
+function joinPlaceNames(names) {
+  const list = names.filter(Boolean);
+  if (list.length <= 1) return list[0] || '';
+  if (list.length === 2) return `${list[0]} and ${list[1]}`;
+  return `${list.slice(0, -1).join(', ')}, and ${list[list.length - 1]}`;
+}
+
+/**
+ * @param {number} wins
+ * @returns {string}
+ */
+function nightlyWinsPhrase(wins) {
+  if (wins === 0) return 'no nightly wins';
+  return `${wins} nightly ${wins === 1 ? 'win' : 'wins'}`;
+}
+
+/**
+ * One podium line. A tie names every player at that rank.
+ *
+ * @param {{ rank?: number, label?: string, tied?: boolean, points?: number, members?: Array<{ handle?: string, points?: number, wins?: number, shows?: number }> }} place
+ * @returns {string}
+ */
+export function formatTourRecapPlaceLine(place) {
+  const members = Array.isArray(place?.members) ? place.members : [];
+  const label = typeof place?.label === 'string' ? place.label : '';
+  if (!members.length) return label;
+  if (place?.tied) {
+    const names = members.map((member) => {
+      const handle = member?.handle || 'Anonymous';
+      const bits = [];
+      const wins = Number(member?.wins);
+      if (Number.isFinite(wins)) bits.push(nightlyWinsPhrase(wins));
+      const shows = Number(member?.shows);
+      if (Number.isFinite(shows)) bits.push(`${shows} ${shows === 1 ? 'show' : 'shows'}`);
+      return bits.length ? `${handle} (${bits.join(', ')})` : handle;
+    });
+    const points = Number(place?.points);
+    const at = Number.isFinite(points) ? ` at ${points} points` : '';
+    return `${label}${at}: ${joinPlaceNames(names)}`;
+  }
+  const member = members[0];
+  const wins = Number(member?.wins);
+  const winPhrase = Number.isFinite(wins) ? nightlyWinsPhrase(wins) : '';
+  const points = Number.isFinite(Number(member?.points)) ? `${member.points} pts` : '';
+  const stats = [points, winPhrase].filter(Boolean).join(', ');
+  return stats ? `${label}: ${member.handle} (${stats})` : `${label}: ${member.handle}`;
+}
 
 /**
  * Rank paragraph used when a stored message has no server `personal_line`.
@@ -341,6 +443,9 @@ export function buildTourRecapEmailPlainText(ctx) {
   const vars = { participantCount, showCount, tourName };
   const opening = (edition.openingParas || []).map((p) => interpolateTourRecapCopy(p, vars));
   const champion = podium?.rows?.[0];
+  const places = tourRecapRankedPlaces(podium);
+  const trophyPlaces = places ? places.filter((place) => Number(place.rank) <= 3) : [];
+  const honorPlaces = places ? places.filter((place) => Number(place.rank) > 3) : [];
 
   const lines = [
     edition.headline,
@@ -350,20 +455,29 @@ export function buildTourRecapEmailPlainText(ctx) {
     '---',
     'THE PODIUM',
     '',
-    champion
-      ? `A massive congratulations to our champion, ${champion.handle}. Taking down ${champion.wins} nightly wins across ${showCount} shows to secure ${champion.points} total points is a dominant performance.`
-      : '',
-    '',
-    'The race for the top was incredibly tight down the stretch:',
-    '',
-    ...(podium?.rows || []).map((row, i) => {
-      const label = i === 0 ? '1st' : i === 1 ? '2nd' : '3rd';
-      return `${label}: ${row.handle} (${row.points} Pts, ${row.wins} Wins)`;
-    }),
-    '',
-    ...(podium?.honorableMentions?.length
-      ? ['Honorable mentions:', ...podium.honorableMentions.map((h) => `- ${h.handle}: ${h.note}`)]
-      : []),
+    ...(places
+      ? [
+          ...trophyPlaces.map((place) => formatTourRecapPlaceLine(place)),
+          ...(honorPlaces.length
+            ? ['', 'Honorable mentions:', ...honorPlaces.map((place) => formatTourRecapPlaceLine(place))]
+            : []),
+        ]
+      : [
+          champion
+            ? `A massive congratulations to our champion, ${champion.handle}. Taking down ${champion.wins} nightly wins across ${showCount} shows to secure ${champion.points} total points is a dominant performance.`
+            : '',
+          '',
+          'The race for the top was incredibly tight down the stretch:',
+          '',
+          ...(podium?.rows || []).map((row, i) => {
+            const label = i === 0 ? '1st' : i === 1 ? '2nd' : '3rd';
+            return `${label}: ${row.handle} (${row.points} Pts, ${row.wins} Wins)`;
+          }),
+          '',
+          ...(podium?.honorableMentions?.length
+            ? ['Honorable mentions:', ...podium.honorableMentions.map((h) => `- ${h.handle}: ${h.note}`)]
+            : []),
+        ]),
     '',
     '---',
     (edition.resultSectionLabel || 'YOUR FINAL RESULT').toUpperCase(),

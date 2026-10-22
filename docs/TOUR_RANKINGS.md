@@ -2,13 +2,13 @@
 
 | Field | Value |
 |--------|--------|
-| **Status** | Rule accepted (#1135). Player-facing page still unpublished — the recap podium still uses list order (#1136). |
+| **Status** | Rule accepted (#1135). The next wrap reads that rank (#1136). The 2026-10-13 Fall Tour message is unchanged. Player-facing page still unpublished. |
 | **Date** | 2026-10-22 |
 | **Case** | Live `tour_recap` for `2026 Fall Tour` (final show 2026-10-12, Orion Amphitheater, Huntsville). Read against the in-app message the same day. |
 | **Code** | `functions/tourRankingsDailyCore.js` · `src/features/scoring/model/aggregateTourStandings.js` · `functions/tourRecapCore.js` · `src/features/tour-recap/ui/TourRecapInApp.jsx` |
 | **Related** | #1135 · #1136 · parent epic #1109 · #510 · #1084 · [TOUR_RECAP_FACT_INVENTORY.md](./comms-triggers/TOUR_RECAP_FACT_INVENTORY.md) |
 
-This note is the shared case study for two workstreams. They ship separately. Ranking decides the place. Recap comms decides the paragraph. A short player-facing page can be cut from the **Adopted rule** section after the standings screen and the recap use the same numbers. Do not publish the current screens as the rule. They disagree.
+This note is the shared case study for two workstreams. Ranking decides the place. Recap comms decides the paragraph. Both are in the code as of 2026-10-22. The Fall Tour message already in inboxes keeps the older podium, because that payload has no `places` array. A short player-facing page can be cut from the **Adopted rule** section. Do not treat the 2026-10-13 screenshots as the rule.
 
 ## Two workstreams
 
@@ -17,7 +17,7 @@ This note is the shared case study for two workstreams. They ship separately. Ra
 | **Question** | What is official place, and which screens show it? | What does the end-of-tour message say once that place is known? |
 | **Owns** | The rule below. Standings badges. Tie metadata on the rank (`tiedCount`, the other handles at that rank). | Podium labels, the personal rank sentence, the shared intro, canned podium lines, a second personal beat, spoken dates, band-fact color. |
 | **Leaves alone** | Recap prose, Phish.net essays, the one-sentence opening. | The points formula, the wins definition, and the wins-then-handle list order. |
-| **Done when** | A tie shares one rank on the tour standings screen and on the number the recap is given. List order inside the tie is still wins, then handle. | The Fall Tour case would name the three-way tie as one place, and the shared intro would carry the gap and the lead changes together. |
+| **Done when** | A tie shares one rank on the tour standings screen and on the number the recap is given. List order inside the tie is still wins, then handle. Shipped (#1135). | The next wrap names a three-way tie as one place, and the shared intro can carry the gap and the lead changes together. Shipped in code (#1136). The already-sent Fall Tour wrap is not resent. |
 
 Ranking goes first only for the place labels. The intro, the canned lines, and the extra personal beat do not need the badge change and can be drafted in parallel. Podium membership and “tied for #N” wait on the rule so comms does not invent a second place system.
 
@@ -56,7 +56,7 @@ YarmouthMeg is second with **zero** nightly wins, ahead of Billy’s two wins. P
 | In-app podium | Same row numbers, with place names. Billy is Third Place. The other two are honorable mentions. |
 | Email top-5 grid | Five people, competition rank on points. The grid already prints rank 3 on all three rows. Jeff (official #6) is past the five-person cutoff. |
 
-The personal sentence and the podium the reader sees under it use different place systems. On 2026-10-13, **View tour standings** then showed the row-number badges, so the next screen agreed with the podium labels and disagreed with “you finished #3” for everyone in a tie who was not the first name in that tie. TelaTuby was the same kind of miss one step down: 70 points, tied with Adam for official #7, badge 8 on the standings list. The tour standings screen now uses the official rank, so that next screen matches “you finished #3.” The podium labels are still the row numbers until #1136.
+The personal sentence and the podium the reader sees under it use different place systems. On 2026-10-13, **View tour standings** then showed the row-number badges, so the next screen agreed with the podium labels and disagreed with “you finished #3” for everyone in a tie who was not the first name in that tie. TelaTuby was the same kind of miss one step down: 70 points, tied with Adam for official #7, badge 8 on the standings list. The tour standings screen now uses the official rank, so that next screen matches “you finished #3.” The podium in that already-sent message is still the row numbers. The next wrap groups by official rank (#1136) and does not relabel this inbox row.
 
 ## Written rules that exist today
 
@@ -68,7 +68,7 @@ What the code comments say:
 - `assignDisplayRanks` is competition rank on **points only**. Ties share a rank. The next rank skips. Morning copy uses this and can say “tied for #3.”
 - The wrap contract names one special case: if someone is level with 5th on points, that last honorable mention names them all. See `content/comms/tours/tour-recap.md` and `buildTourRecapPodium`. The grouping runs **after** the wins sort, and only looks past the fifth person. A tie for third is already split into “Third Place,” “4th,” and “5th” before that rule runs, so the rule does not fire. On this board the fifth person is TheManMulcahy at 85, and the next player, Jeff, has 80.
 
-So the recap did what the contract said on 2026-10-13. The contract did not say what to do when the tie is for first, second, or third. The standings screen at that time used the row number. #1135 accepts the rule below: the tour standings badge uses the competition rank and marks the tie, and the rank payload includes `tiedCount` plus the other handles. The recap podium and the personal sentence still use the old place labels until #1136.
+So the recap did what the contract said on 2026-10-13. The contract did not say what to do when the tie is for first, second, or third. The standings screen at that time used the row number. #1135 accepts the rule below: the tour standings badge uses the competition rank and marks the tie, and the rank payload includes `tiedCount` plus the other handles. The 2026-10-13 send still uses the old place labels. The next wrap reads the official rank (#1136).
 
 ## Adopted rule
 
@@ -155,7 +155,7 @@ Storage dates (`2026-10-11`) are still what this template prints. Other morning 
 
 ### A tighter shared intro, from facts we already store
 
-Not sent. This is the shape, using only the Fall Tour facts above plus `public_tour_stats` (109 different songs, 131 song plays).
+Not sent. This is the shape, using only the Fall Tour facts above plus `public_tour_stats` (109 different songs, 131 song plays). The composer does not read this file. A live date is the short fan date (`10/11/26`), not the prose date in the quote. Lifetime plays stay off the gap clause.
 
 > 2026 Fall Tour is officially in the books.
 >
@@ -171,27 +171,26 @@ Alumni Blues can take one more stored band fact when we want fan texture without
 
 A model should not write the wrap, and it should not paraphrase a Phish.net essay into one. The fact shelf is the gate: a sentence may speak a fact only when we store it and it is true.
 
-Already stored, and unused or barely used in this wrap:
+Already stored. The next wrap speaks the first group. The second group stays unused:
 
-- Gap, last played, debut year, lifetime plays on the tour bustout table
-- Unique songs and total song plays
-- Lead-change count and the nights the lead set changed
-- Closing venue
-- Points margin, and a runner-up with no nightly wins
+- Spoken when the fact exists: gap, last played, debut year, unique songs, lead-change count, who took the lead into the close, closing venue, a runner-up with no nightly wins (on that place line)
+- Still unused: lifetime plays, total song plays, points margin
+
+The 2026-10-13 send did not speak that first group together. It spent the one opening sentence on the gap.
 
 Not stored: Phish.net show recaps, jam charts, and editorial show notes. Show-note pages are still a gated product. Adding them means a new inventory row first: where the text lives, who wrote it, the source URL, and the attribution line. Then one slot on the wrap map. The practical version is a human-approved sentence or two per tour, written from those sources, reviewed like any other comms draft. A scraped recap paragraph in the live send is the wrong layer.
 
 ## Workstream 1 — Tour ranking refinement (#1135)
 
-Accepted 2026-10-22. The tour standings description states the rule. Badges use competition rank and mark a tie. List order inside the tie stays wins, then handle. Morning `tour_rankings_daily` and `tour_recap` payloads include `tiedCount` (or `tour_tied_count`) and the other handles at that rank. The recap sentence and podium still do not read those fields; that is #1136. Do not publish a player-facing rankings page until the podium uses this rank.
+Accepted 2026-10-22. The tour standings description states the rule. Badges use competition rank and mark a tie. List order inside the tie stays wins, then handle. Morning `tour_rankings_daily` and `tour_recap` payloads include `tiedCount` (or `tour_tied_count`) and the other handles at that rank. The next recap reads those fields (#1136). The message already in inboxes does not.
 
 ## Workstream 2 — Recap comms enhancements (#1136)
 
-Depends on workstream 1 for place labels only.
+Shipped in code 2026-10-22. It takes effect on the next wrap after a Cloud Functions deploy. Do not resend the Fall Tour wrap. The sample paragraph above is a shape, not a string the job sends.
 
-1. Podium and honorable mentions group by the official rank. Retire sole “Third Place” inside a tie. Generalize the 5th-place naming rule to every place.
+1. Podium and honorable mentions group by the official rank. A tie is one place. Every published place (ranks 1 through 5) names everyone at that rank.
 2. Personal sentence says “tied for #N with …” when `tiedCount` is greater than 1.
-3. Replace the one-slot opening and the two canned podium lines with a short multi-fact intro. Gap, lead changes, and the close can all be present. Drop a clause when its fact is missing.
-4. Allow the rare-hit beat and the lead beat in the same personal paragraph, still capped.
-5. Speak a short date and the venue. Fold last-played / debut year into the gap clause from `public_tour_stats`.
-6. Leave Phish.net recap essays and show notes out until a sourced, human-approved fact is on the inventory. That slice stays inside this workstream. It does not reopen the rank rule.
+3. The shared intro can hold the gap, the lead changes, and the close. A missing fact drops its clause. New sends skip the two canned podium lines. A stored payload without `places` keeps them.
+4. The rare-hit beat and the lead beat can both appear. The cap is two personal beats. Box-score sentences stay outside that cap.
+5. Dates are the short fan date. Last played and debut year fold into the gap clause from `public_tour_stats`. Lifetime plays stay off.
+6. Phish.net recap essays and show notes stay out until a sourced, human-approved fact is on the inventory. That slice stays inside this workstream. It does not reopen the rank rule.

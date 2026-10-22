@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.87.0] — 2026-10-22
+
+### Added
+- **Tour wrap places (#1136)** — `tour_recap` payload `podium.places` is one entry per official rank from 1 through 5. A tie is one place that names everyone at that rank. `email_board` includes every player at those ranks, so a tie can make the grid longer than five rows.
+
+### Changed
+- **Tour wrap copy (#1136)** — the shared intro can say the field, the rarest hit, the lead changes, and the close in the same paragraph. A missing fact drops its clause. The personal line says “tied for #N with …” when `tiedCount` is greater than 1, and it can carry both the rare-hit beat and the lead beat (two beats at most). Dates are the short fan date. Last played and debut year fold into the gap clause from `public_tour_stats`. New sends skip the canned “dominant performance” and “incredibly tight down the stretch” lines. Messages that already shipped, including the Sphere archive, have no `places` array and keep the older podium. A Cloud Functions deploy is required before the next wrap uses this copy. Do not resend the 2026 Fall Tour wrap.
+
 ## [1.86.0] — 2026-10-22
 
 ### Added
