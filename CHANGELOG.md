@@ -8,6 +8,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.96.0] — 2026-10-22
+
+### Added
+- **Rewind Mode (#1142)** — One admin-chosen past show per week. Same six slots and scoring as a live card. Scores live on `rewind_picks` and `rewind_weeks`. They do not write `picks`, `users` totals, or `official_setlists`, so show, tour, and year boards stay unchanged. The setlist stays hidden until that player locks. The reveal is the six slots plus a Phish.net link, not the full song list. The public page `/rewind` and `/rewind/:weekId` shows player count, average score, and slot hit counts. Share text is the emoji grid and the score. GA4: `rewind_start`, `rewind_lock`, `rewind_share`.
+- **Dark by default** — Player routes render a closed shell unless `VITE_ENABLE_REWIND_MODE=true` at build time. The Rewind segment on the Picks tab is hidden until then. `/rewind` is `noindex` while the flag is off and is not in the sitemap.
+- **War Room** — Admins save the week (MSG NYE dates are suggestions) and refresh one show into `rewind_answers`. A daily job refreshes that cache when it is older than 24 hours and the week is open. No archive crawl.
+
 ## [1.95.0] — 2026-10-22
 
 ### Added

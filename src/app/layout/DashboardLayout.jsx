@@ -18,6 +18,7 @@ import StatsClusterLayout from './ui/StatsClusterLayout';
 import PicksPage from '../../pages/picks/PicksPage';
 import PicksLabPage from '../../pages/picks/PicksLabPage';
 import PicksScorecardPage from '../../pages/picks/PicksScorecardPage';
+import RewindPlayPage from '../../pages/rewind/RewindPlayPage';
 import PoolCreatePage from '../../pages/pools/PoolCreatePage';
 import PoolJoinPage from '../../pages/pools/PoolJoinPage';
 import PoolsPage from '../../pages/pools/PoolsPage';
@@ -429,6 +430,7 @@ export default function DashboardLayout() {
                 path="picks/scorecard"
                 element={<PicksScorecardPage />}
               />
+              <Route path="rewind" element={<RewindPlayPage user={user} />} />
             </Route>
             <Route
               path="scoring"

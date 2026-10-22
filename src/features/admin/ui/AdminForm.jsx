@@ -8,6 +8,7 @@ import { useAdminSetlistForm } from '../model/useAdminSetlistForm';
 import { useLiveSetlistAutomationPanel } from '../model/useLiveSetlistAutomationPanel';
 import { useAdminPicksLock } from '../model/useAdminPicksLock';
 import { useTourKeyMissingAudits } from '../model/useTourKeyMissingAudits';
+import { RewindWeekAdminCard, useRewindWeekAdmin } from '../../rewind';
 import AdminSetlistSlotInputs from './AdminSetlistSlotInputs';
 import AdminSetlistFetchButton from './AdminSetlistFetchButton';
 import AdminSongCatalogRefresh from './AdminSongCatalogRefresh';
@@ -74,6 +75,7 @@ export default function AdminForm({ user, selectedDate }) {
     handleCloseFinalizeForceModal,
     handleConfirmForceFinalizeAndRollup,
   } = useAdminSetlistForm({ user, selectedDate: warRoomShowDate, showDates });
+  const rewindWeek = useRewindWeekAdmin();
   const automationPanel = useLiveSetlistAutomationPanel({
     showDate: warRoomShowDate,
     isAdmin,
@@ -315,6 +317,9 @@ export default function AdminForm({ user, selectedDate }) {
           </div>
         </div>
       </Card>
+      <div className="mt-6">
+        <RewindWeekAdminCard {...rewindWeek} />
+      </div>
     </div>
   );
 }

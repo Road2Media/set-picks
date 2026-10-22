@@ -75,6 +75,17 @@ const CASES = [
     },
   },
   {
+    // #1142: Rewind stays on the Picks tab. The live date picker is the wrong control.
+    path: '/dashboard/rewind',
+    expect: {
+      contextTitle: NAV_LABEL_PICKS,
+      showDatePicker: false,
+      layoutDesktopHeading: null,
+      ownsDesktopStickyChrome: true,
+      layoutDetailEyebrow: null,
+    },
+  },
+  {
     path: '/dashboard/standings',
     expect: {
       contextTitle: NAV_LABEL_STANDINGS,
