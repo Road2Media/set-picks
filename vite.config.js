@@ -236,7 +236,7 @@ export default defineConfig({
   plugins: [react(), loginFormShellHtmlPlugin(), appDocumentDevMiddleware()],
   test: {
     environment: 'node',
-    include: ['src/**/*.test.js', 'api/**/*.test.js'],
+    include: ['src/**/*.test.js', 'api/**/*.test.js', 'comms/**/*.test.js'],
   },
   resolve: {
     alias: {

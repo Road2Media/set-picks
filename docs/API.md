@@ -709,6 +709,21 @@ The profile link stays the long `utm_content=link-in-bio` URL. Local Vite does n
 
 **Tests:** `src/shared/config/socialShortLinks.test.js`.
 
+### 3.5 Inbox sender badge logo (`/bimi/logo.svg`)
+
+**v1.91.0 (#498).** Static SVG Tiny PS mark at `https://www.setlistpickem.com/bimi/logo.svg` (`public/bimi/logo.svg`). This is the BIMI `l=` logo for mail from `updates@setlistpickem.com`. It is not the in-body email image and it is not linked from email HTML.
+
+| Item | Value |
+|------|--------|
+| Path | `/bimi/logo.svg` |
+| Content-Type | `image/svg+xml` (`vercel.json` header on `/bimi/(.*)`) |
+| DNS name | `default._bimi.setlistpickem.com` |
+| TXT before a certificate | `v=BIMI1; l=https://www.setlistpickem.com/bimi/logo.svg;` |
+
+Helpers: `buildEmailInboxBadgeLogoUrl`, `buildBimiDnsHost`, `buildBimiTxtRecord` in `comms/emailBranding.cjs`. The logo URL is the `www` host because the apex 308s and BIMI will not follow that redirect. Removing or renaming this path is MAJOR. Publishing the TXT, and any VMC/CMC PEM, is DNS/registrar work outside this app.
+
+**Tests:** `comms/bimiLogo.test.js`.
+
 ---
 
 ## 4. Environment Variable Interface

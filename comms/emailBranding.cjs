@@ -13,8 +13,9 @@ const path = require('path');
  *    marketing `MarketingLayout`.
  *
  * 2. **Inbox sender badge** — small avatar beside the sender name in Gmail/Apple Mail list
- *    views. NOT driven by the HTML hero. Requires BIMI + DMARC (primary) and/or domain
- *    favicon at the From host (fallback). See docs/comms-triggers/EMAIL_INBOX_BADGE.md (#498).
+ *    views. NOT driven by the HTML hero. BIMI on `default._bimi.setlistpickem.com`
+ *    points at {@link EMAIL_BIMI_LOGO_PATH} (SVG Tiny PS). Domain favicon is only a
+ *    partial fallback. See docs/comms-triggers/EMAIL_INBOX_BADGE.md (#498).
  *
  * 3. **Legacy vinyl path** (`EMAIL_IN_BODY_LOGO_PATH` / `buildEmailInBodyLogoUrl`) — kept for
  *    call-site stability; do not use for new email headers.
@@ -32,8 +33,20 @@ const EMAIL_SHELL_WORDMARK_HEIGHT_PX = 132;
 const EMAIL_BRAND_PRIMARY = '#2dd4bf';
 const EMAIL_BRAND_PRIMARY_STRONG = '#14b8a6';
 const EMAIL_BRAND_BG_DEEP = '#020617';
-/** Hint for BIMI / domain-favicon ops — not injected into email HTML. */
+/**
+ * Domain-favicon fallback for clients that fetch `/favicon.ico` from the From host.
+ * Not the BIMI logo. Not injected into email HTML.
+ */
 const EMAIL_INBOX_BADGE_FAVICON_PATH = '/favicon/favicon-96x96.png';
+/**
+ * BIMI `l=` logo. Square SVG Tiny PS in `public/bimi/logo.svg`.
+ * Host on www (apex 308s, and BIMI rejects a redirect). Not injected into email HTML.
+ */
+const EMAIL_BIMI_LOGO_PATH = '/bimi/logo.svg';
+/** BIMI selector. The TXT name is `{selector}._bimi.{domain}`. */
+const EMAIL_BIMI_SELECTOR = 'default';
+/** Organizational domain of `updates@setlistpickem.com`. */
+const EMAIL_BIMI_DOMAIN = 'setlistpickem.com';
 const DEFAULT_SITE_URL = 'https://www.setlistpickem.com';
 
 /** @type {string | null} */
@@ -62,6 +75,45 @@ function buildEmailLogoUrl(siteUrl = DEFAULT_SITE_URL) {
 function buildEmailWordmarkUrl(siteUrl = DEFAULT_SITE_URL) {
   const base = String(siteUrl || DEFAULT_SITE_URL).replace(/\/+$/, '');
   return `${base}${EMAIL_WORDMARK_GRADIENT_PATH}`;
+}
+
+/**
+ * Absolute URL of the BIMI logo. Defaults to www so the URL does not 308.
+ * Inbox clients fetch this only after DNS publishes it; email HTML does not.
+ * @param {string} [siteUrl]
+ * @returns {string}
+ */
+function buildEmailInboxBadgeLogoUrl(siteUrl = DEFAULT_SITE_URL) {
+  const base = String(siteUrl || DEFAULT_SITE_URL).replace(/\/+$/, '');
+  return `${base}${EMAIL_BIMI_LOGO_PATH}`;
+}
+
+/**
+ * DNS name for the BIMI TXT record (`default._bimi.setlistpickem.com`).
+ * @returns {string}
+ */
+function buildBimiDnsHost() {
+  return `${EMAIL_BIMI_SELECTOR}._bimi.${EMAIL_BIMI_DOMAIN}`;
+}
+
+/**
+ * BIMI TXT value. Omits `a=` until a human hosts a VMC or CMC PEM.
+ * A blank certificate URL is omitted. A non-HTTPS evidence URL throws.
+ * The logo URL is always the production www host — BIMI is looked up on the From
+ * domain, not on a preview origin.
+ * @param {string} [certificateUrl]
+ * @returns {string}
+ */
+function buildBimiTxtRecord(certificateUrl) {
+  const logo = buildEmailInboxBadgeLogoUrl(DEFAULT_SITE_URL);
+  if (certificateUrl == null || String(certificateUrl).trim() === '') {
+    return `v=BIMI1; l=${logo};`;
+  }
+  const cert = String(certificateUrl).trim();
+  if (!/^https:\/\//i.test(cert) || /\s/.test(cert)) {
+    throw new Error('BIMI certificate URL must be a single https URL');
+  }
+  return `v=BIMI1; l=${logo}; a=${cert};`;
 }
 
 /**
@@ -178,9 +230,15 @@ module.exports = {
   EMAIL_BRAND_PRIMARY_STRONG,
   EMAIL_BRAND_BG_DEEP,
   EMAIL_INBOX_BADGE_FAVICON_PATH,
+  EMAIL_BIMI_LOGO_PATH,
+  EMAIL_BIMI_SELECTOR,
+  EMAIL_BIMI_DOMAIN,
   buildEmailInBodyLogoUrl,
   buildEmailLogoUrl,
   buildEmailWordmarkUrl,
+  buildEmailInboxBadgeLogoUrl,
+  buildBimiDnsHost,
+  buildBimiTxtRecord,
   buildEmailWordmarkHeroHtml,
   buildEmailWordmarkCidSrc,
   buildEmailWordmarkResendAttachment,
