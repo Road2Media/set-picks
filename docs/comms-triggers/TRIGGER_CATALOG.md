@@ -350,7 +350,7 @@ Tonight's top score was {{top_score}} points — {{top_scorer_handle}} led the r
 
 #### Variables used
 
-`{{handle}}`, `{{show_date}}`, `{{venue_name}}`, `{{venue_city}}`, `{{show_score}}`, `{{global_rank}}`, `{{global_total_pickers}}`, `{{pool_name}}`, `{{pool_rank}}`, `{{pool_total_pickers}}`, `{{correct_picks_count}}`, `{{total_picks_count}}`, `{{opener_result}}`, `{{closer_result}}`, `{{encore_result}}`, `{{wildcard_result}}`, `{{bustout_bonus}}`, `{{setlist_highlight}}`, `{{top_scorer_handle}}`, `{{top_score}}`, `{{tour_rank}}`, `{{total_tour_pickers}}`, `{{tour_points}}`, `{{rank_change}}`, `{{is_debut}}`, `{{is_late_joiner}}`, `{{tour_rank_tied}}`, `{{tour_tied_count}}`, `{{tour_tier}}`, `{{shows_played}}`, `{{pool_tour_rank}}`, `{{next_show_date}}`, `{{next_show_venue}}`
+`{{handle}}`, `{{show_date}}`, `{{venue_name}}`, `{{venue_city}}`, `{{show_score}}`, `{{global_rank}}`, `{{global_total_pickers}}`, `{{pool_name}}`, `{{pool_rank}}`, `{{pool_total_pickers}}`, `{{correct_picks_count}}`, `{{total_picks_count}}`, `{{opener_result}}`, `{{closer_result}}`, `{{encore_result}}`, `{{wildcard_result}}`, `{{bustout_bonus}}`, `{{setlist_highlight}}`, `{{top_scorer_handle}}`, `{{top_score}}`, `{{tour_rank}}`, `{{total_tour_pickers}}`, `{{tour_points}}`, `{{rank_change}}`, `{{is_debut}}`, `{{is_late_joiner}}`, `{{tour_rank_tied}}`, `{{tour_tied_count}}`, `{{tour_tied_handles}}`, `{{tour_tier}}`, `{{shows_played}}`, `{{pool_tour_rank}}`, `{{next_show_date}}`, `{{next_show_venue}}`
 
 #### Template — Push
 
@@ -565,7 +565,9 @@ Abbreviated recap + Standings / invite CTA. Forced to every inbox (no play filte
 
 #### Variables used
 
-`{{handle}}`, `{{rank}}`, `{{points}}`, `{{wins}}`, `{{showsPlayed}}`, `{{participantCount}}`, `{{tour_id}}`, `{{tour_name}}`, `{{show_count}}`, `{{headline}}`, `{{podium}}`
+`{{handle}}`, `{{rank}}`, `{{tiedCount}}`, `{{tiedHandles}}`, `{{points}}`, `{{wins}}`, `{{showsPlayed}}`, `{{participantCount}}`, `{{tour_id}}`, `{{tour_name}}`, `{{show_count}}`, `{{headline}}`, `{{podium}}`
+
+`rank` is competition rank on tour points (#1135). `tiedCount` is how many players share it. `tiedHandles` is the other handles at that rank, in list order (nightly wins, then handle). The personal sentence and the in-app podium still speak list order until #1136. These fields are what that copy should read.
 
 #### Rank branches (personalized)
 
