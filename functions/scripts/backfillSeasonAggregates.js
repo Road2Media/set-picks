@@ -8,6 +8,11 @@
  * `users/{uid}` — overwriting rather than incrementing so the result is
  * idempotent no matter how many times you run it.
  *
+ * Each user write also deletes the legacy nested `stats` blob (#298).
+ * Merge never named that field, so earlier backfills left it in place.
+ * Users with no graded picks are not touched here; `cleanupLegacyUserStats.js`
+ * scans the whole `users` collection.
+ *
  * Also stamps `winCredited` on every pick so the live
  * `rollupScoresForShow` can diff wins on re-finalization (required for
  * the idempotent wins delta on future runs).
@@ -97,6 +102,34 @@ function usageAndExit(msg) {
     ].join("\n")
   );
   process.exit(msg ? 1 : 0);
+}
+
+/**
+ * User-doc merge payload for one backfill row.
+ * `stats: FieldValue.delete()` removes the pre-launch blob without
+ * touching any other unnamed field.
+ *
+ * @param {{
+ *   totalPoints: number,
+ *   shows: number,
+ *   wins: number,
+ *   careerCorrectSlots: number,
+ *   latestShow: string,
+ *   seasonStats: Record<string, unknown>,
+ * }} row
+ * @param {{ serverTimestamp: () => unknown, delete: () => unknown }} FieldValue
+ */
+function buildSeasonAggregateUserPatch(row, FieldValue) {
+  return {
+    totalPoints: row.totalPoints,
+    showsPlayed: row.shows,
+    wins: row.wins,
+    careerCorrectSlots: row.careerCorrectSlots,
+    seasonStats: row.seasonStats,
+    seasonStatsSnapshotAt: FieldValue.serverTimestamp(),
+    seasonStatsThroughShow: row.latestShow,
+    stats: FieldValue.delete(),
+  };
 }
 
 /** @returns {Record<string, string>} */
@@ -373,15 +406,7 @@ async function main() {
     await commitIfFull();
     batch.set(
       db.collection("users").doc(uid),
-      {
-        totalPoints: row.totalPoints,
-        showsPlayed: row.shows,
-        wins: row.wins,
-        careerCorrectSlots: row.careerCorrectSlots,
-        seasonStats: row.seasonStats,
-        seasonStatsSnapshotAt: admin.firestore.FieldValue.serverTimestamp(),
-        seasonStatsThroughShow: row.latestShow,
-      },
+      buildSeasonAggregateUserPatch(row, admin.firestore.FieldValue),
       { merge: true }
     );
     opCount += 1;
@@ -403,8 +428,14 @@ async function main() {
   console.log("\nBackfill complete.");
 }
 
-main().catch((err) => {
-  console.error("\nbackfillSeasonAggregates.js failed:");
-  console.error(err instanceof Error ? err.stack || err.message : err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("\nbackfillSeasonAggregates.js failed:");
+    console.error(err instanceof Error ? err.stack || err.message : err);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  buildSeasonAggregateUserPatch,
+};
