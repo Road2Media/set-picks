@@ -25,6 +25,9 @@ const PublicTourStatsPage = lazy(
 const MsgGardenStatsPage = lazy(
   () => import('../pages/marketing/MsgGardenStatsPage'),
 );
+const AnnualTourStatsPage = lazy(
+  () => import('../pages/marketing/AnnualTourStatsPage'),
+);
 
 /**
  * Paths that leave the marketing document (#832 / #892 / #916).
@@ -152,6 +155,14 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <MsgGardenStatsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tour-stats/2026"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <AnnualTourStatsPage />
             </Suspense>
           }
         />

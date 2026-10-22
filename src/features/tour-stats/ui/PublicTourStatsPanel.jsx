@@ -74,6 +74,10 @@ export default function PublicTourStatsPanel({
               2026 Sphere
             </Link>
             {' · '}
+            <Link to="/tour-stats/2026" className={LINK_ON_DARK}>
+              2026 tours
+            </Link>
+            {' · '}
             <Link to="/tour-stats/msg" className={LINK_ON_DARK}>
               Phish at MSG
             </Link>

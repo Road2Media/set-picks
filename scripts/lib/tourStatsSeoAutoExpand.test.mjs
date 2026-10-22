@@ -211,6 +211,27 @@ describe('tourStatsSeoAutoExpand (#959)', () => {
     assert.equal(allowed[0]?.tourStatsSeoSlug, '2026-fall-tour');
   });
 
+  it('does not auto-expand reserved pages /tour-stats/2026 or /tour-stats/msg', async () => {
+    const indexDoc = {
+      tours: [
+        { tourSlug: '2026', tourLabel: '2026', lastShowDate: '2026-10-12' },
+        { tourSlug: 'msg', tourLabel: 'MSG', lastShowDate: '2026-07-29' },
+      ],
+    };
+    const routes = await resolveAutoExpandTourStatsRoutes({
+      indexDoc,
+      loadDoc: async (slug) => ({
+        tourLabel: slug,
+        showsWithSetlist: 10,
+        uniqueSongs: 40,
+        lastShowDate: '2026-10-12',
+      }),
+      now,
+      env: {},
+    });
+    assert.equal(routes.length, 0);
+  });
+
   it('merges sitemap + llms without duplicating existing URLs', () => {
     const route = buildAutoTourStatsPrerenderRoute({
       slug: '2026-fall-tour',

@@ -204,6 +204,17 @@ async function fetchPublicTourStatsDocViaSdk(slug) {
 }
 
 /**
+ * Tour picker docs only. `_index` and `_year_YYYY` are not tours (#1141).
+ *
+ * @param {unknown} id
+ * @returns {boolean}
+ */
+export function isPublicTourPickerDocId(id) {
+  const docId = String(id ?? '').trim();
+  return Boolean(docId) && !docId.startsWith('_');
+}
+
+/**
  * Fallback if `_index` is missing: list non-index docs (bounded).
  * @returns {Promise<PublicTourIndexEntry[]>}
  */
@@ -219,7 +230,7 @@ export async function listPublicTourStatsDocs() {
   );
   const snap = await getDocs(q);
   return snap.docs
-    .filter((d) => d.id !== '_index')
+    .filter((d) => isPublicTourPickerDocId(d.id))
     .map((d) => {
       const data = d.data() || {};
       return {
