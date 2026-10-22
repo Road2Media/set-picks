@@ -29,6 +29,7 @@ const AnnualTourStatsPage = lazy(
   () => import('../pages/marketing/AnnualTourStatsPage'),
 );
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
+const StatsEmbedPage = lazy(() => import('../pages/marketing/StatsEmbedPage'));
 
 /**
  * Paths that leave the marketing document (#832 / #892 / #916).
@@ -188,6 +189,15 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <RewindResultsPage />
+            </Suspense>
+          }
+        />
+        <Route path="/embed" element={<Navigate to="/embed/stats" replace />} />
+        <Route
+          path="/embed/stats"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <StatsEmbedPage />
             </Suspense>
           }
         />

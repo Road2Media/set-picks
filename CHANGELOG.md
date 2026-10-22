@@ -8,6 +8,15 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.0] — 2026-10-22
+
+### Added
+- **Embeddable game card (part of #1145)** — `/embed/stats` is a small frameable card. It shows the tour leader and their points from `public_tour_stats.tourWinners` when that field exists, and a link card with no numbers otherwise. The read uses a Firestore field mask for `tourLabel`, `tourSlug`, and `tourWinners` only. Song titles, gaps, bustouts, play counts, and venue counts are not rendered. `?card=badge` forces the link card. `?tour=` accepts a kebab tour slug. The credit is a normal link to the homepage with `utm_source=embed` and `utm_campaign=seo_geo`. Copy embed sits on public Tour Insights (hub, tour, MSG, and 2026) and on the dashboard Stats tab. Returning sessions stay on the marketing document for `/embed` instead of bouncing to the dashboard. The route is `noindex` and disallowed in `robots.txt`. It is not in the sitemap.
+- **Framing exception** — `X-Frame-Options` stays off `/embed` and `/embed/*`. Those routes send `Content-Security-Policy-Report-Only` with `frame-ancestors *`. Every other listed app route still sends `DENY`, and the catch-all report-only policy still uses `frame-ancestors 'none'`.
+
+### Changed
+- **Route group** — `/embed` and `/embed/*` report GA4 `route_group=embed`.
+
 ## [1.96.0] — 2026-10-22
 
 ### Added
