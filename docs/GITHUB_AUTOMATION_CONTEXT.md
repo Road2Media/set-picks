@@ -102,6 +102,11 @@ Name **existing** domains when known (e.g. `pools`, `picks`, `scoring`, `auth`, 
 
 ---
 
+## Release issue close (#1149 / #1174)
+
+- **Workflow:** `.github/workflows/close-shipped-issues.yml` on `release: published` (and `workflow_dispatch` for a dry run). It closes issues named with `Closes` / `Fixes` / `Resolves` on the staging PRs inside the promote. `Part of`, plain mentions, pull request numbers, closed issues, and the `keep-open` label stay open.
+- Active only once the workflow file is on the default branch (`main`). It does not merge, deploy, or edit branch protection.
+
 ## Dependabot (active, #504 / #744 / #967)
 
 - **Runbook:** **`docs/DEPENDABOT_OPERATIONS.md`** — enablement-wave root cause, T0 auto-merge, ops-reset, re-enable checklist.

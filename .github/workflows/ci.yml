@@ -111,6 +111,9 @@ jobs:
       - name: Dependabot T0 auto-merge policy (#967, #1052)
         run: npm run test:dependabot-auto-merge
 
+      - name: Shipped-issue close collector (#1149, #1174)
+        run: npm run test:shipped-issue-close
+
       # Informational only (#414) — does not fail the job. Triage notes in AGENTS.md.
       - name: npm audit (informational)
         continue-on-error: true

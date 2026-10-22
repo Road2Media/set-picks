@@ -76,6 +76,7 @@ Core local commands:
 
 - **Base branch is `staging`**, not `main` (per `.cursorrules` §10).
 - Branch naming: `feat/<issue#>-<kebab-slug>`.
+- **Issue keywords:** `Closes #N` only when the PR fully finishes the issue. `Part of #N` for partial work. A merge to `staging` leaves the issue open. `.github/workflows/close-shipped-issues.yml` closes keyword references when the GitHub Release is published, and skips pull requests, closed issues, and the `keep-open` label. Dry run from Actions with the release `tag` and `dry_run` checked (workflow file must be on `main` first). See `.cursor/rules/promote-release.mdc`.
 - Firestore rules tests (`npm run test:rules`) require the Firebase emulator and are not part of the regular CI matrix for the web app.
 
 ### Gotchas

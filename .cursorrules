@@ -96,8 +96,9 @@ This repo follows **Semantic Versioning 2.0.0** (https://semver.org). The public
 
 ## 11) PR Workflow & QA
 - **Base branch for every PR is `staging`**, not `main`. Staging auto-promotes to main via a rolled-up PR.
-- **Branch naming:** `feat/<issue#>-<kebab-slug>`. Commit messages follow `perf(area): headline` / `feat(area): headline` and include `Closes #<n>` so the issue auto-closes on merge.
-- **PR bodies** include `Closes #<n>`, a `## Summary`, and a `## Test plan` checklist. Create with HEREDOC: `gh pr create --body "$(cat <<'EOF' ... EOF )"`.
+- **Branch naming:** `feat/<issue#>-<kebab-slug>`. Commit messages follow `perf(area): headline` / `feat(area): headline`.
+- **Issue keywords:** `Closes #<n>` only when that PR fully finishes the issue. `Part of #<n>` for a slice of an epic or any partial ship. Keywords on a PR into `staging` stay open until `.github/workflows/close-shipped-issues.yml` runs on the published release. See `.cursor/rules/promote-release.mdc`.
+- **PR bodies** include that keyword line, a `## Summary`, and a `## Test plan` checklist. Create with HEREDOC: `gh pr create --body "$(cat <<'EOF' ... EOF )"`.
 - **CI policy is risk-weighted for throughput:** required baseline on PRs is `verify` (lint + vitest + `verify:dashboard-meta` + `verify:dashboard-ui`) plus Vercel preview. `functions`, `rules`, and `qa-runners` are required when their risk/path gates match, can be forced with labels (`ci/full`, `ci/qa`), and the workflow runs a nightly scheduled full matrix backstop.
 - **`gh` GraphQL writes (`pr create`, `pr comment`, `pr review`, `pr merge`, `label list`) are sandbox-blocked.** Request `required_permissions: ["all"]` on the Shell call. REST reads (`pr view --json`, `pr diff`, `pr checks`, `issue view`) work in the default sandbox.
 - **PR QA playbook lives at `.cursor/skills/pr-qa/SKILL.md`** (project skill). Read it at the start of any PR QA pass — it covers triage, agent-side chunk-graph + lint/test checks, browser-verification recipes the user must run, and the reporting template. The skill's `recipes.md` has the exact DevTools scripts per PR type; `traps.md` documents 11 specific failure modes (staging-vs-PR preview URL mix-up, JS filter tab hiding Firestore, Firebase v10 WebChannel multiplexing, etc.) — do NOT re-derive these.
