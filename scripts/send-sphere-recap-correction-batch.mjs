@@ -115,8 +115,9 @@ const payloads = RECIPIENTS.map((r) => {
     text: rendered.text,
     scheduled_at: SCHEDULED_AT,
     tags: [
-      { name: "campaignId", value: "sphere-recap-correction-2026-09" },
       { name: "uid", value: r.uid },
+      { name: "triggerId", value: "tour_recap" },
+      { name: "campaignId", value: "sphere-recap-correction-2026-09" },
     ],
   };
 });

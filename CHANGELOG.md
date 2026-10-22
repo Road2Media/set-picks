@@ -8,6 +8,21 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.85.0] — 2026-10-22
+
+### Added
+- **Process once-ever gate (#1035)** — `comms_process_state/{triggerId}:{scope}` is the scanner gate for a completed moment (`sent` / `skipped_archive` / `closed`). `tour_recap` writes that doc and still mirrors `comms_tour_recap_state`, so the Summer `sent` and Sphere `skipped_archive` seed stays one gate. Rules deny client access. Seed: `node functions/scripts/seedCommsProcessState.js` (`seedTourRecapState.js` is the same command).
+- **Calendar `editionStatus` (#1035)** — tour groups may carry `editionStatus` (`live` | `archive` | `closed`), `campaignId`, and `commsProcessId`. Pending `tour_recap` and `show_recap` re-rollups skip `archive` / `closed` before they build recipients. Phish.net calendar sync copies those fields forward. Seed Sphere with `node functions/scripts/seedCalendarEditionStatus.js` (dry-run unless `--confirm`).
+- **Inbox `triggerId` (#1035)** — new `commsInbox` writes store the catalog `triggerId` next to `templateId`. The message id is still the dedup id. `campaignId`, when the send has one, is copied onto the inbox payload.
+
+### Changed
+- **`tour_recap` campaign slug (#1035)** — sends tag `campaignId` from the tour group or from the tour key (`2026 Summer Tour` → `2026-summer`, `2026 Sphere` → `2026-sphere`, `Fall Tour 2026` → `2026-fall`). The catalog trigger id stays `tour_recap`.
+- **Archive replay identity (#1035)** — `deliverSphere2026TourRecapInbox` still uses template `sphere-2026-inaugural` and the same inbox doc id. New rows also store `triggerId: tour_recap` and `campaignId: 2026-sphere`. That path does not send email.
+- **Sphere name is not a send gate (#1035)** — the 8am scanner no longer skips `/\bsphere\b/i`. A tour is skipped for a terminal process doc or for `editionStatus` `archive` / `closed`.
+
+### Fixed
+- **Stale / duplicate fan-out class (#1035)** — a scanner no longer treats “no live per-uid dedup doc” as “never sent” for an archive edition or a process that already closed. Re-grading an archive show does not start modern `show_recap`.
+
 ## [1.84.1] — 2026-10-21
 
 ### Fixed

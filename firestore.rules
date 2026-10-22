@@ -232,6 +232,15 @@ service cloud.firestore {
     }
 
     /**
+     * Process-level once-ever gate (#1035). Document id is
+     * `{triggerId}:{scope}`. `tour_recap` also mirrors
+     * `comms_tour_recap_state`. Written only by Admin SDK. Clients have no access.
+     */
+    match /comms_process_state/{processId} {
+      allow read, write: if false;
+    }
+
+    /**
      * Email suppression list for comms deliverability (#442). Written only by
      * Cloud Functions (webhooks + unsubscribe endpoint); clients must not access.
      */
