@@ -32,6 +32,7 @@ import { useStandingsLeaderboardView } from './useStandingsLeaderboardView';
 import { useStandingsTourSelection } from './useStandingsTourSelection';
 import { useStandingsView } from './useStandingsView';
 import { useStandingsViewChange } from './useStandingsViewChange';
+import { useLiveSetlistServiceStatus } from './useLiveSetlistServiceStatus';
 import { useTourStandings } from './useTourStandings';
 import { useScoringRulesModal } from '../ui/ScoringRulesModalProvider';
 
@@ -81,6 +82,9 @@ export function useStandingsScreen(selectedDate, options = {}) {
   const activeFilter = view === 'pools' && poolId ? poolId : 'global';
 
   const { picks, actualSetlist, loading } = useStandings(selectedDate, showDates);
+  const liveSetlistServiceStatus = useLiveSetlistServiceStatus(selectedDate, {
+    enabled: Boolean(user),
+  });
   const displayedPicks = useDisplayedPicks({
     picks,
     userPools,
@@ -305,5 +309,6 @@ export function useStandingsScreen(selectedDate, options = {}) {
     redactOpponentPicksPreLock,
 
     inviteChooser,
+    liveSetlistServiceStatus,
   };
 }

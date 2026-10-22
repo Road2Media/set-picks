@@ -166,6 +166,18 @@ function tourCountdownInAppCta(p) {
   return { label: 'Make your picks', href: PICKS_HREF };
 }
 
+function LiveSetlistOpsInApp({ title, body }) {
+  return (
+    <div className="space-y-2 text-sm">
+      <p className="font-bold text-content-primary">{title || 'Live setlist polling'}</p>
+      <p className="whitespace-pre-wrap text-content-secondary">{body || ''}</p>
+      <a href="/dashboard/admin" className="font-bold text-brand-primary">
+        Open War Room
+      </a>
+    </div>
+  );
+}
+
 /**
  * @typedef {object} CommsTemplateEntry
  * @property {string} triggerId
@@ -968,6 +980,26 @@ export const COMMS_TEMPLATE_REGISTRY = {
       {
         name: 'Champion (archive)',
         payload: { rank: 1, points: 160, wins: 4, showsPlayed: 9, participantCount: 23 },
+      },
+    ],
+  },
+
+  // Ops-only (#644). Not a player lifecycle catalog trigger.
+  'live-setlist-ops': {
+    triggerId: 'live_setlist_ops',
+    displayName: 'Live setlist polling ops',
+    Component: LiveSetlistOpsInApp,
+    toComponentProps: (payload) => ({
+      title: typeof payload.title === 'string' ? payload.title : 'Live setlist polling',
+      body: typeof payload.body === 'string' ? payload.body : '',
+    }),
+    samples: [
+      {
+        name: 'Upstream stalled',
+        payload: {
+          title: 'Live setlist polling stalled (2026-07-17)',
+          body: 'Show date: 2026-07-17\nUpstream: Phish.net\nUse War Room manual save / Force poll.',
+        },
       },
     ],
   },

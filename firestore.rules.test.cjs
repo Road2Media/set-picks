@@ -534,6 +534,57 @@ test("live_setlist_automation: client writes always rejected (even admin)", asyn
   );
 });
 
+test("public_service_status: signed-in user may read", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "public_service_status", "live-setlist-2026-07-17"), {
+      service: "live_setlist",
+      showDate: "2026-07-17",
+      status: "degraded",
+      messageKey: "phishnet_stalled",
+    });
+  });
+  const db = signedInAs("alice");
+  await assertSucceeds(
+    getDoc(doc(db, "public_service_status", "live-setlist-2026-07-17"))
+  );
+});
+
+test("public_service_status: anonymous read denied", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "public_service_status", "live-setlist-2026-07-17"), {
+      status: "degraded",
+    });
+  });
+  const db = anon();
+  await assertFails(
+    getDoc(doc(db, "public_service_status", "live-setlist-2026-07-17"))
+  );
+});
+
+test("public_service_status: client writes denied even for admin", async () => {
+  const db = signedInAs("mod", { admin: true });
+  await assertFails(
+    setDoc(doc(db, "public_service_status", "live-setlist-2026-07-17"), {
+      status: "degraded",
+      message: "<script>",
+    })
+  );
+});
+
+test("live_setlist_ops_alerts: clients cannot read or write", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "live_setlist_ops_alerts", "incident-1"), {
+      kind: "outage",
+    });
+  });
+  const reader = signedInAs("mod", { admin: true });
+  await assertFails(getDoc(doc(reader, "live_setlist_ops_alerts", "incident-1")));
+  const writer = signedInAs("alice");
+  await assertFails(
+    setDoc(doc(writer, "live_setlist_ops_alerts", "incident-2"), { kind: "outage" })
+  );
+});
+
 // ─── rollup_audit/{showDate} ─────────────────────────────────────────────────
 
 test("rollup_audit: non-admin cannot read", async () => {

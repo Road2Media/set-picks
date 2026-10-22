@@ -161,6 +161,23 @@ service cloud.firestore {
     }
 
     /**
+     * Sanitized live-setlist player status (#644). Admin SDK / callables write.
+     * Authenticated clients may read the projection only. Operational errors
+     * stay on `live_setlist_automation`, which remains admin-read.
+     */
+    match /public_service_status/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    /**
+     * Ops-alert dedup log (#644). Cloud Functions only.
+     */
+    match /live_setlist_ops_alerts/{messageId} {
+      allow read, write: if false;
+    }
+
+    /**
      * Admin picks-lock override (#522). Written by `lockPicksForShowNow` callable
      * (Admin SDK); signed-in clients read to honor effective lock state.
      */
