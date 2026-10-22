@@ -27,6 +27,9 @@ export async function fetchUserProfileDocument(uid) {
  * Updates `users/{uid}` and syncs the new handle onto every pick doc for this user.
  * `avatarId` is profile-only (not copied onto picks).
  *
+ * `avatarId` is written only when the caller passes a non-empty string.
+ * Profile edit omits it until the user picks a catalog id (#643).
+ *
  * @param {string} uid
  * @param {{ handle: string, favoriteSong?: string, avatarId?: string }} fields
  */

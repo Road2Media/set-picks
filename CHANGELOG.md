@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.89.1] — 2026-10-22
+
+### Fixed
+- **Unset profile avatar (#643)** — Profile no longer treats a missing `avatarId` as Ticket. The picker shows no selection and the same dashed add mark as standings. Saving a handle or favorite song without picking an avatar does not write `avatarId`, so your standings row keeps the add control. Choosing Ticket, or any other mark, still saves that id and shows it on standings. Accounts that already have `avatarId: ticket` stored stay on Ticket; this does not clear them.
+
 ## [1.89.0] — 2026-10-22
 
 ### Added
