@@ -197,6 +197,13 @@ const TOUR_STATS_SUMMER_TITLE =
 const TOUR_STATS_SUMMER_DESCRIPTION =
   "2026 Summer Tour Phish setlist statistics—most-played songs, unique songs, summer tour bustouts, and gap highlights. Updated every night the band plays live. Play Setlist Pick'Em to unlock personal stats.";
 const TOUR_STATS_SUMMER_URL = `${SEO_CONFIG.siteUrl}/tour-stats/2026-summer-tour`;
+
+/** MSG milestone page (#1139). Not a tour slug. */
+const MSG_GARDEN_TITLE =
+  "Phish at MSG: 96 Shows by the Numbers | Setlist Pick'Em";
+const MSG_GARDEN_DESCRIPTION =
+  'Phish at Madison Square Garden by the numbers: 96 shows through July 29, 2026, most-played songs, debuts, gaps, and New Year\'s Eve facts. January 2, 2027 is the 100th show.';
+const MSG_GARDEN_URL = `${SEO_CONFIG.siteUrl}/tour-stats/msg`;
 /**
  * Static opt-in slugs that always prerender facts (#928).
  * #959 auto-expand adds further slugs at build time without editing this list.
@@ -271,6 +278,45 @@ function buildTourStatsSphereJsonLd() {
             position: 3,
             name: '2026 Sphere',
             item: TOUR_STATS_SPHERE_URL,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function buildMsgGardenJsonLdShell() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': MSG_GARDEN_URL,
+        url: MSG_GARDEN_URL,
+        name: MSG_GARDEN_TITLE,
+        description: MSG_GARDEN_DESCRIPTION,
+        isPartOf: { '@id': `${SEO_CONFIG.siteUrl}/#website` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Home',
+            item: `${SEO_CONFIG.siteUrl}/`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Tour Insights',
+            item: TOUR_STATS_HUB_URL,
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: 'Phish at MSG',
+            item: MSG_GARDEN_URL,
           },
         ],
       },
@@ -590,6 +636,19 @@ export const PRERENDER_ROUTES = [
       'Tour-wide song trends for fans. Play the game and your personal stats build as you compete.',
     ],
     buildJsonLd: buildTourStatsSummerJsonLd,
+  },
+  {
+    path: '/tour-stats/msg',
+    title: MSG_GARDEN_TITLE,
+    description: MSG_GARDEN_DESCRIPTION,
+    canonicalUrl: MSG_GARDEN_URL,
+    h1: 'Phish at MSG, by the numbers',
+    paragraphs: [
+      'Phish at Madison Square Garden, counted from the shows Phish.net actually played. Canceled nights stay off the total.',
+      'Aggregates only: most-played songs, songs debuted at the Garden, the longest stretches between visits, bustouts that landed here, New Year\'s Eve counts, and how often each song has opened a show. Frequencies, not a pick tip.',
+      'Not a night-by-night setlist archive. The New Year\'s Run is the next reason to lock a card.',
+    ],
+    buildJsonLd: buildMsgGardenJsonLdShell,
   },
   {
     path: KEYWORD_PAGE_PATH,

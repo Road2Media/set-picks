@@ -22,6 +22,9 @@ const PhishSetlistPredictionGamePage = lazy(
 const PublicTourStatsPage = lazy(
   () => import('../pages/marketing/PublicTourStatsPage'),
 );
+const MsgGardenStatsPage = lazy(
+  () => import('../pages/marketing/MsgGardenStatsPage'),
+);
 
 /**
  * Paths that leave the marketing document (#832 / #892 / #916).
@@ -141,6 +144,14 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <PublicTourStatsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tour-stats/msg"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <MsgGardenStatsPage />
             </Suspense>
           }
         />

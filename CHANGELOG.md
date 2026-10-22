@@ -8,6 +8,13 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.94.0] — 2026-10-22
+
+### Added
+- **Phish at MSG, by the numbers (#1139)** — Public `/tour-stats/msg` (not a tour slug). Aggregates only: played shows, most-played songs, songs debuted at the Garden, longest stretches between visits, bustouts, New Year's Eve counts, and how often each song has opened set 1. Frequencies, not a pick tip. Prerender embeds the facts plus FAQ and ItemList JSON-LD. Sitemap and `llms.txt` include the URL. Visible credit: "Data courtesy of Phish.net / The Mockingbird Foundation," linking to phish.net. CTA locks New Year's Run picks.
+- **Show count** — 96 played Phish shows through 2026-07-29 (Phish.net: "96th performance"). Four 2021–22 Garden dates were canceled and are not counted. Jan 2, 2027 is show 100. The issue text's "99 before Dec 30" does not match Phish.net.
+- **`public_venue_stats/msg`** — Nightly `scheduledPublicMsgGardenStats` (08:10 ET) and admin `refreshPublicMsgGardenStats` fetch Phish.net venue 157, discard the raw rows, and write aggregates. A count under 90 does not overwrite the doc. The page ships from a committed snapshot until a human deploys rules, then those two functions, then runs the admin callable once. Not part of `npm run deploy:functions:phishnet`. No setlists are stored.
+
 ## [1.93.0] — 2026-10-22
 
 ### Added

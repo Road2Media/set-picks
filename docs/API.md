@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.93.0  
+**Version:** 1.94.0  
 
 
 **SemVer:** https://semver.org  
@@ -372,6 +372,39 @@ Full-field points and slugging board for one calendar year of show dates. A Dec 
 
 Points rank uses the same aggregation and tie rule as the Standings year view. Slugging is `totalPoints / (shows × 30)`. The annual slugging badges require **10** graded shows. That is lower than the all-time floor of 15 and higher than the in-progress tour gate of 3. Players under 10 stay on the points board and do not receive a slugging rank. The all-time Global Stats doc is not an input.
 
+### 1.22 `public_venue_stats/msg` (**v1.94.0 / #1139**)
+
+Public, aggregate-only Madison Square Garden stats for `/tour-stats/msg`. Written by Cloud Functions Admin SDK (`refreshPublicMsgGardenStats` / `scheduledPublicMsgGardenStats`). **Never** contains a full setlist or Phish.net prose. Clients may read after the rules deploy; client writes are denied.
+
+Until rules and the functions are deployed, the page and prerender use the committed snapshot in `src/features/msg-stats/model/msgGardenSnapshot.json`. A live doc replaces that snapshot when `showCount` is at least 1. A short Phish.net payload (`showCount` under 90) does not overwrite the doc.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `venueId` | number | `157` (Madison Square Garden) |
+| `venueName` / `city` | string | Display labels |
+| `showCount` | number | Played Phish shows. Canceled nights are omitted. As of 2026-10-22 this is **96**, not the 100 venue-page rows (four 2021–22 dates were canceled). |
+| `uniqueSongs` | number | Distinct titles across counted shows |
+| `firstShowDate` / `lastShowDate` | string | `YYYY-MM-DD` of the first and latest counted show |
+| `lastShowOrdinal` | number\|null | Phish.net "Nth performance" from the latest counted show's notes, when present |
+| `nyeShowCount` | number | Counted shows on December 31 |
+| `openerShowCount` | number | Shows with a set-1 opener |
+| `milestoneShowDate` | string | `2027-01-02` |
+| `milestoneShowNumber` | number | `showCount` plus the index of that date among upcoming shows, plus 1. With 96 played and four announced nights, Jan 2 is **100**. |
+| `upcomingShowDates` | string[] | Announced Phish dates at the venue on or after the refresh day. Not counted in `showCount`. |
+| `topSongs` | `{ title, timesPlayed }[]` | Most-played titles. A same-night return counts twice. Capped at 10. |
+| `openers` | `{ title, timesPlayed }[]` | Set-1 openers (lowest position in set 1). Capped at 8. Frequencies, not a pick tip. |
+| `nyeOpeners` | `{ title, timesPlayed }[]` | Set-1 openers on December 31. Capped at 5. |
+| `debuts` | `{ title, showDate }[]` | Songs whose Phish.net footnote marks a Phish debut. Earliest date per title. |
+| `longestVisitGaps` | `{ days, fromDate, toDate }[]` | Gaps between consecutive counted shows. Top 5. |
+| `longestBustouts` | `{ title, gap, showDate }[]` | Max pre-show gap of at least 30 per title. Capped at 8. |
+| `checkedOn` | string | `YYYY-MM-DD` refresh day (`America/New_York`) |
+| `credit` | string | `Data courtesy of Phish.net / The Mockingbird Foundation` |
+| `sourceUrl` | string | `https://phish.net` |
+| `writtenAt` | string | ISO timestamp. Absent on the bundled snapshot. |
+| `schemaVersion` | number | `1` |
+
+**Deploy (human, not CI):** rules first, then `functions:scheduledPublicMsgGardenStats,functions:refreshPublicMsgGardenStats`, then one admin `refreshPublicMsgGardenStats` so the doc exists before 08:10 ET. The schedule uses secret `PHISHNET_API_KEY` (already provisioned for other Phish.net jobs). These two functions are not part of `npm run deploy:functions:phishnet`.
+
 ---
 
 ## 2. Cloud Function Callables
@@ -514,6 +547,8 @@ Phish.net integration, live scoring, and public tour-stats refresh. Deployed via
 
 **`public_tour_stats` (#665):** `scheduledPublicTourStatsRefresh` (daily 07:30 ET) and admin callable `refreshPublicTourStats` rebuild aggregate docs. Calendar sync also triggers a refresh after writing `show_calendar/snapshot`.
 
+**`public_venue_stats/msg` (#1139 / v1.94.0):** `scheduledPublicMsgGardenStats` (daily 08:10 ET) and admin callable `refreshPublicMsgGardenStats` rebuild the MSG aggregate. Request: none. Response: `{ ok, written, showCount?, lastShowDate?, reason? }`. Admin claim required. A `showCount` under 90 returns `{ ok: true, written: false, reason: "short-count" }` and does not write. Missing `PHISHNET_API_KEY` returns `reason: "missing-api-key"`. Not included in `npm run deploy:functions:phishnet`. See §1.22 for the deploy order.
+
 **`global_stats_leaderboards` (#1004 / v1.70.0):** `scheduledGlobalStatsLeaderboardsRefresh` (daily 08:00 ET) and admin callable `refreshGlobalStatsLeaderboards` rebuild all-time + every tour. `rollupScoresForShow` also rebuilds all-time + the finalized show’s tour (soft-fail). Request: none. Response: `{ ok, docsWritten, usersScanned, tourKeys }`. Admin claim required on the callable.
 
 **Storage object `song-catalog.json` (v1.25.0+, #554):** published by `scheduledPhishnetSongCatalog` / `refreshPhishnetSongCatalog`. Each song object includes `{ name, total, gap, last, debut }` where `debut` is a string (typically `YYYY-MM-DD`) or `""` when unknown. See `docs/SONG_CATALOG.md`. Adding `debut` is a **MINOR** catalog-field addition (clients may ignore unknown fields).
@@ -647,7 +682,8 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/login` | `mode?` (`signin` \| `signup`), `signup=1` (compat) | **v1.47.0 (#832):** auth entry for marketing CTAs. **v1.48.0 (#834):** full-page inline sign-in / create-account (no modal). Marketing CTAs hard-navigate here (`?mode=signup` for create account). **v1.48.1:** app-shell splash CTAs also navigate here (no splash modals); `MarketingPageShell` Home hard-navigates to marketing `/`. **v1.48.2:** mid-page Get Started chooser removed — splash/marketing play CTAs go straight here. **v1.48.3 (#835):** branded `login/index.html` boot shell; form paints without Auth init on the critical path. **v1.48.4 (#850):** after form paint, warm Auth (+ parallel App Check); Google/`signInWithPopup` must not await App Check (Safari gesture). **v1.49.2 (#858):** warm starts **immediately** after paint; Continue with Google stays disabled until Auth + click-path modules are ready (brief “Preparing sign-in…”); ready click path invokes popup/redirect with no chunk awaits — standing rules in `docs/AUTH_BOOT_PRACTICES.md` (incl. rule 2b). **v1.49.3:** `login/index.html` paints a login auth-card skeleton (not dashboard bottom-tab chrome) while the SPA mounts. **v1.50.0 (#859):** Safari / iOS / in-app Google sign-in uses `signInWithRedirect` (desktop Chromium/Firefox keep popup; `auth/popup-blocked` → one-shot redirect). **v1.51.0 (#860):** marketing CTA intent prefetches `/login` UI assets (no Firebase execute on marketing `/`); login shell modulepreloads `firebase-core`; `auth_surface_timing.warm_path=intent` when prefetch contributed; Google continue chrome covers redirect blank gap. **v1.52.0 (#880):** after marketing first paint, idle speculative download of `/login` + login UI + `firebase-core` (still no `initializeApp` on marketing); `warm_path=speculative` when idle warm contributed without CTA intent; optional `auth_hop_timing` `{ phase: cta_to_form, value, intent, warm_path }`. **v1.53.0 (#881):** thin CSR `login.html` entry (form only after JS) — **retired in v1.53.1 (#890)** after Safari private hang. **v1.53.1 (#890):** restored `app.html` + branded shell. **v1.54.0 (#892 / #894 / epic #889 Phase 2):** **HTML-first auth door** — first document includes real form controls; `login.html` → auth-only `loginMain.jsx` hydrate (not dashboard `app-*.js` / react-query); Suspense fallback keeps form chrome; Terms/Privacy hard-nav; post-auth / unauth dashboard-setup hard-nav across documents. Compatibility: `signup=1` and `/?login=true` still resolve here. **v1.47.3 (#830):** unauthenticated `/dashboard/*` and `/setup` hard opens bounce here; outbound inventory in `docs/OUTBOUND_AUTH_HANDOFF.md`. Invite VIP (`/join`, `/invite`) keeps modal auth until #844. |
 | `/how-it-works` | None | How to play marketing page. **v1.32.0+ (#659):** served as prerendered `dist/how-it-works/index.html` when present. **v1.47.0:** marketing document. **v1.56.1 (#937):** show-night walkthrough (distinct from splash Game Format teaser). |
 | `/how-scoring-works` | None | Scoring rules marketing page. **v1.32.0+ (#659):** served as prerendered `dist/how-scoring-works/index.html` when present. **v1.47.0:** marketing document. **v1.58.0 (#944):** light editorial main + `ScoringRulesContent surface="light"` (in-app modal remains dark default). |
-| `/tour-stats` | None | **v1.33.0 (#665):** public aggregate tour song stats (filter + default Sphere). Prerendered shell; live data from `public_tour_stats`. Never full nightly setlists. **v1.47.1 (#827):** skeleton chrome + `PublicTourStatsPage` modulepreload. **v1.49.0 (#853):** boots the **marketing** document (no `AuthProvider`); App Check + Firestore load at fetch time only — restores cold-open feel after #835 login deferral regressed the app-shell path. **v1.60.0 (#929):** hub “current tour” blurb links to the live summer SEO slug; filter selection always uses slug URLs. **v1.62.0 (#869):** first meaningful stats prefer `/tour-stats-data/*.json` + Firestore REST (no App Check kick on marketing). **v1.91.2 (#930):** build-time `dist/sitemap.xml` stamps `<lastmod>` on this hub from the newest prerendered slug `lastShowDate`. |
+| `/tour-stats` | None | **v1.33.0 (#665):** public aggregate tour song stats (filter + default Sphere). Prerendered shell; live data from `public_tour_stats`. Never full nightly setlists. **v1.47.1 (#827):** skeleton chrome + `PublicTourStatsPage` modulepreload. **v1.49.0 (#853):** boots the **marketing** document (no `AuthProvider`); App Check + Firestore load at fetch time only — restores cold-open feel after #835 login deferral regressed the app-shell path. **v1.60.0 (#929):** hub “current tour” blurb links to the live summer SEO slug; filter selection always uses slug URLs. **v1.62.0 (#869):** first meaningful stats prefer `/tour-stats-data/*.json` + Firestore REST (no App Check kick on marketing). **v1.91.2 (#930):** build-time `dist/sitemap.xml` stamps `<lastmod>` on this hub from the newest prerendered slug `lastShowDate`. **v1.94.0 (#1139):** hub blurb also links to `/tour-stats/msg`. |
+| `/tour-stats/msg` | None | **v1.94.0 (#1139):** dedicated MSG Garden page (not a tour slug, not `PublicTourStatsPage`). Prerendered aggregates: played-show count, most-played songs, MSG debuts, longest visit gaps, bustouts, New Year's Eve counts, and set-1 opener frequencies. FAQ + ItemList JSON-LD, sitemap, `llms.txt`. On-page credit links to Phish.net. CTA is `/login?mode=signup`. Sitemap `<lastmod>` is the page's `lastShowDate` and is not folded into the `/tour-stats` hub max. Live numbers come from `public_venue_stats/msg` after that doc exists; until then the committed snapshot is the source. |
 | `/tour-stats/:tourSlug` | None | **v1.33.0 (#665):** same surface for a kebab-case tour slug (e.g. `2026-sphere`). Default Sphere slug is also prerendered. **v1.49.0 (#853):** same marketing-document boot as `/tour-stats`. **v1.59.0 (#927/#928):** `2026-summer-tour` prerendered + sitemap/`llms.txt` (live calendar label **2026 Summer Tour**); crawler HTML includes aggregate bustout/frequency facts at build time. **v1.60.0 (#929):** fan-language H2s/intros on the public surface; selecting the current/default tour keeps the slug path (no collapse to `/tour-stats`). **v1.62.0 (#869):** same CDN/REST data plane as the hub. **v1.62.1 (#930):** `/llms.txt` restates unique / frequency / 30+ bustout definitions and deep-links this summer slug. **v1.63.0 (#959):** additional slugs auto-prerender (facts HTML + FAQ/ItemList, sitemap, `llms.txt`) when `public_tour_stats` meets the thin-page gate — no hand edit of `seoRoutes.js`. Gate: `showsWithSetlist ≥ 4` and `uniqueSongs ≥ 20` and `lastShowDate` in the current UTC year. Kill-switch / allowlist / denylist: `TOUR_STATS_SEO_AUTO_EXPAND`, `TOUR_STATS_SEO_ALLOWLIST`, `TOUR_STATS_SEO_DENYLIST`. Aggregates only; never full night setlists. No `/phish-picks`. **v1.91.2 (#930):** each prerendered slug’s sitemap `<lastmod>` is that doc’s `lastShowDate` (not `writtenAt`). `/llms.txt` is not a sitemap URL. |
 | `/tour-stats-data/:docId.json` | None | **v1.62.0 (#869):** build-time JSON snapshot of `public_tour_stats/{docId}` (`_index` + each tour slug). Same-origin; `Cache-Control: public, max-age=300, stale-while-revalidate=86400`. Aggregates only — never full night setlists. Client revalidates via Firestore REST. |
 | `/phish-setlist-prediction-game` | None | **v1.34.0 (#660):** keyword-intent educational page for Phish setlist prediction game queries; prerendered HTML + FAQ JSON-LD. **v1.47.0:** marketing document. **v1.56.0 (#940):** tightened scannable definitional landing (epic #942). **v1.62.2 (#973):** title / description / FAQ bridge C6 (`phish setlist prediction`) and C7 (`phish picks`) on this same URL — no `/phish-picks` doorway. |

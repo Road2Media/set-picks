@@ -22,6 +22,7 @@ import {
   buildFinishedTourWrap,
   buildFinishedTourWrapHtml,
 } from '../src/features/tour-stats/model/finishedTourWrap.js';
+import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
 import {
   APP_BOOT_SHELL_REL_PATH,
   DASHBOARD_BOOT_PRELOAD_MARKER,
@@ -114,6 +115,10 @@ assert(
   'expected 2026 Summer Tour tour-stats prerender entry (#927/#928)',
 );
 assert(
+  PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/msg'),
+  'expected Phish at MSG prerender entry (#1139)',
+);
+assert(
   PRERENDER_ROUTES.some((r) => r.path === '/phish-setlist-prediction-game'),
   'expected keyword-intent prerender entry',
 );
@@ -144,6 +149,34 @@ for (const route of PRERENDER_ROUTES) {
   const html = injectPrerenderHtml(shell, route);
   assertRouteHtml(html, route, `fixture ${route.path}`);
 }
+
+const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/msg');
+const msgEnrichment = buildMsgGardenPrerenderEnrichment(null, msgRoute.canonicalUrl);
+const msgHtml = injectPrerenderHtml(shell, msgRoute, msgEnrichment);
+assert(msgHtml.includes('96 times'), 'MSG prerender HTML must include the played-show count (#1139)');
+assert(msgHtml.includes('data-seo-msg-stats="top-songs"'), 'MSG prerender HTML must include most-played songs');
+assert(msgHtml.includes('FAQPage'), 'MSG prerender JSON-LD must include FAQPage');
+assert(msgHtml.includes('ItemList'), 'MSG prerender JSON-LD must include ItemList');
+assert(
+  msgHtml.includes('Data courtesy of <a href="https://phish.net">Phish.net</a>'),
+  'MSG prerender HTML must credit Phish.net',
+);
+assert(
+  msgHtml.includes('not a pick tip'),
+  'MSG opener copy must be labeled as frequencies',
+);
+assert(
+  readFileSync(join(root, 'public', 'sitemap.xml'), 'utf8').includes(
+    'https://www.setlistpickem.com/tour-stats/msg',
+  ),
+  'public sitemap must list /tour-stats/msg',
+);
+assert(
+  readFileSync(join(root, 'public', 'llms.txt'), 'utf8').includes(
+    'https://www.setlistpickem.com/tour-stats/msg',
+  ),
+  'public llms.txt must list /tour-stats/msg',
+);
 
 // HTML-first legal door fixtures (no marketing/app/login module graph).
 for (const legalPath of ['/privacy', '/terms']) {

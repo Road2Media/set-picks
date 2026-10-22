@@ -61,6 +61,7 @@ import {
   finishedTourWrapShareImageUrl,
 } from '../src/features/tour-stats/model/finishedTourWrap.js';
 import { TOUR_STATS_SEO_FACT_SLUGS } from '../src/shared/config/seoRoutes.js';
+import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const distDir = join(root, 'dist');
@@ -91,7 +92,11 @@ const appShell = readFileSync(distApp, 'utf8');
 const loginEntryShell = readFileSync(distLogin, 'utf8');
 
 function isTourStatsPrerenderRoute(path) {
-  return typeof path === 'string' && path.startsWith('/tour-stats');
+  return (
+    typeof path === 'string' &&
+    path.startsWith('/tour-stats') &&
+    path !== '/tour-stats/msg'
+  );
 }
 
 function isLegalPrerenderRoute(path) {
@@ -227,6 +232,30 @@ async function maybeWriteTourWrapShareImage(doc, slug) {
   }
 }
 
+async function loadMsgGardenEnrichment(route) {
+  if (route.path !== '/tour-stats/msg') return null;
+  let liveDoc = null;
+  try {
+    liveDoc = await fetchFirestoreRestDocument(
+      FIRESTORE_PROJECT_ID,
+      'public_venue_stats/msg',
+    );
+  } catch (err) {
+    console.warn(
+      'prerender-seo: public_venue_stats/msg unavailable, using snapshot',
+      err?.message || err,
+    );
+  }
+  const enrichment = buildMsgGardenPrerenderEnrichment(
+    liveDoc,
+    route.canonicalUrl,
+  );
+  console.log(
+    `prerender-seo: /tour-stats/msg facts (${enrichment.stats.showCount} shows through ${enrichment.stats.lastShowDate})`,
+  );
+  return enrichment;
+}
+
 async function loadTourStatsEnrichment(route) {
   const slug =
     typeof route.tourStatsSeoSlug === 'string' ? route.tourStatsSeoSlug.trim() : '';
@@ -333,7 +362,7 @@ function collectTourStatsSitemapLastmods(routes) {
   return tourStatsSitemapLastmodMap(slugDates, { siteUrl: SEO_CONFIG.siteUrl });
 }
 
-function emitTourStatsDiscoveryFiles(allRoutes) {
+function emitTourStatsDiscoveryFiles(allRoutes, msgLastShowDate = '') {
   const { locs, llms } = tourStatsDiscoveryFromRoutes(allRoutes);
   const publicSitemap = join(root, 'public', 'sitemap.xml');
   const publicLlms = join(root, 'public', 'llms.txt');
@@ -341,9 +370,14 @@ function emitTourStatsDiscoveryFiles(allRoutes) {
     console.warn('prerender-seo: missing public/sitemap.xml or public/llms.txt');
     return;
   }
+  const lastmods = collectTourStatsSitemapLastmods(allRoutes);
+  const msgDate = sitemapLastmodDate(msgLastShowDate);
+  if (msgDate) {
+    lastmods[`${SEO_CONFIG.siteUrl}/tour-stats/msg`] = msgDate;
+  }
   const sitemap = applySitemapLastmods(
     appendSitemapTourStatsUrls(readFileSync(publicSitemap, 'utf8'), locs),
-    collectTourStatsSitemapLastmods(allRoutes),
+    lastmods,
   );
   const llmsTxt = appendLlmsTourStatsLinks(readFileSync(publicLlms, 'utf8'), llms);
   writeFileSync(join(distDir, 'sitemap.xml'), sitemap, 'utf8');
@@ -358,13 +392,16 @@ function emitTourStatsDiscoveryFiles(allRoutes) {
 }
 
 const prerenderRoutes = await resolvePrerenderRoutes();
+let msgLastShowDate = '';
 
 for (const route of prerenderRoutes) {
   // Legal door shells are written separately (zero-JS; #916) — not marketing CSR.
   if (isLegalPrerenderRoute(route.path)) continue;
 
   const shell = marketingShell;
-  const enrichment = await loadTourStatsEnrichment(route);
+  const msgEnrichment = await loadMsgGardenEnrichment(route);
+  if (msgEnrichment?.lastShowDate) msgLastShowDate = msgEnrichment.lastShowDate;
+  const enrichment = msgEnrichment || (await loadTourStatsEnrichment(route));
   let html = injectPrerenderHtml(shell, route, enrichment);
   // Marketing home statically imports splash UI via marketingMain — no lazy
   // HomeRoute waterfall, so no splash modulepreload injection (#832).
@@ -384,7 +421,7 @@ for (const route of prerenderRoutes) {
 }
 
 await emitPublicTourStatsCdnJson();
-emitTourStatsDiscoveryFiles(prerenderRoutes);
+emitTourStatsDiscoveryFiles(prerenderRoutes, msgLastShowDate);
 
 // HTML-first legal door (#916): full policy body in first HTML, no module graph.
 for (const legalPath of ['/privacy', '/terms']) {

@@ -38,6 +38,8 @@ Public aggregates only — never full night setlists. Numbers refresh every nigh
 
 Deep link — 2026 Summer Tour setlist statistics: https://www.setlistpickem.com/tour-stats/2026-summer-tour
 
+Phish at Madison Square Garden, aggregates only (played shows, most-played songs, debuts, visit gaps, bustouts that landed there, New Year's Eve counts, opener frequencies). Canceled nights are not counted. January 2, 2027 is the announced 100th show. Not a setlist archive. https://www.setlistpickem.com/tour-stats/msg
+
 Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.com/tour-stats
 
 ## Links
@@ -48,6 +50,7 @@ Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.c
 - Tour Insights / Phish tour setlist statistics: https://www.setlistpickem.com/tour-stats
 - 2026 Sphere tour statistics: https://www.setlistpickem.com/tour-stats/2026-sphere
 - 2026 Summer Tour setlist statistics: https://www.setlistpickem.com/tour-stats/2026-summer-tour
+- Phish at MSG, 96 shows by the numbers: https://www.setlistpickem.com/tour-stats/msg
 - Phish Setlist Prediction Game: https://www.setlistpickem.com/phish-setlist-prediction-game
 - About: https://www.setlistpickem.com/about
 - Setlist data credit: https://phish.net (The Mockingbird Foundation)

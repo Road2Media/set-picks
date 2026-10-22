@@ -76,6 +76,7 @@ const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorke
 const { getTriggerSpec } = require("./commsCatalog");
 const { tourCountdownDeliveryPlan } = require("./commsTemplates");
 const { refreshPublicTourStats } = require("./publicTourStats");
+const { refreshPublicMsgGardenStats } = require("./msgGardenStats");
 const {
   rebuildGlobalStatsLeaderboards,
 } = require("./globalStatsLeaderboards");
@@ -2150,6 +2151,59 @@ exports.refreshPublicTourStats = onCall(
       throw new HttpsError(
         "failed-precondition",
         `refreshPublicTourStats failed: ${msg}`
+      );
+    }
+  }
+);
+
+/**
+ * Nightly aggregate-only MSG Garden stats (#1139).
+ * Runs after tour stats (07:30) and global boards (08:00).
+ * Fetches Phish.net venue 157, discards the raw rows, writes public_venue_stats/msg.
+ */
+exports.scheduledPublicMsgGardenStats = onSchedule(
+  {
+    schedule: "10 8 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 120,
+    secrets: [phishnetApiKey],
+  },
+  async () => {
+    await refreshPublicMsgGardenStats(db, {
+      logger,
+      phishnetApiKey: String(phishnetApiKey.value() || "").trim(),
+    });
+    return null;
+  }
+);
+
+/**
+ * Admin-only on-demand rebuild of `public_venue_stats/msg` (#1139).
+ */
+exports.refreshPublicMsgGardenStats = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    timeoutSeconds: 120,
+    secrets: [phishnetApiKey],
+  },
+  async (request) => {
+    try {
+      assertAdminClaim(request);
+      const result = await refreshPublicMsgGardenStats(db, {
+        logger,
+        phishnetApiKey: String(phishnetApiKey.value() || "").trim(),
+      });
+      return { ok: true, ...result };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error("refreshPublicMsgGardenStats unexpected error", msg, e);
+      throw new HttpsError(
+        "failed-precondition",
+        `refreshPublicMsgGardenStats failed: ${msg}`
       );
     }
   }
