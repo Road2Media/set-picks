@@ -7,7 +7,7 @@ import { ga4Event } from '../../../shared/lib/ga4';
  * Views owned by `/dashboard/standings?view=` (#255). Keep aligned with
  * `dashboardPageMeta.js` and `scripts/verify-dashboard-meta.mjs`.
  */
-export const STANDINGS_PATH_VIEWS = Object.freeze(['show', 'tour', 'pools']);
+export const STANDINGS_PATH_VIEWS = Object.freeze(['show', 'tour', 'year', 'pools']);
 
 /**
  * Standings chrome views (#769). Stats moved to the Stats primary.
@@ -96,7 +96,7 @@ function writeRecentStandingsPoolId(poolId) {
 /**
  * URL-synced state for the standings top-level pill toggle.
  *
- * Owns the `?view=show|tour|pools` and `?pool=<id>` query params so
+ * Owns the `?view=show|tour|year|pools` and `?pool=<id>` query params so
  * `useDisplayedPicks` can stay a pure derivation and the page can stay
  * declarative. Handles:
  *

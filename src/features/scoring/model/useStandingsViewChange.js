@@ -8,13 +8,13 @@ import { DEFAULT_STANDINGS_VIEW, STANDINGS_VIEWS } from './useStandingsView';
 /**
  * Cross-route Standings IA toggle (#255 / #769).
  *
- * Show / Tour / Pools stay on `/dashboard/standings` (delegating to the
+ * Show / Tour / Year / Pools stay on `/dashboard/standings` (delegating to the
  * in-page `setPathView` when already there — that path owns GA4).
- * Preserves `?tour=` on Tour.
+ * Preserves `?tour=` on Tour and `?year=` on Year.
  *
  * @param {{
- *   view: 'show' | 'tour' | 'pools',
- *   setPathView?: (next: 'show' | 'tour' | 'pools') => void,
+ *   view: 'show' | 'tour' | 'year' | 'pools',
+ *   setPathView?: (next: 'show' | 'tour' | 'year' | 'pools') => void,
  * }} options
  */
 export function useStandingsViewChange({ view, setPathView }) {
@@ -31,6 +31,7 @@ export function useStandingsViewChange({ view, setPathView }) {
 
       const tourKey = searchParams.get('tour') || '';
       const poolId = searchParams.get('pool') || '';
+      const yearKey = searchParams.get('year') || '';
 
       if (typeof setPathView === 'function') {
         setPathView(normalized);
@@ -42,6 +43,7 @@ export function useStandingsViewChange({ view, setPathView }) {
         buildStandingsViewPath(normalized, {
           tourKey: normalized === 'tour' ? tourKey : '',
           poolId: normalized === 'pools' ? poolId : '',
+          yearKey: normalized === 'year' ? yearKey : '',
         }),
       );
     },

@@ -52,8 +52,9 @@ function readViewQuery(search) {
  * @param {string} pathname
  * @param {string | URLSearchParams | null | undefined} [search]  `location.search`.
  *   Used by `/dashboard/standings` to hide the global date picker when
- *   `?view=tour` is active (#255), and by Stats Personal / Global / Band
- *   (#769 / #1004) — tour-scoped surfaces share the chrome tour picker.
+ *   `?view=tour` (#255) or `?view=year` (#1110) is active, and by Stats
+ *   Personal / Global / Band (#769 / #1004) — tour-scoped surfaces share
+ *   the chrome tour picker. Year view shows the year picker instead.
  */
 export function getDashboardPageMeta(pathname, search) {
   const normalized = normalizeDashboardPathname(pathname);
@@ -65,6 +66,8 @@ export function getDashboardPageMeta(pathname, search) {
       showDatePicker: false,
       isStandingsTourView: false,
       showTourScopePicker: false,
+      isStandingsYearView: false,
+      showYearScopePicker: false,
       layoutDesktopHeading: null,
       layoutDetailEyebrow: null,
       desktopHeadingTone: 'default',
@@ -89,6 +92,9 @@ export function getDashboardPageMeta(pathname, search) {
   const isStandingsTourView = isStandings && readViewQuery(search) === 'tour';
   const showTourScopePicker =
     isStandingsTourView || isStatsTourScopedPath(normalized);
+  // Standings Year only (#1110). Not the tour picker.
+  const isStandingsYearView = isStandings && readViewQuery(search) === 'year';
+  const showYearScopePicker = isStandingsYearView;
 
   const contextTitle = (() => {
     if (isStatsCluster) return NAV_LABEL_STATS;
@@ -104,7 +110,11 @@ export function getDashboardPageMeta(pathname, search) {
   })();
 
   const showDatePicker =
-    !isProfileCluster && !isPoolHub && !showTourScopePicker && !isStatsCluster;
+    !isProfileCluster &&
+    !isPoolHub &&
+    !showTourScopePicker &&
+    !showYearScopePicker &&
+    !isStatsCluster;
 
   // Five player tabs own title + tray in the desktop sticky stack. Layout H2
   // stays only for War Room. Pool details keeps Option C (no cluster title).
@@ -125,6 +135,8 @@ export function getDashboardPageMeta(pathname, search) {
     showDatePicker,
     isStandingsTourView,
     showTourScopePicker,
+    isStandingsYearView,
+    showYearScopePicker,
     layoutDesktopHeading,
     layoutDetailEyebrow,
     desktopHeadingTone: isAdmin ? 'warRoom' : 'default',

@@ -14,6 +14,16 @@ describe('buildStandingsViewPath', () => {
     );
   });
 
+  it('builds Year with optional calendar year (#1110)', () => {
+    expect(buildStandingsViewPath('year')).toBe('/dashboard/standings?view=year');
+    expect(buildStandingsViewPath('year', { yearKey: '2026' })).toBe(
+      '/dashboard/standings?view=year&year=2026',
+    );
+    expect(buildStandingsViewPath('year', { yearKey: '26' })).toBe(
+      '/dashboard/standings?view=year',
+    );
+  });
+
   it('builds Pools with optional pool id', () => {
     expect(buildStandingsViewPath('pools')).toBe('/dashboard/standings?view=pools');
     expect(buildStandingsViewPath('pools', { poolId: 'abc' })).toBe(

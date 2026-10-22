@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.92.0] — 2026-10-22
+
+### Added
+- **Annual standings (#1110)** — Standings tray is Show / Tour / Year / Pools. `?view=year` is the global board for one calendar year of show dates (optional `?year=YYYY` when it is not the newest year). A Dec 31 show stays in that year. A Jan 1 show is the next year. Points, nightly wins, and shows played use the tour-standings rules. A points tie shares a rank. The date picker hides and a year picker shows. An empty year says so. All-time standings stay the career board. No Cloud Functions, rules, or index deploy.
+
 ## [1.91.2] — 2026-10-22
 
 ### Fixed

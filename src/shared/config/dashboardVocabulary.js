@@ -141,6 +141,15 @@ export const TOUR_STANDINGS_HEADING = 'Tour standings';
 export const TOUR_STANDINGS_DESCRIPTION =
   'Running totals for this tour across every graded show. Players with the same points share a rank, and the next rank skips. Inside a tie, nightly wins then name set the order.';
 
+/**
+ * Calendar-year leaderboard on Standings (#1110). Scope is the calendar year
+ * of each show date (Dec 31 stays in that year; Jan 1 is the next year).
+ * Global only — a pool-scoped year view is later.
+ */
+export const YEAR_STANDINGS_HEADING = 'Year standings';
+export const YEAR_STANDINGS_DESCRIPTION =
+  'Running totals for this calendar year across every graded show. Players with the same points share a rank, and the next rank skips. Inside a tie, nightly wins then name set the order.';
+
 /** Pool-scoped alias of {@link TOUR_STANDINGS_HEADING} for pool details. */
 export const POOL_TOUR_STANDINGS_HEADING = TOUR_STANDINGS_HEADING;
 export const POOL_TOUR_STANDINGS_DESCRIPTION =
