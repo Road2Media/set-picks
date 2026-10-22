@@ -1,12 +1,15 @@
 # Dependabot — weekly npm updates for the SPA and Cloud Functions (#414).
 # Grouped PRs reduce noise; triage + first-run runbook: docs/DEPENDABOT_OPERATIONS.md
 # PRs target `staging` (repo PR base), not `main`.
+# Dependabot reads this file from the default branch (`main`).
 #
 # Re-enabled 2026-07-05 (Sprint 6 wrap, #504) after v1.18 enablement-wave ops reset.
 # Reworked 2026-07-28 (#744): groups contain ONLY minor/patch ("safe") updates so
 # they stay green and mergeable. Major versions arrive as individual PRs and get
 # dedicated migration work — see docs/DEPENDABOT_OPERATIONS.md "Major upgrades".
-# Triage: max 1–2 merges/week; never batch-rebase all PRs.
+# Profile B (#967): open-pull-requests-limit is 2 per entry. `*-safe` groups are
+# squash auto-merged by .github/workflows/dependabot-auto-merge.yml. Never
+# batch-rebase all PRs. Do not auto-merge majors or `actions-all`.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -15,7 +18,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 2
     labels:
       - dependencies
       - skip-version-bump
@@ -33,7 +36,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 2
     labels:
       - dependencies
       - skip-version-bump
@@ -57,7 +60,7 @@ updates:
     target-branch: "staging"
     schedule:
       interval: monthly
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     labels:
       - dependencies
       - skip-version-bump

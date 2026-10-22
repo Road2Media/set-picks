@@ -4,6 +4,14 @@
 
 name: CI
 
+# Superseded pushes and PR updates cancel the older run (#967).
+# The nightly schedule stays in its own group so a push to the default
+# branch does not cancel the full-matrix backstop, and the backstop does
+# not cancel that push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'schedule' && 'schedule' || github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, master, staging]
@@ -99,6 +107,9 @@ jobs:
 
       - name: Client tests (vitest)
         run: npm test
+
+      - name: Dependabot T0 auto-merge policy (#967)
+        run: npm run test:dependabot-auto-merge
 
       # Informational only (#414) — does not fail the job. Triage notes in AGENTS.md.
       - name: npm audit (informational)
