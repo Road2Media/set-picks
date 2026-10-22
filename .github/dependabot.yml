@@ -5,20 +5,20 @@
 #
 # Re-enabled 2026-07-05 (Sprint 6 wrap, #504) after v1.18 enablement-wave ops reset.
 # Reworked 2026-07-28 (#744): groups contain ONLY minor/patch ("safe") updates so
-# they stay green and mergeable. Major versions arrive as individual PRs and get
-# dedicated migration work — see docs/DEPENDABOT_OPERATIONS.md "Major upgrades".
-# Profile B (#967): open-pull-requests-limit is 2 per entry. `*-safe` groups are
-# squash auto-merged by .github/workflows/dependabot-auto-merge.yml.
-# Monday 18:00 UTC sweep (#1052): .github/workflows/dependabot-scheduled-execution.yml
-# enables that same squash auto-merge when the event workflow missed a `*-safe`
-# PR, and comments when the PR has been red or conflicted for 7 days. The sweep
-# does not change groups, limits, or the default rebase behavior.
-# Never batch-rebase all PRs. Do not auto-merge majors or `actions-all`.
+# one breaking major never blocks a week of safe updates. Majors stay individual PRs.
+# Factory standard (2026-10-22, #1148): squash auto-merge every Dependabot PR
+# into staging when required checks pass, majors included. See
+# docs/DEPENDABOT_OPERATIONS.md. Rebases are disabled on each entry below so a
+# push to staging does not force a new preview for every open Dependabot PR.
+# Groups are version updates only, so security updates are not held for Monday.
+# `@types/node` majors beyond functions `engines.node` (24) are ignored.
+# Never batch-rebase all PRs.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: "/"
     target-branch: "staging"
+    rebase-strategy: disabled
     schedule:
       interval: weekly
       day: monday
@@ -26,17 +26,25 @@ updates:
     labels:
       - dependencies
       - skip-version-bump
+    ignore:
+      # Functions runtime is Node 24 (`functions/package.json` engines).
+      # Ignore @types/node majors beyond that LTS. 25+ tracks Current Node.
+      - dependency-name: "@types/node"
+        versions: [">=25.0.0"]
     groups:
       root-production-safe:
         dependency-type: production
+        applies-to: version-updates
         update-types: ["minor", "patch"]
       root-development-safe:
         dependency-type: development
+        applies-to: version-updates
         update-types: ["minor", "patch"]
 
   - package-ecosystem: npm
     directory: "/functions"
     target-branch: "staging"
+    rebase-strategy: disabled
     schedule:
       interval: weekly
       day: monday
@@ -51,17 +59,23 @@ updates:
       # (#624, #744, #799). Remove once firebase-functions-test allows ^14.
       - dependency-name: "firebase-admin"
         update-types: ["version-update:semver-major"]
+      # Same Node 24 pin as the root entry. Majors beyond that LTS stay ignored.
+      - dependency-name: "@types/node"
+        versions: [">=25.0.0"]
     groups:
       functions-production-safe:
         dependency-type: production
+        applies-to: version-updates
         update-types: ["minor", "patch"]
       functions-development-safe:
         dependency-type: development
+        applies-to: version-updates
         update-types: ["minor", "patch"]
 
   - package-ecosystem: github-actions
     directory: "/"
     target-branch: "staging"
+    rebase-strategy: disabled
     schedule:
       interval: monthly
     open-pull-requests-limit: 2

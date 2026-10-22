@@ -1,15 +1,16 @@
-# Monday execution backstop for grouped Dependabot minor/patch PRs (#1052).
+# Monday execution backstop for Dependabot pull requests (#1052, #1148).
 #
-# The #967 workflow enables squash auto-merge when Dependabot opens or
-# updates a `*-safe` pull request. This sweep covers an open T0 PR that
-# event missed: it adds `skip-version-bump` when the label is missing,
-# enables the same squash auto-merge, and comments when the PR has been
-# red or conflicted for 7 days.
+# The event workflow enables squash auto-merge when Dependabot opens or
+# updates a pull request. This sweep covers an open Dependabot PR that
+# event missed, including majors and security updates: it adds
+# `skip-version-bump` when the label is missing, adds `ui-check` for
+# visitor-facing packages, enables the same squash auto-merge, and comments
+# when the PR has been red or conflicted for 7 days.
 #
-# It does not push, update the branch, or rebase. A commit from this
-# workflow would fail dependabot/fetch-metadata and the #967 revoke job
-# would turn auto-merge off. `schedule` uses the workflow on the default
-# branch, so this file does nothing until it is on `main`.
+# It does not push, update the branch, or rebase. `rebase-strategy` is
+# `disabled`. A commit from this workflow would fail dependabot/fetch-metadata
+# and the revoke job would turn auto-merge off. `schedule` uses the workflow
+# on the default branch, so this file does nothing until it is on `main`.
 
 name: Dependabot scheduled execution
 

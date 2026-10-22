@@ -4,6 +4,7 @@
  * reads pull requests and applies those decisions. It checks out nothing.
  */
 
+import { isAutoMergeEnableReason } from "./dependabotAutoMergePolicy.mjs";
 import {
   clearedStuckCommentBody,
   enableFailureCommentBody,
@@ -17,6 +18,7 @@ import {
   stuckCommentBody,
   STUCK_COMMENT_MARKER,
   toCommitIdentity,
+  UI_CHECK_LABEL,
 } from "./dependabotScheduledExecution.mjs";
 
 const ENABLE_MUTATION = `mutation ($pullRequestId: ID!, $mergeMethod: PullRequestMergeMethod!) {
@@ -230,6 +232,7 @@ function preliminaryPlan(pull, now) {
     headRef: pull.head?.ref || "",
     draft: pull.draft === true,
     state: pull.state || "open",
+    body: pull.body || "",
     labels: (pull.labels || []).map((label) => label.name).filter(Boolean),
     autoMergeEnabled: Boolean(pull.auto_merge),
     mergeableState: pull.mergeable_state || "unknown",
@@ -265,6 +268,7 @@ export async function loadPullPlan(github, listed, now) {
     headRef: pull.head?.ref || "",
     draft: pull.draft === true,
     state: pull.state || "open",
+    body: pull.body || "",
     labels: (pull.labels || []).map((label) => label.name).filter(Boolean),
     autoMergeEnabled: Boolean(pull.auto_merge),
     mergeableState: pull.mergeable_state || "unknown",
@@ -298,8 +302,10 @@ async function upsertComment(github, number, marker, body, dryRun) {
   return "updated";
 }
 
+const ALLOWED_LABELS = new Set([SKIP_VERSION_BUMP_LABEL, UI_CHECK_LABEL]);
+
 /**
- * Refuse to enable anything the planner did not classify as a verified T0 group.
+ * Refuse to enable anything the planner did not classify as an auto-merge candidate.
  *
  * @param {object} item
  * @param {object} action
@@ -309,14 +315,14 @@ function assertActionAllowed(item, action) {
     throw new Error(`refusing ${action.type} on non-T0 PR #${item?.number}`);
   }
   if (action.type === "enable-automerge") {
-    if (item.reason !== "t0-safe-group") {
+    if (!isAutoMergeEnableReason(item.reason)) {
       throw new Error(`refusing enable on #${item.number} (${item.reason})`);
     }
     if (action.mergeMethod !== "SQUASH") {
       throw new Error(`refusing merge method ${action.mergeMethod || ""}`);
     }
   }
-  if (action.type === "add-label" && action.label !== SKIP_VERSION_BUMP_LABEL) {
+  if (action.type === "add-label" && !ALLOWED_LABELS.has(action.label)) {
     throw new Error(`refusing label ${action.label || ""}`);
   }
   if (action.type === "disable-automerge" && item.reason !== "non-dependabot-commit") {

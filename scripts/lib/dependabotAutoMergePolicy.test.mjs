@@ -61,7 +61,7 @@ describe("dependabot auto-merge policy", () => {
     assert.equal(decision.group, "root-development-safe");
   });
 
-  it("does not enable an individual major", () => {
+  it("enables an individual major and marks it for a migration issue if checks fail", () => {
     const samples = [
       {
         title: "chore(deps): Bump firebase-admin from 13.10.0 to 14.5.0",
@@ -85,12 +85,14 @@ describe("dependabot auto-merge policy", () => {
         ...sample,
         dependencyGroup: "",
       });
-      assert.equal(decision.action, "skip", sample.title);
+      assert.equal(decision.action, "enable", sample.title);
       assert.equal(decision.reason, "semver-major", sample.title);
+      assert.equal(decision.major, true, sample.title);
+      assert.equal(decision.uiCheck, false, sample.title);
     }
   });
 
-  it("does not enable actions-all, even for a patch", () => {
+  it("enables actions-all, including a patch", () => {
     const decision = classifyDependabotAutoMerge({
       ...safePr,
       title: "chore(deps): Bump the actions-all group with 2 updates",
@@ -98,28 +100,32 @@ describe("dependabot auto-merge policy", () => {
       dependencyGroup: "actions-all",
       updateType: "version-update:semver-patch",
     });
-    assert.equal(decision.action, "skip");
-    assert.equal(decision.reason, "group-not-safe");
+    assert.equal(decision.action, "enable");
+    assert.equal(decision.reason, "version-update");
+    assert.equal(decision.major, false);
   });
 
-  it("does not enable a *-safe group whose highest update is a major", () => {
+  it("enables a *-safe group whose highest update is a major and flags the major", () => {
     const decision = classifyDependabotAutoMerge({
       ...safePr,
       updateType: "version-update:semver-major",
     });
-    assert.equal(decision.action, "skip");
+    assert.equal(decision.action, "enable");
     assert.equal(decision.reason, "semver-major");
+    assert.equal(decision.major, true);
+    assert.equal(decision.group, "root-production-safe");
   });
 
-  it("does not enable when the title itself is a major bump", () => {
+  it("enables when the title itself is a major bump", () => {
     const decision = classifyDependabotAutoMerge({
       ...safePr,
       title: "chore(deps): Bump something from 1.2.3 to 2.0.0 in the root-production-safe group",
       dependencyGroup: "root-production-safe",
       updateType: "",
     });
-    assert.equal(decision.action, "skip");
+    assert.equal(decision.action, "enable");
     assert.equal(decision.reason, "semver-major");
+    assert.equal(decision.major, true);
     assert.equal(titleHasMajorBump("from 6.28.1 to 6.34.1"), false);
   });
 
@@ -135,7 +141,7 @@ describe("dependabot auto-merge policy", () => {
     assert.equal(decision.group, "root-production-safe");
   });
 
-  it("stays quiet when fetch-metadata fails on a non-safe PR", () => {
+  it("fails closed when fetch-metadata fails on a major", () => {
     const decision = classifyDependabotAutoMerge({
       ...safePr,
       title: "chore(deps): Bump firebase-admin from 13.10.0 to 14.5.0",
@@ -145,7 +151,35 @@ describe("dependabot auto-merge policy", () => {
       metadataOk: false,
     });
     assert.equal(decision.action, "skip");
-    assert.equal(decision.reason, "not-safe-group");
+    assert.equal(decision.reason, "metadata-unavailable");
+    assert.equal(decision.major, true);
+  });
+
+  it("labels visitor-facing packages and treats a security bump as auto-merge", () => {
+    const ui = classifyDependabotAutoMerge({
+      ...safePr,
+      title: "chore(deps): Bump react-router-dom from 6.30.3 to 7.18.2",
+      headRef: "dependabot/npm_and_yarn/staging/react-router-dom-7.18.2",
+      dependencyGroup: "",
+      updateType: "version-update:semver-major",
+      dependencyNames: "react-router-dom",
+    });
+    assert.equal(ui.action, "enable");
+    assert.equal(ui.uiCheck, true);
+    assert.equal(ui.major, true);
+
+    const security = classifyDependabotAutoMerge({
+      ...safePr,
+      title: "chore(deps): Bump vite from 8.3.0 to 8.3.1",
+      headRef: "dependabot/npm_and_yarn/staging/vite-8.3.1",
+      dependencyGroup: "",
+      updateType: "version-update:semver-patch",
+      body: "Bumps `vite` from 8.3.0 to 8.3.1. This update includes a security fix.",
+    });
+    assert.equal(security.action, "enable");
+    assert.equal(security.reason, "security-update");
+    assert.equal(security.major, false);
+    assert.equal(security.uiCheck, false);
   });
 
   it("skips authors, bases, drafts, closed PRs, and non-dependabot heads", () => {
@@ -200,6 +234,10 @@ describe("dependabot auto-merge repo contract", () => {
     assert.equal((yml.match(/- skip-version-bump/g) || []).length, 3);
     assert.match(yml, /dependency-name: "firebase-admin"/);
     assert.match(yml, /version-update:semver-major/);
+    assert.equal((yml.match(/rebase-strategy: disabled/g) || []).length, 3);
+    assert.equal((yml.match(/applies-to: version-updates/g) || []).length, 4);
+    assert.equal((yml.match(/dependency-name: "@types\/node"/g) || []).length, 2);
+    assert.equal((yml.match(/">=25\.0\.0"/g) || []).length, 2);
 
     const safeGroups = [
       "root-production-safe:",
@@ -232,19 +270,23 @@ describe("dependabot auto-merge repo contract", () => {
     const yml = readFileSync(path.join(root, ".github/workflows/dependabot-auto-merge.yml"), "utf8");
     assert.match(yml, /pull_request_target:/);
     assert.match(yml, /branches:\s*\[staging\]/);
-    assert.match(yml, /mergeMethod: "SQUASH"/);
-    assert.match(yml, /enablePullRequestAutoMerge/);
-    assert.match(yml, /disablePullRequestAutoMerge/);
+    assert.match(yml, /gh pr merge "\$PR_NUMBER" --repo "\$GH_REPO" --auto --squash/);
+    assert.match(yml, /--disable-auto/);
+    assert.match(yml, /dependabot\/fetch-metadata@v2/);
+    assert.match(yml, /--add-label ui-check/);
+    assert.match(yml, /dependabot-open-major-migration\.mjs/);
     assert.match(yml, /dependabot-t0-automerge-failure/);
     assert.match(yml, /dependabot-t0-ci-failure/);
     assert.match(yml, /dependabot-t0-automerge-revoked/);
     assert.match(yml, /github\.event\.repository\.default_branch/);
     assert.match(yml, /persist-credentials: false/);
     assert.match(yml, /github\.actor == 'dependabot\[bot\]'/);
+    assert.doesNotMatch(yml, /github\.event\.pull_request\.body/);
+    assert.match(yml, /dependabot-pr-body\.txt/);
     assert.doesNotMatch(yml, /pull_request\.head\.sha/);
     assert.doesNotMatch(yml, /ref:\s*\$\{\{\s*github\.event\.pull_request\.head/);
-    assert.doesNotMatch(yml, /mergeMethod: "MERGE"/);
-    assert.doesNotMatch(yml, /mergeMethod: "REBASE"/);
+    assert.doesNotMatch(yml, /actions\/checkout@v7\n\s+with:\n\s+ref:\s*\$\{\{\s*github\.event\.pull_request\.head\.sha/);
+    assert.doesNotMatch(yml, /alert-lookup:\s*true/);
   });
 
   it("writes the enable decision to GITHUB_OUTPUT", () => {
@@ -277,7 +319,7 @@ describe("dependabot auto-merge repo contract", () => {
     assert.match(text, /^group=root-production-safe$/m);
   });
 
-  it("writes a major skip from the CLI", () => {
+  it("writes a major enable from the CLI", () => {
     const dir = mkdtempSync(path.join(tmpdir(), "dep-am-"));
     const output = path.join(dir, "github-output.txt");
     const result = spawnSync(
@@ -300,7 +342,9 @@ describe("dependabot auto-merge repo contract", () => {
     );
     assert.equal(result.status, 0, result.stderr?.toString());
     const text = readFileSync(output, "utf8");
-    assert.match(text, /^action=skip$/m);
+    assert.match(text, /^action=enable$/m);
     assert.match(text, /^reason=semver-major$/m);
+    assert.match(text, /^major=true$/m);
+    assert.match(text, /^ui-check=false$/m);
   });
 });

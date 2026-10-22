@@ -111,7 +111,7 @@ Name **existing** domains when known (e.g. `pools`, `picks`, `scoring`, `auth`, 
 
 - **Runbook:** **`docs/DEPENDABOT_OPERATIONS.md`** — enablement-wave root cause, T0 auto-merge, ops-reset, re-enable checklist.
 - Config is `.github/dependabot.yml` on the **default branch** (`main`). Every entry has `target-branch: staging`. `open-pull-requests-limit` is **2** per entry. **0** is only for an ops reset.
-- `*-safe` groups are minor/patch only. `.github/workflows/dependabot-auto-merge.yml` enables squash auto-merge for those groups after the workflow is on `main`. `.github/workflows/dependabot-scheduled-execution.yml` (#1052) runs Mondays at 18:00 UTC from `main`, enables auto-merge if that event was missed, and comments when a `*-safe` PR has been red or conflicted for 7 days. It does not push to the PR branch. Majors and `actions-all` are not auto-merged.
+- `*-safe` groups are minor/patch version updates only (`applies-to: version-updates`), so security updates are not held for Monday. `.github/workflows/dependabot-auto-merge.yml` enables squash auto-merge for every Dependabot pull request into `staging`, majors included, after the workflow is on `main` (#1148 factory standard). A major that fails checks stays open and becomes an `agent-queue` `p3` issue. Visitor-facing packages get `ui-check`. `.github/workflows/dependabot-scheduled-execution.yml` (#1052) runs Mondays at 18:00 UTC from `main` as the backstop. It does not push or rebase. `rebase-strategy` is `disabled`.
 - **First enable dumps PRs immediately** (not weekly schedule). Ship `target-branch: staging` on day one or Dependabot opens against `main`.
 
 ---
