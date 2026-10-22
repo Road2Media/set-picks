@@ -318,3 +318,25 @@ test("without a played bustout the opening falls through to lead changes, then t
   assert.match(empty.opening_paras[1], /inexact science/);
   assert.equal(empty.fact_label.slots.at(-1), "opening_fallback");
 });
+
+test("recap payload carries the shared rank and the other handles without rewriting the sentence", () => {
+  const payload = buildTourRecapPayload({
+    handle: "ArmenianMan",
+    rank: 3,
+    tiedCount: 3,
+    tiedHandles: ["HotDog Billy", "TheManMulcahy"],
+    points: 85,
+    wins: 1,
+    showsPlayed: 8,
+    participantCount: 20,
+    tourId: "2026 Fall Tour",
+    tourName: "2026 Fall Tour",
+    showCount: 8,
+    podium: { rows: [], honorableMentions: [] },
+  });
+  assert.equal(payload.rank, 3);
+  assert.equal(payload.tiedCount, 3);
+  assert.deepEqual(payload.tiedHandles, ["HotDog Billy", "TheManMulcahy"]);
+  assert.match(payload.personal_line, /You finished #3 of 20/);
+  assert.equal(payload.personal_line.includes("tied for"), false);
+});

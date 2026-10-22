@@ -689,7 +689,14 @@ async function deliverTourRecapIfFinalShow({
   const recipients = [];
   for (const row of enriched) {
     const info = ranked.get(row.uid);
-    const rank = info?.rank ?? recipients.length + 1;
+    // Official place comes from competition rank. Do not invent it from list index.
+    if (!info) {
+      logger?.warn?.("deliverTourRecapIfFinalShow: missing display rank", {
+        uid: row.uid,
+        tourKey,
+      });
+      continue;
+    }
     const userData = row.userData || {};
     recipients.push({
       uid: row.uid,
@@ -697,7 +704,9 @@ async function deliverTourRecapIfFinalShow({
       payload: {
         ...buildTourRecapPayload({
           handle: row.handle || handleFromUser(userData),
-          rank,
+          rank: info.rank,
+          tiedCount: info.tiedCount,
+          tiedHandles: info.tiedHandles,
           points: row.totalPoints,
           wins: row.wins,
           showsPlayed: row.shows,

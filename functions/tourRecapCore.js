@@ -534,6 +534,8 @@ function composeWrapCopy(input, shared, player) {
  * @param {{
  *   handle?: string,
  *   rank: number,
+ *   tiedCount?: number,
+ *   tiedHandles?: string[],
  *   points: number,
  *   wins: number,
  *   showsPlayed: number,
@@ -555,6 +557,10 @@ function buildTourRecapPayload(input) {
   return {
     handle: input.handle || "Picker",
     rank: input.rank,
+    tiedCount: Number.isFinite(Number(input.tiedCount)) ? Number(input.tiedCount) : 1,
+    tiedHandles: Array.isArray(input.tiedHandles)
+      ? input.tiedHandles.filter((name) => typeof name === "string" && name.trim()).map((name) => name.trim())
+      : [],
     points: input.points,
     wins: input.wins,
     showsPlayed: input.showsPlayed,

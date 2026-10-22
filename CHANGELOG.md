@@ -8,6 +8,17 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.86.0] — 2026-10-22
+
+### Added
+- **Shared tour rank on the comms payload (#1135)** — `tour_rankings_daily` includes `tour_tied_handles`. `tour_recap` includes `tiedCount` and `tiedHandles`. Both are the other players at that official rank, in list order. A Cloud Functions deploy is required before a live send writes them.
+
+### Changed
+- **Tour standings description (#1135)** — the tour screen says players with the same points share a rank, the next rank skips, and nightly wins then name only order a tie.
+
+### Fixed
+- **Tour standings badges (#1135)** — official place is competition rank on total points. On the 2026 Fall Tour board, HotDog Billy, ArmenianMan, and TheManMulcahy all show rank 3, marked as a tie. Jeff shows 6. Nightly wins, then name, still order the list inside the tie. Shows played do not.
+
 ## [1.85.0] — 2026-10-22
 
 ### Added

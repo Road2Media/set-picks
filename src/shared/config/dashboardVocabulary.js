@@ -139,7 +139,7 @@ export const POOL_ALL_TIME_STANDINGS_DESCRIPTION =
  */
 export const TOUR_STANDINGS_HEADING = 'Tour standings';
 export const TOUR_STANDINGS_DESCRIPTION =
-  'Running totals for the current tour — points, wins, and shows played across every graded show in this tour.';
+  'Running totals for this tour across every graded show. Players with the same points share a rank, and the next rank skips. Inside a tie, nightly wins then name set the order.';
 
 /** Pool-scoped alias of {@link TOUR_STANDINGS_HEADING} for pool details. */
 export const POOL_TOUR_STANDINGS_HEADING = TOUR_STANDINGS_HEADING;
