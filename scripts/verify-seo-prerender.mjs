@@ -19,6 +19,10 @@ import {
   normalizeTourStatsFacts,
 } from './lib/tourStatsSeoFacts.mjs';
 import {
+  buildFinishedTourWrap,
+  buildFinishedTourWrapHtml,
+} from '../src/features/tour-stats/model/finishedTourWrap.js';
+import {
   APP_BOOT_SHELL_REL_PATH,
   DASHBOARD_BOOT_PRELOAD_MARKER,
   DASHBOARD_BOOT_SHELL_MARKER,
@@ -329,6 +333,94 @@ assert(
   autoEnriched.includes('"@type":"FAQPage"') ||
     autoEnriched.includes('"@type": "FAQPage"'),
   'auto-expand fixture: missing FAQPage JSON-LD',
+);
+
+// #1140: finished tours embed the wrap (same numbers as the doc) above the lists.
+const openFall = buildFinishedTourWrap(autoDocsFixture['2026-fall-tour'], {
+  slug: '2026-fall-tour',
+  today: '2026-10-22',
+});
+assert(openFall == null, 'in-progress fall fixture must not render a wrap');
+
+const finishedSummer = {
+  tourSlug: '2026-summer-tour',
+  tourLabel: '2026 Summer Tour',
+  uniqueSongs: 188,
+  totalSongPlays: 240,
+  showsWithSetlist: 21,
+  tourShowCount: 21,
+  lastShowDate: '2026-09-06',
+  topSongs: [{ title: 'Character Zero', showAppearances: 12, timesPlayed: 14 }],
+  bustouts: [{ title: 'Melt the Guns', gap: 142, showDate: '2026-07-15' }],
+  tourWinners: { handles: ['Rivertranced'], points: 400, uid: 'hidden-uid' },
+  officialSetlist: ['You Enjoy Myself'],
+};
+const summerWrap = buildFinishedTourWrap(finishedSummer, {
+  slug: '2026-summer-tour',
+  today: '2026-10-22',
+});
+assert(summerWrap, 'finished summer fixture must build a wrap');
+assert(summerWrap.uniqueSongs === 188, 'wrap unique songs must match the doc');
+assert(summerWrap.songsPlayed === 240, 'wrap songs played must match the doc');
+assert(summerWrap.showsPlayed === 21, 'wrap shows must match the doc');
+const summerRouteForWrap = PRERENDER_ROUTES.find(
+  (route) => route.tourStatsSeoSlug === '2026-summer-tour',
+);
+assert(summerRouteForWrap, 'summer SEO route missing');
+const summerWrapHtml = injectPrerenderHtml(shell, summerRouteForWrap, {
+  leadHtml: buildFinishedTourWrapHtml(summerWrap),
+  factsHtml: buildTourStatsFactsHtml(normalizeTourStatsFacts(finishedSummer)),
+  ogImage: 'https://www.setlistpickem.com/tour-stats-share/2026-summer-tour.jpg?v=1',
+  ogImageAlt: summerWrap.headline,
+});
+assert(
+  summerWrapHtml.includes('data-tour-wrap="summary"'),
+  'finished tour prerender: missing wrap marker',
+);
+assert(
+  summerWrapHtml.includes('188 unique songs'),
+  'finished tour prerender: unique songs drifted from the doc',
+);
+assert(
+  summerWrapHtml.includes('240 songs played'),
+  'finished tour prerender: songs played drifted from the doc',
+);
+assert(
+  summerWrapHtml.includes('Character Zero'),
+  'finished tour prerender: most played drifted from stored rank',
+);
+assert(
+  summerWrapHtml.includes('Melt the Guns'),
+  'finished tour prerender: missing longest bustout',
+);
+assert(
+  summerWrapHtml.includes('Rivertranced'),
+  'finished tour prerender: missing public winner handle',
+);
+assert(
+  !summerWrapHtml.includes('hidden-uid'),
+  'finished tour prerender: uid must stay off the public page',
+);
+assert(
+  !summerWrapHtml.includes('You Enjoy Myself'),
+  'finished tour prerender: must not print a nightly setlist',
+);
+assert(
+  summerWrapHtml.includes('tour-stats-share/2026-summer-tour.jpg'),
+  'finished tour prerender: missing share image URL',
+);
+const sphereWrap = buildFinishedTourWrap(
+  {
+    ...finishedSummer,
+    tourSlug: '2026-sphere',
+    tourLabel: '2026 Sphere',
+    lastShowDate: '2026-05-03',
+  },
+  { slug: '2026-sphere', today: '2026-10-22' },
+);
+assert(
+  sphereWrap && sphereWrap.headline.includes('2026 Sphere'),
+  'sphere fixture must use the same wrap, not a fall-only string',
 );
 
 const autoDiscovery = tourStatsDiscoveryFromRoutes([

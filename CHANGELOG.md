@@ -8,6 +8,12 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.88.0] — 2026-10-22
+
+### Added
+- **Finished-tour wrap on `/tour-stats/{slug}` (#1140)** — a closed tour (every post-launch date has a setlist, and the last show is before today in Pacific time) gets a short wrap under the title: shows, unique songs, songs played, the same most-played song the frequency list already ranks, bustout count plus the longest gap, and the Bustout Boost line. Fall, summer, and Sphere use the same block. The counts are the public tour-stats fields, and the block is in the prerendered HTML. A 1200×630 JPEG at `/tour-stats-share/{slug}.jpg` is the Open Graph image. Share copies a `utm_campaign=seo_geo` link. A slug that is not in the static SEO registry (Fall) uses the live tour label for the H1, title, and canonical. Sphere and Summer keep their registry titles.
+- **`public_tour_stats.tourWinners` (#1140)** — optional `{ handles, points, tied }` for rank 1. Display handles and points only. Empty and Anonymous handles are dropped. No uid. Written when the tour is finished. `schemaVersion` stays `2` so the existing version `1`/`2` list query still sees the docs. A Cloud Functions deploy plus a public tour-stats refresh is required before the winner line appears. Until then the wrap still shows the song facts.
+
 ## [1.87.0] — 2026-10-22
 
 ### Added

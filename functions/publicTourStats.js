@@ -13,6 +13,10 @@ const {
   fetchPhishnetSongsNormalized,
   isPhishNetPayloadOk,
 } = require("./phishnetSongCatalog");
+const {
+  isFinishedPublicTour,
+  loadPublicTourWinners,
+} = require("./publicTourWinners");
 
 /** Game launch floor — keep aligned with `src/shared/config/gameLaunch.js`. */
 const GAME_LAUNCH_SHOW_DATE = "2026-04-16";
@@ -724,6 +728,29 @@ async function refreshPublicTourStats(db, opts = {}) {
       ...(payload.bustouts || []),
       ...(payload.gapHighlights || []),
     ]);
+    const lastShowDate = showDates[showDates.length - 1] || null;
+    // schemaVersion stays 2. The client fallback query only lists versions
+    // 1 and 2 (`fetchPublicTourStats.js`). `tourWinners` is additive.
+    let tourWinners = null;
+    if (
+      isFinishedPublicTour(
+        {
+          showsWithSetlist: payload.showsWithSetlist,
+          tourShowCount: payload.tourShowCount,
+          lastShowDate,
+        },
+        today
+      )
+    ) {
+      try {
+        tourWinners = await loadPublicTourWinners(db, showDates);
+      } catch (err) {
+        logger.warn("refreshPublicTourStats: tour winner lookup failed", {
+          tourSlug,
+          message: err?.message || String(err),
+        });
+      }
+    }
     await db
       .collection("public_tour_stats")
       .doc(tourSlug)
@@ -733,8 +760,9 @@ async function refreshPublicTourStats(db, opts = {}) {
           tourLabel,
           showDates,
           firstShowDate: showDates[0] || null,
-          lastShowDate: showDates[showDates.length - 1] || null,
+          lastShowDate,
           ...payload,
+          ...(tourWinners ? { tourWinners } : {}),
           // #918: durable stamp cache — survives ranking churn + 429 partials.
           lastPlayedByRow,
           // #666: null when the refresh ran without phish.net (missing key /
