@@ -227,7 +227,10 @@ Document ID is a kebab-case slug from the calendar tour label (`2026 Sphere` →
 | `lastPlayedByRow` | object | **v1.55.2 (#918)** — durable bustout/high-gap Last-date cache (`{ "song|YYYY-MM-DD": "YYYY-MM-DD" }`). Server refresh only; clients may ignore. Survives ranking churn so a song that drops out of `gapHighlights` and later returns keeps its stamp. |
 | `enrichment` | `{ source, enrichedAt } \| null` | **v1.46.0 (#666)** — non-null when rows carry phish.net lifetime fields; `null` when the refresh ran without phish.net (missing key / upstream failure) |
 | `writtenAt` | string | ISO timestamp |
-| `schemaVersion` | number | `2` (**v1.46.0 #666**; `1` before) |
+| `schemaVersion` | number | `2` (**v1.46.0 #666**; `1` before). Stays `2` when `tourWinners` is added (**v1.88.0**). The client list fallback only queries versions `1` and `2`. |
+| `tourWinners` | `{ handles: string[], points: number, tied: boolean }` absent when unknown | **v1.88.0 / #1140.** Rank-1 players on total points (same rule as tour standings). Display handles and points only. `tied` is true when more than one public handle shares rank 1. Omitted when the tour is still open, the picks read fails, or every rank-1 handle is missing or `Anonymous`. No uid. Clients and prerender ignore the field until a refresh writes it. |
+
+**Finished-tour wrap (v1.88.0 / #1140):** public `/tour-stats/{slug}` renders a wrap when `showsWithSetlist >= tourShowCount` and `lastShowDate` is before today (`America/Los_Angeles`). The sentences use the fields above (not a second aggregation, not a nightly setlist). Prerender embeds that block. The production build writes `/tour-stats-share/{slug}.jpg` (1200×630) and points `og:image` at it for a finished SEO slug. Open tours keep the live lede and the site OG card.
 
 **Row enrichment (v1.46.0 / #666, Phase 1 of the gated-external-sources plan):** every refresh fetches phish.net `v5/songs` **server-side** (secret `PHISHNET_API_KEY`; never sent to browsers) and stamps `lifetimePlays` (all-time times played) + `debutYear` onto each row — `null` when phish.net has no data for the title, **absent** when the whole refresh ran unenriched. setlist.fm / phish.com remain behind the explicit legal/product gate (issue #666 phase 3).
 
