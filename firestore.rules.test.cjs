@@ -846,3 +846,57 @@ test("pools: self-join cannot rewrite another member's memberJoinedAt", async ()
     })
   );
 });
+
+test("rewind: public week is readable and not client-writable (#1142)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "rewind_weeks", "2026-11-23"), {
+      weekId: "2026-11-23",
+      showDate: "1995-12-31",
+      playerCount: 0,
+    });
+  });
+
+  await assertSucceeds(getDoc(doc(anon(), "rewind_weeks", "2026-11-23")));
+  await assertFails(
+    setDoc(doc(signedInAs("fan"), "rewind_weeks", "2026-11-23"), {
+      playerCount: 99,
+    })
+  );
+});
+
+test("rewind: answers stay server-only (#1142)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "rewind_answers", "2026-11-23"), {
+      showDate: "1995-12-31",
+      setlist: { s1o: "AC/DC Bag" },
+    });
+  });
+
+  await assertFails(getDoc(doc(anon(), "rewind_answers", "2026-11-23")));
+  await assertFails(getDoc(doc(signedInAs("fan"), "rewind_answers", "2026-11-23")));
+  await assertFails(
+    setDoc(doc(signedInAs("fan", { admin: true }), "rewind_answers", "2026-11-23"), {
+      showDate: "1995-12-31",
+    })
+  );
+});
+
+test("rewind: picks are readable when signed in and never client-writable (#1142)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "rewind_picks", "2026-11-23_fan"), {
+      userId: "fan",
+      weekId: "2026-11-23",
+      score: 10,
+      picks: { s1o: "Tweezer" },
+    });
+  });
+
+  await assertFails(getDoc(doc(anon(), "rewind_picks", "2026-11-23_fan")));
+  await assertSucceeds(getDoc(doc(signedInAs("fan"), "rewind_picks", "2026-11-23_fan")));
+  await assertFails(
+    setDoc(doc(signedInAs("fan"), "rewind_picks", "2026-11-23_fan"), {
+      userId: "fan",
+      score: 999,
+    })
+  );
+});

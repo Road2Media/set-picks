@@ -76,6 +76,15 @@ const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorke
 const { getTriggerSpec } = require("./commsCatalog");
 const { tourCountdownDeliveryPlan } = require("./commsTemplates");
 const { refreshPublicTourStats } = require("./publicTourStats");
+const {
+  assertRewindAdmin,
+  assertRewindPlayer,
+  lockRewindPick: lockRewindPickDoc,
+  readRewindReveal: readRewindRevealDoc,
+  refreshRewindAnswer: refreshRewindAnswerDoc,
+  runScheduledRewindAnswerRefresh,
+  saveRewindWeek: saveRewindWeekDoc,
+} = require("./rewindMode");
 const { refreshPublicMsgGardenStats } = require("./msgGardenStats");
 const {
   rebuildGlobalStatsLeaderboards,
@@ -2439,5 +2448,101 @@ exports.refreshPickRecommendationHistory = onCall(
         `refreshPickRecommendationHistory failed: ${msg}`
       );
     }
+  }
+);
+
+/**
+ * Admin-chosen Rewind week (#1142). Public metadata only — no setlist songs.
+ */
+exports.saveRewindWeek = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    assertRewindAdmin(request);
+    return saveRewindWeekDoc({ db, input: request.data, now: new Date() });
+  }
+);
+
+/**
+ * One historical show, cached on `rewind_answers`. Force skips the 24h wait.
+ * Does not write `official_setlists` or live `picks`.
+ */
+exports.refreshRewindAnswer = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    secrets: [phishnetApiKey],
+    timeoutSeconds: 60,
+  },
+  async (request) => {
+    assertRewindAdmin(request);
+    const key = phishnetApiKey.value();
+    return refreshRewindAnswerDoc({
+      db,
+      weekId: request.data?.weekId,
+      apiKey: String(key || "").trim(),
+      now: new Date(),
+      force: request.data?.force === true,
+    });
+  }
+);
+
+/**
+ * Daily refresh of the open Rewind week when its cache is 24h old.
+ * No fetch when there is no open week.
+ */
+exports.scheduledRewindAnswerRefresh = onSchedule(
+  {
+    schedule: "20 8 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 60,
+    secrets: [phishnetApiKey],
+  },
+  async () => {
+    const summary = await runScheduledRewindAnswerRefresh({
+      db,
+      apiKey: String(phishnetApiKey.value() || "").trim(),
+      now: new Date(),
+    });
+    logger.info("scheduledRewindAnswerRefresh", summary);
+    return null;
+  }
+);
+
+/**
+ * Score a Rewind card onto `rewind_picks`. Never touches live leaderboards.
+ */
+exports.lockRewindPick = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    const uid = assertRewindPlayer(request);
+    return lockRewindPickDoc({
+      db,
+      uid,
+      input: request.data,
+      now: new Date(),
+    });
+  }
+);
+
+/** Rebuild the caller's reveal after a reload. Refused before they lock. */
+exports.readRewindReveal = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    const uid = assertRewindPlayer(request);
+    return readRewindRevealDoc({ db, uid, input: request.data });
   }
 );

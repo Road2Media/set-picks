@@ -3,6 +3,7 @@ import React from 'react';
 import {
   NAV_LABEL_MAKE_PICKS,
   NAV_LABEL_PICKS_LAB,
+  NAV_LABEL_REWIND,
   NAV_LABEL_SCORECARD,
 } from '../../../shared/config/dashboardVocabulary';
 import { PICKS_CLUSTER_PATHS } from '../../../shared/config/dashboardRoutes';
@@ -31,10 +32,18 @@ export default function PicksClusterMobileChrome({ items }) {
   );
 }
 
-export function buildPicksClusterNavItems(makePicksTo) {
-  return [
+export function buildPicksClusterNavItems(makePicksTo, options = {}) {
+  const items = [
     { to: makePicksTo, label: NAV_LABEL_MAKE_PICKS, end: true },
     { to: PICKS_CLUSTER_PATHS.lab, label: NAV_LABEL_PICKS_LAB, end: true },
     { to: PICKS_CLUSTER_PATHS.scorecard, label: NAV_LABEL_SCORECARD, end: true },
   ];
+  if (options.includeRewind) {
+    items.push({
+      to: PICKS_CLUSTER_PATHS.rewind,
+      label: NAV_LABEL_REWIND,
+      end: true,
+    });
+  }
+  return items;
 }

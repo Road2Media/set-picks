@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.95.0  
+**Version:** 1.96.0  
 
 
 **SemVer:** https://semver.org  
@@ -407,6 +407,21 @@ Until rules and the functions are deployed, the page and prerender use the commi
 
 **Deploy (human, not CI):** rules first, then `functions:scheduledPublicMsgGardenStats,functions:refreshPublicMsgGardenStats`, then one admin `refreshPublicMsgGardenStats` so the doc exists before 08:10 ET. The schedule uses secret `PHISHNET_API_KEY` (already provisioned for other Phish.net jobs). These two functions are not part of `npm run deploy:functions:phishnet`.
 
+### 1.23 Rewind Mode (`rewind_weeks`, `rewind_state`, `rewind_answers`, `rewind_picks`) (**v1.96.0 / #1142**)
+
+Off-tour week. One admin-chosen historical show. Player surfaces stay dark until `VITE_ENABLE_REWIND_MODE=true`. Live standings keep reading `picks` only.
+
+| Collection | Read | Write | Contents |
+|------------|------|-------|----------|
+| `rewind_weeks/{weekId}` | Public | Admin SDK | Week id (`YYYY-MM-DD` open date), `showDate`, `title`, `venue`, `status` (`open` \| `closed`), `opensAt`, `closesAt`, `phishNetUrl`, `playerCount`, `scoreSum`, `averageScore`, `correctSlotCounts` (six numbers), `answerCachedAt`, `attribution`, `schemaVersion`. No song titles. |
+| `rewind_state/current` | Public | Admin SDK | `{ weekId }` pointer to the featured week. |
+| `rewind_answers/{weekId}` | None | Admin SDK | Scoring payload for that one show: slot map, `officialSetlist`, `encoreSongs`, `bustouts`, `cachedAt`. |
+| `rewind_picks/{weekId}_{uid}` | Signed in | Admin SDK | That player's six guesses, `score`, `correctSlots`, `handle`, `lockedAt`. Not the ordered setlist. |
+
+`weekId` is the UTC date the week opens. `showDate` must be before the save day. A week that already has locks cannot change `showDate`.
+
+**Deploy (human, not CI):** see §2.10. Do not run a backfill. There is no historical pick migration.
+
 ---
 
 ## 2. Cloud Function Callables
@@ -672,6 +687,27 @@ Taking effect in production requires a rules deploy and a functions deploy, in t
 
 Until those deploys, signup does not increment the counter and finished tours do not freeze.
 
+### 2.10 Rewind Mode callables (**v1.96.0 / #1142**)
+
+Region `us-central1`. `saveRewindWeek` and `refreshRewindAnswer` require the admin claim. `lockRewindPick` and `readRewindReveal` require a signed-in user. `scheduledRewindAnswerRefresh` runs at 08:20 `America/New_York`.
+
+| Callable | Body | Result |
+|----------|------|--------|
+| `saveRewindWeek` | `{ weekId, showDate, title, venue, closesOn, status? }` | Public week doc. Strips any setlist fields. Sets `rewind_state/current` when `status` is `open`. |
+| `refreshRewindAnswer` | `{ weekId, force? }` | Fetches **that one** Phish.net showdate into `rewind_answers`. Skips the fetch when the cache is under 24 hours unless `force` is true. Rescores existing `rewind_picks` for the week. Response is `{ ok, skipped, weekId, showDate, songCount, playersRescored }` — a count, not titles. |
+| `scheduledRewindAnswerRefresh` | none | Refreshes the current week only when it is `open` and the cache is at least 24 hours old. A closed week does not call Phish.net. |
+| `lockRewindPick` | `{ weekId, picks }` | Writes `rewind_picks/{weekId}_{uid}` and increments week aggregates. A second call returns the first card. Reveal is six slots (`guess`, `actual`, `points`, `kind`). No `officialSetlist`. Fails closed when the cache is missing. |
+| `readRewindReveal` | `{ weekId }` | Same reveal after reload. Fails until that user has locked. |
+
+These writes never touch `picks`, `users`, or `official_setlists`.
+
+**Deploy (human, after this merges, before anyone sets the flag):**
+
+1. `firebase deploy --only firestore:rules --project set-picks`
+2. `firebase deploy --only functions:saveRewindWeek,functions:refreshRewindAnswer,functions:scheduledRewindAnswerRefresh,functions:lockRewindPick,functions:readRewindReveal --project set-picks`
+
+`refreshRewindAnswer` and the scheduler bind the existing `PHISHNET_API_KEY` secret. No new secret. Not part of `npm run deploy:functions:phishnet`. Then an admin saves a week in War Room and refreshes the cache once. Leave `VITE_ENABLE_REWIND_MODE` unset until that week should be visible. Setting it is a Vercel env change plus a rebuild (Production and Preview). Do not run a backfill.
+
 ---
 
 ## 3. Public URL Routes
@@ -699,6 +735,9 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/password-reset-complete` | None | Password reset page. **v1.84.0 (#1049):** Resend mail links here with `oobCode`. The page calls `verifyPasswordResetCode` / `confirmPasswordReset`. Older Firebase `/__/auth/action` links still open until they expire. |
 | `/setup` | Auth | Profile setup (new users) |
 | `/dashboard/*` | Auth | Full game dashboard |
+| `/rewind` | None | **v1.96.0 (#1142):** public Rewind results for the featured week. Player count, average score, slot hit counts, Phish.net link. No setlist. `noindex` while `VITE_ENABLE_REWIND_MODE` is not `true`. Not prerendered and not in the sitemap. |
+| `/rewind/:weekId` | None | **v1.96.0 (#1142):** same page for one week id (`YYYY-MM-DD` open date). |
+| `/dashboard/rewind` | Auth | **v1.96.0 (#1142):** play the featured week. Picks tab stays active. Date picker hides. The Rewind segment is hidden unless `VITE_ENABLE_REWIND_MODE=true`. Coming-soon shell otherwise. |
 
 Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
@@ -720,7 +759,7 @@ Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
 **Picks — Prediction Lab (**v1.38.0 / #651**, moved **v1.64.0 / #766**, add confirmation **v1.72.0**):** lives at **`/dashboard/picks/lab`**. Opt-in slot recommendations consuming Storage `pick-recommendations.json` (see §2.3). **Use** fills the shared cluster draft (same card as Make Picks) and does **not** persist — Lock In Picks / Update Picks still writes `picks/{showDate}_{uid}`. Lab shows a live Your card plus that save CTA when the draft is dirty. Manual autocomplete on Make Picks is unchanged. When `VITE_ENABLE_PREDICTION_LAB` is not `true`, the Lab route still renders (coming-soon shell) — the tertiary tab is not hidden. **GA4 (client):** `prediction_lab_open` `{ show_id, model_version }`, `prediction_lab_impression` `{ show_id, slot, model_version, risk_band, rank }`, `prediction_lab_select` `{ show_id, slot, model_version, risk_band, rank, song_normalized }`.
 
-**Field RUM — web-vitals (**v1.44.0 / #801**, route groups **v1.49.1 / #857**):** production hostnames only. Client emits GA4 `web_vital` for LCP, INP, CLS, TTFB, FCP after idle. Params: `{ metric_name, value, metric_id, metric_rating, route_group, navigation_type }` where `route_group` is `splash` \| `login` \| `marketing` \| `tour_stats` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` and `navigation_type` is `navigate` \| `reload` \| `back_forward` \| `prerender`. Ops: [`docs/WEB_VITALS_RUM.md`](WEB_VITALS_RUM.md).
+**Field RUM — web-vitals (**v1.44.0 / #801**, route groups **v1.49.1 / #857**):** production hostnames only. Client emits GA4 `web_vital` for LCP, INP, CLS, TTFB, FCP after idle. Params: `{ metric_name, value, metric_id, metric_rating, route_group, navigation_type }` where `route_group` is `splash` \| `login` \| `marketing` \| `tour_stats` \| `rewind` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` and `navigation_type` is `navigate` \| `reload` \| `back_forward` \| `prerender`. Ops: [`docs/WEB_VITALS_RUM.md`](WEB_VITALS_RUM.md).
 
 **Auth interaction timings (**v1.49.1 / #857**, hop **v1.52.0 / #880**):** production hostnames only (same `ga4Event` gate). `auth_surface_timing` `{ phase: paint_to_ready, value, route_group: login, warm_path, navigation_type }` once per `/login` warm (`warm_path`: `immediate` \| `idle` \| `intent` \| `speculative`). `auth_google_timing` `{ phase: click_to_popup \| credential_to_nav, value, method: google, auth_flow, outcome, error_code? }`. `auth_hop_timing` `{ phase: cta_to_form, value, intent: signin \| signup, warm_path, route_group: login }` when a marketing CTA stamped the hop. Ops: [`docs/AUTH_TELEMETRY_RUNBOOK.md`](AUTH_TELEMETRY_RUNBOOK.md) · plan [`docs/AUTH_SEAMLESS_PATH.md`](AUTH_SEAMLESS_PATH.md) §7.
 
@@ -818,6 +857,7 @@ These `VITE_*` variables are read at build time. Adding or removing one is a MIN
 | `VITE_PICK_RECOMMENDATIONS_URL` | No | CDN URL override for pick recommendations (#650) |
 | `VITE_ENABLE_SPONSOR_SLOTS` | No | `true` renders reserved sponsor/ad placements (`SponsorSlot`); omit to hide (default) |
 | `VITE_ENABLE_PREDICTION_LAB` | No | `true` renders Prediction Lab + loads pick-recommendations artifact on **`/dashboard/picks/lab`**. Omit to show the Lab coming-soon shell (default). The Lab tertiary segment stays visible either way (**v1.64.0 / #766**). Use on Preview/local for QA; leave unset in Production until launch |
+| `VITE_ENABLE_REWIND_MODE` | No | **v1.96.0 (#1142).** `true` shows the Rewind segment, the play card, and public `/rewind` results. Omit to keep the closed shell (default). Turning it on is a Vercel env change plus a rebuild. Do that after the §2.10 functions and rules deploy, and after an admin has cached the first week. |
 
 ### 4.1 Cloud Functions runtime env vars
 

@@ -337,5 +337,39 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    /**
+     * Rewind week metadata and aggregates (#1142). No song titles.
+     * Admin SDK writes the doc. Anyone may read it.
+     */
+    match /rewind_weeks/{weekId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    /**
+     * Pointer to the featured Rewind week (`current`). Week id only.
+     */
+    match /rewind_state/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    /**
+     * Cached scoring payload for one Rewind show. Clients never read it.
+     * The lock callable returns six slot results to the player who locked.
+     */
+    match /rewind_answers/{weekId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * Rewind cards. Separate from `picks`, so live standings queries miss them.
+     * Signed-in players can read the board (handle + score). Clients cannot write.
+     */
+    match /rewind_picks/{pickId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
   }
 }
