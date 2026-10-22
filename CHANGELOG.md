@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.91.2] — 2026-10-22
+
+### Fixed
+- **Tour-stats sitemap `lastmod` (#930)** — production `sitemap.xml` now stamps `<lastmod>` on `/tour-stats` and each prerendered `/tour-stats/{slug}` from that tour’s `public_tour_stats.lastShowDate` (hub = newest of those dates). Google ignores `changefreq`. `writtenAt` is not used, because the nightly refresh rewrites it when the show list did not change. Home, about, and the keyword page stay unstamped. `/llms.txt` stays out of the sitemap.
+
+### Changed
+- **Child D ops log (#930)** — playbook §4 records the 2026-10-12 live GSC pack (71 impressions, 5 clicks, registry 0/17). §6 holds an unposted summer-URL draft (`utm_campaign=seo_926`, `utm_content=tour-stats-summer-2026`). Search Console Request indexing and the off-site post stay human steps on property `sc-domain:setlistpickem.com`.
+
 ## [1.91.1] — 2026-10-22
 
 ### Fixed

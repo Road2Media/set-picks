@@ -33,7 +33,7 @@ Two different “auto” layers — do not conflate them.
 |-------|--------------|------|-----|
 | Product `_index` | `public_tour_stats/_index` + per-slug docs; public filter / hub “current tour” | Through-today shows exist (nightly refresh) | Cloud Functions |
 | SEO auto-expand | Prerender HTML under `dist/tour-stats/{slug}/`, `dist/sitemap.xml`, `dist/llms.txt` | `showsWithSetlist ≥ 4` **and** `uniqueSongs ≥ 20` **and** `lastShowDate` in the current UTC year. Does **not** expand on the first empty night. | Next production `vite build` + `prerender-seo.mjs` |
-| GSC Request indexing | Optional nudge for a high-priority new slug | Human judgment after `main` is READY | Human — **not** automated |
+| GSC Request indexing | One-time nudge for hub, summer slug, and `/llms.txt` | Human judgment after `main` is READY | Human — **not** automated. Sitemap `<lastmod>` (#930) is the ongoing recrawl signal for `/tour-stats` URLs only. |
 
 Constants live in `scripts/lib/tourStatsSeoAutoExpand.mjs` (`TOUR_STATS_SEO_MIN_SHOWS_WITH_SETLIST = 4`, `TOUR_STATS_SEO_MIN_UNIQUE_SONGS = 20`). First-wave allowlist is the current-year `lastShowDate` rule (plus optional `TOUR_STATS_SEO_ALLOWLIST`).
 
@@ -70,8 +70,8 @@ npm run verify:og-home
    - `https://www.setlistpickem.com/tour-stats/2026-summer-tour`
    - `https://www.setlistpickem.com/llms.txt`
 4. **Test live URL** → confirm favicons / title / body (or prerendered content once #659 ships).
-5. **Request indexing** on each changed URL. **#930 ops AC (human):** request indexing on the three URLs above after `main` is READY.
-6. If sitemap changed: Sitemaps → confirm `https://www.setlistpickem.com/sitemap.xml` (re-submit only if GSC shows a durable error; “Temporary processing error” is usually transient).
+5. **Request indexing** on each changed URL. **#930 ops AC (human):** request indexing on the three URLs above after `main` is READY. Use the **Domain** property `sc-domain:setlistpickem.com` (#1138, live 2026-10-21). Inspect **www** URLs inside that property. The reporting service account is Restricted and cannot press this button; this repo does not call a reindex API.
+6. If sitemap changed: Sitemaps → confirm `https://www.setlistpickem.com/sitemap.xml` (re-submit only if GSC shows a durable error; “Temporary processing error” is usually transient). From the #930 build onward, `dist/sitemap.xml` stamps `<lastmod>` on `/tour-stats` and each prerendered `/tour-stats/{slug}` from that slug’s `public_tour_stats.lastShowDate` (hub = newest of those dates). Google ignores `<changefreq>`. `/llms.txt` is not in the sitemap, so step 5 is still required for that file. Do not stamp `writtenAt` — the nightly refresh rewrites it even when the show list did not change.
 7. Log the date in §4 weekly table (notes column).
 
 **Do not** request indexing on apex `https://setlistpickem.com/` — it redirects.
@@ -213,6 +213,7 @@ Historical rows below stay for the 2026-07 baseline. Prefer the Action pack + `c
 | 2026-08-23 | | | | | | | |
 | 2026-08-30 | | | | | | | **#930 resume week.** After promote: request indexing on hub + `/tour-stats/2026-summer-tour` + `/llms.txt`; fill last-7-days totals here. |
 | 2026-09-06 | | | | | | | First full week after Child D reindex (if indexing landed 2026-09-02). |
+| 2026-10-12 | 71 | 5 | `phish stats` and `setlist game` (2 impressions each; neither is a registry id) | unknown — C1–C4 had no GSC rows | _not in pack_ | _not in pack_ | Live pack on [#926](https://github.com/Road2Media/set-picks/issues/926#issuecomment-6324127195) (posted 2026-10-21). Window 2026-10-14 → 2026-10-20. CTR 7.0%, avg position 6.0. Registry queries with rows: **0 / 17**, including S4–S6. GA4 organic landing: `/tour-stats` 1 session. Property `sc-domain:setlistpickem.com`. |
 
 **How to fill if the Action has not posted yet:** GSC → Performance → last 7 days → Totals (manual). Optional CSV stays on your machine. After #932 credentials are live, copy site totals from the #926 pack instead of this table. Machine log: append-only `crew/output/seo/weekly-log.jsonl` (gitignored).
 
@@ -260,7 +261,12 @@ Example (**#930** — share the **summer stats URL**, not only home, after a rea
 
 (`utm_campaign=seo_geo` is also valid; pick one and keep it consistent for the post.)
 
-**#930 ops AC (human):** log ≥1 UTM’d off-site share in this playbook §5 Status/Action, §9 checklist, **or** a comment on [#926](https://github.com/pat792/set-picks/issues/926) / [#930](https://github.com/pat792/set-picks/issues/930).
+**Draft caption (not posted).** Re-read the public summer page before sending. Figures below are the public aggregates on 2026-10-22 (`public_tour_stats/2026-summer-tour`: 21 shows, 191 unique songs, 50 songs back after a 30+ show gap). One cited return already on that page: Melt the Guns, gap 2052, show date 2026-07-31. The current calendar tour is Fall (`2026-fall-tour`); #930 still asks for the **summer** URL.
+
+> 2026 Summer Tour setlist stats: 191 unique songs across 21 shows, and 50 bustouts (songs back after a 30+ show gap). Melt the Guns returned July 31 after 2,052 shows.
+> https://www.setlistpickem.com/tour-stats/2026-summer-tour?utm_source=discord&utm_medium=social&utm_campaign=seo_926&utm_content=tour-stats-summer-2026
+
+**#930 ops AC (human):** this draft is not the acceptance check. After a person posts it, log the live post in this playbook §5 Status/Action, §9 checklist, **or** a comment on [#926](https://github.com/Road2Media/set-picks/issues/926) / [#930](https://github.com/Road2Media/set-picks/issues/930).
 
 Optional future event: `organic_landing` (landing path + campaign) — only if product analytics needs it; not required for #664.
 
@@ -301,9 +307,19 @@ Docs (llms + this playbook) ship in the product PR. The two remaining acceptance
 
 | Step | Owner | Status |
 |------|--------|--------|
-| `public/llms.txt` Tour Insights definitions + summer deep link | Agent | Done (this PR) |
-| Playbook §3 S4–S6 + §4 packs/secrets pointer (E0 #931 / E1 #932) | Agent | Done |
-| GSC URL Inspection + **Request indexing** on hub, `/tour-stats/2026-summer-tour`, `/llms.txt` | Human | **Open** — after promote |
-| ≥1 UTM’d off-site share of the **summer** URL (not only home) after a real bustout night; campaign `seo_geo` or `seo_926`, content `tour-stats-summer-2026` | Human | **Open** — log here or on #926 / #930 |
+| `public/llms.txt` Tour Insights definitions + summer deep link | Agent | Done (#981) |
+| Playbook §3 S4–S6 + §4 packs/secrets pointer (E0 #931 / E1 #932) | Agent | Done (#981). First live pack is the 2026-10-12 row in §4. |
+| Sitemap `<lastmod>` on `/tour-stats` + prerendered slugs from `lastShowDate` | Agent | Done (#930) — ships in `dist/sitemap.xml` on the next production build. Does not index `/llms.txt`. |
+| GSC URL Inspection + **Request indexing** on hub, `/tour-stats/2026-summer-tour`, `/llms.txt` | Human | **Open** — after this `lastmod` change is on `main`. Property `sc-domain:setlistpickem.com`. |
+| ≥1 UTM’d off-site share of the **summer** URL (not only home) after a real bustout night; campaign `seo_geo` or `seo_926`, content `tour-stats-summer-2026` | Human | **Open** — §6 has a draft. Log the live post here or on #926 / #930. |
 
 Do **not** request indexing on apex `https://setlistpickem.com/` or on `/tour-stats/summer-tour-2026` (that path 308s to the live slug).
+
+### Human console steps (not done in git)
+
+1. Wait until production `main` is READY and `https://www.setlistpickem.com/sitemap.xml` shows `<lastmod>` on the hub and `/tour-stats/2026-summer-tour`.
+2. Search Console → property `sc-domain:setlistpickem.com` → URL Inspection → **Request indexing** on:
+   - `https://www.setlistpickem.com/tour-stats`
+   - `https://www.setlistpickem.com/tour-stats/2026-summer-tour`
+   - `https://www.setlistpickem.com/llms.txt`
+3. Post the §6 summer URL off-site (Discord or another channel the community rules allow). Paste the live post link on #930 or #926. Do not mark §9 done before that post exists.

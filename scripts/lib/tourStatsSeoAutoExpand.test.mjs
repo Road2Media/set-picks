@@ -6,7 +6,11 @@ import {
   TOUR_STATS_SEO_MIN_UNIQUE_SONGS,
   appendLlmsTourStatsLinks,
   appendSitemapTourStatsUrls,
+  applySitemapLastmods,
   buildAutoTourStatsPrerenderRoute,
+  maxSitemapLastmod,
+  sitemapLastmodDate,
+  tourStatsSitemapLastmodMap,
   isTourStatsSeoAutoExpandEnabled,
   lastShowDateIsInYear,
   parseSlugCsv,
@@ -246,5 +250,75 @@ describe('tourStatsSeoAutoExpand (#959)', () => {
       [...parseSlugCsv(' 2026-fall-tour, _index, ,2026-sphere ')],
       ['2026-fall-tour', '2026-sphere'],
     );
+  });
+});
+
+describe('tour-stats sitemap lastmod (#930)', () => {
+  it('accepts a real show date and rejects writtenAt-style noise and impossible days', () => {
+    assert.equal(sitemapLastmodDate('2026-09-06'), '2026-09-06');
+    assert.equal(sitemapLastmodDate('2026-10-21T11:30:32.063Z'), '2026-10-21');
+    assert.equal(sitemapLastmodDate('2026-02-31'), null);
+    assert.equal(sitemapLastmodDate('09/06/2026'), null);
+    assert.equal(sitemapLastmodDate(''), null);
+    assert.equal(maxSitemapLastmod(['2026-09-06', 'not-a-date', '2026-10-12']), '2026-10-12');
+  });
+
+  it('stamps hub and slug lastmod from lastShowDate and leaves other urls alone', () => {
+    const lastmods = tourStatsSitemapLastmodMap(
+      {
+        '2026-summer-tour': '2026-09-06',
+        '2026-sphere': '2026-05-02',
+        '2026-fall-tour': '2026-10-12',
+        _index: '2026-10-12',
+        '': '2026-10-12',
+      },
+      { siteUrl: 'https://www.setlistpickem.com' },
+    );
+    assert.equal(
+      lastmods['https://www.setlistpickem.com/tour-stats/2026-summer-tour'],
+      '2026-09-06',
+    );
+    assert.equal(lastmods['https://www.setlistpickem.com/tour-stats'], '2026-10-12');
+    assert.equal(lastmods['https://www.setlistpickem.com/tour-stats/_index'], undefined);
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.setlistpickem.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats/2026-summer-tour</loc>
+    <lastmod>2020-01-01</lastmod>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/about</loc>
+    <changefreq>monthly</changefreq>
+  </url>
+</urlset>
+`;
+    const stamped = applySitemapLastmods(xml, lastmods);
+    assert.match(
+      stamped,
+      /<loc>https:\/\/www\.setlistpickem\.com\/tour-stats<\/loc>\s*<lastmod>2026-10-12<\/lastmod>/,
+    );
+    assert.match(
+      stamped,
+      /<loc>https:\/\/www\.setlistpickem\.com\/tour-stats\/2026-summer-tour<\/loc>\s*<lastmod>2026-09-06<\/lastmod>/,
+    );
+    assert.equal(stamped.includes('2020-01-01'), false);
+    const blocks = [...stamped.matchAll(/<url>([\s\S]*?)<\/url>/gi)].map((m) => m[1]);
+    const home = blocks.find((block) => block.includes('https://www.setlistpickem.com/</loc>'));
+    const about = blocks.find((block) => block.includes('/about</loc>'));
+    assert.ok(home && !home.includes('<lastmod>'));
+    assert.ok(about && !about.includes('<lastmod>'));
+    assert.equal(applySitemapLastmods(xml, { '/nope': 'yesterday' }), xml);
   });
 });

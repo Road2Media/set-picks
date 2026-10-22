@@ -51,8 +51,10 @@ import {
 import {
   appendLlmsTourStatsLinks,
   appendSitemapTourStatsUrls,
+  applySitemapLastmods,
   resolveAutoExpandTourStatsRoutes,
   tourStatsDiscoveryFromRoutes,
+  tourStatsSitemapLastmodMap,
 } from './lib/tourStatsSeoAutoExpand.mjs';
 import { TOUR_STATS_SEO_FACT_SLUGS } from '../src/shared/config/seoRoutes.js';
 
@@ -442,6 +444,81 @@ assert(
 assert(
   !autoSitemap.includes('thin-empty-night'),
   'auto-expand sitemap fixture: must not list the thin tour',
+);
+const childDLastmods = tourStatsSitemapLastmodMap(
+  {
+    '2026-summer-tour': '2026-09-06',
+    '2026-fall-tour': '2026-10-12',
+  },
+  { siteUrl: 'https://www.setlistpickem.com' },
+);
+const childDSitemap = applySitemapLastmods(
+  `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.setlistpickem.com/</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats/2026-summer-tour</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/llms.txt</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+</urlset>
+`,
+  childDLastmods,
+);
+assert(
+  childDSitemap.includes(
+    '<loc>https://www.setlistpickem.com/tour-stats/2026-summer-tour</loc>\n    <lastmod>2026-09-06</lastmod>',
+  ),
+  'Child D sitemap: summer slug must carry lastShowDate lastmod',
+);
+assert(
+  childDSitemap.includes(
+    '<loc>https://www.setlistpickem.com/tour-stats</loc>\n    <lastmod>2026-10-12</lastmod>',
+  ),
+  'Child D sitemap: hub lastmod is the newest prerendered tour date',
+);
+assert(
+  !/<loc>https:\/\/www\.setlistpickem\.com\/llms\.txt<\/loc>\s*<lastmod>/.test(childDSitemap),
+  'Child D sitemap: /llms.txt stays out of lastmod stamping (Request indexing is human)',
+);
+const llmsBrief = readFileSync(join(root, 'public', 'llms.txt'), 'utf8');
+assert(
+  llmsBrief.includes('Unique songs:') &&
+    llmsBrief.includes('Song frequency:') &&
+    llmsBrief.includes('Bustouts:') &&
+    llmsBrief.includes('https://www.setlistpickem.com/tour-stats/2026-summer-tour') &&
+    llmsBrief.includes('https://www.setlistpickem.com/tour-stats'),
+  'Child D llms.txt: unique / frequency / bustout definitions and summer + hub links',
+);
+const playbook = readFileSync(join(root, 'docs', 'SEO_GEO_PLAYBOOK.md'), 'utf8');
+for (const needle of [
+  'bustouts summer tour 2026',
+  'phish bustout list this tour',
+  'unique songs played this tour',
+  'utm_campaign=seo_926',
+  'utm_content=tour-stats-summer-2026',
+  'https://www.setlistpickem.com/llms.txt',
+  'sc-domain:setlistpickem.com',
+]) {
+  assert(playbook.includes(needle), `Child D playbook missing ${needle}`);
+}
+assert(
+  /GSC URL Inspection[\s\S]*\| Human \| \*\*Open\*\*/.test(playbook),
+  'Child D playbook must keep GSC Request indexing as an open human step',
+);
+assert(
+  /UTM’d off-site share[\s\S]*\| Human \| \*\*Open\*\*/.test(playbook),
+  'Child D playbook must keep the off-site UTM share as an open human step',
 );
 const autoLlms = appendLlmsTourStatsLinks(
   `## Links

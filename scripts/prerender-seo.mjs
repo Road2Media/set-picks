@@ -10,6 +10,8 @@
  * #959: additional `/tour-stats/{slug}` pages auto-expand from `_index` when
  * the thin-page gate passes (see `scripts/lib/tourStatsSeoAutoExpand.mjs`).
  * Sitemap + `llms.txt` in `dist/` are rewritten from the same registry.
+ * #930: tour-stats `<lastmod>` comes from `lastShowDate` (hub = newest).
+ * `/llms.txt` stays out of the sitemap — Request indexing on that URL is human.
  * #869: also writes `dist/tour-stats-data/{slug}.json` so public `/tour-stats`
  * can paint aggregates without App Check / Firestore SDK.
  * Boot shells: `dashboard` / `spa-boot` use `dist/app.html`;
@@ -38,9 +40,12 @@ import { fetchFirestoreRestDocument } from './lib/firestoreRestDecode.mjs';
 import {
   appendLlmsTourStatsLinks,
   appendSitemapTourStatsUrls,
+  applySitemapLastmods,
   isTourStatsSeoAutoExpandEnabled,
   resolveAutoExpandTourStatsRoutes,
+  sitemapLastmodDate,
   tourStatsDiscoveryFromRoutes,
+  tourStatsSitemapLastmodMap,
 } from './lib/tourStatsSeoAutoExpand.mjs';
 import {
   buildTourStatsFactsHtml,
@@ -305,6 +310,29 @@ async function resolvePrerenderRoutes() {
   return [...PRERENDER_ROUTES, ...extra];
 }
 
+/**
+ * Dates already fetched into `publicTourStatsDocCache` during this build.
+ * Missing docs are omitted — we do not stamp "today".
+ *
+ * @param {Array<{ tourStatsSeoSlug?: string }>} routes
+ * @returns {Record<string, string>}
+ */
+function collectTourStatsSitemapLastmods(routes) {
+  /** @type {Record<string, string>} */
+  const slugDates = {};
+  for (const route of Array.isArray(routes) ? routes : []) {
+    const slug =
+      typeof route?.tourStatsSeoSlug === 'string'
+        ? route.tourStatsSeoSlug.trim()
+        : '';
+    if (!slug) continue;
+    const doc = publicTourStatsDocCache.get(slug);
+    const date = sitemapLastmodDate(doc?.lastShowDate);
+    if (date) slugDates[slug] = date;
+  }
+  return tourStatsSitemapLastmodMap(slugDates, { siteUrl: SEO_CONFIG.siteUrl });
+}
+
 function emitTourStatsDiscoveryFiles(allRoutes) {
   const { locs, llms } = tourStatsDiscoveryFromRoutes(allRoutes);
   const publicSitemap = join(root, 'public', 'sitemap.xml');
@@ -313,9 +341,9 @@ function emitTourStatsDiscoveryFiles(allRoutes) {
     console.warn('prerender-seo: missing public/sitemap.xml or public/llms.txt');
     return;
   }
-  const sitemap = appendSitemapTourStatsUrls(
-    readFileSync(publicSitemap, 'utf8'),
-    locs,
+  const sitemap = applySitemapLastmods(
+    appendSitemapTourStatsUrls(readFileSync(publicSitemap, 'utf8'), locs),
+    collectTourStatsSitemapLastmods(allRoutes),
   );
   const llmsTxt = appendLlmsTourStatsLinks(readFileSync(publicLlms, 'utf8'), llms);
   writeFileSync(join(distDir, 'sitemap.xml'), sitemap, 'utf8');

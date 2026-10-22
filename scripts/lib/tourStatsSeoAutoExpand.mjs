@@ -279,6 +279,105 @@ export function appendSitemapTourStatsUrls(xml, locs) {
 }
 
 /**
+ * Sitemap `<lastmod>` date. Accepts `YYYY-MM-DD` or an ISO timestamp and
+ * returns the calendar date only when it is a real UTC day.
+ *
+ * Use `public_tour_stats.lastShowDate`, not `writtenAt`. The nightly refresh
+ * rewrites `writtenAt` even when the show list is unchanged, and Google drops
+ * `<lastmod>` that moves without a page change. `changefreq` is ignored.
+ *
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+export function sitemapLastmodDate(value) {
+  if (typeof value !== 'string') return null;
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  if (
+    utc.getUTCFullYear() !== year ||
+    utc.getUTCMonth() !== month - 1 ||
+    utc.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return `${match[1]}-${match[2]}-${match[3]}`;
+}
+
+/**
+ * @param {unknown[]} dates
+ * @returns {string | null}
+ */
+export function maxSitemapLastmod(dates) {
+  const valid = (Array.isArray(dates) ? dates : [])
+    .map((value) => sitemapLastmodDate(value))
+    .filter(Boolean)
+    .sort();
+  return valid.length ? valid[valid.length - 1] : null;
+}
+
+/**
+ * Absolute sitemap locs for prerendered tour-stats slugs, plus the hub.
+ * Hub `<lastmod>` is the newest slug date (the hub follows the current tour).
+ * URLs with no valid date are omitted so unchanged marketing pages stay unstamped.
+ *
+ * @param {Record<string, unknown>} slugDates
+ * @param {{ siteUrl?: string }} [opts]
+ * @returns {Record<string, string>}
+ */
+export function tourStatsSitemapLastmodMap(slugDates, opts = {}) {
+  const siteUrl = String(opts.siteUrl || SEO_CONFIG.siteUrl).replace(/\/$/, '');
+  /** @type {Record<string, string>} */
+  const out = {};
+  const dates = [];
+  for (const [slug, raw] of Object.entries(slugDates || {})) {
+    const clean = String(slug || '').trim();
+    const date = sitemapLastmodDate(raw);
+    if (!clean || clean.startsWith('_') || !date) continue;
+    out[`${siteUrl}/tour-stats/${clean}`] = date;
+    dates.push(date);
+  }
+  const hub = maxSitemapLastmod(dates);
+  if (hub) out[`${siteUrl}/tour-stats`] = hub;
+  return out;
+}
+
+/**
+ * Insert or replace `<lastmod>` on url blocks whose `<loc>` is in `lastmods`.
+ * Other urls, including home / about / keyword, are left unchanged.
+ *
+ * @param {string} xml
+ * @param {Record<string, string>} lastmods
+ * @returns {string}
+ */
+export function applySitemapLastmods(xml, lastmods) {
+  const map = new Map();
+  for (const [loc, raw] of Object.entries(lastmods || {})) {
+    const key = String(loc || '').trim();
+    const date = sitemapLastmodDate(raw);
+    if (!key || !date) continue;
+    map.set(key, date);
+  }
+  if (!map.size) return xml;
+  return String(xml).replace(/<url>([\s\S]*?)<\/url>/gi, (block, inner) => {
+    const locMatch = inner.match(/<loc>\s*([^<]+?)\s*<\/loc>/i);
+    if (!locMatch) return block;
+    const date = map.get(locMatch[1].trim());
+    if (!date) return block;
+    const nextInner = /<lastmod>[\s\S]*?<\/lastmod>/i.test(inner)
+      ? inner.replace(/<lastmod>[\s\S]*?<\/lastmod>/i, `<lastmod>${date}</lastmod>`)
+      : inner.replace(
+          /(<loc>\s*[^<]+?\s*<\/loc>)/i,
+          `$1\n    <lastmod>${date}</lastmod>`,
+        );
+    return `<url>${nextInner}</url>`;
+  });
+}
+
+/**
  * Append missing tour-stats lines to the llms.txt Links section.
  *
  * @param {string} text
