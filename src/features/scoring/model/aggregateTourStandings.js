@@ -2,6 +2,7 @@ import {
   pickCountsTowardSeason,
   reduceShowWinners,
 } from '../../../shared/utils/showAggregation';
+import { assignTourDisplayRanks } from './tourStandingsRank';
 
 /**
  * Reduce a list of `{ date, picks: PickLike[] }` into a sorted tour
@@ -16,10 +17,11 @@ import {
  *   - Wins: one per show where they tied/beat the global max (across every
  *     graded, non-empty pick for that show). Ties share. `max === 0 → skip`.
  *
- * Sort: `totalPoints` desc, then `wins` desc, then `handle` asc as a stable
- * placeholder. Deterministic intra-tie ordering that matches the real UI
- * lives in #73 §3.5; this function will pick up that helper when it lands
- * so every surface stays consistent.
+ * Sort: `totalPoints` desc, then `wins` desc, then `handle` asc. That order
+ * only sequences names inside a points tie. It does not award a sole place.
+ * Shows played do not order a tie. Official place is competition rank on
+ * points (`assignTourDisplayRanks`, #1135). Issue #73 §3.5's timestamp
+ * tie-break never landed; handle order is the shipped list order.
  *
  * @typedef {{
  *   uid: string,
@@ -27,6 +29,9 @@ import {
  *   totalPoints: number,
  *   wins: number,
  *   shows: number,
+ *   rank: number,
+ *   tiedCount: number,
+ *   tiedHandles: string[],
  * }} TourStandingsRow
  *
  * @param {Array<{ date: string, picks: Array<Record<string, unknown>> }>} picksByDate
@@ -70,9 +75,10 @@ export function aggregateTourStandings(picksByDate) {
     }
   }
 
-  return [...perUser.values()].sort((a, b) => {
+  const sorted = [...perUser.values()].sort((a, b) => {
     if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
     if (b.wins !== a.wins) return b.wins - a.wins;
     return a.handle.localeCompare(b.handle);
   });
+  return assignTourDisplayRanks(sorted);
 }

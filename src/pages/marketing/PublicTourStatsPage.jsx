@@ -18,11 +18,17 @@ import { getPrerenderRoute } from '../../shared/config/seoRoutes';
  */
 export default function PublicTourStatsPage() {
   const screen = usePublicTourStatsScreen();
-  const route = screen.routeHasSlug
-    ? getPrerenderRoute(`/tour-stats/${screen.activeSlug}`) ||
-      getPrerenderRoute('/tour-stats')
-    : getPrerenderRoute('/tour-stats') ||
-      getPrerenderRoute(`/tour-stats/${screen.activeSlug}`);
+  // Static registry covers Sphere and Summer. Auto-expanded slugs such as
+  // Fall are not in that list, so a hub-route fallback must not steal their
+  // title, canonical, or H1 once the live label is known.
+  const slugRoute = screen.routeHasSlug
+    ? getPrerenderRoute(`/tour-stats/${screen.activeSlug}`)
+    : null;
+  const hubRoute = getPrerenderRoute('/tour-stats');
+  const liveLabel =
+    screen.tourName && screen.tourName !== screen.activeSlug
+      ? screen.tourName
+      : '';
 
   useEffect(() => {
     if (!screen.activeSlug || screen.statsLoading) return;
@@ -30,33 +36,40 @@ export default function PublicTourStatsPage() {
   }, [screen.activeSlug, screen.statsLoading]);
 
   const title =
-    route?.title ||
-    (screen.tourName
-      ? `${screen.tourName} Setlist Statistics | ${SEO_CONFIG.siteName}`
-      : `Phish Tour Statistics & Insights | ${SEO_CONFIG.siteName}`);
+    slugRoute?.title ||
+    (liveLabel
+      ? `${liveLabel} Setlist Statistics | ${SEO_CONFIG.siteName}`
+      : hubRoute?.title ||
+        `Phish Tour Statistics & Insights | ${SEO_CONFIG.siteName}`);
   const description =
-    route?.description ||
-    (screen.tourName
-      ? `Tour Insights for ${screen.tourName}: setlist statistics, most-played songs, bustouts, and gap highlights. Updated every night the band plays live.`
-      : 'Tour Insights: the latest Phish tour setlist statistics—most-played songs, bustouts by tour, and gap highlights. Updated every night the band plays live.');
+    slugRoute?.description ||
+    (liveLabel
+      ? `Tour Insights for ${liveLabel}: setlist statistics, most-played songs, bustouts, and gap highlights.`
+      : hubRoute?.description ||
+        'Tour Insights: the latest Phish tour setlist statistics, most-played songs, bustouts by tour, and gap highlights.');
   const canonical =
-    route?.canonicalUrl ||
-    `${SEO_CONFIG.siteUrl}/tour-stats/${screen.activeSlug}`;
-  const jsonLd = route?.buildJsonLd?.() || {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: title,
-    description,
-    url: canonical,
-  };
+    slugRoute?.canonicalUrl ||
+    (screen.routeHasSlug && screen.activeSlug
+      ? `${SEO_CONFIG.siteUrl}/tour-stats/${screen.activeSlug}`
+      : hubRoute?.canonicalUrl || `${SEO_CONFIG.siteUrl}/tour-stats`);
+  const shareImage = screen.shareImageUrl || SEO_CONFIG.ogImageUrl;
 
-  // Prefer registry H1 when the slug is SEO'd (#927) so Sphere/Summer paint
-  // tour-specific titles before Firestore doc load. Fall back to live label.
+  const jsonLd = slugRoute?.buildJsonLd?.() ||
+    (!screen.routeHasSlug && hubRoute?.buildJsonLd?.()) || {
+      '@context': 'https://schema.org',
+      '@type': 'WebPage',
+      name: title,
+      description,
+      url: canonical,
+    };
+
+  // Registry H1 for Sphere and Summer (#927). Live label for other slugs
+  // once the doc loads, so Fall does not keep the hub H1.
   const heading =
-    route?.h1 ||
-    (screen.tourName && screen.tourName !== screen.activeSlug
-      ? `${screen.tourName} setlist statistics`
-      : 'Phish tour setlist statistics');
+    slugRoute?.h1 ||
+    (liveLabel
+      ? `${liveLabel} setlist statistics`
+      : hubRoute?.h1 || 'Phish tour setlist statistics');
 
   return (
     <>
@@ -68,11 +81,14 @@ export default function PublicTourStatsPage() {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonical} />
-        <meta property="og:image" content={SEO_CONFIG.ogImageUrl} />
+        <meta property="og:image" content={shareImage} />
+        {screen.shareImageUrl ? (
+          <meta property="og:image:alt" content={screen.wrap?.headline || title} />
+        ) : null}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />
-        <meta name="twitter:image" content={SEO_CONFIG.ogImageUrl} />
+        <meta name="twitter:image" content={shareImage} />
         <link rel="canonical" href={canonical} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
@@ -90,6 +106,7 @@ export default function PublicTourStatsPage() {
           onSelectTour={screen.selectTour}
           routeHasSlug={screen.routeHasSlug}
           defaultTourSlug={screen.defaultTourSlug}
+          wrap={screen.wrap}
         />
       </MarketingPageShell>
     </>

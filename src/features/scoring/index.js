@@ -24,6 +24,10 @@ export { useStandings } from './model/useStandings';
 export { useStandingsLeaderboardView } from './model/useStandingsLeaderboardView';
 export { useStandingsScreen } from './model/useStandingsScreen';
 export {
+  LIVE_SETLIST_DEGRADED_MESSAGE_KEYS,
+  playerDegradedMessage,
+} from './model/liveSetlistServiceStatus';
+export {
   DEFAULT_STANDINGS_VIEW,
   STANDINGS_PATH_VIEWS,
   STANDINGS_VIEWS,

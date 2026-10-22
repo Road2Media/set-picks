@@ -1,36 +1,55 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { ensureAuthReady } from '../../../shared/lib/ensureFirebase';
-import { getFirebaseAuthErrorMessage } from '../utils/firebaseAuthMessages';
+import { isEmailCredentialFailure } from '../utils/firebaseAuthMessages';
 import {
   clearSplashGoogleModalInflight,
   setSplashGoogleModalInflight,
 } from '../utils/splashGoogleModalInflight';
+import { applyAuthFormAction, EMPTY_AUTH_NOTICE, isPlausibleAuthEmail } from './authFormNotice';
 import { trackAuthError, trackAuthLogin } from './authAnalytics';
 import { markGoogleAuthClick } from './authLoginTiming';
 import { shouldPreferGoogleRedirectAuth } from './preferGoogleRedirectAuth';
 import { runGoogleSplashAuth } from './runGoogleSplashAuth';
 
 export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmailState] = useState('');
+  const [password, setPasswordState] = useState('');
   const [busy, setBusy] = useState(false);
   /** Google-only pending — keeps email busy from showing “Opening Google…”. */
   const [googleBusy, setGoogleBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [resetLinkNotice, setResetLinkNotice] = useState({ text: '', type: '' });
+  const [notice, setNotice] = useState(EMPTY_AUTH_NOTICE);
   const preferGoogleRedirect = shouldPreferGoogleRedirectAuth();
 
+  const replaceNotice = useCallback((action) => {
+    setNotice((prev) => applyAuthFormAction({ notice: prev }, action).notice);
+  }, []);
+
   useEffect(() => {
-    if (isOpen && seedError) setError(seedError);
+    if (isOpen && seedError) setNotice({ text: seedError, type: 'error' });
   }, [isOpen, seedError]);
 
   const resetForm = useCallback(() => {
-    setEmail('');
-    setPassword('');
-    setError('');
-    setResetLinkNotice({ text: '', type: '' });
+    setEmailState('');
+    setPasswordState('');
+    setNotice(EMPTY_AUTH_NOTICE);
   }, []);
+
+  const setEmail = useCallback(
+    (value) => {
+      setEmailState(value);
+      replaceNotice({ kind: 'edit', field: 'email' });
+    },
+    [replaceNotice],
+  );
+
+  const setPassword = useCallback(
+    (value) => {
+      setPasswordState(value);
+      replaceNotice({ kind: 'edit', field: 'password' });
+    },
+    [replaceNotice],
+  );
 
   const closeModal = useCallback(() => {
     onClose?.();
@@ -57,7 +76,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
   }, [isOpen, resetForm]);
 
   const handleGoogle = useCallback(async () => {
-    setError('');
+    replaceNotice({ kind: 'clear' });
     setBusy(true);
     setGoogleBusy(true);
     setSplashGoogleModalInflight();
@@ -84,9 +103,9 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
             surface: 'sign_in',
             auth_flow: result.authFlow,
           });
-          setError(getFirebaseAuthErrorMessage(result.errorCode));
+          replaceNotice({ kind: 'continue-google', code: result.errorCode });
         } else {
-          setError(result.message);
+          replaceNotice({ kind: 'continue-google', message: result.message });
         }
         return;
       }
@@ -99,7 +118,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
         surface: 'sign_in',
         auth_flow: authFlow,
       });
-      setError(getFirebaseAuthErrorMessage(err.code));
+      replaceNotice({ kind: 'continue-google', code: err.code });
     } finally {
       if (!leftViaRedirect) {
         clearSplashGoogleModalInflight();
@@ -107,17 +126,28 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
         setGoogleBusy(false);
       }
     }
-  }, [closeModal, preferGoogleRedirect]);
+  }, [closeModal, preferGoogleRedirect, replaceNotice]);
 
   const handleEmailSignIn = useCallback(
     async (e) => {
       e.preventDefault();
-      setError('');
+      const blocked = applyAuthFormAction(
+        { notice: EMPTY_AUTH_NOTICE },
+        { kind: 'continue-email', email, password },
+      ).notice;
+      if (blocked.text) {
+        replaceNotice({ kind: 'continue-email', email, password });
+        return;
+      }
+      replaceNotice({ kind: 'clear' });
       setBusy(true);
+      /** @type {(email: string) => Promise<'google' | 'other'>} */
+      let lookupEmailSignIn = async () => 'other';
       try {
         const { auth } = await ensureAuthReady();
-        const { signInWithEmail } = await import('../api/splashAuthApi');
-        await signInWithEmail(auth, email, password);
+        const api = await import('../api/splashAuthApi');
+        lookupEmailSignIn = api.lookupEmailSignIn;
+        await api.signInWithEmail(auth, email, password);
         trackAuthLogin('email', { surface: 'sign_in' });
         closeModal();
       } catch (err) {
@@ -127,44 +157,47 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
           error_code: err.code,
           surface: 'sign_in',
         });
-        setError(getFirebaseAuthErrorMessage(err.code));
+        const signIn = isEmailCredentialFailure(err.code)
+          ? await lookupEmailSignIn(email)
+          : 'other';
+        replaceNotice({
+          kind: 'continue-email',
+          email,
+          password,
+          code: err.code,
+          signIn,
+        });
       } finally {
         setBusy(false);
       }
     },
-    [closeModal, email, password],
+    [closeModal, email, password, replaceNotice],
   );
 
   const handleSendPasswordResetEmail = useCallback(async () => {
     const em = email.trim();
-    if (!em) {
-      setError('Enter your email address above first.');
-      setResetLinkNotice({ text: '', type: '' });
+    if (!em || !isPlausibleAuthEmail(em)) {
+      replaceNotice({ kind: 'forgot-password', email });
       return;
     }
     setBusy(true);
-    setError('');
-    setResetLinkNotice({ text: '', type: '' });
+    replaceNotice({ kind: 'clear' });
     try {
-      const { auth } = await ensureAuthReady();
       const { sendResetEmail } = await import('../api/splashAuthApi');
-      await sendResetEmail(auth, em);
-      setResetLinkNotice({
-        text: `Check your inbox at ${em} for a password reset link. Then return here to sign in.`,
-        type: 'success',
+      const result = await sendResetEmail(em);
+      replaceNotice({
+        kind: 'forgot-password',
+        email: em,
+        account: result?.signIn === 'google' ? 'google' : 'unknown',
       });
     } catch (err) {
       console.error('Password reset:', err);
       trackAuthError({ method: 'password_reset', error_code: err.code });
-      const msg =
-        err.code === 'auth/too-many-requests'
-          ? 'Too many attempts. Wait a few minutes and try again.'
-          : 'Could not send reset email. Try again later.';
-      setResetLinkNotice({ text: msg, type: 'error' });
+      replaceNotice({ kind: 'forgot-password', email: em, errorCode: err.code });
     } finally {
       setBusy(false);
     }
-  }, [email]);
+  }, [email, replaceNotice]);
 
   return {
     email,
@@ -173,8 +206,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
     setPassword,
     busy,
     googleBusy,
-    error,
-    resetLinkNotice,
+    notice,
     closeModal,
     handleGoogle,
     handleEmailSignIn,

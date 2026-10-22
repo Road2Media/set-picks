@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 import Button from '../../../shared/ui/Button';
 import Input from '../../../shared/ui/Input';
-import { StatusBanner } from '../../../shared';
-import { AUTH_EMAIL_CTA } from './authCtaClasses';
+import AuthFormPrepend from './AuthFormPrepend';
+import { AUTH_EMAIL_CTA, AUTH_FORGOT_CTA } from './authCtaClasses';
 import GoogleAuthContinueOverlay from './GoogleAuthContinueOverlay';
 import { resolveGoogleCtaLabel } from './googleCtaLabel';
 import PasswordRevealToggle, {
@@ -28,8 +28,7 @@ export default function SplashSignInModal({
     setPassword,
     busy,
     googleBusy,
-    error,
-    resetLinkNotice,
+    notice,
     closeModal,
     handleGoogle,
     handleEmailSignIn,
@@ -39,19 +38,11 @@ export default function SplashSignInModal({
   const revealVisible = shouldShowPasswordReveal(email, password);
 
   const prependContent =
-    poolInvitePending || error ? (
-      <div className="space-y-3">
-        {poolInvitePending ? (
-          <StatusBanner
-            type="info"
-            message="You're joining a pool — sign in to continue."
-            className="text-left"
-          />
-        ) : null}
-        {error ? (
-          <StatusBanner type="error" message={error} className="text-left" />
-        ) : null}
-      </div>
+    poolInvitePending || notice.text ? (
+      <AuthFormPrepend
+        poolMessage={poolInvitePending ? "You're joining a pool — sign in to continue." : ''}
+        notice={notice}
+      />
     ) : null;
 
   return (
@@ -69,7 +60,7 @@ export default function SplashSignInModal({
         prependContent={prependContent}
         closeOnBackdropClick={false}
       >
-      <form onSubmit={handleEmailSignIn} className="space-y-4 text-left">
+      <form onSubmit={handleEmailSignIn} noValidate className="space-y-4 text-left">
         <div>
           <label
             htmlFor="si-email"
@@ -114,22 +105,14 @@ export default function SplashSignInModal({
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <Button
-            variant="link"
-            size="none"
+          <button
             type="button"
             onClick={handleSendPasswordResetEmail}
             disabled={busy}
-            className="w-fit px-0 py-0 text-left text-sm text-amber-400/90 decoration-amber-400/90 hover:text-amber-300 hover:decoration-amber-300 disabled:opacity-50"
+            className={AUTH_FORGOT_CTA}
           >
-            Forgot password? Send reset link to your email
-          </Button>
-          {resetLinkNotice.text ? (
-            <StatusBanner
-              type={resetLinkNotice.type === 'error' ? 'error' : 'success'}
-              message={resetLinkNotice.text}
-            />
-          ) : null}
+            Forgot password
+          </button>
         </div>
         <button type="submit" disabled={busy} className={AUTH_EMAIL_CTA}>
           {busy ? 'Signing in…' : 'Continue with email'}

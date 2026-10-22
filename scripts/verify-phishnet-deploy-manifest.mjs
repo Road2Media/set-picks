@@ -32,6 +32,7 @@ const REQUIRED_EXPORTS = [
   "scheduledPicksLockReminder",
   "setLiveSetlistAutomationState",
   "pollLiveSetlistNow",
+  "setLiveSetlistServiceStatus",
   "sendPushCanary",
   "lockPicksForShowNow",
   "scheduledPublicTourStatsRefresh",

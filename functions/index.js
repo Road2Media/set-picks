@@ -22,7 +22,13 @@ const {
   parseShowCalendarSnapshotToShows,
   pollSingleShowDate,
   scheduledCandidateShowDates,
+  timeZoneForShowDate,
 } = require("./phishnetLiveSetlistAutomation");
+const {
+  applyLiveSetlistServiceStatusCommand,
+  deliverLiveSetlistOpsAlert,
+  parseOpsAlertEmails,
+} = require("./liveSetlistOutage");
 const {
   parseSuperAdminUidsEnv,
   resolveAdminCallerRole,
@@ -57,6 +63,12 @@ const {
 const { evaluateManualFinalizeTimingGate } = require("./showFinalizationGate");
 const { applyLockPicksForShowNow } = require("./picksLockOverride");
 const { runAccountDeletionForCaller } = require("./accountDelete");
+const {
+  PASSWORD_RESET_ACTION_CODE_SETTINGS,
+  clientIpFromCallableRequest,
+  lookupSignInMethod,
+  sendPasswordResetWithResend,
+} = require("./passwordResetEmail");
 const { deliverCommsTrigger, buildDefaultWorkers, mergeCommsDeliverySummaries } = require("./commsDelivery");
 const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorker");
 const { getTriggerSpec } = require("./commsCatalog");
@@ -1277,6 +1289,60 @@ exports.deletePoolWithCleanup = onCall(
 );
 
 /**
+ * Unauthenticated password reset (#1049).
+ * Admin `generatePasswordResetLink` issues the code. Resend mails
+ * https://www.setlistpickem.com/password-reset-complete?oobCode=…
+ * Unknown addresses get the same `{ ok: true }` as a sent reset.
+ * Google-only accounts (google.com, no password) get
+ * `{ ok: true, signIn: "google" }` and no mail.
+ */
+exports.requestPasswordResetEmail = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    secrets: [resendApiKey],
+  },
+  async (request) => {
+    return sendPasswordResetWithResend({
+      email: request.data?.email,
+      ip: clientIpFromCallableRequest(request),
+      db,
+      getUserByEmail: (normalized) => admin.auth().getUserByEmail(normalized),
+      generateLink: (normalized) =>
+        admin.auth().generatePasswordResetLink(
+          normalized,
+          PASSWORD_RESET_ACTION_CODE_SETTINGS
+        ),
+      resendClient: buildResendClient(process.env.RESEND_API_KEY, logger),
+      logger,
+    });
+  }
+);
+
+/**
+ * Unauthenticated sign-in method check (#1049).
+ * Same Google-only rule as password reset, but it never sends mail.
+ * Unknown and password accounts both return `{ ok: true }`.
+ */
+exports.lookupSignInMethod = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    return lookupSignInMethod({
+      email: request.data?.email,
+      ip: clientIpFromCallableRequest(request),
+      db,
+      getUserByEmail: (normalized) => admin.auth().getUserByEmail(normalized),
+      logger,
+    });
+  }
+);
+
+/**
  * Self-serve account deletion (Terms of Service): gated confirmation on the client;
  * server writes `account_deletion_reports/{id}`, removes pool membership / picks /
  * user subcollections / profile doc, then deletes the Firebase Auth user.
@@ -1389,6 +1455,36 @@ exports.scheduledTourRankingsDailyComms = onSchedule(
   }
 );
 
+function notifyLiveSetlistOps(event) {
+  return deliverLiveSetlistOpsAlert({
+    db,
+    admin,
+    logger,
+    resendClient: process.env.RESEND_API_KEY
+      ? buildResendClient(process.env.RESEND_API_KEY, logger)
+      : null,
+    superAdminUids: [...parseSuperAdminUidsEnv()],
+    extraEmails: parseOpsAlertEmails(process.env),
+    event,
+  });
+}
+
+async function deliverPollRecovery(result) {
+  if (!result?.opsRecovery) return;
+  try {
+    await notifyLiveSetlistOps({
+      ...result.opsRecovery,
+      updatedPicks:
+        typeof result.updatedPicks === "number" ? result.updatedPicks : null,
+    });
+  } catch (error) {
+    logger.error("live setlist recovery alert failed", {
+      showDate: result.showDate,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 exports.scheduledPhishnetLiveSetlistPoll = onSchedule(
   {
     // Wake every 2m; in-window spacing vs Phish.net is enforced by per-date
@@ -1435,6 +1531,8 @@ exports.scheduledPhishnetLiveSetlistPoll = onSchedule(
         apiKey: String(key).trim(),
         logger,
         force: false,
+        timeZone: timeZoneForShowDate(calendarShows, showDate),
+        deliverOpsAlert: notifyLiveSetlistOps,
         // Inject rollup core so the poller can auto-finalize + rollup
         // without going through the HTTPS callable path (#266). Only the
         // scheduled path gets this: admin "Poll Now" keeps full manual
@@ -1449,6 +1547,7 @@ exports.scheduledPhishnetLiveSetlistPoll = onSchedule(
             logger,
           }),
       });
+      await deliverPollRecovery(result);
       results.push(result);
     }
     logger.info("live setlist poll cycle", {
@@ -1516,6 +1615,10 @@ exports.pollLiveSetlistNow = onCall(
       explicitShowDate == null
         ? candidateShowDates(new Date())
         : [assertShowDateString(explicitShowDate)];
+    const calSnap = await db.collection("show_calendar").doc("snapshot").get();
+    const calendarShows = parseShowCalendarSnapshotToShows(
+      calSnap.exists ? calSnap.data() : null
+    );
     const started = Date.now();
     const results = [];
     for (const showDate of dates) {
@@ -1527,6 +1630,8 @@ exports.pollLiveSetlistNow = onCall(
         logger,
         force: true,
         requestorEmail: request.auth.token?.email ?? null,
+        timeZone: timeZoneForShowDate(calendarShows, showDate),
+        deliverOpsAlert: notifyLiveSetlistOps,
       });
       if (result.changed) {
         const setlistSnap = await db.collection("official_setlists").doc(showDate).get();
@@ -1536,6 +1641,7 @@ exports.pollLiveSetlistNow = onCall(
           await recomputeLiveScoresForShow(showDate, actualSetlist)
         ).updatedPicks;
       }
+      await deliverPollRecovery(result);
       results.push(result);
     }
     logger.info("manual live setlist poll", {
@@ -1544,6 +1650,39 @@ exports.pollLiveSetlistNow = onCall(
       durationMs: Date.now() - started,
     });
     return { ok: true, dates, results };
+  }
+);
+
+/**
+ * Admin-only player banner for a stalled live setlist (#644).
+ * Writes the sanitized `public_service_status` projection. Does not poll Phish.net.
+ */
+exports.setLiveSetlistServiceStatus = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    assertAdminClaim(request);
+    const showDate = assertShowDateString(request.data?.showDate);
+    const action = request.data?.action;
+    if (action !== "publish" && action !== "clear") {
+      throw new HttpsError("invalid-argument", "action must be publish or clear.");
+    }
+    try {
+      return await applyLiveSetlistServiceStatusCommand({
+        db,
+        admin,
+        showDate,
+        action,
+        messageKey: request.data?.messageKey,
+        clearOnRecovery: request.data?.clearOnRecovery === true,
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new HttpsError("invalid-argument", msg);
+    }
   }
 );
 

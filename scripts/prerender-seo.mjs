@@ -47,6 +47,14 @@ import {
   mergeTourStatsFactsJsonLd,
   normalizeTourStatsFacts,
 } from './lib/tourStatsSeoFacts.mjs';
+import { writeFinishedTourWrapShareImage } from './lib/tourWrapShareImage.mjs';
+import { SEO_CONFIG } from '../src/shared/config/seo.js';
+import {
+  buildFinishedTourWrap,
+  buildFinishedTourWrapHtml,
+  finishedTourWrapShareImageFile,
+  finishedTourWrapShareImageUrl,
+} from '../src/features/tour-stats/model/finishedTourWrap.js';
 import { TOUR_STATS_SEO_FACT_SLUGS } from '../src/shared/config/seoRoutes.js';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -163,6 +171,7 @@ async function emitPublicTourStatsCdnJson() {
       }
       const rel = `tour-stats-data/${slug}.json`;
       writeFileSync(join(outDir, `${slug}.json`), JSON.stringify({ id: slug, ...doc }));
+      await maybeWriteTourWrapShareImage(doc, slug);
       console.log(
         `prerender-seo: wrote dist/${rel} (${Buffer.byteLength(JSON.stringify(doc), 'utf8')} bytes)`,
       );
@@ -179,6 +188,40 @@ async function emitPublicTourStatsCdnJson() {
  * @param {object} route
  * @returns {Promise<{ factsHtml?: string, jsonLd?: object }>}
  */
+/**
+ * Finished-tour wrap + JPEG for any public doc that has closed (#1140).
+ * Image failure still leaves the HTML wrap. Default OG card stays when there
+ * is no JPEG.
+ *
+ * @param {Record<string, unknown>} doc
+ * @param {string} slug
+ * @returns {Promise<{ wrap: ReturnType<typeof buildFinishedTourWrap>, ogImage: string }>}
+ */
+async function maybeWriteTourWrapShareImage(doc, slug) {
+  const wrap = buildFinishedTourWrap(doc, { slug, now: new Date() });
+  if (!wrap) return { wrap: null, ogImage: '' };
+  const file = finishedTourWrapShareImageFile(slug);
+  if (!file) return { wrap, ogImage: '' };
+  try {
+    await writeFinishedTourWrapShareImage(wrap, join(distDir, file));
+    console.log(`prerender-seo: wrote dist/${file}`);
+    return {
+      wrap,
+      ogImage:
+        finishedTourWrapShareImageUrl(slug, {
+          siteUrl: SEO_CONFIG.siteUrl,
+          version: typeof doc.writtenAt === 'string' ? doc.writtenAt : '',
+        }) || '',
+    };
+  } catch (err) {
+    console.warn(
+      `prerender-seo: tour wrap share image skipped for ${slug}:`,
+      err?.message || err,
+    );
+    return { wrap, ogImage: '' };
+  }
+}
+
 async function loadTourStatsEnrichment(route) {
   const slug =
     typeof route.tourStatsSeoSlug === 'string' ? route.tourStatsSeoSlug.trim() : '';
@@ -197,13 +240,17 @@ async function loadTourStatsEnrichment(route) {
         `prerender-seo: public_tour_stats/${slug} has no bustouts/topSongs yet`,
       );
     }
+    const { wrap, ogImage } = await maybeWriteTourWrapShareImage(doc, slug);
     return {
       factsHtml: buildTourStatsFactsHtml(facts),
+      leadHtml: wrap ? buildFinishedTourWrapHtml(wrap) : '',
       jsonLd: mergeTourStatsFactsJsonLd(
         route.buildJsonLd(),
         facts,
         route.canonicalUrl,
       ),
+      ogImage: ogImage || undefined,
+      ogImageAlt: wrap?.headline || '',
     };
   } catch (err) {
     console.warn(

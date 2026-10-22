@@ -10,13 +10,15 @@
  *   uid: string,
  *   rendered: { inApp: { templateId: string, payload: Record<string, unknown> } },
  *   dedupId: string,
+ *   triggerId?: string,
+ *   campaignId?: string | null,
  *   dryRun?: boolean,
  *   logger?: { info?: Function, warn?: Function },
  * }} ctx
  * @returns {Promise<{ ok: boolean, skipReason?: string, messageId?: string }>}
  */
 async function deliverCommsInbox(ctx) {
-  const { db, admin, uid, rendered, dedupId, dryRun, logger } = ctx;
+  const { db, admin, uid, rendered, dedupId, triggerId, campaignId, dryRun, logger } = ctx;
   const messageId = dedupId || `${rendered?.inApp?.templateId || "msg"}_${uid}`;
 
   if (!uid || !rendered?.inApp?.templateId) {
@@ -25,6 +27,13 @@ async function deliverCommsInbox(ctx) {
   if (dryRun) {
     return { ok: true, skipReason: "dry_run", messageId };
   }
+
+  const payload = { ...(rendered.inApp.payload || {}) };
+  const campaign =
+    typeof campaignId === "string" && campaignId.trim() ? campaignId.trim() : "";
+  if (campaign && payload.campaignId == null) payload.campaignId = campaign;
+  const catalogTriggerId =
+    typeof triggerId === "string" && triggerId.trim() ? triggerId.trim() : "";
 
   try {
     await db
@@ -35,7 +44,8 @@ async function deliverCommsInbox(ctx) {
       .set(
         {
           templateId: rendered.inApp.templateId,
-          payload: rendered.inApp.payload || {},
+          ...(catalogTriggerId ? { triggerId: catalogTriggerId } : {}),
+          payload,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         },
         { merge: true }

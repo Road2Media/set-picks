@@ -9,6 +9,7 @@ import StandingsOfficialSetlistCard from './StandingsOfficialSetlistCard';
 import Leaderboard from './Leaderboard';
 import StandingsActiveShowCard from './StandingsActiveShowCard';
 import StandingsBannerWaitingSetlist from './StandingsBannerWaitingSetlist';
+import StandingsLiveSetlistDegradedBanner from './StandingsLiveSetlistDegradedBanner';
 import StandingsCrowdPulse from './StandingsCrowdPulse';
 import StandingsPoolPicker from './StandingsPoolPicker';
 import StandingsWinnerOfTheNightBanner from './StandingsWinnerOfTheNightBanner';
@@ -59,7 +60,12 @@ export default function StandingsShowOrPoolView({ screen }) {
     redactOpponentPicksPreLock,
     inviteChooser,
     crowdTourLeaders,
+    liveSetlistServiceStatus,
   } = screen;
+
+  const degradedBanner = liveSetlistServiceStatus?.visible ? (
+    <StandingsLiveSetlistDegradedBanner message={liveSetlistServiceStatus.message} />
+  ) : null;
 
   const isPoolsView = view === 'pools';
   const isShowView = view === 'show';
@@ -68,11 +74,14 @@ export default function StandingsShowOrPoolView({ screen }) {
 
   if (isPoolsView && !poolId) {
     return (
-      <StandingsPoolPicker
-        pools={userPools || []}
-        activePoolId={null}
-        onChange={setPoolId}
-      />
+      <>
+        {degradedBanner}
+        <StandingsPoolPicker
+          pools={userPools || []}
+          activePoolId={null}
+          onChange={setPoolId}
+        />
+      </>
     );
   }
 
@@ -86,6 +95,7 @@ export default function StandingsShowOrPoolView({ screen }) {
             onChange={setPoolId}
           />
         ) : null}
+        {degradedBanner}
         <div className="mt-20 flex flex-col items-center justify-center gap-3 font-bold text-brand-primary">
           <Loader2 className="h-10 w-10 animate-spin" aria-hidden />
           <p>Loading standings for {showLabel}…</p>
@@ -109,6 +119,7 @@ export default function StandingsShowOrPoolView({ screen }) {
           show={selectedShow}
           showStatus={showStatus}
         />
+        {degradedBanner}
         {showLastShowWinnerBanner ? (
           <StandingsWinnerOfTheNightBanner
             variant="lastShow"
@@ -189,6 +200,7 @@ export default function StandingsShowOrPoolView({ screen }) {
             onChange={setPoolId}
           />
         ) : null}
+        {degradedBanner}
         <DashboardJobShell tone="none" pad="row" className="text-center">
           <p className={STANDINGS_BOX_TITLE}>Results aren&apos;t up yet</p>
           <p className={`mx-auto mt-1 max-w-sm ${STANDINGS_BOX_BODY}`}>
@@ -224,6 +236,8 @@ export default function StandingsShowOrPoolView({ screen }) {
           </button>
         </div>
       ) : null}
+
+      {degradedBanner}
 
       {showLastShowWinnerBanner ? (
         <StandingsWinnerOfTheNightBanner

@@ -299,7 +299,12 @@ describe('comms template registry', () => {
   it('tour-recap preview samples use generic fixtures, not Sphere live IDs', () => {
     const entry = getCommsTemplateEntry('tour-recap');
     expect(entry.Component).toBeTypeOf('function');
-    expect(entry.samples.map((s) => s.name)).toEqual(['Champion', 'Top 10', 'Partial attendance']);
+    expect(entry.samples.map((s) => s.name)).toEqual([
+      'Champion',
+      'Tied for third',
+      'Top 10',
+      'Partial attendance',
+    ]);
     for (const sample of entry.samples) {
       expect(JSON.stringify(sample.payload)).not.toMatch(/sphere-2026-inaugural/i);
       expect(sample.payload.tour_name).toBe('Sample Tour');

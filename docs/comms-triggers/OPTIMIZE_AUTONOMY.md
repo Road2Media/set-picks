@@ -131,7 +131,7 @@ Agents **open draft PRs and proposal issues only**. They do **not** auto-merge, 
 | **Night show recap** | [#572](https://github.com/pat792/set-picks/issues/572) | `show_recap` (+ morning absorb) | After a single show grades |
 | **End-of-tour recap** | [#510](https://github.com/pat792/set-picks/issues/510) | `tour_recap` (generalize Sphere edition) | Morning after a tour’s final show (8am PT cron; not same-tick as night `show_recap`) |
 
-Do **not** put tour-length narrative into night `show_recap`, or night setlist flow into `tour_recap`. Sphere ’26 is an **edition archive / QA replay**, not the permanent production trigger.
+Do **not** put tour-length narrative into night `show_recap`, or night setlist flow into `tour_recap`. Sphere ’26 is an **edition archive / QA replay**, not the permanent production trigger. Automated scanners skip that edition via `editionStatus: archive` and `comms_process_state` (#1035), not via a Sphere trigger id. Post-mortem: [INCIDENT_2026-09-09_SPHERE_TOUR_RECAP.md](./INCIDENT_2026-09-09_SPHERE_TOUR_RECAP.md). Delivery checklist: [FRAMEWORK.md](./FRAMEWORK.md) DELIVER.
 
 ---
 
@@ -140,7 +140,8 @@ Do **not** put tour-length narrative into night `show_recap`, or night setlist f
 | Source | Path / doc | Use in Optimize |
 |--------|------------|-----------------|
 | Official setlists | `docs/OFFICIAL_SETLISTS_SCHEMA.md` · `official_setlists/{showDate}` | Slots, `officialSetlist`, `bustouts`, `songGaps` |
-| Tour calendar | `show_calendar` / `showDatesByTour` | Tour membership, final-show detection |
+| Tour calendar | `show_calendar` / `showDatesByTour` | Tour membership, final-show detection, `editionStatus` (`live` / `archive` / `closed`) |
+| Process gate | `comms_process_state/{triggerId}:{scope}` | Once-ever skip for a completed or archive moment (#1035). `tour_recap` also mirrors `comms_tour_recap_state` |
 | Show context | `docs/COMMS_SHOW_CONTEXT_SCHEMA.md` · `comms_show_context/{showDate}` | Deterministic night highlights (#572) |
 | Measurement | `docs/comms-triggers/MEASUREMENT_PLAN.md` | Deliver → open → CTA |
 | Delivery | `functions/commsDelivery.js` + workers | Prefs, dedup, fatigue, canary/`dryRun` |

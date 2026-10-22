@@ -161,6 +161,23 @@ service cloud.firestore {
     }
 
     /**
+     * Sanitized live-setlist player status (#644). Admin SDK / callables write.
+     * Authenticated clients may read the projection only. Operational errors
+     * stay on `live_setlist_automation`, which remains admin-read.
+     */
+    match /public_service_status/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    /**
+     * Ops-alert dedup log (#644). Cloud Functions only.
+     */
+    match /live_setlist_ops_alerts/{messageId} {
+      allow read, write: if false;
+    }
+
+    /**
      * Admin picks-lock override (#522). Written by `lockPicksForShowNow` callable
      * (Admin SDK); signed-in clients read to honor effective lock state.
      */
@@ -232,6 +249,15 @@ service cloud.firestore {
     }
 
     /**
+     * Process-level once-ever gate (#1035). Document id is
+     * `{triggerId}:{scope}`. `tour_recap` also mirrors
+     * `comms_tour_recap_state`. Written only by Admin SDK. Clients have no access.
+     */
+    match /comms_process_state/{processId} {
+      allow read, write: if false;
+    }
+
+    /**
      * Email suppression list for comms deliverability (#442). Written only by
      * Cloud Functions (webhooks + unsubscribe endpoint); clients must not access.
      */
@@ -253,6 +279,15 @@ service cloud.firestore {
      * Written only via Admin SDK; no client access.
      */
     match /account_deletion_reports/{reportId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * Password-reset rate limit (#1049). Doc ids are hashes of the address
+     * or caller IP. Written only by `requestPasswordResetEmail` (Admin SDK).
+     * Clients must not read counts or seed the window.
+     */
+    match /password_reset_rate/{docId} {
       allow read, write: if false;
     }
 

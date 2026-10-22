@@ -164,17 +164,18 @@ function injectJsonLd(html, jsonLd) {
   return cleaned.replace(/<\/head>/i, `  ${script}\n</head>`);
 }
 
-function buildCrawlerBody(route, factsHtml = '') {
+function buildCrawlerBody(route, factsHtml = '', leadHtml = '') {
   const paras = route.paragraphs
     .map((p) => `    <p>${escapeHtml(p)}</p>`)
     .join('\n');
   const factsBlock = factsHtml ? `\n${factsHtml}` : '';
+  const leadBlock = leadHtml ? `\n${leadHtml}\n` : '';
   // Thin top progress bar + crawler main: content visible while JS loads.
   // createRoot replaces the whole #root once React mounts.
   return `${buildMarketingBootShellMarkup()}
 <!--seo-prerender:${escapeHtml(route.path)}-->
   <main data-seo-prerender="true">
-    <h1>${escapeHtml(route.h1)}</h1>
+    <h1>${escapeHtml(route.h1)}</h1>${leadBlock}
 ${paras}${factsBlock}
   </main>`;
 }
@@ -194,11 +195,15 @@ function injectRootBody(html, bodyInner) {
  * @param {object} route
  * @param {{
  *   factsHtml?: string,
+ *   leadHtml?: string,
  *   jsonLd?: object,
- * }} [enrichment] optional tour-stats aggregate facts (#928)
+ *   ogImage?: string,
+ *   ogImageAlt?: string,
+ * }} [enrichment] optional tour-stats aggregate facts (#928) and finished-tour wrap (#1140)
  */
 export function injectPrerenderHtml(shellHtml, route, enrichment = {}) {
   let html = shellHtml;
+  const ogImage = enrichment.ogImage || SEO_CONFIG.ogImageUrl;
   html = upsertTitle(html, route.title);
   html = upsertMetaByName(html, 'description', route.description);
   html = upsertMetaByName(html, 'author', SEO_CONFIG.publisherName);
@@ -207,19 +212,22 @@ export function injectPrerenderHtml(shellHtml, route, enrichment = {}) {
   html = upsertMetaByProperty(html, 'og:title', route.title);
   html = upsertMetaByProperty(html, 'og:description', route.description);
   html = upsertMetaByProperty(html, 'og:url', route.canonicalUrl);
-  html = upsertMetaByProperty(html, 'og:image', SEO_CONFIG.ogImageUrl);
-  html = upsertMetaByProperty(html, 'og:image:secure_url', SEO_CONFIG.ogImageUrl);
+  html = upsertMetaByProperty(html, 'og:image', ogImage);
+  html = upsertMetaByProperty(html, 'og:image:secure_url', ogImage);
+  if (enrichment.ogImageAlt) {
+    html = upsertMetaByProperty(html, 'og:image:alt', enrichment.ogImageAlt);
+  }
   html = upsertMetaByName(html, 'twitter:card', 'summary_large_image');
   html = upsertMetaByName(html, 'twitter:title', route.title);
   html = upsertMetaByName(html, 'twitter:description', route.description);
-  html = upsertMetaByName(html, 'twitter:image', SEO_CONFIG.ogImageUrl);
+  html = upsertMetaByName(html, 'twitter:image', ogImage);
   html = upsertLinkCanonical(html, route.canonicalUrl);
   html = ensureFavicons(html);
   const jsonLd = enrichment.jsonLd || route.buildJsonLd();
   html = injectJsonLd(html, jsonLd);
   html = injectRootBody(
     html,
-    buildCrawlerBody(route, enrichment.factsHtml || ''),
+    buildCrawlerBody(route, enrichment.factsHtml || '', enrichment.leadHtml || ''),
   );
   return html;
 }

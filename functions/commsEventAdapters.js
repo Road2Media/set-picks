@@ -38,20 +38,30 @@ const {
 } = require("./commsShowContext");
 const { buildShowRecapEnrichment } = require("./showRecapNarrativeCore");
 const { persistableActualSetlistFromOfficialDoc } = require("./scoringCore");
+const { tourLabelToSlug } = require("./aggregateTourSetlistStats.cjs");
 const {
   isFinalShowOfTour,
   buildTourRecapPodium,
   buildTourRecapEmailBoard,
   buildTourRecapPayload,
   closingVenueForTour,
+  showsForTour,
   deriveSharedWrapFacts,
   derivePlayerWrapFacts,
 } = require("./tourRecapCore");
+const { tourRecapFanoutCompleted } = require("./tourRecapState");
 const {
-  readTourRecapState,
-  writeTourRecapState,
-  tourRecapFanoutCompleted,
-} = require("./tourRecapState");
+  readProcessState,
+  writeProcessState,
+  automatedFanoutBlock,
+} = require("./commsProcessState");
+const {
+  editionStatusFromGroup,
+  editionBlocksAutomatedSend,
+  campaignIdForTourGroup,
+  explicitProcessId,
+  findTourGroup,
+} = require("./calendarEdition");
 const { tourCountdownDeliveryPlan } = require("./commsTemplates");
 const { mergeCommsDeliverySummaries } = require("./commsDelivery");
 
@@ -86,24 +96,14 @@ function daysBetweenYmd(a, b) {
 }
 
 /**
- * Sphere ’26 stays archive / War Room (`deliverSphere2026TourRecapInbox`) only.
- * Live `tour_recap` must not pick up calendar labels like `2026 Sphere`.
+ * Whether the 8am PT pending scanner should attempt `tour_recap` for this finale.
+ * Time bound only. Archive / closed is `editionStatus` on the tour group, not
+ * a name match (#1035).
  *
- * @param {string} tourKey
+ * @param {{ finalDate: string, today: string, tourKey?: string }} params
  * @returns {boolean}
  */
-function isSphereArchiveTourKey(tourKey) {
-  return /\bsphere\b/i.test(String(tourKey || "").trim());
-}
-
-/**
- * Whether the 8am PT pending scanner should attempt `tour_recap` for this tour.
- *
- * @param {{ tourKey: string, finalDate: string, today: string }} params
- * @returns {boolean}
- */
-function shouldAttemptPendingTourRecap({ tourKey, finalDate, today }) {
-  if (isSphereArchiveTourKey(tourKey)) return false;
+function shouldAttemptPendingTourRecap({ finalDate, today }) {
   if (!finalDate || !today || finalDate >= today) return false;
   const age = daysBetweenYmd(finalDate, today);
   if (!Number.isFinite(age)) return false;
@@ -411,6 +411,55 @@ async function deliverPostRollupComms({
   if (!isCommsEventAdaptersEnabled()) return null;
   if (!picksSnap || picksSnap.empty) return null;
 
+  const group = findTourGroup(showDatesByTour, tourKey);
+  const editionStatus = editionStatusFromGroup(group);
+  const showState = await readProcessState({
+    db,
+    triggerId: "show_recap",
+    scope: showDate,
+  });
+  let tourStatus = null;
+  if (tourKey) {
+    const tourState = await readProcessState({
+      db,
+      triggerId: "tour_recap",
+      scope: tourKey,
+      supersedes: explicitProcessId(group) ? [explicitProcessId(group)] : [],
+    });
+    tourStatus = typeof tourState.data?.status === "string" ? tourState.data.status : null;
+  }
+  const blockReason = automatedFanoutBlock({
+    editionStatus,
+    processTerminal: showState.terminal,
+    relatedStatus: tourStatus,
+  });
+  if (blockReason) {
+    if (admin && blockReason !== "process_terminal") {
+      await writeProcessState({
+        db,
+        admin,
+        triggerId: "show_recap",
+        scope: showDate,
+        status: editionStatus === "closed" || tourStatus === "closed" ? "closed" : "skipped_archive",
+        finalDate: showDate,
+        source: "rollup",
+        supersedes: explicitProcessId(group) ? [explicitProcessId(group)] : [],
+        extra: { tourKey: tourKey || null, blockReason },
+      });
+    }
+    logger?.info?.("deliverPostRollupComms: skip archive re-rollup", {
+      showDate,
+      tourKey,
+      blockReason,
+      editionStatus,
+      tourStatus,
+    });
+    return {
+      recapSummary: { skipped: blockReason, showDate, tourKey: tourKey || null },
+      engagementSummary: null,
+    };
+  }
+
   const calSnap = await db.collection("show_calendar").doc("snapshot").get();
   const calData = calSnap.exists ? calSnap.data() : null;
   const shows = parseShowCalendarSnapshotToShows(calData);
@@ -561,7 +610,8 @@ async function deliverPostRollupComms({
  * last date in `showDatesByTour` for `tourKey`. Audience: users with ≥1 graded
  * pick on any show in that tour. Production calls this from the morning-after
  * 8am PT cron (`deliverPendingTourRecaps`), not the night-of rollup.
- * Sphere ’26 replay stays on `deliverSphere2026TourRecapInbox` (War Room / QA only).
+ * Sphere ’26 replay stays on `deliverSphere2026TourRecapInbox` (QA only).
+ * `campaignId` is the edition analytics slug. It is not a second trigger id.
  *
  * @param {{
  *   db: import("firebase-admin").firestore.Firestore,
@@ -569,6 +619,7 @@ async function deliverPostRollupComms({
  *   showDate: string,
  *   tourKey: string | null,
  *   showDatesByTour: unknown,
+ *   campaignId?: string | null,
  *   logger?: object,
  * }} params
  */
@@ -578,11 +629,15 @@ async function deliverTourRecapIfFinalShow({
   showDate,
   tourKey,
   showDatesByTour,
+  campaignId = null,
   logger,
 }) {
   if (!tourKey) return null;
   const tourDates = tourDatesForKey(showDatesByTour, tourKey);
   if (!isFinalShowOfTour(tourDates, showDate)) return null;
+  const editionCampaignId =
+    (typeof campaignId === "string" && campaignId.trim()) ||
+    campaignIdForTourGroup(findTourGroup(showDatesByTour, tourKey));
 
   const picksByDate = await loadPicksByDates(db, tourDates);
   const leaders = aggregateTourStandings(picksByDate);
@@ -625,49 +680,76 @@ async function deliverTourRecapIfFinalShow({
       message: err?.message || String(err),
     });
   }
+  let songFacts = null;
+  try {
+    songFacts = await loadTourRecapSongFacts(db, tourKey);
+  } catch (err) {
+    logger?.warn?.("deliverTourRecapIfFinalShow: public tour stats read failed", {
+      tourKey,
+      message: err?.message || String(err),
+    });
+  }
   const shared = deriveSharedWrapFacts({
     setlists,
     picksByDate,
     showCount,
     closingVenue: closingVenueForTour(showDatesByTour, tourKey),
+    shows: showsForTour(showDatesByTour, tourKey),
+    songFacts,
   });
 
   /** @type {Array<{ uid: string, userData?: object, payload: object, vars: object }>} */
   const recipients = [];
   for (const row of enriched) {
     const info = ranked.get(row.uid);
-    const rank = info?.rank ?? recipients.length + 1;
+    // Official place comes from competition rank. Do not invent it from list index.
+    if (!info) {
+      logger?.warn?.("deliverTourRecapIfFinalShow: missing display rank", {
+        uid: row.uid,
+        tourKey,
+      });
+      continue;
+    }
     const userData = row.userData || {};
     recipients.push({
       uid: row.uid,
       userData,
-      payload: buildTourRecapPayload({
-        handle: row.handle || handleFromUser(userData),
-        rank,
-        points: row.totalPoints,
-        wins: row.wins,
-        showsPlayed: row.shows,
-        participantCount,
-        tourId: tourKey,
-        tourName,
-        showCount,
-        podium,
-        emailBoard,
-        shared,
-        player: derivePlayerWrapFacts({
-          uid: row.uid,
-          picksByDate,
-          setlists,
-          shared,
-          seasonStats: userData.seasonStats,
-          tourKey,
+      payload: {
+        ...buildTourRecapPayload({
+          handle: row.handle || handleFromUser(userData),
+          rank: info.rank,
+          tiedCount: info.tiedCount,
+          tiedHandles: info.tiedHandles,
           points: row.totalPoints,
           wins: row.wins,
           showsPlayed: row.shows,
+          participantCount,
+          tourId: tourKey,
+          tourName,
           showCount,
+          podium,
+          emailBoard,
+          shared,
+          player: derivePlayerWrapFacts({
+            uid: row.uid,
+            picksByDate,
+            setlists,
+            shared,
+            seasonStats: userData.seasonStats,
+            tourKey,
+            points: row.totalPoints,
+            wins: row.wins,
+            showsPlayed: row.shows,
+            showCount,
+          }),
         }),
-      }),
-      vars: { uid: row.uid, tourId: tourKey },
+        ...(editionCampaignId ? { campaignId: editionCampaignId } : {}),
+      },
+      vars: {
+        uid: row.uid,
+        tourId: tourKey,
+        ...(editionCampaignId ? { campaignId: editionCampaignId } : {}),
+      },
     });
   }
 
@@ -684,17 +766,16 @@ async function deliverTourRecapIfFinalShow({
  * (America/Los_Angeles, same tz as the 8am cron), within
  * {@link MAX_TOUR_RECAP_LOOKBACK_DAYS}.
  *
- * Once-ever gate: after a successful fan-out (or archive skip), writes
- * `comms_tour_recap_state/{tourId}` and hard-skips that tour forever on later
- * ticks (#1033). Per-uid `fcm_notification_log` dedup remains for channel
- * idempotency; the tour doc is the durable process so each tour only gets one
- * automatic end-of-tour send.
+ * Once-ever gate: after a successful fan-out (or an archive/closed edition),
+ * writes `comms_process_state/tour_recap:{tourId}` and mirrors
+ * `comms_tour_recap_state/{tourId}`. A terminal doc hard-skips later ticks.
+ * Per-uid `fcm_notification_log` remains channel idempotency (#1033 / #1035).
  *
- * Firestore is read only for tours that can still send (finale already past,
- * inside the 14-day lookback) and for Sphere archive labels, which are closed
- * even outside that window. In-progress, future, and older non-Sphere tours
- * are not the recap reference period and are not read. The morning rankings
- * email is a later step in the same cron and keys off yesterday's show.
+ * Firestore is read only for tours inside the 14-day lookback and for groups
+ * whose `editionStatus` is `archive` or `closed` (those close even outside
+ * the window). A tour name is not a gate. In-progress, future, and older
+ * live tours are not read. The morning rankings email is a later step in
+ * the same cron and keys off yesterday's show.
  *
  * @param {{
  *   db: import("firebase-admin").firestore.Firestore,
@@ -724,13 +805,14 @@ async function deliverPendingTourRecaps({
     if (!tourKey) continue;
     const tourDates = tourDatesForKey(showDatesByTour, tourKey);
     const finalDate = tourDates.length > 0 ? tourDates[tourDates.length - 1] : "";
+    const editionStatus = editionStatusFromGroup(group);
+    const editionBlocks = editionBlocksAutomatedSend(editionStatus);
     const inRecapWindow = shouldAttemptPendingTourRecap({
       tourKey,
       finalDate,
       today,
     });
-    const sphereArchive = isSphereArchiveTourKey(tourKey);
-    if (!inRecapWindow && !sphereArchive) {
+    if (!inRecapWindow && !editionBlocks) {
       if (finalDate && finalDate < today) {
         logger?.info?.("deliverPendingTourRecaps: skip tour", {
           tourKey,
@@ -742,9 +824,16 @@ async function deliverPendingTourRecaps({
       continue;
     }
 
+    const priorTemplateIds = explicitProcessId(group) ? [explicitProcessId(group)] : [];
+
     try {
       // eslint-disable-next-line no-await-in-loop
-      const state = await readTourRecapState({ db, tourKey });
+      const state = await readProcessState({
+        db,
+        triggerId: "tour_recap",
+        scope: tourKey,
+        supersedes: priorTemplateIds,
+      });
       if (state.terminal) {
         logger?.info?.("deliverPendingTourRecaps: skip tour (state terminal)", {
           tourKey,
@@ -754,21 +843,24 @@ async function deliverPendingTourRecaps({
         continue;
       }
 
-      if (isSphereArchiveTourKey(tourKey)) {
+      if (editionBlocks) {
         if (admin) {
           // eslint-disable-next-line no-await-in-loop
-          await writeTourRecapState({
+          await writeProcessState({
             db,
             admin,
-            tourKey,
-            status: "skipped_archive",
+            triggerId: "tour_recap",
+            scope: tourKey,
+            status: editionStatus === "closed" ? "closed" : "skipped_archive",
             finalDate: finalDate || null,
             source: "cron",
+            supersedes: priorTemplateIds,
           });
         }
-        logger?.info?.("deliverPendingTourRecaps: skip Sphere archive tour", {
+        logger?.info?.("deliverPendingTourRecaps: skip archive edition", {
           tourKey,
           finalDate,
+          editionStatus,
         });
         continue;
       }
@@ -780,19 +872,22 @@ async function deliverPendingTourRecaps({
         showDate: finalDate,
         tourKey,
         showDatesByTour,
+        campaignId: campaignIdForTourGroup(group),
         logger,
       });
       if (summary) out.push({ tourKey, finalDate, summary });
 
       if (admin && tourRecapFanoutCompleted(summary)) {
         // eslint-disable-next-line no-await-in-loop
-        await writeTourRecapState({
+        await writeProcessState({
           db,
           admin,
-          tourKey,
+          triggerId: "tour_recap",
+          scope: tourKey,
           status: "sent",
           finalDate,
           source: "cron",
+          supersedes: priorTemplateIds,
           extra: {
             delivered: Number(summary.delivered) || 0,
             processed: Number(summary.processed) || 0,
@@ -1034,6 +1129,34 @@ async function loadPicksByDates(db, dates) {
   }
 
   return dates.map((date) => ({ date, picks: byDate.get(date) || [] }));
+}
+
+/**
+ * Bustout last-played / debut year and the unique-song count from
+ * `public_tour_stats`. A missing doc drops those clauses. It does not drop the send.
+ *
+ * @param {import("firebase-admin").firestore.Firestore} db
+ * @param {string} tourKey
+ * @returns {Promise<{ uniqueSongs: number, bustouts: Array<{ title: string, showDate: string, lastPlayed: string, debutYear: number | null }> } | null>}
+ */
+async function loadTourRecapSongFacts(db, tourKey) {
+  if (!db || !tourKey) return null;
+  const snap = await db.collection("public_tour_stats").doc(tourLabelToSlug(tourKey)).get();
+  if (!snap.exists) return null;
+  const data = snap.data() || {};
+  const unique = Number(data.uniqueSongs);
+  const bustouts = Array.isArray(data.bustouts) ? data.bustouts : [];
+  return {
+    uniqueSongs: Number.isFinite(unique) && unique > 0 ? Math.trunc(unique) : 0,
+    bustouts: bustouts
+      .map((row) => ({
+        title: typeof row?.title === "string" ? row.title.trim() : "",
+        showDate: typeof row?.showDate === "string" ? row.showDate : "",
+        lastPlayed: typeof row?.lastPlayed === "string" ? row.lastPlayed : "",
+        debutYear: Number.isFinite(Number(row?.debutYear)) ? Math.trunc(Number(row.debutYear)) : null,
+      }))
+      .filter((row) => row.title),
+  };
 }
 
 /**
@@ -1283,7 +1406,6 @@ module.exports = {
   shouldSkipTourRankingsOnTourRecapMorning,
   MAX_TOUR_RECAP_LOOKBACK_DAYS,
   daysBetweenYmd,
-  isSphereArchiveTourKey,
   shouldAttemptPendingTourRecap,
   computeGlobalRankByUid,
   findTourCountdownTargets,

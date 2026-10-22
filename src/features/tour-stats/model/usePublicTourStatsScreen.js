@@ -6,6 +6,10 @@ import {
   fetchPublicTourStatsIndex,
 } from '../api/fetchPublicTourStats';
 import {
+  buildFinishedTourWrap,
+  finishedTourWrapShareImageUrl,
+} from './finishedTourWrap';
+import {
   readCachedPublicTourStatsDoc,
   readCachedPublicTourStatsIndex,
   writeCachedPublicTourStatsDoc,
@@ -16,6 +20,7 @@ import {
   resolveDefaultPublicTourSlug,
   sortPublicTourIndex,
 } from './publicTourIndex';
+import { SEO_CONFIG } from '../../../shared/config/seo';
 
 /**
  * Public tour-stats screen (#665 / #869) — aggregate docs only; no self overlay.
@@ -166,6 +171,17 @@ export function usePublicTourStatsScreen() {
     tours.find((t) => t.tourSlug === activeSlug)?.tourLabel ||
     activeSlug;
 
+  const wrap = useMemo(
+    () => buildFinishedTourWrap(doc, { slug: activeSlug }),
+    [doc, activeSlug],
+  );
+  const shareImageUrl = wrap?.slug
+    ? finishedTourWrapShareImageUrl(wrap.slug, {
+        siteUrl: SEO_CONFIG.siteUrl,
+        version: typeof doc?.writtenAt === 'string' ? doc.writtenAt : '',
+      })
+    : null;
+
   const selectTour = (slug) => {
     const next = String(slug ?? '').trim();
     if (!next) return;
@@ -185,6 +201,8 @@ export function usePublicTourStatsScreen() {
     statsLoading,
     error,
     stats,
+    wrap,
+    shareImageUrl,
     selectTour,
   };
 }

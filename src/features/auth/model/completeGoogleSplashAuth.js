@@ -9,6 +9,7 @@ import {
   trackAuthRollbackFailed,
   trackAuthSignUp,
 } from './authAnalytics';
+import { AUTH_FLOW_COPY } from '../utils/firebaseAuthMessages';
 import { decideSignInModalGoogleAction } from './signInModalGuard';
 
 /**
@@ -78,7 +79,7 @@ export async function completeGoogleSplashAuth({
       }
       return {
         kind: 'error',
-        message: 'Could not finish creating your account. Please try again.',
+        message: AUTH_FLOW_COPY.signupIncomplete,
       };
     }
     trackAuthSignUp('google', { surface: 'create_account', ...flowOpts });

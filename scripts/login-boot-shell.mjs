@@ -358,23 +358,46 @@ function loginModeBootScript() {
     if (document.documentElement.dataset.loginFocusGuard !== '1') {
       document.documentElement.dataset.loginFocusGuard = '1';
       var gestured = false;
-      function markGesture() { gestured = true; }
-      document.addEventListener('pointerdown', markGesture, true);
-      document.addEventListener('touchstart', markGesture, true);
-      document.addEventListener('keydown', markGesture, true);
+      function markGesture() {
+        gestured = true;
+        document.documentElement.dataset.loginFocusGestured = '1';
+      }
       function isCred(el) {
         if (!el || el.tagName !== 'INPUT') return false;
         var t = (el.getAttribute('type') || '').toLowerCase();
-        if (t === 'checkbox' || t === 'radio' || t === 'hidden' || t === 'submit') return false;
+        if (t === 'checkbox' || t === 'radio' || t === 'hidden' || t === 'submit' || t === 'button') return false;
         return t === 'email' || t === 'password' || t === 'text' || t === '' ||
           el.id === 'si-email' || el.id === 'si-pass' ||
           el.id === 'su-email' || el.id === 'su-pass' || el.id === 'su-confirm';
       }
+      function unlock(el) {
+        if (!isCred(el)) return;
+        el.readOnly = false;
+        if (el.removeAttribute) el.removeAttribute('readonly');
+      }
+      function fieldFromTarget(target) {
+        if (isCred(target)) return target;
+        if (!target || target.tagName !== 'LABEL') return null;
+        var id = target.getAttribute && target.getAttribute('for');
+        if (!id) return null;
+        var linked = document.getElementById(id);
+        return isCred(linked) ? linked : null;
+      }
+      function onPointerGesture(ev) {
+        var field = fieldFromTarget(ev.target);
+        if (!field) return;
+        markGesture();
+        unlock(field);
+      }
+      document.addEventListener('pointerdown', onPointerGesture, true);
+      document.addEventListener('touchstart', onPointerGesture, true);
+      document.addEventListener('keydown', markGesture, true);
       function parkFocus() {
         var park = document.getElementById('login-focus-park');
         if (park && park.focus) park.focus({ preventScroll: true });
       }
       function neutralize() {
+        if (gestured || document.documentElement.dataset.loginFocusGestured === '1') return;
         var ae = document.activeElement;
         if (!isCred(ae)) return;
         ae.blur();
@@ -383,8 +406,9 @@ function loginModeBootScript() {
       document.addEventListener('focusin', function (ev) {
         var t = ev.target;
         if (!isCred(t)) return;
-        if (gestured) {
-          if (t.readOnly) t.readOnly = false;
+        if (gestured || document.documentElement.dataset.loginFocusGestured === '1') {
+          if (!gestured) markGesture();
+          unlock(t);
           return;
         }
         t.blur();

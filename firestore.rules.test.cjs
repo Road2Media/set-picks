@@ -534,6 +534,57 @@ test("live_setlist_automation: client writes always rejected (even admin)", asyn
   );
 });
 
+test("public_service_status: signed-in user may read", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "public_service_status", "live-setlist-2026-07-17"), {
+      service: "live_setlist",
+      showDate: "2026-07-17",
+      status: "degraded",
+      messageKey: "phishnet_stalled",
+    });
+  });
+  const db = signedInAs("alice");
+  await assertSucceeds(
+    getDoc(doc(db, "public_service_status", "live-setlist-2026-07-17"))
+  );
+});
+
+test("public_service_status: anonymous read denied", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "public_service_status", "live-setlist-2026-07-17"), {
+      status: "degraded",
+    });
+  });
+  const db = anon();
+  await assertFails(
+    getDoc(doc(db, "public_service_status", "live-setlist-2026-07-17"))
+  );
+});
+
+test("public_service_status: client writes denied even for admin", async () => {
+  const db = signedInAs("mod", { admin: true });
+  await assertFails(
+    setDoc(doc(db, "public_service_status", "live-setlist-2026-07-17"), {
+      status: "degraded",
+      message: "<script>",
+    })
+  );
+});
+
+test("live_setlist_ops_alerts: clients cannot read or write", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "live_setlist_ops_alerts", "incident-1"), {
+      kind: "outage",
+    });
+  });
+  const reader = signedInAs("mod", { admin: true });
+  await assertFails(getDoc(doc(reader, "live_setlist_ops_alerts", "incident-1")));
+  const writer = signedInAs("alice");
+  await assertFails(
+    setDoc(doc(writer, "live_setlist_ops_alerts", "incident-2"), { kind: "outage" })
+  );
+});
+
 // ─── rollup_audit/{showDate} ─────────────────────────────────────────────────
 
 test("rollup_audit: non-admin cannot read", async () => {
@@ -613,6 +664,25 @@ test("comms_email_engagement: no client read or write (even admin claim)", async
 });
 
 // ─── account_deletion_reports/{reportId} ─────────────────────────────────────
+
+test("password_reset_rate: no client read or write (anon or admin claim)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "password_reset_rate", "e_hash"), {
+      count: 1,
+      windowStartMs: 1,
+    });
+  });
+  const signedIn = signedInAs("mod", { admin: true });
+  await assertFails(getDoc(doc(signedIn, "password_reset_rate", "e_hash")));
+  await assertFails(
+    setDoc(doc(signedIn, "password_reset_rate", "e_other"), { count: 9 })
+  );
+  const guest = anon();
+  await assertFails(getDoc(doc(guest, "password_reset_rate", "e_hash")));
+  await assertFails(
+    setDoc(doc(guest, "password_reset_rate", "e_guest"), { count: 1 })
+  );
+});
 
 test("account_deletion_reports: no client read or write (even admin claim)", async () => {
   await seed(async (adminDb) => {

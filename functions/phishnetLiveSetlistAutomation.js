@@ -1,9 +1,15 @@
 const crypto = require("node:crypto");
+const {
+  nextBackoffDelayMs,
+  planUpstreamFailure,
+  planUpstreamSuccess,
+  sanitizeUpstreamError,
+  syncLiveSetlistPublicStatus,
+} = require("./liveSetlistOutage");
 
 const LIVE_AUTOMATION_COLLECTION = "live_setlist_automation";
 const OFFICIAL_SETLISTS_COLLECTION = "official_setlists";
 const PHISHNET_API_ROOT = "https://api.phish.net/v5/setlists/showdate";
-const MAX_BACKOFF_MINUTES = 30;
 const DEFAULT_SHOW_TIME_ZONE = "America/Los_Angeles";
 
 const SLOT_KEYS = ["s1o", "s1c", "s2o", "s2c", "enc"];
@@ -813,9 +819,18 @@ function songGapsMapsEqual(a, b) {
   return true;
 }
 
-function nextBackoffMinutes(failureCount) {
-  const n = Number.isFinite(failureCount) ? Math.max(1, failureCount) : 1;
-  return Math.min(2 ** (n - 1), MAX_BACKOFF_MINUTES);
+/**
+ * Venue timezone for a calendar show date, or null when the snapshot has none.
+ *
+ * @param {Array<{ date?: string, timeZone?: string }> | null | undefined} calendarShows
+ * @param {string} showDate
+ * @returns {string | null}
+ */
+function timeZoneForShowDate(calendarShows, showDate) {
+  if (!Array.isArray(calendarShows)) return null;
+  const match = calendarShows.find((show) => show && show.date === showDate);
+  const tz = match && typeof match.timeZone === "string" ? match.timeZone.trim() : "";
+  return isValidIanaTimeZone(tz) ? tz : null;
 }
 
 async function fetchPhishnetSetlistForDate(showDate, apiKey) {
@@ -969,6 +984,13 @@ async function pollSingleShowDate({
   // existing tests and any future caller that doesn't want auto-finalize
   // keep working unchanged.
   runRollup = null,
+  /** IANA zone for the venue. Live-window backoff uses this clock. */
+  timeZone = null,
+  /** Test override. `null` derives the window from `timeZone` and `now`. */
+  inLiveWindow = null,
+  rng = Math.random,
+  /** Optional ops alert sender. Recovery alerts are returned for the caller. */
+  deliverOpsAlert = null,
 }) {
   const started = Date.now();
   const automationRef = db.collection(LIVE_AUTOMATION_COLLECTION).doc(showDate);
@@ -991,34 +1013,107 @@ async function pollSingleShowDate({
     return { showDate, skipped: "backoff", changed: false, updatedPicks: 0 };
   }
 
-  const scheduledCadenceStamp = () =>
-    !force
-      ? {
-          nextPollAt: admin.firestore.Timestamp.fromDate(
-            new Date(Date.now() + randomScheduledPollDelayMs())
-          ),
-        }
-      : {};
+  const inWindow =
+    typeof inLiveWindow === "boolean"
+      ? inLiveWindow
+      : isWithinShowLocalPollWindow(
+          new Date(now),
+          isValidIanaTimeZone(timeZone) ? timeZone : DEFAULT_SHOW_TIME_ZONE
+        );
+  const pollMode = force ? "force" : "scheduled";
+
+  const successStamp = () => {
+    const plan = planUpstreamSuccess({ automation, showDate });
+    /** @type {Record<string, unknown>} */
+    const fields = {
+      failureCount: 0,
+      lastError: admin.firestore.FieldValue.delete(),
+      lastErrorAt: admin.firestore.FieldValue.delete(),
+      nextPollAt: admin.firestore.Timestamp.fromDate(
+        new Date(now + randomScheduledPollDelayMs(rng))
+      ),
+      lastSuccessfulPollAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastSuccessfulPollMode: pollMode,
+    };
+    if (plan.archiveError) {
+      fields.previousError = sanitizeUpstreamError(plan.archiveError);
+      fields.previousErrorAt =
+        automation.lastErrorAt || admin.firestore.FieldValue.serverTimestamp();
+    }
+    if (plan.sendRecovery) {
+      fields.recoveredAt = admin.firestore.FieldValue.serverTimestamp();
+      fields.recoveryAlertedAt = admin.firestore.FieldValue.serverTimestamp();
+    } else if (plan.clearUnalertedOutage) {
+      fields.outageStartedAt = admin.firestore.FieldValue.delete();
+    }
+    return { fields, plan };
+  };
+
+  const recoveryEvent = (plan, changed) => {
+    if (!plan.sendRecovery) return null;
+    const started = timestampToMs(automation.outageStartedAt);
+    return {
+      kind: "recovery",
+      showDate,
+      messageId: plan.recoveryMessageId,
+      failureCount: Number(automation.failureCount || 0),
+      downtimeMs: started != null ? Math.max(0, now - started) : null,
+      changed: Boolean(changed),
+      sanitizedError: plan.archiveError
+        ? sanitizeUpstreamError(plan.archiveError)
+        : "",
+      updatedPicks: null,
+    };
+  };
+
+  const finish = async (result, phase) => {
+    if (phase === "success" || phase === "failure") {
+      try {
+        await syncLiveSetlistPublicStatus({
+          db,
+          admin,
+          logger,
+          showDate,
+          phase,
+        });
+      } catch (statusErr) {
+        logger?.error?.("live setlist public status sync failed", {
+          showDate,
+          phase,
+          error:
+            statusErr instanceof Error ? statusErr.message : String(statusErr),
+        });
+      }
+    }
+    return result;
+  };
 
   try {
     const payload = await fetchPhishnetSetlistForDate(showDate, apiKey);
     const rows = normalizeSetlistRows(payload);
     if (rows.length === 0) {
-      if (!force) {
-        await automationRef.set(
-          {
-            showDate,
-            enabled: automation.enabled !== false,
-            failureCount: 0,
-            lastPolledAt: admin.firestore.FieldValue.serverTimestamp(),
-            lastResult: "no-rows",
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            ...scheduledCadenceStamp(),
-          },
-          { merge: true }
-        );
-      }
-      return { showDate, changed: false, updatedPicks: 0, reason: "no-rows" };
+      const success = successStamp();
+      await automationRef.set(
+        {
+          showDate,
+          enabled: automation.enabled !== false,
+          lastPolledAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastResult: "no-rows",
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          ...success.fields,
+        },
+        { merge: true }
+      );
+      return finish(
+        {
+          showDate,
+          changed: false,
+          updatedPicks: 0,
+          reason: "no-rows",
+          opsRecovery: recoveryEvent(success.plan, false),
+        },
+        "success"
+      );
     }
 
     const signature = signatureFromRows(rows);
@@ -1167,28 +1262,32 @@ async function pollSingleShowDate({
     // different built docs, and we must write the newer one. Payload-equal
     // alone is the authoritative "nothing to persist" test.
     if (prevSignature === signature && setlistPayloadEqual(prev, nextPayload)) {
+      const success = successStamp();
       await automationRef.set(
         {
           showDate,
           enabled: automation.enabled !== false,
-          failureCount: 0,
           lastPolledAt: admin.firestore.FieldValue.serverTimestamp(),
           lastResult: "no-change",
           lastNoChangeAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           ...timingStateUpdate,
-          ...scheduledCadenceStamp(),
+          ...success.fields,
         },
         { merge: true }
       );
       const autoFinalize = await maybeAutoFinalize(autoFinalizeContext);
-      return {
-        showDate,
-        changed: false,
-        updatedPicks: 0,
-        reason: "unchanged",
-        autoFinalize,
-      };
+      return finish(
+        {
+          showDate,
+          changed: false,
+          updatedPicks: 0,
+          reason: "unchanged",
+          autoFinalize,
+          opsRecovery: recoveryEvent(success.plan, false),
+        },
+        "success"
+      );
     }
 
     const setlistPayload = {
@@ -1210,15 +1309,15 @@ async function pollSingleShowDate({
         pollMode: force ? "manual" : "scheduled",
       },
     };
+    const success = successStamp();
     const automationPayload = {
       showDate,
       enabled: automation.enabled !== false,
-      failureCount: 0,
       lastPolledAt: admin.firestore.FieldValue.serverTimestamp(),
       lastResult: "changed",
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       ...timingStateUpdate,
-      ...scheduledCadenceStamp(),
+      ...success.fields,
     };
     const batch = db.batch();
     batch.set(setlistRef, setlistPayload, { merge: true });
@@ -1247,44 +1346,105 @@ async function pollSingleShowDate({
       });
     }
     const autoFinalize = await maybeAutoFinalize(autoFinalizeContext);
-    return {
-      showDate,
-      changed: true,
-      updatedPicks: null,
-      durationMs: Date.now() - started,
-      autoFinalize,
-    };
-  } catch (e) {
-    const failureCount = Number(automation.failureCount || 0) + 1;
-    const backoffMinutes = nextBackoffMinutes(failureCount);
-    const nextPollAt = new Date(Date.now() + backoffMinutes * 60_000);
-    await automationRef.set(
+    return finish(
       {
         showDate,
-        enabled: automation.enabled !== false,
-        failureCount,
-        nextPollAt: admin.firestore.Timestamp.fromDate(nextPollAt),
-        lastResult: "error",
-        lastError: e instanceof Error ? e.message : String(e),
-        lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        changed: true,
+        updatedPicks: null,
+        durationMs: Date.now() - started,
+        autoFinalize,
+        opsRecovery: recoveryEvent(success.plan, true),
       },
-      { merge: true }
+      "success"
     );
+  } catch (e) {
+    const raw = e instanceof Error ? e.message : String(e);
+    const sanitized = sanitizeUpstreamError(raw);
+    const failureCount = Number(automation.failureCount || 0) + 1;
+    const backoffMs = nextBackoffDelayMs({
+      failureCount,
+      inLiveWindow: inWindow,
+      rng,
+    });
+    const backoffMinutes = Math.round(backoffMs / 60_000);
+    const plan = planUpstreamFailure({
+      automation,
+      failureCount,
+      inLiveWindow: inWindow,
+      nowMs: now,
+      showDate,
+    });
+    /** @type {Record<string, unknown>} */
+    const failurePatch = {
+      showDate,
+      enabled: automation.enabled !== false,
+      failureCount,
+      nextPollAt: admin.firestore.Timestamp.fromDate(new Date(now + backoffMs)),
+      lastResult: "error",
+      lastError: sanitized,
+      lastErrorAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    if (plan.resetIncident) {
+      failurePatch.outageStartedAt = admin.firestore.Timestamp.fromMillis(
+        plan.outageStartedAtMs
+      );
+      failurePatch.outageAlertedAt = admin.firestore.FieldValue.delete();
+      failurePatch.outageAlertMessageId = admin.firestore.FieldValue.delete();
+      failurePatch.outageEscalatedAt = admin.firestore.FieldValue.delete();
+      failurePatch.recoveryAlertedAt = admin.firestore.FieldValue.delete();
+      failurePatch.recoveredAt = admin.firestore.FieldValue.delete();
+    }
+    if (plan.sendInitial) {
+      failurePatch.outageAlertedAt = admin.firestore.FieldValue.serverTimestamp();
+      failurePatch.outageAlertMessageId = plan.outageMessageId;
+    }
+    if (plan.sendEscalation) {
+      failurePatch.outageEscalatedAt = admin.firestore.FieldValue.serverTimestamp();
+    }
+    await automationRef.set(failurePatch, { merge: true });
     logger?.error?.("live setlist poll failed", {
       showDate,
       failureCount,
       backoffMinutes,
-      error: e instanceof Error ? e.message : String(e),
+      inLiveWindow: inWindow,
+      error: sanitized,
     });
-    return {
-      showDate,
-      changed: false,
-      updatedPicks: 0,
-      error: e instanceof Error ? e.message : String(e),
-      failureCount,
-      backoffMinutes,
-    };
+    if (
+      (plan.sendInitial || plan.sendEscalation) &&
+      typeof deliverOpsAlert === "function"
+    ) {
+      try {
+        await deliverOpsAlert({
+          kind: plan.sendInitial ? "outage" : "escalation",
+          showDate,
+          messageId: plan.sendInitial
+            ? plan.outageMessageId
+            : plan.escalationMessageId,
+          sanitizedError: sanitized,
+          failureCount,
+          firstFailureAt: new Date(plan.outageStartedAtMs).toISOString(),
+          lastFailureAt: new Date(now).toISOString(),
+          nextPollAt: new Date(now + backoffMs).toISOString(),
+        });
+      } catch (alertErr) {
+        logger?.error?.("live setlist ops alert failed", {
+          showDate,
+          error: alertErr instanceof Error ? alertErr.message : String(alertErr),
+        });
+      }
+    }
+    return finish(
+      {
+        showDate,
+        changed: false,
+        updatedPicks: 0,
+        error: sanitized,
+        failureCount,
+        backoffMinutes,
+      },
+      plan.publishDegraded ? "failure" : null
+    );
   }
 }
 
@@ -1315,6 +1475,7 @@ module.exports = {
   parseShowCalendarSnapshotToShowsByTour,
   pollSingleShowDate,
   randomScheduledPollDelayMs,
+  timeZoneForShowDate,
   scheduledCandidateShowDates,
   set1TitleSignatureFromRows,
   setlistPayloadEqual,

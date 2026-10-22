@@ -11,6 +11,7 @@
 const {
   fetchOfficialPhishSchedule,
 } = require("./phishOfficialSchedule");
+const { stampPreservedEdition } = require("./calendarEdition");
 
 const MONTHS = [
   "Jan",
@@ -682,10 +683,13 @@ async function syncPhishnetShowCalendarToFirestore(db, apiKey, ctx) {
             : String(scheduleError),
       });
     }
-    const showDatesByTour = enrichGroupsWithOfficialSchedule(
-      groupedShows,
-      officialScheduleByDate,
-      prevScheduleByDate
+    const showDatesByTour = stampPreservedEdition(
+      enrichGroupsWithOfficialSchedule(
+        groupedShows,
+        officialScheduleByDate,
+        prevScheduleByDate
+      ),
+      prevSnap.exists ? prevSnap.data() : null
     );
     const flat = showDatesByTour.flatMap((g) => g.shows);
 

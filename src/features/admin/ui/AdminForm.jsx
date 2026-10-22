@@ -5,6 +5,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useShowCalendar } from '../../show-calendar';
 import { resolveShowTimeZone } from '../../../shared/utils/showTimeZone';
 import { useAdminSetlistForm } from '../model/useAdminSetlistForm';
+import { useLiveSetlistAutomationPanel } from '../model/useLiveSetlistAutomationPanel';
 import { useAdminPicksLock } from '../model/useAdminPicksLock';
 import AdminSetlistSlotInputs from './AdminSetlistSlotInputs';
 import AdminSetlistFetchButton from './AdminSetlistFetchButton';
@@ -56,12 +57,6 @@ export default function AdminForm({ user, selectedDate }) {
     isSaving,
     isFetchingApi,
     apiFetchError,
-    automationEnabled,
-    isAutomationLoading,
-    isAutomationToggling,
-    isAutomationPolling,
-    automationStatus,
-    automationError,
     message,
     setOfficialSetlistInput,
     handleInputChange,
@@ -70,8 +65,6 @@ export default function AdminForm({ user, selectedDate }) {
     handleFetchFromApi,
     handleSave,
     handleFinalizeAndRollup,
-    handleToggleAutomation,
-    handlePollAutomationNow,
     finalizeAllowedWithoutForce,
     finalizeTimingTooltip,
     finalizeForceModalOpen,
@@ -79,6 +72,10 @@ export default function AdminForm({ user, selectedDate }) {
     handleCloseFinalizeForceModal,
     handleConfirmForceFinalizeAndRollup,
   } = useAdminSetlistForm({ user, selectedDate: warRoomShowDate, showDates });
+  const automationPanel = useLiveSetlistAutomationPanel({
+    showDate: warRoomShowDate,
+    isAdmin,
+  });
   const {
     showStatus: picksLockShowStatus,
     picksAlreadyLocked,
@@ -161,18 +158,35 @@ export default function AdminForm({ user, selectedDate }) {
             <AdminActionToggle
               id="admin-live-automation"
               title="Live automation"
-              description="Pause/resume scheduled live setlist polling and run a one-off poll + score refresh."
+              description="Polling health, Phish.net Force poll, and the player delay message. Separate from Save Official Setlist."
               open={liveAutomationOpen}
               onOpenChange={setLiveAutomationOpen}
             >
               <AdminLiveSetlistAutomationControls
-                enabled={automationEnabled}
-                isToggling={isAutomationLoading || isAutomationToggling}
-                isPolling={isAutomationPolling}
-                statusText={automationStatus}
-                errorText={automationError}
-                onToggle={handleToggleAutomation}
-                onPollNow={handlePollAutomationNow}
+                enabled={automationPanel.enabled}
+                isToggling={automationPanel.isToggling}
+                isPolling={automationPanel.isPolling}
+                isPublishing={automationPanel.isPublishing}
+                statusText={automationPanel.statusText}
+                errorText={automationPanel.errorText}
+                health={automationPanel.health}
+                lastResult={automationPanel.lastResult}
+                failureCount={automationPanel.failureCount}
+                lastError={automationPanel.lastError}
+                lastPolledAt={automationPanel.lastPolledAt}
+                nextPollAt={automationPanel.nextPollAt}
+                lastSuccessfulPollMode={automationPanel.lastSuccessfulPollMode}
+                messageKey={automationPanel.messageKey}
+                messageChoices={automationPanel.messageChoices}
+                clearOnRecovery={automationPanel.clearOnRecovery}
+                bannerVisible={automationPanel.bannerVisible}
+                bannerActivatedBy={automationPanel.bannerActivatedBy}
+                onToggle={automationPanel.handleToggle}
+                onPollNow={automationPanel.handlePollNow}
+                onMessageKey={automationPanel.setMessageKey}
+                onClearOnRecovery={automationPanel.setClearOnRecovery}
+                onPublishBanner={automationPanel.handlePublishBanner}
+                onClearBanner={automationPanel.handleClearBanner}
               />
             </AdminActionToggle>
             <AdminActionToggle
