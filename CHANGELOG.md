@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.90.0] — 2026-10-22
+
+### Added
+- **Tour-key-missing rollup signal (#298)** — when a show is finalized and `show_calendar/snapshot` has no tour for that date, `rollup_audit/{showDate}` stores `tourKeyMissing: true`, `tourKey: null`, and `showDate`, and Cloud Logging records an error instead of a warning. War Room lists those dates. A later rollup that resolves the tour key sets `tourKeyMissing: false`. That clears the badge. It does not replay first-grade `seasonStats` increments that were skipped. Repair those counters with `functions/scripts/backfillSeasonAggregates.js` after the calendar lists the date. Taking effect in production requires a Cloud Functions deploy. The badge stays empty until a rollup runs on that deploy.
+
+### Changed
+- **Legacy `users/{uid}.stats` (#298)** — rollup and the season-aggregate backfill now delete the unread pre-launch `stats` map on every user doc they merge. `functions/scripts/cleanupLegacyUserStats.js` (`npm run cleanup:legacy-user-stats` from `functions/`) deletes that field on every user doc, including accounts the backfill never touches. Dry-run is the default. `--apply` writes. This does not run in CI. A human with Firestore credentials must run it once against production. The live delete on rollup also needs the Cloud Functions deploy.
+
 ## [1.89.1] — 2026-10-22
 
 ### Fixed

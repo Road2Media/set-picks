@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.84.1  
+**Version:** 1.90.0  
 
 
 **SemVer:** https://semver.org  
@@ -335,6 +335,26 @@ Sanitized player projection. Document id for live setlist is `live-setlist-{show
 | `clearOnRecovery` | boolean | Automation sets `true`. A manual pin stays until cleared unless the admin checked this. |
 | `resolvedAt` | Timestamp? | Set when the banner is cleared. |
 | `updatedAt` | Timestamp | |
+
+### 1.19 `rollup_audit/{showDate}` tour-key drift (**v1.90.0 / #298**)
+
+Admin-read, client-write denied. `rollupScoresForShow` (manual, auto, and auto-reconcile) merges this doc after every rollup that passes the hollow-setlist gate, including a show with zero picks. Document id is the show date.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `lastRolledUpAt` | Timestamp | When this invocation committed. |
+| `processedPicks` | number | Picks regraded. |
+| `skippedPicks` | number | Picks skipped (missing `userId`). |
+| `totalPicks` | number | Matching `picks` docs for this date. |
+| `callerUid` | string \| null | Admin uid, or null for the scheduler. |
+| `trigger` | `"manual"` \| `"auto"` \| `"auto-reconcile"` | |
+| `showDate` | string | **v1.90.0.** `YYYY-MM-DD`. Same as the document id. |
+| `tourKey` | string \| null | **v1.90.0.** Calendar tour label used for `seasonStats`, or null when the snapshot did not list the date. |
+| `tourKeyMissing` | boolean | **v1.90.0.** `true` when this invocation skipped per-tour `seasonStats` because `resolveTourKeyForDate` returned null. `false` when the key resolved. Merge overwrites a prior `true`. Clearing the flag does not replay skipped first-grade tour increments. |
+
+Global `totalPoints`, `showsPlayed`, and `wins` still update when `tourKeyMissing` is true. War Room reads `tourKeyMissing == true` (limit 50) and lists the dates. Docs written before the functions deploy omit `tourKeyMissing`, so they do not appear until that show is rolled up again.
+
+Rollup and `backfillSeasonAggregates.js` also `FieldValue.delete()` the legacy undeclared `users/{uid}.stats` map (`{ showsPlayed, totalPoints }` from launch-day docs). It was never part of this schema. `cleanupLegacyUserStats.js` is the one-shot that removes it from docs those writers do not touch. Production cleanup is a manual `--apply`, not a client or rules change.
 
 ---
 

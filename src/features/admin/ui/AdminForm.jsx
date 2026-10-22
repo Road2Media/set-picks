@@ -7,6 +7,7 @@ import { resolveShowTimeZone } from '../../../shared/utils/showTimeZone';
 import { useAdminSetlistForm } from '../model/useAdminSetlistForm';
 import { useLiveSetlistAutomationPanel } from '../model/useLiveSetlistAutomationPanel';
 import { useAdminPicksLock } from '../model/useAdminPicksLock';
+import { useTourKeyMissingAudits } from '../model/useTourKeyMissingAudits';
 import AdminSetlistSlotInputs from './AdminSetlistSlotInputs';
 import AdminSetlistFetchButton from './AdminSetlistFetchButton';
 import AdminSongCatalogRefresh from './AdminSongCatalogRefresh';
@@ -17,6 +18,7 @@ import AdminOfficialSetlistBuilder from './AdminOfficialSetlistBuilder';
 import AdminFinalizeAndSave from './AdminFinalizeAndSave';
 import AdminWarRoomShowDate from './AdminWarRoomShowDate';
 import AdminClaimBootstrap from './AdminClaimBootstrap';
+import AdminTourKeyMissingNotice from './AdminTourKeyMissingNotice';
 import ConfirmationModal from '../../../shared/ui/ConfirmationModal/ConfirmationModal';
 
 function normalizeDashboardShowDate(value) {
@@ -91,6 +93,7 @@ export default function AdminForm({ user, selectedDate }) {
   });
   const warRoomShow = showDates.find((show) => show.date === warRoomShowDate) || null;
   const warRoomTimeZone = resolveShowTimeZone(warRoomShow);
+  const tourKeyDrift = useTourKeyMissingAudits({ enabled: isAdmin });
 
   if (!isAdmin) {
     return (
@@ -111,6 +114,10 @@ export default function AdminForm({ user, selectedDate }) {
         show={warRoomShow}
       />
       <AdminClaimBootstrap user={user} />
+      <AdminTourKeyMissingNotice
+        shows={tourKeyDrift.shows}
+        errorText={tourKeyDrift.errorText}
+      />
       <Card variant="danger" padding="sm" className="mb-6 mt-4">
         <p className="text-xs text-red-300/80 font-bold uppercase tracking-wider flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" aria-hidden />
