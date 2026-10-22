@@ -73,6 +73,10 @@ export default function PublicTourStatsPanel({
             <Link to={SPHERE_TOUR_SEO_PATH} className={LINK_ON_DARK}>
               2026 Sphere
             </Link>
+            {' · '}
+            <Link to="/tour-stats/msg" className={LINK_ON_DARK}>
+              Phish at MSG
+            </Link>
           </p>
         ) : null}
       </header>
