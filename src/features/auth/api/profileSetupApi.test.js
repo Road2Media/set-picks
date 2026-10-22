@@ -29,6 +29,7 @@ describe('buildInitialUserProfilePayload', () => {
     expect(out.email).toBe('pat@example.com');
     expect(out.createdAt).toBe(SERVER_SENTINEL);
     expect(out.totalPoints).toBe(0);
+    expect('avatarId' in out).toBe(false);
   });
 
   it('uses Firebase Auth creationTime when provided (orphan repair)', () => {

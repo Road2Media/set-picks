@@ -7,7 +7,11 @@ import {
   updateUserProfileWithPickHandles,
 } from '../api/profileApi';
 import { showSuccessToast } from '../../../shared/ui/toast';
-import { DEFAULT_AVATAR_ID, normalizeAvatarId } from './avatarCatalog';
+import {
+  didAvatarSelectionChange,
+  profileAvatarSaveFields,
+  seedProfileAvatarId,
+} from './profileAvatarForm';
 import { trackAvatarChanged } from './profileEngagementAnalytics';
 
 /**
@@ -20,24 +24,24 @@ export function useUserProfile(user) {
 
   const [handle, setHandle] = useState('');
   const [favoriteSong, setFavoriteSong] = useState('');
-  const [avatarId, setAvatarId] = useState(DEFAULT_AVATAR_ID);
+  const [avatarId, setAvatarId] = useState(/** @type {string | null} */ (null));
   const [badges, setBadges] = useState(/** @type {Record<string, unknown> | null} */ (null));
   const [joinDate, setJoinDate] = useState('');
   const [isLoading, setIsLoading] = useState(!!uid);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
-  /** Last persisted avatar — used to detect real changes on save (#638). */
-  const persistedAvatarIdRef = useRef(DEFAULT_AVATAR_ID);
+  /** Last persisted explicit avatar, or null when unset (#638 / #643). */
+  const persistedAvatarIdRef = useRef(/** @type {string | null} */ (null));
 
   useEffect(() => {
     if (!uid) {
       setIsLoading(false);
       setHandle('');
       setFavoriteSong('');
-      setAvatarId(DEFAULT_AVATAR_ID);
+      setAvatarId(null);
       setBadges(null);
       setJoinDate('');
-      persistedAvatarIdRef.current = DEFAULT_AVATAR_ID;
+      persistedAvatarIdRef.current = null;
       return;
     }
 
@@ -49,7 +53,7 @@ export function useUserProfile(user) {
       if (data) {
         setHandle(data.handle || '');
         setFavoriteSong(data.favoriteSong || '');
-        const nextAvatar = normalizeAvatarId(data.avatarId);
+        const nextAvatar = seedProfileAvatarId(data);
         setAvatarId(nextAvatar);
         persistedAvatarIdRef.current = nextAvatar;
         setBadges(
@@ -60,8 +64,8 @@ export function useUserProfile(user) {
       } else {
         setHandle('');
         setFavoriteSong('');
-        setAvatarId(DEFAULT_AVATAR_ID);
-        persistedAvatarIdRef.current = DEFAULT_AVATAR_ID;
+        setAvatarId(null);
+        persistedAvatarIdRef.current = null;
         setBadges(null);
       }
     };
@@ -118,16 +122,19 @@ export function useUserProfile(user) {
       setMessage({ text: '', type: '' });
 
       try {
-        const nextAvatarId = normalizeAvatarId(avatarId);
-        const avatarChanged = nextAvatarId !== persistedAvatarIdRef.current;
+        const nextAvatarId = seedProfileAvatarId({ avatarId });
+        const avatarChanged = didAvatarSelectionChange(
+          persistedAvatarIdRef.current,
+          nextAvatarId,
+        );
         await updateUserProfileWithPickHandles(uid, {
           handle: trimmedHandle,
           favoriteSong,
-          avatarId: nextAvatarId,
+          ...profileAvatarSaveFields(avatarId),
         });
         setAvatarId(nextAvatarId);
         persistedAvatarIdRef.current = nextAvatarId;
-        if (avatarChanged) {
+        if (avatarChanged && nextAvatarId) {
           trackAvatarChanged({ avatar_id: nextAvatarId });
         }
         setMessage({ text: 'Profile updated successfully! 🎸', type: 'success' });
