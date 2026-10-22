@@ -295,6 +295,9 @@ Scores update live during the show. Check back tonight.
 | **Prefs key** | `results` |
 | **Dedup** | `show_recap:{uid}:{showDate}` in `commsInbox` + `fcm_notification_log` |
 | **Implementation** | Batch fan-out triggered after `rollupScoresForShow` completes |
+| **Process scope** | `show_recap:{showDate}` |
+| **Lookback** | None. Event-scoped to the rollup of that show. |
+| **Archive policy** | Skip when the tour `editionStatus` is `archive` or `closed`, when that tour's process is `skipped_archive` or `closed`, or when `show_recap:{showDate}` is already terminal. A `sent` `tour_recap` does not block a live night. Re-rollup of an archive show does not send (#1035). |
 | **Note** | Email folded into `tour_rankings_daily`'s next-morning send (#451) — the two triggers fired for the same `(uid, showDate)` on every single-tour-night, the dominant same-day email fatigue collision. inApp/push keep the immediate night-of tease + inbox card unchanged. Narrative vars from `comms_show_context` (#572). `narrative_line` composer (#985) weaves arc + card + relative rank; push stays a short tease. |
 
 #### Variables used
@@ -547,15 +550,18 @@ Abbreviated recap + Standings / invite CTA. Forced to every inbox (no play filte
 | Field | Value |
 |-------|-------|
 | **Status** | `shipped` |
-| **Automation** | `automated` — 8am PT `scheduledTourRankingsDailyComms` → `deliverPendingTourRecaps` after the tour's **final show date** is in the past **and within a 14-day lookback**. **Not** same-tick as night `show_recap`. **Not** War Room on the production happy path. |
-| **Event** | Last date in `show_calendar.showDatesByTour` for that tour is already yesterday-or-earlier (PT) and ≤14 days old **and** `comms_tour_recap_state/{tourId}` is not terminal. First successful fan-out writes `status: sent` and hard-skips forever (once-ever). Older / never-sent finales outside lookback: admin `runCommsTrigger` only. |
+| **Automation** | `automated` — 8am PT `scheduledTourRankingsDailyComms` → `deliverPendingTourRecaps` after the tour's **final show date** is in the past **and within a 14-day lookback**, unless `editionStatus` is `archive` or `closed`. **Not** same-tick as night `show_recap`. **Not** War Room on the production happy path. |
+| **Process scope** | `tour_recap:{tourId}` |
+| **Lookback** | 14 days after the finale. |
+| **Archive policy** | `editionStatus` `archive` / `closed` skips every channel and writes `skipped_archive` or `closed`, including outside the lookback. A tour name is not a gate. Terminal `comms_process_state` (and the `comms_tour_recap_state` mirror) hard-skips. `campaignId` is the edition slug; `triggerId` stays `tour_recap` (#1035). |
+| **Event** | Last date in `show_calendar.showDatesByTour` for that tour is already yesterday-or-earlier (PT) and ≤14 days old **and** the process doc is not terminal **and** `editionStatus` is not `archive` or `closed`. First successful fan-out writes `status: sent` and hard-skips forever (once-ever). Older / never-sent finales outside lookback: admin `runCommsTrigger` only. |
 | **Channels** | `inApp`, `push`, `email` (abbreviated teaser; optional `emailFull` / in-app long form) |
 | **Audience** | Users with ≥1 graded pick on any show in that tour |
 | **Prefs key** | `results` |
 | **Dedup** | `tour_recap:{tourId}:{uid}` in `fcm_notification_log` + inbox message id |
 | **Priority** | P1 (`results_recap`, W3) |
 | **Implementation** | Thin adapter in `functions/commsEventAdapters.js` → `deliverCommsTrigger`. Edition flavor from `content/comms/tours/<edition>.md` + send-time payload — do not hardcode Sphere as the live catalog trigger. |
-| **Note** | Night `show_recap` ≠ this end-of-tour recap. Last night of tour is still `show_recap` only; this trigger waits until the next morning and that morning skips `tour_rankings_daily`. Do not replace `show_recap` or `tour_rankings_daily` on mid-tour nights. Sphere ’26 (`sphere-2026-inaugural` / `tour_recap_sphere_2026`) and any calendar tour key matching `/\bsphere\b/i` (e.g. `2026 Sphere`) are archive + War Room replay (`deliverSphere2026TourRecapInbox`) only — cron writes `comms_tour_recap_state` `skipped_archive` (#1033). Per-uid dedup remains; tour-level state is the durable once-ever process for every tour. GitHub #510 / #1033. |
+| **Note** | Night `show_recap` ≠ this end-of-tour recap. Last night of tour is still `show_recap` only; this trigger waits until the next morning and that morning skips `tour_rankings_daily`. Do not replace `show_recap` or `tour_rankings_daily` on mid-tour nights. Sphere ’26 stays the archive template `sphere-2026-inaugural` (`deliverSphere2026TourRecapInbox` replay only). The cron skip is `editionStatus: archive` plus the process ledger, not a name regex and not a per-tour trigger id (#1033 / #1035). `campaignId` distinguishes the edition (`2026-summer`, `2026-sphere`). Per-uid dedup remains channel idempotency. GitHub #510 / #1033 / #1035. |
 
 #### Variables used
 

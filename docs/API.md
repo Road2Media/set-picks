@@ -60,11 +60,11 @@ All collections live in the default `(default)` Firestore database for project `
 | Field | Type | Notes |
 |-------|------|-------|
 | `templateId` | string | Registry key (e.g. `"account-welcome"`) |
-| `triggerId` | string | Catalog trigger ID |
+| `triggerId` | string | Catalog trigger ID. **v1.85.0 (#1035):** `commsInboxWorker` writes this on new inbox docs. `templateId` stays the kebab registry key. Message id is still the dedup id. Historical rows are not backfilled. |
 | `readAt` | Timestamp? | **v1.70.2+ (#1015):** Null until the user closes the message after opening it (Collapse, switch to another row, or collapse Inbox). Opening alone does not set `readAt`, so Unopened rows stay expanded while reading. |
 | `archivedAt` | Timestamp? | **v1.67.0+ (#513 / #770)** Set when the owner archives the message. Unread bell count excludes archived. |
 | `createdAt` | Timestamp | |
-| `payload` | map | Template-specific variables. `show_recap`, the morning `tour_rankings_daily` night paragraph, and `tour_recap` may include `payload.fact_label` (**#1082**): `{ map: "show_recap" \| "tour_recap", branch?, slots: string[], showDate?, tourId? }`. `slots` are filled ids from the message map. Unknown ids are not written. Absence of a fact omits that slot and does not drop the send. `tour_recap` may also include `personal_line` (the in-app rank paragraph plus at most one personal sentence), `personal_clause` (that one sentence, for the email), and `email_board` (up to five rows: rank, handle, points, wins, nights, avg). Push stays the rank tease. (**#1084**) |
+| `payload` | map | Template-specific variables. `show_recap`, the morning `tour_rankings_daily` night paragraph, and `tour_recap` may include `payload.fact_label` (**#1082**): `{ map: "show_recap" \| "tour_recap", branch?, slots: string[], showDate?, tourId? }`. `slots` are filled ids from the message map. Unknown ids are not written. Absence of a fact omits that slot and does not drop the send. `tour_recap` may also include `personal_line` (the in-app rank paragraph plus at most one personal sentence), `personal_clause` (that one sentence, for the email), and `email_board` (up to five rows: rank, handle, points, wins, nights, avg). Push stays the rank tease. (**#1084**) **v1.85.0 (#1035):** when the send has an edition slug, `payload.campaignId` is set (for example `2026-summer`). It does not change the doc id. |
 
 **Client write surface (v1.67.0 / #513):** owners may update `readAt` and/or `archivedAt` only (payload / `templateId` / `createdAt` stay server-owned). Owners may **hard-delete** their own inbox docs. Clients cannot create inbox docs — Admin SDK / Cloud Functions only.
 
@@ -98,7 +98,7 @@ Also hosts the per-user daily email fatigue cap (#453): doc ID `email_cap:{uid}:
 
 ### 1.7.1 `comms_tour_recap_state/{tourId}` (**v1.74.2 / #1033**)
 
-Tour-level once-ever gate for production `tour_recap`. Document ID is the calendar tour key (e.g. `2026 Summer Tour`). A `/` in the key is stored as `-` so the id stays one Firestore path segment (`2026/2027 NYE Run` → `2026-2027 NYE Run`). Keys that are already a legal id are unchanged. Written only by Admin SDK (`deliverPendingTourRecaps` or `functions/scripts/seedTourRecapState.js`). Clients have no access. The 8am scanner reads this collection only for tours whose finale is already past and inside the 14-day lookback, plus Sphere archive labels.
+Tour-level mirror of the `tour_recap` process gate. Document ID is the calendar tour key (e.g. `2026 Summer Tour`). A `/` in the key is stored as `-` so the id stays one Firestore path segment (`2026/2027 NYE Run` → `2026-2027 NYE Run`). Keys that are already a legal id are unchanged. Written only by Admin SDK. **v1.85.0 (#1035):** new writes also go to `comms_process_state/tour_recap:{tourId}` in the same call. Reads of the process ledger treat a terminal doc here as terminal, so the 2026-09-09 seed (Summer `sent`, Sphere `skipped_archive`) still blocks without a second gate. Clients have no access.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -106,9 +106,28 @@ Tour-level once-ever gate for production `tour_recap`. Document ID is the calend
 | `status` | string | `sent` \| `skipped_archive` \| `closed` — any of these permanently blocks the 8am pending scanner for this tour |
 | `finalDate` | string? | Tour finale `YYYY-MM-DD` when known |
 | `completedAt` | timestamp | Server time when the terminal status was written |
-| `source` | string | `cron` \| `manual` \| `seed` \| `incident` |
+| `source` | string | `cron` \| `manual` \| `seed` \| `incident` \| `rollup` (`rollup` is the `show_recap` re-rollup skip on the process ledger) |
+| `processId` | string? | **v1.85.0:** ledger id when this mirror was written with the process doc |
+| `supersedes` | string[]? | Prior template or trigger ids that already counted as this moment |
 
 Per-uid channel idempotency remains `fcm_notification_log` (`tour_recap:{tourId}:{uid}`). The tour doc is the durable process so each tour only gets **one** automatic end-of-tour send.
+
+### 1.7.2 `comms_process_state/{processId}` (**v1.85.0 / #1035**)
+
+Process-level once-ever gate for one-shot and pending-scanner comms. Document ID is `{triggerId}:{scope}` (`tour_recap:2026 Summer Tour`, `show_recap:2026-05-02`). A `/` in the scope is stored as `-`. Written only by Admin SDK (`deliverPendingTourRecaps`, `deliverPostRollupComms`, `functions/scripts/seedCommsProcessState.js`). Clients have no access (`allow read, write: if false`).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `processId` | string | Same as doc id |
+| `triggerId` | string | Catalog id (`tour_recap`, `show_recap`) |
+| `scope` | string | Tour key or show date, slash-normalized |
+| `status` | string | `sent` \| `skipped_archive` \| `closed` — terminal; scanners skip before building recipients |
+| `supersedes` | string[] | Prior trigger or template ids that already counted (for example `sphere-2026-inaugural`) |
+| `finalDate` | string? | `YYYY-MM-DD` when known |
+| `completedAt` | timestamp | Server time when the terminal status was written |
+| `source` | string | `cron` \| `manual` \| `seed` \| `incident` \| `rollup` |
+
+Automated paths read this **before** `deliverCommsTrigger`. `runCommsTrigger` remains an explicit admin replay (`dryRun` default true) and does not walk the calendar. `tour_recap` dual-writes §1.7.1. A `sent` tour process does not block night `show_recap` for a live edition. `skipped_archive` / `closed` on the tour process does block `show_recap` for that tour.
 
 ### 1.8 `show_calendar` (singleton or subcollection — see `docs/SHOW_CALENDAR_TOUR_LABELS.md`)
 
@@ -131,6 +150,16 @@ Tour and show date metadata. Read by `resolveCurrentTour` and `resolveSelectable
 **Picks wall-clock lock (#522):** when `scheduledStartLocal` (or a seeded advertised show time) is known, lock = **published ticket/show time + 20 minutes**. Same Phish.com date-page source as doors (`Show Time`). When show time is unknown, fallback is **19:30** venue-local. Admin `show_lock_state` and (planned) setlist `s1o` still win as earlier signals.
 
 `scheduledPhishnetShowCalendar` runs daily at 06:00 ET. Phish.net is canonical for dates/tours/venues; the sync then fetches Phish.com upcoming date pages for timing. A Phish.com failure does not fail or erase the calendar: prior timing is preserved.
+
+**Tour group fields (v1.85.0 / #1035):** each `showDatesByTour[]` object may include:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `editionStatus` | `'live' \| 'archive' \| 'closed'`? | Absent is treated as live. `archive` and `closed` skip automated `tour_recap` and `show_recap` before recipients are built. A tour name is not a gate. |
+| `campaignId` | string? | Edition analytics slug. Overrides the slug derived from the tour key. |
+| `commsProcessId` | string? | Prior template id recorded on the process doc as `supersedes` (for example `sphere-2026-inaugural`). |
+
+The daily Phish.net sync rebuilds groups and copies these three fields forward from the previous snapshot (by show date, then by tour label). `closed` wins over `archive` over `live` if one new group mixes dates from more than one old group. Seed `2026 Sphere` with `node functions/scripts/seedCalendarEditionStatus.js` (`--dry-run` default, `--confirm` writes). That script is a production Firestore write. It is not run by deploy.
 
 ### 1.9 `email_suppression/{sha256(email)}`
 
@@ -421,10 +450,10 @@ Automated comms delivery triggered by Firestore writes, post-rollup hooks, live-
 |--------|---------|--------------|
 | `commsOnUserProfileWrite` | `account_welcome` | `users/{uid}` write when handle first appears |
 | `commsOnPickWrite` | `picks_confirmed` | `picks/{pickId}` create with non-empty picks |
-| Post-rollup hook | `show_recap`, `tour_engagement_reminder` | `rollupScoresForShow` completion. Last night of a tour is still night `show_recap` only. |
+| Post-rollup hook | `show_recap`, `tour_engagement_reminder` | `rollupScoresForShow` completion. Last night of a tour is still night `show_recap` only. **v1.85.0:** skips the fan-out when the tour `editionStatus` is `archive` or `closed`, when that tour’s process is `skipped_archive` or `closed`, or when `show_recap:{showDate}` is already terminal. A live re-rollup still uses per-uid dedup. |
 | Live-scoring hook | `score_first_points`, `score_leader` | `recomputeLiveScoresForShow` |
 | `scheduledTourCountdownComms` | `tour_countdown` | Daily 9am PT cron (300s; T-10/T-5/T-3/T-1). Push and in-app on every beat. Email on T-5 and T-1 only, and only when the opener card is empty (`picks_secured` false). Fall Tour 2026 (`first_show_date` `2026-10-02`) skips the T-1 email for everyone. A tour whose first show has an invalid IANA `timeZone` is skipped. |
-| `scheduledTourRankingsDailyComms` | `tour_rankings_daily`, `tour_recap` | Daily 8am PT cron (300s). Rankings = morning-after show, **skipped** when that show is a tour finale (`tour_recap` day). A failure in the tour-recap step does not cancel rankings on any other morning. A show whose `timeZone` is not a valid IANA name is skipped. `tour_recap` = first tick after that tour’s final show date while inside a **14-day lookback** and `comms_tour_recap_state/{tourId}` is not terminal (dedup `tour_recap:{tourId}:{uid}`); successful fan-out writes `status: sent` (once-ever). One tour’s failure does not stop another tour in the same tick. Sphere calendar labels (`/\bsphere\b/i`) write `skipped_archive` (#1033). |
+| `scheduledTourRankingsDailyComms` | `tour_rankings_daily`, `tour_recap` | Daily 8am PT cron (300s). Rankings = morning-after show, **skipped** when that show is a tour finale (`tour_recap` day). A failure in the tour-recap step does not cancel rankings on any other morning. A show whose `timeZone` is not a valid IANA name is skipped. `tour_recap` = first tick after that tour’s final show date while inside a **14-day lookback**, the tour group is not `editionStatus` `archive`/`closed`, and `comms_process_state/tour_recap:{tourId}` (or the legacy `comms_tour_recap_state` mirror) is not terminal. Dedup `tour_recap:{tourId}:{uid}`. Successful fan-out writes `status: sent` (once-ever) on both stores. Email tags include `campaignId` (edition slug). One tour’s failure does not stop another tour in the same tick (#1033 / #1035). |
 | `scheduledPicksLockReminder` | `picks_lock_reminder` | Every 15 min (300s); venue-local show day **T-3h–lock** (window tracks per-show lock from ticket-time+20 or 19:30 fallback); **not** gated by `COMMS_EVENT_ADAPTERS_ENABLED` (v1.19.0+). A show with an invalid IANA `timeZone` is skipped. |
 
 Trigger specs and channels: `docs/comms-triggers/catalog.json`. Admin canary/replay: `runCommsTrigger` (§2.2).
@@ -434,6 +463,8 @@ Trigger specs and channels: `docs/comms-triggers/catalog.json`. Admin canary/rep
 **v1.72.1:** `tour_recap` is **not** same-tick as the finale `show_recap`. Production fan-out is the 8am PT `scheduledTourRankingsDailyComms` tick after the tour’s last show date (`deliverPendingTourRecaps`). That tick skips `tour_rankings_daily` when yesterday was the finale. Manual `runCommsTrigger` / canary still work.
 
 **v1.74.1 / v1.74.2 (#1033):** `deliverPendingTourRecaps` only attempts finales within **14 days** (late-grade window before first send), **hard-skips** Sphere archive tour keys, and persists **`comms_tour_recap_state/{tourId}`** (`sent` / `skipped_archive` / `closed`) so each tour is once-ever after the end-of-tour send. Seed existing tours with `functions/scripts/seedTourRecapState.js`.
+
+**v1.85.0 (#1035):** The name regex is no longer the archive gate. `editionStatus` on the tour group and `comms_process_state` are. `tour_recap` still mirrors `comms_tour_recap_state` on write and still honors a terminal legacy doc on read. `show_recap` re-rollup of an archive or `skipped_archive` tour does not fan out. New inbox docs include `triggerId`. `tour_recap` sends a `campaignId` edition slug. Taking effect in production requires a Cloud Functions deploy (`scheduledTourRankingsDailyComms`, `rollupScoresForShow`, and the other comms adapters) plus `firestore.rules`. The Sphere `editionStatus` seed is a separate human `--confirm` against production Firestore.
 
 **v1.71.1:** Email CTA **View Recap** → `/dashboard/profile/notifications`. In-app `TourRecapInApp` CTA **View tour standings** → `/dashboard/standings?view=tour`.
 

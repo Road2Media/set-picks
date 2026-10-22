@@ -17,8 +17,29 @@ const { sendWebPushToToken } = require("./fcmMessagingCore");
 
 const SPHERE_2026_INAUGURAL_TEMPLATE_ID = "sphere-2026-inaugural";
 
+/**
+ * Catalog intent stays `tour_recap`. This module is the archive template, not
+ * a second trigger id. It sends inbox + push only (no Resend), so there is no
+ * `resendEmailId` to persist.
+ */
+const SPHERE_RECAP_CATALOG_TRIGGER_ID = "tour_recap";
+const SPHERE_RECAP_CAMPAIGN_ID = "2026-sphere";
+
 /** Doc id under `users/{uid}/commsInbox` — fixed for idempotent admin re-runs. */
 const COMMS_INBOX_DOC_ID = "sphere-2026-inaugural";
+
+/**
+ * @param {Record<string, unknown>} payload
+ * @param {unknown} createdAt
+ */
+function sphereRecapInboxBody(payload, createdAt) {
+  return {
+    templateId: SPHERE_2026_INAUGURAL_TEMPLATE_ID,
+    triggerId: SPHERE_RECAP_CATALOG_TRIGGER_ID,
+    payload: { ...payload, campaignId: SPHERE_RECAP_CAMPAIGN_ID },
+    createdAt,
+  };
+}
 
 /**
  * Sphere Run dates — must stay in sync with `Sphere Run` under
@@ -300,6 +321,8 @@ async function sendRecapPushFanout({ db, admin, templateId, preview, forceResend
         {
           kind: "tourRecap",
           templateId,
+          triggerId: SPHERE_RECAP_CATALOG_TRIGGER_ID,
+          campaignId: SPHERE_RECAP_CAMPAIGN_ID,
           userId: item.uid,
           delivered: true,
           forceResend: forceResend || false,
@@ -444,11 +467,7 @@ async function deliverSphere2026TourRecapInbox({ db, admin, dryRun, forceResend 
       .doc(COMMS_INBOX_DOC_ID);
     batch.set(
       ref,
-      {
-        templateId: SPHERE_2026_INAUGURAL_TEMPLATE_ID,
-        payload: item.payload,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
+      sphereRecapInboxBody(item.payload, admin.firestore.FieldValue.serverTimestamp()),
       { merge: true }
     );
     opCount += 1;
@@ -493,7 +512,10 @@ async function deliverSphere2026TourRecapInbox({ db, admin, dryRun, forceResend 
 module.exports = {
   SPHERE_2026_INAUGURAL_SHOW_DATES,
   SPHERE_2026_INAUGURAL_TEMPLATE_ID,
+  SPHERE_RECAP_CATALOG_TRIGGER_ID,
+  SPHERE_RECAP_CAMPAIGN_ID,
   COMMS_INBOX_DOC_ID,
+  sphereRecapInboxBody,
   recapPushLogDocId,
   userWantsRecapPush,
   aggregateTourStandings,

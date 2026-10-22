@@ -59,6 +59,12 @@ Also check in-app `commsInbox` rows and FCM for the same cohort (channels share 
 
 Already-delivered uids are mostly protected by `tour_recap:2026 Sphere:{uid}` dedup; tour state stops prefs-off / other historical tours from being retried forever.
 
+## Systemic fix (#1035)
+
+The three containment layers above stop this blast. They are not the class fix. v1.85.0 stores a process doc (`comms_process_state`) and an `editionStatus` on the calendar tour group. The 8am scanner and `show_recap` re-rollup read those **before** building recipients. A tour name matching Sphere is no longer a send gate. `triggerId` stays `tour_recap`. `campaignId` is the edition slug (`2026-sphere`). Checklist: [FRAMEWORK.md](./FRAMEWORK.md) DELIVER.
+
+Production behavior changes only after Cloud Functions and `firestore.rules` are deployed. `editionStatus` on the live calendar is a separate seed (`functions/scripts/seedCalendarEditionStatus.js --confirm`). The existing `comms_tour_recap_state` seed still blocks `tour_recap` for Summer and Sphere through the ledger’s legacy read.
+
 ## Follow-ups (human)
 
 - [x] Clarification email sent (2026-09-10 09:00 ET, 21 recipients). Copy: `content/comms/lifecycle/1033-sphere-recap-correction.md`.
