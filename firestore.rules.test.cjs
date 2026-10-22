@@ -119,6 +119,67 @@ test("users: owner may update their own profile", async () => {
   );
 });
 
+test("users: owner cannot write accepted invites, inviter, or badges (#1115)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "users", "alice"), {
+      handle: "alice",
+      badges: { shows_played_1: { scope: "career" } },
+    });
+  });
+  const db = signedInAs("alice");
+  await assertFails(
+    updateDoc(doc(db, "users", "alice"), { acceptedInviteCount: 5 })
+  );
+  await assertFails(
+    updateDoc(doc(db, "users", "alice"), {
+      invitedBy: { uid: "bob", handle: "bob" },
+    })
+  );
+  await assertFails(
+    updateDoc(doc(db, "users", "alice"), {
+      badges: { tour_winner_1: { scope: "tour:Summer" } },
+    })
+  );
+  await assertSucceeds(
+    updateDoc(doc(db, "users", "alice"), { favoriteSong: "Reba" })
+  );
+});
+
+test("users: create cannot seed the invite counter or badges (#1115)", async () => {
+  const db = signedInAs("alice");
+  await assertFails(
+    setDoc(doc(db, "users", "alice"), {
+      handle: "alice",
+      acceptedInviteCount: 5,
+    })
+  );
+});
+
+test("users: admin client cannot rewrite server-owned badge fields (#1115)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "users", "bob"), { handle: "bob", acceptedInviteCount: 1 });
+  });
+  const db = signedInAs("mod", { admin: true });
+  await assertFails(
+    updateDoc(doc(db, "users", "bob"), { acceptedInviteCount: 9 })
+  );
+  await assertSucceeds(
+    updateDoc(doc(db, "users", "bob"), { handle: "bob-fixed" })
+  );
+});
+
+test("rank snapshots: clients cannot read or write (#1115)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "tour_rank_snapshots", "Summer"), { tourKey: "Summer" });
+    await setDoc(doc(adminDb, "year_rank_snapshots", "2025"), { year: "2025" });
+  });
+  const db = signedInAs("alice");
+  await assertFails(getDoc(doc(db, "tour_rank_snapshots", "Summer")));
+  await assertFails(getDoc(doc(db, "year_rank_snapshots", "2025")));
+  await assertFails(setDoc(doc(db, "tour_rank_snapshots", "Other"), { tourKey: "Other" }));
+  await assertFails(setDoc(doc(db, "year_rank_snapshots", "2024"), { year: "2024" }));
+});
+
 test("users: non-owner non-admin cannot update another profile", async () => {
   await seed(async (adminDb) => {
     await setDoc(doc(adminDb, "users", "bob"), { handle: "bob" });

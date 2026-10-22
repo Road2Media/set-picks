@@ -4,6 +4,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const {
+  countBustoutBoosts,
   setlistHasAnyPlayedSong,
   actualSetlistFromOfficialDoc,
   persistableActualSetlistFromOfficialDoc,
@@ -71,6 +72,28 @@ test("shouldSkipLiveScoreRecompute: false when a scored slot changes", () => {
     officialSetlist: ["Ghost"],
   };
   assert.equal(shouldSkipLiveScoreRecompute(before, after), false);
+});
+
+test("countBustoutBoosts: counts a hit on a bustout and skips a miss", () => {
+  const setlist = {
+    s1o: "Tweezer",
+    s1c: "Reba",
+    s2o: "",
+    s2c: "",
+    enc: "",
+    wild: "",
+    officialSetlist: ["Tweezer", "Reba"],
+    bustouts: ["Tweezer"],
+  };
+  assert.equal(
+    countBustoutBoosts({ s1o: "Tweezer", s1c: "Reba", wild: "Tweezer" }, setlist),
+    2
+  );
+  assert.equal(countBustoutBoosts({ s1o: "Ghost" }, setlist), 0);
+  assert.equal(
+    countBustoutBoosts({ s1o: "Tweezer" }, { ...setlist, bustouts: [] }),
+    0
+  );
 });
 
 test("shouldSkipLiveScoreRecompute: false on first write (no before doc)", () => {

@@ -5,10 +5,12 @@
  * shows played, night wins, lifetime points, account age (`createdAt` vs the
  * show date), and a set favorite song.
  *
- * Deferred until a comparative snapshot or per-show grade context exists:
- * tour winner / top 5, tour-leading average / PPS / bustout boosts, triple
- * crown, yearly winner, slugging leaders, invite count, streaks, perfect
- * night, bustout hits. Ids must match `PROFILE_BADGES`.
+ * Tour, year, and invite badges are awarded from frozen snapshots and the
+ * accepted-invite counter (`badgeRankSnapshots.js`, `badgeSnapshotJobs.js`,
+ * `acceptedInvites.js`). Ids must match `PROFILE_BADGES`.
+ *
+ * Still deferred: streaks, perfect night, personal bustout hits, and the
+ * optional matrix rows that were not chosen for #1115.
  */
 
 /**

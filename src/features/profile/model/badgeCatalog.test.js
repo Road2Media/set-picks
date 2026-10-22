@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -12,9 +16,29 @@ describe('badgeCatalog', () => {
   it('lists the ladder in rank order with a matching asset path', () => {
     const ids = PROFILE_BADGES.map((b) => b.id);
     expect(ids).toEqual([
+      'triple_crown',
+      'tour_winner_3',
+      'year_winner_3',
+      'tour_winner_2',
+      'year_winner_2',
+      'year_slugging_leader_3',
+      'tour_winner_1',
+      'year_winner_1',
+      'year_slugging_leader_2',
+      'tour_top5_3',
+      'year_slugging_top5_3',
+      'year_slugging_leader_1',
       'win_10',
       'points_1000',
       'shows_played_50',
+      'tour_top5_2',
+      'year_slugging_top5_2',
+      'tour_lead_batting_avg',
+      'tour_lead_points_per_show',
+      'tour_lead_bustout_boosts',
+      'tour_top5_1',
+      'year_slugging_top5_1',
+      'pickem_evangelist',
       'win_5',
       'points_500',
       'shows_played_25',
@@ -106,6 +130,26 @@ describe('badgeCatalog', () => {
       'anniversary_1',
       'anniversary_2',
       'anniversary_3',
+      'tour_winner_1',
+      'tour_winner_2',
+      'tour_winner_3',
+      'tour_top5_1',
+      'tour_top5_2',
+      'tour_top5_3',
+      'tour_lead_batting_avg',
+      'tour_lead_points_per_show',
+      'tour_lead_bustout_boosts',
+      'triple_crown',
+      'year_winner_1',
+      'year_winner_2',
+      'year_winner_3',
+      'year_slugging_leader_1',
+      'year_slugging_leader_2',
+      'year_slugging_leader_3',
+      'year_slugging_top5_1',
+      'year_slugging_top5_2',
+      'year_slugging_top5_3',
+      'pickem_evangelist',
     ]);
     expect(ladder.filter((b) => b.earned).map((b) => b.id)).toEqual(['win_1']);
     expect(ladder.find((b) => b.id === 'win_1')?.awardedAt).toBe(123);
@@ -129,7 +173,44 @@ describe('badgeCatalog', () => {
       ['Night wins', ['win_1', 'win_5', 'win_10']],
       ['Points', ['points_500', 'points_1000']],
       ['Years on the board', ['anniversary_1', 'anniversary_2', 'anniversary_3']],
+      ['Tour titles', ['tour_winner_1', 'tour_winner_2', 'tour_winner_3']],
+      ['Tour top five', ['tour_top5_1', 'tour_top5_2', 'tour_top5_3']],
+      [
+        'Tour leaders',
+        [
+          'tour_lead_batting_avg',
+          'tour_lead_points_per_show',
+          'tour_lead_bustout_boosts',
+          'triple_crown',
+        ],
+      ],
+      ['Year titles', ['year_winner_1', 'year_winner_2', 'year_winner_3']],
+      [
+        'Year slugging',
+        [
+          'year_slugging_leader_1',
+          'year_slugging_leader_2',
+          'year_slugging_leader_3',
+          'year_slugging_top5_1',
+          'year_slugging_top5_2',
+          'year_slugging_top5_3',
+        ],
+      ],
+      ['Invites', ['pickem_evangelist']],
     ]);
+  });
+
+  it('uses the same ids as the functions award modules (#1115)', () => {
+    const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
+    const sources = [
+      'functions/badgeAwards.js',
+      'functions/badgeRankSnapshots.js',
+    ]
+      .map((rel) => readFileSync(resolve(root, rel), 'utf8'))
+      .join('\n');
+    for (const badge of PROFILE_BADGES) {
+      expect(sources).toContain(`"${badge.id}"`);
+    }
   });
 
   it('resolveBadgeLadder tolerates a missing badges map', () => {

@@ -116,6 +116,49 @@ function calculateSlotScore(fieldId, guessedSong, actualSetlist) {
   return base + (bustoutBoost ? SCORING_RULES.BUSTOUT_BOOST : 0);
 }
 
+/**
+ * Slots whose bustout boost actually fired.
+ *
+ * A miss returns before the boost in `calculateSlotScore`, so a bustout title
+ * that was not a hit does not count. Stripping `bustouts` yields the base
+ * score; the boost fired only when that base is positive and the guess is on
+ * the show's bustout list.
+ *
+ * @param {Record<string, unknown> | null | undefined} userPicks
+ * @param {Record<string, unknown> | null | undefined} actualSetlist
+ * @returns {number}
+ */
+function countBustoutBoosts(userPicks, actualSetlist) {
+  if (!actualSetlist || !userPicks) return 0;
+  const withoutBoosts = { ...actualSetlist, bustouts: [] };
+  let n = 0;
+  for (const fieldId of SCORE_FIELDS) {
+    const guessed = userPicks[fieldId];
+    if (guessed == null || String(guessed).trim() === "") continue;
+    if (calculateSlotScore(fieldId, guessed, withoutBoosts) <= 0) continue;
+    if (guessIsListedBustout(guessed, actualSetlist)) n += 1;
+  }
+  return n;
+}
+
+/**
+ * @param {unknown} guessedSong
+ * @param {Record<string, unknown>} actualSetlist
+ * @returns {boolean}
+ */
+function guessIsListedBustout(guessedSong, actualSetlist) {
+  const guess = normalizeSong(guessedSong);
+  if (!guess) return false;
+  const bustoutList = Array.isArray(actualSetlist.bustouts)
+    ? actualSetlist.bustouts
+    : [];
+  for (const raw of bustoutList) {
+    if (typeof raw !== "string") continue;
+    if (normalizeSong(raw) === guess) return true;
+  }
+  return false;
+}
+
 function calculateTotalScore(userPicks, actualSetlist) {
   if (!actualSetlist || !userPicks) return 0;
   return SCORE_FIELDS.reduce((total, fieldId) => {
@@ -252,6 +295,7 @@ module.exports = {
   setlistHasAnyPlayedSong,
   calculateSlotScore,
   calculateTotalScore,
+  countBustoutBoosts,
   countCorrectSlots,
   actualSetlistFromOfficialDoc,
   persistableActualSetlistFromOfficialDoc,

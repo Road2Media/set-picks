@@ -271,5 +271,49 @@ test("computePerPickRollup: missing correctSlotsCredited on re-grade treats old 
   assert.equal(plan.correctSlotsDiff, 2);
 });
 
+test("computePerPickRollup: bustout boosts diff is regrade-safe (#1115)", () => {
+  const first = computePerPickRollup({
+    pickData: { picks: { s1o: "Tweezer" } },
+    newScore: 30,
+    newGlobalMax: 30,
+    newBustoutBoosts: 2,
+  });
+  assert.equal(first.newBustoutBoosts, 2);
+  assert.equal(first.bustoutBoostsDiff, 2);
+
+  const same = computePerPickRollup({
+    pickData: {
+      picks: { s1o: "Tweezer" },
+      isGraded: true,
+      bustoutBoostsCredited: 2,
+    },
+    newScore: 30,
+    newGlobalMax: 30,
+    newBustoutBoosts: 2,
+  });
+  assert.equal(same.bustoutBoostsDiff, 0);
+
+  const dropped = computePerPickRollup({
+    pickData: {
+      picks: { s1o: "Tweezer" },
+      isGraded: true,
+      bustoutBoostsCredited: 2,
+    },
+    newScore: 10,
+    newGlobalMax: 30,
+    newBustoutBoosts: 1,
+  });
+  assert.equal(dropped.bustoutBoostsDiff, -1);
+
+  const empty = computePerPickRollup({
+    pickData: { picks: {}, isGraded: true, bustoutBoostsCredited: 2 },
+    newScore: 0,
+    newGlobalMax: 10,
+    newBustoutBoosts: 2,
+  });
+  assert.equal(empty.newBustoutBoosts, 0);
+  assert.equal(empty.bustoutBoostsDiff, -2);
+});
+
 // Keep #1004 writer tests on the functions `npm test` file list.
 require("./globalStatsLeaderboards.test");

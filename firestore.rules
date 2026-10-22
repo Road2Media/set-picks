@@ -16,6 +16,25 @@ service cloud.firestore {
     }
 
     /**
+     * Badge awards and accepted-invite counts are server-owned (#1115).
+     * Admin SDK bypasses these rules. Client creates must omit the fields.
+     * Client updates must leave them unchanged, including admin-claim clients.
+     */
+    function userCreateOmitsServerOwnedFields() {
+      return !request.resource.data.keys().hasAny([
+        'acceptedInviteCount',
+        'invitedBy',
+        'badges'
+      ]);
+    }
+
+    function userServerOwnedFieldsUnchanged() {
+      return request.resource.data.get('acceptedInviteCount', null) == resource.data.get('acceptedInviteCount', null)
+        && request.resource.data.get('invitedBy', null) == resource.data.get('invitedBy', null)
+        && request.resource.data.get('badges', null) == resource.data.get('badges', null);
+    }
+
+    /**
      * Join flow: `members` grows by one and includes the caller. `from_membership`
      * pools (#417) also stamp `memberJoinedAt.{uid}` on self-join.
      */
@@ -80,9 +99,11 @@ service cloud.firestore {
      */
     match /users/{userId} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.auth.uid == userId;
+      allow create: if signedIn() && request.auth.uid == userId
+        && userCreateOmitsServerOwnedFields();
       allow update: if signedIn()
-        && (request.auth.uid == userId || isAdmin());
+        && (request.auth.uid == userId || isAdmin())
+        && userServerOwnedFieldsUnchanged();
       allow delete: if isAdmin();
 
       /**
@@ -288,6 +309,21 @@ service cloud.firestore {
      * Clients must not read counts or seed the window.
      */
     match /password_reset_rate/{docId} {
+      allow read, write: if false;
+    }
+
+    /**
+     * Frozen full-field tour ranks for badges (#1115). Admin SDK only.
+     * Not the live top-50 Global Stats boards.
+     */
+    match /tour_rank_snapshots/{tourKey} {
+      allow read, write: if false;
+    }
+
+    /**
+     * Frozen full-field calendar-year ranks for badges (#1115). Admin SDK only.
+     */
+    match /year_rank_snapshots/{year} {
       allow read, write: if false;
     }
 

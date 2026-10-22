@@ -8,6 +8,17 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.93.0] — 2026-10-22
+
+### Added
+- **Tour and year badge snapshots (#1115)** — Finished tours freeze a full-field rank snapshot (`tour_rank_snapshots/{tourKey}`) after every date on that tour has a rollup audit. Calendar years freeze (`year_rank_snapshots/{YYYY}`) after 31 December UTC, once every show dated in that year is graded. Points use the same competition rank as standings and the year board (#1110): a tie shares a place. Tour winner, tour top 5, year winner, annual slugging leader, and annual slugging top 5 each award a 1/2/3 ladder so a later tour or year is a different badge. Tour-leading batting average, points per show, and bustout boosts, plus Triple Crown, award once. A second run does not change `awardedAt`. Live top-50 boards are not the source.
+- **Bustout boost count (#1115)** — Finalize stores `picks.bustoutBoostsCredited` and increments `users.seasonStats.{tourKey}.bustoutBoosts`. Regrade and revert adjust the difference. Snapshot bustout rank recounts graded picks and does not read that counter.
+- **Pick 'em Evangelist (#1115)** — `recordAcceptedInvite` counts a finished signup from a profile invite or a pool `?from=` invite. A click does not count. At 5 accepted invites the inviter earns `pickem_evangelist` once. There is no invite backfill.
+- **Rank-snapshot backfill script (#1115)** — `node scripts/backfillRankSnapshots.js` from `functions/` is a dry-run. `--apply` writes snapshots and badges. Do not run `--apply` from CI. The daily `scheduledBadgeRankSnapshots` job does the same write on its first tick.
+
+### Changed
+- **Annual slugging floor (#1115)** — Year slugging badges need 10 graded shows in that calendar year. Players under 10 stay on the year points board with no slugging rank. The all-time floor stays 15. The in-progress tour rate gate stays 3.
+
 ## [1.92.0] — 2026-10-22
 
 ### Added

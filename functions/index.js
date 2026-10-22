@@ -53,6 +53,8 @@ const {
   normalizeFcmSendMessageId,
 } = require("./fcmMessagingCore");
 const { applyRevertRollupForShow } = require("./revertRollupCore");
+const { recordAcceptedInviteForCaller } = require("./acceptedInvites");
+const { freezeClosedRankSnapshots } = require("./badgeSnapshotJobs");
 const { deliverSphere2026TourRecapInbox } = require("./sphereTourRecapDelivery");
 const { deliverMarketingSummerTour2026Launch } = require("./marketingBatchDelivery");
 const { deliverMarketingSummer2026AlmostEnd } = require("./marketingAlmostEndDelivery");
@@ -483,6 +485,64 @@ exports.revertRollupForShow = onCall(
       revertedPicks: result.revertedPicks,
       noop: result.noop === true,
     };
+  }
+);
+
+/**
+ * Count one finished signup toward the inviter (#1115).
+ * A click is not a join. The client must not write the counter.
+ */
+exports.recordAcceptedInvite = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    return recordAcceptedInviteForCaller({
+      db,
+      admin,
+      callerUid: request.auth.uid,
+      handle: request.data?.handle,
+      now: new Date(),
+    });
+  }
+);
+
+/**
+ * Freeze finished tour and calendar-year rank snapshots and award badges.
+ * Already-closed periods without a snapshot are included (the backfill).
+ * Awards stay once `awardsAppliedAt` is set.
+ */
+exports.scheduledBadgeRankSnapshots = onSchedule(
+  {
+    schedule: "15 9 * * *",
+    timeZone: "America/Los_Angeles",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 540,
+    memory: "1GiB",
+  },
+  async () => {
+    try {
+      const summary = await freezeClosedRankSnapshots({
+        db,
+        admin,
+        logger,
+        now: new Date(),
+        dryRun: false,
+      });
+      logger.info("scheduledBadgeRankSnapshots", {
+        tours: summary.tours.length,
+        years: summary.years.length,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error("scheduledBadgeRankSnapshots failed", { msg, err: e });
+    }
+    return null;
   }
 );
 
