@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { AppDocumentAuthLink } from '../../landing';
+import { StatsEmbedShareRow } from '../../stats-embed';
 import TourStatsView from '../ui/TourStatsView';
 import TourWrapBlock from './TourWrapBlock';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
@@ -153,6 +154,8 @@ export default function PublicTourStatsPanel({
         showSelfOverlay={false}
         surface="public"
       />
+
+      <StatsEmbedShareRow tourSlug={activeSlug} />
 
       <p className="mt-8 text-center text-sm leading-snug text-slate-400 sm:text-left">
         Tour-wide trends only, not a night-by-night archive. Play and your

@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 import { AppDocumentAuthLink } from '../../landing';
+import { StatsEmbedShareRow } from '../../stats-embed';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
 import {
   formatCount,
@@ -141,6 +142,8 @@ export default function MsgGardenStatsView({ stats, heading }) {
         </a>{' '}
         / The Mockingbird Foundation.
       </p>
+
+      <StatsEmbedShareRow />
 
       <div className="mt-6 flex flex-col items-center gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-400">

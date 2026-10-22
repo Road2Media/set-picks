@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import { FeatureNewBadge, useFeatureSpotlight } from '../../../features/feature-discovery';
+import { StatsEmbedShareRow } from '../../../features/stats-embed';
 import {
   STATS_CLUSTER_PATHS,
   isPersonalStatsPath,
@@ -59,6 +60,7 @@ export default function StatsClusterLayout({ user }) {
           )
         : null}
       <Outlet context={{ user }} />
+      <StatsEmbedShareRow />
     </div>
   );
 }
