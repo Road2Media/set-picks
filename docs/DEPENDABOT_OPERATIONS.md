@@ -30,6 +30,7 @@ This is **not** recurring weekly noise — it was a **one-time enablement avalan
 | CI `build` job | Runs on any PR touching `package.json` / `package-lock.json` / build config | `verify` doesn't run the production build and qa-runners skip lockfile-only diffs, so Tailwind-4-class breaks were only visible on Vercel (#519) |
 | `open-pull-requests-limit` | **2** per updates entry (root npm, `/functions` npm, Actions) (#967) | Was **5/5/3** after the 2026-07-05 re-enable. 2 matches the two `*-safe` groups per npm directory. **0** is only for an ops reset |
 | T0 auto-merge | `*-safe` minor/patch groups only (#967) | `.github/workflows/dependabot-auto-merge.yml` enables squash auto-merge. Majors and `actions-all` are never enabled |
+| Monday sweep | 18:00 UTC Mondays (#1052) | Enables squash auto-merge on a `*-safe` PR the event workflow missed. Adds `skip-version-bump` when that label is missing. Comments when the PR has been red or conflicted for 7 days. Does not push or rebase |
 | CI concurrency | `cancel-in-progress` on `.github/workflows/ci.yml` (#967) | A newer push or PR update cancels the older run. The nightly schedule uses its own concurrency group |
 | SemVer gate | Skips `dependabot/*` + `skip-version-bump` label | Deps PRs never bump `package.json` |
 | Vercel | `ignoreCommand` → `scripts/vercel-should-build.sh` | No SPA preview for Actions/functions-only bumps |
@@ -38,7 +39,7 @@ This is **not** recurring weekly noise — it was a **one-time enablement avalan
 
 | PR class | Policy |
 |----------|--------|
-| `*-safe` group (minor/patch) | **T0.** Squash auto-merge once required checks are green (`verify`, `build` when the dep path filter runs, `functions` when that job runs, Vercel). No weekly merge ritual |
+| `*-safe` group (minor/patch) | **T0.** Squash auto-merge once required checks are green (`verify`, `build` when the dep path filter runs, `functions` when that job runs, Vercel). The Monday sweep is the backstop when the open event was missed |
 | Actions group (`actions-all`) | Not auto-merged. It can contain major Action bumps. Merge on green `verify` only after a human looks |
 | Individual **major** PR | **Never auto-merge, and never merge on green alone.** Open a dedicated migration issue/PR, apply `ci/qa` (and `ci/full` for toolchain), follow "Major upgrades" below |
 
@@ -66,13 +67,14 @@ Alerts are failure-only:
 
 - The workflow comments when it cannot enable auto-merge, or when a non-Dependabot actor updates the branch.
 - A later CI failure on a T0 PR updates one comment (`<!-- dependabot-t0-ci-failure -->`). A green CI run does not open a new comment.
-- Success does not page anyone. There is no weekly "merge the bots" pass for `*-safe` groups.
+- Success does not page anyone. A green enable run does not open a comment. The Monday sweep (#1052) comments only when a `*-safe` PR has been red or conflicted for 7 days.
 
 Where the files live:
 
 - `pull_request_target` runs the workflow from the **default branch** (`main`). Merging this to `staging` does not start auto-merge. It starts after the promote to `main`.
 - Dependabot reads `.github/dependabot.yml` from `main` as well. The limit of 2 and the workflow turn on together at that promote.
 - CI `concurrency` is in the workflow that runs for the PR merge commit, so it applies to `staging` as soon as that `ci.yml` is on `staging`.
+- The Monday sweep workflow is also read from `main`. `schedule` does not run the copy on `staging`.
 
 Do not `@dependabot rebase` the whole queue to wake existing PRs up. Dependabot's own rebase (the default `rebase-strategy: auto`) sends `synchronize` and the workflow enables auto-merge then. This change does not close or merge PRs that are already open.
 
@@ -85,6 +87,30 @@ Troubleshooting:
 | Comment says CI failed | Fix the red job, or leave the PR. Auto-merge will not land it. `functions` red still blocks a `/functions` group. |
 | Auto-merge API error about the merge method | The repo is squash-only. The workflow requests `SQUASH`. Do not switch the workflow to `MERGE`. |
 | Too few new Dependabot PRs | Expected while two PRs are already open for that entry. The limit is 2. Existing PRs count. Do not raise the limit to clear a backlog; merge or close the open ones first, one at a time. |
+
+### Scheduled execution (#1052)
+
+`.github/workflows/dependabot-scheduled-execution.yml` runs Mondays at 18:00 UTC, after Dependabot's Monday scan (default 05:00 UTC when `dependabot.yml` sets no `time`), and on `workflow_dispatch`.
+
+For each open Dependabot pull request into `staging` whose group is `*-safe` and whose commits are all from `dependabot[bot]`:
+
+- Add `skip-version-bump` when the label is missing. The sweep does not change `package.json`.
+- Enable squash auto-merge when it is off. GitHub still waits for `verify`, for `build` and `functions` when those jobs run, and for Vercel, and for the branch to be up to date with `staging`. The sweep does not call the merge API itself.
+- Comment when `verify`, `build`, `functions`, or a Vercel check has been failing for 7 days, or the pull request is conflicted and the newest commit is at least 7 days old. One comment, updated in place (`<!-- dependabot-t0-stuck-7d -->`). A later sweep rewrites that comment once the PR is green and mergeable. It does not open a separate success comment.
+
+GitHub does not record when a pull request became conflicted. The sweep uses the newest commit time, which is the last Dependabot update. A dirty PR whose head is at least 7 days old has gone through a Monday scan without a successful rebase.
+
+The sweep leaves the branch alone. A commit created by this workflow would be from `github-actions[bot]`. `dependabot/fetch-metadata` fails on that commit, and `.github/workflows/dependabot-auto-merge.yml` turns auto-merge off. Catching a behind-`staging` branch up stays with Dependabot's default rebase (`rebase-strategy` is unset, which means `auto`). That rebase is a Dependabot push, so the event workflow runs as `dependabot[bot]`.
+
+The sweep does not rebase the queue, does not enable auto-merge for majors or `actions-all`, and does not run until the workflow file is on `main`.
+
+`workflow_dispatch` input `dry_run` plans without labeling, enabling, or commenting.
+
+| Symptom | What to do |
+|---------|------------|
+| Monday sweep did not enable a green T0 PR | Confirm this workflow file is on `main`. Read the run log. `commits-unverified` means the commit list was empty. `non-dependabot-commit` means a human or Actions commit is on the branch; auto-merge stays off |
+| Stuck comment on a conflicted PR | Dependabot could not rebase onto `staging`. Resolve the conflict or close the PR. The sweep will not force-push |
+| PR is behind `staging` with auto-merge enabled and still open | Expected until Dependabot rebases. `staging` requires the branch to be up to date. Leave the branch to that rebase |
 
 ### Major upgrades (dedicated migration work)
 
@@ -130,7 +156,7 @@ Known pending majors (from the closed July 2026 group PRs — tracked in #744):
 | PR type | Agent action |
 |---------|----------------|
 | `dependabot/github_actions/*` | Not auto-merged. Triage together; merge only if `verify` green; never bump version |
-| `*-safe` npm groups (minor/patch) | Leave them to T0 auto-merge. Do not bump `package.json`. If the failure comment is up, report that; do not merge around a red `functions` or `build` job |
+| `*-safe` npm groups (minor/patch) | Leave them to T0 auto-merge and the Monday sweep. Do not bump `package.json`. Do not push onto the branch. If the failure comment or the 7-day stuck comment is up, report that; do not merge around a red `functions` or `build` job |
 | Individual **major** PR | Do NOT auto-merge and do NOT merge on green; route through "Major upgrades" above |
 | Stale/red group PR | If lockfile desync (EUSAGE): regenerate with `npm install` in the affected dir and push to the PR branch (#521 pattern). If ERESOLVE peer conflict: check upstream peer ranges before assuming it's fixable (#624 pattern) |
 

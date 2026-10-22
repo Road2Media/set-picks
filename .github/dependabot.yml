@@ -8,8 +8,12 @@
 # they stay green and mergeable. Major versions arrive as individual PRs and get
 # dedicated migration work — see docs/DEPENDABOT_OPERATIONS.md "Major upgrades".
 # Profile B (#967): open-pull-requests-limit is 2 per entry. `*-safe` groups are
-# squash auto-merged by .github/workflows/dependabot-auto-merge.yml. Never
-# batch-rebase all PRs. Do not auto-merge majors or `actions-all`.
+# squash auto-merged by .github/workflows/dependabot-auto-merge.yml.
+# Monday 18:00 UTC sweep (#1052): .github/workflows/dependabot-scheduled-execution.yml
+# enables that same squash auto-merge when the event workflow missed a `*-safe`
+# PR, and comments when the PR has been red or conflicted for 7 days. The sweep
+# does not change groups, limits, or the default rebase behavior.
+# Never batch-rebase all PRs. Do not auto-merge majors or `actions-all`.
 version: 2
 updates:
   - package-ecosystem: npm
