@@ -108,7 +108,7 @@ jobs:
       - name: Client tests (vitest)
         run: npm test
 
-      - name: Dependabot T0 auto-merge policy (#967)
+      - name: Dependabot T0 auto-merge policy (#967, #1052)
         run: npm run test:dependabot-auto-merge
 
       # Informational only (#414) — does not fail the job. Triage notes in AGENTS.md.

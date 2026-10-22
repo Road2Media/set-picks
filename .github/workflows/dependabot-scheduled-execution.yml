@@ -1,0 +1,56 @@
+# Monday execution backstop for grouped Dependabot minor/patch PRs (#1052).
+#
+# The #967 workflow enables squash auto-merge when Dependabot opens or
+# updates a `*-safe` pull request. This sweep covers an open T0 PR that
+# event missed: it adds `skip-version-bump` when the label is missing,
+# enables the same squash auto-merge, and comments when the PR has been
+# red or conflicted for 7 days.
+#
+# It does not push, update the branch, or rebase. A commit from this
+# workflow would fail dependabot/fetch-metadata and the #967 revoke job
+# would turn auto-merge off. `schedule` uses the workflow on the default
+# branch, so this file does nothing until it is on `main`.
+
+name: Dependabot scheduled execution
+
+on:
+  schedule:
+    # Monday 18:00 UTC, after Dependabot's default Monday 05:00 UTC scan.
+    - cron: "0 18 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Plan only. Do not label, enable auto-merge, or comment.
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  checks: read
+
+concurrency:
+  group: dependabot-scheduled-execution
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout this workflow's commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Enable missed T0 auto-merges and alert stuck PRs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        # github.event.inputs is empty on schedule. Boolean dispatch inputs
+        # arrive as the strings "true" and "false".
+        run: node scripts/dependabot-scheduled-sweep.mjs${{ github.event.inputs.dry_run == 'true' && ' --dry-run' || '' }}

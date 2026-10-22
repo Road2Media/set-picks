@@ -55,7 +55,7 @@
     "test:tour-stats-seo-facts": "node --test scripts/lib/tourStatsSeoFacts.test.mjs scripts/lib/tourStatsSeoAutoExpand.test.mjs scripts/lib/firestoreRestDecode.test.mjs",
     "test:seo-query-registry": "node --test scripts/lib/queryRegistry.test.mjs",
     "test:seo-gsc-snapshot": "node --test scripts/lib/seoGscSnapshot.test.mjs",
-    "test:dependabot-auto-merge": "node --test scripts/lib/dependabotAutoMergePolicy.test.mjs",
+    "test:dependabot-auto-merge": "node --test scripts/lib/dependabotAutoMergePolicy.test.mjs scripts/lib/dependabotScheduledExecution.test.mjs",
     "seo:gsc-weekly-snapshot": "node scripts/seo/gsc-weekly-snapshot.mjs",
     "seo:title-h1-scan": "python3 -m crew.scripts.seo_title_h1_scan",
     "emails:build": "npm run build --prefix emails",
