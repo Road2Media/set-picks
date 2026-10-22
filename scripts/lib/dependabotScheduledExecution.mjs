@@ -7,15 +7,18 @@
  * red/conflicted alert.
  *
  * It never plans a branch update or a rebase. A commit from this workflow
- * would fail `dependabot/fetch-metadata` and the #967 revoke job would turn
- * auto-merge off. Dependabot's own rebase (default `rebase-strategy: auto`)
- * is what catches a behind-`staging` branch up as `dependabot[bot]`.
+ * would fail `dependabot/fetch-metadata` and the event workflow's revoke job
+ * would turn auto-merge off. `rebase-strategy` is `disabled` (#1148), so this
+ * sweep also does not ask Dependabot to rebase. With strict "up to date"
+ * required on `staging`, a behind PR stays behind until a human updates it
+ * or that requirement is turned off.
  */
 
-import { isT0DependabotPr } from "./dependabotAutoMergePolicy.mjs";
+import { classifyDependabotAutoMerge } from "./dependabotAutoMergePolicy.mjs";
 
 export const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 export const SKIP_VERSION_BUMP_LABEL = "skip-version-bump";
+export const UI_CHECK_LABEL = "ui-check";
 export const STUCK_COMMENT_MARKER = "<!-- dependabot-t0-stuck-7d -->";
 export const ENABLE_FAILURE_MARKER = "<!-- dependabot-t0-scheduled-enable-failure -->";
 export const SCHEDULED_REVOKE_MARKER = "<!-- dependabot-t0-scheduled-revoke -->";
@@ -269,13 +272,16 @@ export function planScheduledDependabotExecution(input) {
     throw new Error("planScheduledDependabotExecution requires input.now as an ISO date");
   }
 
-  const decision = isT0DependabotPr({
+  const decision = classifyDependabotAutoMerge({
     author: input?.author || "",
     baseRef: input?.baseRef || "",
     title: input?.title || "",
+    body: input?.body || "",
     headRef: input?.headRef || "",
     dependencyGroup: input?.dependencyGroup || "",
+    dependencyNames: input?.dependencyNames || "",
     updateType: input?.updateType || "",
+    alertState: input?.alertState || "",
     draft: input?.draft === true,
     state: input?.state || "open",
     metadataOk: input?.metadataOk !== false,
@@ -311,6 +317,9 @@ export function planScheduledDependabotExecution(input) {
   if (!labels.includes(SKIP_VERSION_BUMP_LABEL)) {
     actions.push({ type: "add-label", label: SKIP_VERSION_BUMP_LABEL });
   }
+  if (decision.uiCheck && !labels.includes(UI_CHECK_LABEL)) {
+    actions.push({ type: "add-label", label: UI_CHECK_LABEL });
+  }
   if (!input?.autoMergeEnabled) {
     actions.push({ type: "enable-automerge", mergeMethod: "SQUASH" });
   }
@@ -335,7 +344,15 @@ export function planScheduledDependabotExecution(input) {
   }
 
   return planResult(
-    { t0: true, reason: "t0-safe-group", group: decision.group, actions, stuck },
+    {
+      t0: true,
+      reason: decision.reason,
+      group: decision.group,
+      actions,
+      stuck,
+      major: decision.major,
+      uiCheck: decision.uiCheck,
+    },
     input,
   );
 }
@@ -349,11 +366,11 @@ export function planScheduledDependabotExecution(input) {
 export function stuckCommentBody(action, group, runUrl) {
   return [
     STUCK_COMMENT_MARKER,
-    "This `*-safe` Dependabot pull request has been red or conflicted long enough that the Monday execution sweep left it open.",
+    "This Dependabot pull request has been red or conflicted long enough that the Monday sweep left it open.",
     group ? `Group: \`${group}\`.` : "",
     action?.reason ? `Reason: \`${action.reason}\`.` : "",
     ...(action?.details || []),
-    "Squash auto-merge stays enabled only for a verified Dependabot `*-safe` group, and GitHub still waits for green required checks. This sweep does not push to the branch. Majors and `actions-all` are left for a human.",
+    "Squash auto-merge stays enabled for a verified Dependabot pull request, and GitHub still waits for green required checks. A major that stays red becomes an agent-queue p3 migration issue. This sweep does not push or rebase the branch.",
     runUrl || "",
   ]
     .filter(Boolean)
@@ -378,7 +395,7 @@ export function clearedStuckCommentBody(runUrl) {
 export function enableFailureCommentBody(message, runUrl) {
   return [
     ENABLE_FAILURE_MARKER,
-    "The Monday Dependabot sweep could not enable squash auto-merge on this `*-safe` pull request.",
+    "The Monday Dependabot sweep could not enable squash auto-merge on this pull request.",
     message ? `Error: ${message}` : "",
     "The pull request stays open. Required checks still gate the land.",
     runUrl || "",
@@ -395,7 +412,7 @@ export function revokeCommentBody(runUrl) {
   return [
     SCHEDULED_REVOKE_MARKER,
     "The Monday sweep turned auto-merge off because a commit on this Dependabot pull request is not from `dependabot[bot]`.",
-    "T0 auto-merge stays off until Dependabot pushes a branch whose commits are only Dependabot's.",
+    "Auto-merge stays off until Dependabot pushes a branch whose commits are only Dependabot's.",
     runUrl || "",
   ]
     .filter(Boolean)

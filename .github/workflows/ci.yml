@@ -349,3 +349,25 @@ jobs:
 
       - name: qa:preview-headers (recipe §C)
         run: node scripts/qa/preview-cache-headers.mjs
+
+  # #1148: build, functions, and rules skip when their paths did not change.
+  # A ruleset that requires those job names treats a skip as "not successful".
+  # ci-gate always reports. Skipped path-filtered jobs pass. A real failure
+  # or a cancellation fails the gate. Patrick can require this check instead
+  # of Vercel / build / functions / rules.
+  ci-gate:
+    name: ci-gate
+    needs: [changes, verify, build, functions, rules]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Aggregate required CI results
+        env:
+          CI_GATE_CHANGES: ${{ needs.changes.result }}
+          CI_GATE_VERIFY: ${{ needs.verify.result }}
+          CI_GATE_BUILD: ${{ needs.build.result }}
+          CI_GATE_FUNCTIONS: ${{ needs.functions.result }}
+          CI_GATE_RULES: ${{ needs.rules.result }}
+        run: node scripts/ci-gate.mjs

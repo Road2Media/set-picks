@@ -16,6 +16,9 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ### Changed
 - **Route group** — `/embed` and `/embed/*` report GA4 `route_group=embed`.
+- **Dependabot (#1148)** — Factory standard: updates, majors included, squash auto-merge into `staging` when required checks pass. A failed major stays open as an `agent-queue` `p3` issue. Visitor-facing packages get `ui-check`. `@types/node` majors beyond Node 24 are ignored. Rebases are disabled, and `dependabot/*` previews are skipped. `ci-gate` always reports `verify`, `build`, `functions`, and `rules`. No public API change.
+
+
 
 ## [1.96.0] — 2026-10-22
 

@@ -103,11 +103,12 @@ describe("dependabot scheduled execution plan", () => {
     assert.equal(plan.reason, "t0-safe-group");
   });
 
-  it("does not enable a major, actions-all, a non-staging base, or a human author", () => {
+  it("enables a major and actions-all, and skips a non-staging base or a human author", () => {
     const major = planScheduledDependabotExecution(
       safeInput({
         title: "chore(deps): Bump firebase-admin from 13.10.0 to 14.5.0",
         headRef: "dependabot/npm_and_yarn/staging/firebase-admin-14.5.0",
+        dependencyGroup: "",
       }),
     );
     const actions = planScheduledDependabotExecution(
@@ -117,14 +118,30 @@ describe("dependabot scheduled execution plan", () => {
         dependencyGroup: "actions-all",
       }),
     );
+    const router = planScheduledDependabotExecution(
+      safeInput({
+        title: "chore(deps): Bump react-router-dom from 6.30.3 to 7.18.2",
+        headRef: "dependabot/npm_and_yarn/staging/react-router-dom-7.18.2",
+        dependencyGroup: "",
+        labels: ["dependencies", "skip-version-bump"],
+      }),
+    );
     const mainBase = planScheduledDependabotExecution(safeInput({ baseRef: "main" }));
     const human = planScheduledDependabotExecution(safeInput({ author: "pat792" }));
-    for (const plan of [major, actions, mainBase, human]) {
+    assert.equal(major.t0, true);
+    assert.equal(major.reason, "semver-major");
+    assert.equal(major.uiCheck, false);
+    assert.ok(types(major).includes("enable-automerge"));
+    assert.equal(actions.t0, true);
+    assert.equal(actions.reason, "version-update");
+    assert.ok(types(actions).includes("enable-automerge"));
+    assert.equal(router.uiCheck, true);
+    assert.ok(types(router).includes("add-label"));
+    assert.equal(router.actions.find((action) => action.type === "add-label").label, "ui-check");
+    for (const plan of [mainBase, human]) {
       assert.equal(plan.t0, false, plan.reason);
       assert.deepEqual(plan.actions, []);
     }
-    assert.equal(major.reason, "semver-major");
-    assert.equal(actions.reason, "group-not-safe");
   });
 
   it("does not enable when a commit is not from Dependabot, and disables auto-merge that was already on", () => {
@@ -447,7 +464,7 @@ describe("dependabot scheduled execution apply", () => {
 });
 
 describe("dependabot scheduled sweep client", () => {
-  it("enables one missed T0 PR, skips a major, and keeps going when another load fails", async () => {
+  it("enables one missed group PR and a major, and keeps going when another load fails", async () => {
     const calls = [];
     const safePull = {
       number: 1161,
@@ -503,6 +520,35 @@ describe("dependabot scheduled sweep client", () => {
         return jsonResponse([majorPull, brokenPull, safePull]);
       }
       if (pathname.endsWith("/pulls/1162")) return jsonResponse({ message: "boom" }, 500);
+      if (pathname.endsWith("/pulls/1067")) return jsonResponse(majorPull);
+      if (pathname.endsWith("/pulls/1067/commits")) {
+        return jsonResponse([
+          {
+            author: { login: "dependabot[bot]" },
+            committer: { login: "dependabot[bot]" },
+            commit: {
+              author: { email: "49699333+dependabot[bot]@users.noreply.github.com", date: isoDaysBefore(1) },
+              committer: { email: "49699333+dependabot[bot]@users.noreply.github.com", date: isoDaysBefore(1) },
+            },
+          },
+        ]);
+      }
+      if (pathname.endsWith("/commits/maj/check-runs")) {
+        return jsonResponse({
+          check_runs: [
+            {
+              name: "verify",
+              status: "completed",
+              conclusion: "success",
+              completed_at: isoDaysBefore(0.1),
+              head_sha: "maj",
+            },
+          ],
+        });
+      }
+      if (pathname.endsWith("/commits/maj/statuses")) return jsonResponse([]);
+      if (pathname.endsWith("/issues/1067/labels") && method === "POST") return jsonResponse([]);
+      if (pathname.endsWith("/issues/1067/comments")) return jsonResponse([]);
       if (pathname.endsWith("/pulls/1161")) return jsonResponse(safePull);
       if (pathname.endsWith("/pulls/1161/commits")) {
         return jsonResponse([
@@ -535,7 +581,7 @@ describe("dependabot scheduled sweep client", () => {
       if (pathname.endsWith("/graphql")) {
         const payload = JSON.parse(options.body);
         assert.equal(payload.variables.mergeMethod, "SQUASH");
-        assert.equal(payload.variables.pullRequestId, "PR_node_1161");
+        assert.ok(["PR_node_1161", "PR_major"].includes(payload.variables.pullRequestId));
         assert.doesNotMatch(JSON.stringify(payload), /"MERGE"/);
         return jsonResponse({ data: { enablePullRequestAutoMerge: { pullRequest: { number: 1161 } } } });
       }
@@ -560,7 +606,10 @@ describe("dependabot scheduled sweep client", () => {
     const enabled = result.applied.find((item) => item.number === 1161);
     assert.equal(enabled.ok, true);
     assert.deepEqual(enabled.applied, ["add-label", "enable-automerge"]);
-    assert.equal(calls.some((call) => call.url.includes("/pulls/1067")), false);
+    assert.equal(calls.some((call) => call.url.includes("/pulls/1067")), true);
+    const majorEnabled = result.applied.find((item) => item.number === 1067);
+    assert.equal(majorEnabled.ok, true);
+    assert.ok(majorEnabled.applied.includes("enable-automerge"));
     assert.equal(calls.some((call) => call.url.includes("update-branch")), false);
     assert.match(calls[0].authorization, /Bearer test-token/);
     const labelCall = calls.find((call) => call.url.includes("/labels"));
@@ -676,7 +725,7 @@ describe("dependabot scheduled execution repo contract", () => {
     }
 
     const dependabot = readFileSync(path.join(root, ".github/dependabot.yml"), "utf8");
-    assert.doesNotMatch(dependabot, /rebase-strategy/);
+    assert.equal((dependabot.match(/rebase-strategy: disabled/g) || []).length, 3);
     const limits = [...dependabot.matchAll(/open-pull-requests-limit:\s*(\d+)/g)].map((match) => Number(match[1]));
     assert.deepEqual(limits, [2, 2, 2]);
 
