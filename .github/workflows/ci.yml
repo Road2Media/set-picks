@@ -114,6 +114,9 @@ jobs:
       - name: Shipped-issue close collector (#1149, #1174)
         run: npm run test:shipped-issue-close
 
+      - name: Sphere recap recipient loader (#1194)
+        run: npm run test:sphere-recap-recipients
+
       # Informational only (#414) — does not fail the job. Triage notes in AGENTS.md.
       - name: npm audit (informational)
         continue-on-error: true
