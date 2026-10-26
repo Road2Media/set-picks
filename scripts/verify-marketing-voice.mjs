@@ -57,6 +57,7 @@ const SCAN_FILES = [
   join(root, 'src/features/scoring/ui/ScoringRulesContent.jsx'),
   join(root, 'src/features/tour-stats/ui/PublicTourStatsPanel.jsx'),
   join(root, 'src/features/tour-stats/ui/TourWrapBlock.jsx'),
+  join(root, 'src/features/tour-stats/ui/AnnualTourStatsView.jsx'),
 ];
 
 /**

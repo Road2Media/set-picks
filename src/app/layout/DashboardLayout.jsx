@@ -18,6 +18,7 @@ import StatsClusterLayout from './ui/StatsClusterLayout';
 import PicksPage from '../../pages/picks/PicksPage';
 import PicksLabPage from '../../pages/picks/PicksLabPage';
 import PicksScorecardPage from '../../pages/picks/PicksScorecardPage';
+import RewindPlayPage from '../../pages/rewind/RewindPlayPage';
 import PoolCreatePage from '../../pages/pools/PoolCreatePage';
 import PoolJoinPage from '../../pages/pools/PoolJoinPage';
 import PoolsPage from '../../pages/pools/PoolsPage';
@@ -29,7 +30,9 @@ import BandStatsPage from '../../pages/stats/BandStatsPage';
 import {
   ScoringRulesModalProvider,
   StandingsTourScopeSelect,
+  StandingsYearScopeSelect,
   useStandingsTourSelection,
+  useStandingsYearSelection,
 } from '../../features/scoring';
 import {
   NAV_LABEL_ACCOUNT,
@@ -114,11 +117,16 @@ export default function DashboardLayout() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user, isAdmin } = useAuth();
-  const { showDates, showDatesByTour } = useShowCalendar();
+  const { showDates, showDatesByTour, loading: calendarLoading } = useShowCalendar();
   // URL-synced (`?tour=`) — same instance the Standings screen reads, so the
   // chrome tour picker and the tour leaderboard stay consistent (#295/#609).
   const { selectedTour, setTourKey, selectableTours } =
     useStandingsTourSelection(showDatesByTour);
+  // URL-synced (`?year=`) — same contract for the year board (#1110).
+  const { selectedYear, setYearKey, selectableYears } = useStandingsYearSelection(
+    showDates,
+    { calendarReady: !calendarLoading },
+  );
   usePendingPoolJoin(showDates);
   usePrefetchDashboardRoutes(location.pathname);
 
@@ -321,6 +329,15 @@ export default function DashboardLayout() {
                     }
                   : null
               }
+              yearScope={
+                meta.showYearScopePicker
+                  ? {
+                      years: selectableYears,
+                      selectedYearKey: selectedYear?.year ?? null,
+                      onSelectYear: setYearKey,
+                    }
+                  : null
+              }
             />
             {usesMobileFixedChrome ? (
               <div id={DASHBOARD_MOBILE_FIXED_CHROME_ROOT_ID} />
@@ -349,7 +366,8 @@ export default function DashboardLayout() {
         <div className="max-w-xl mx-auto w-full min-w-0 px-4 pt-2 md:p-8">
           {meta.ownsDesktopStickyChrome ||
           meta.showDatePicker ||
-          meta.showTourScopePicker ? (
+          meta.showTourScopePicker ||
+          meta.showYearScopePicker ? (
             <DashboardStickyChromeStack>
               {meta.showDatePicker ? (
                 <DashboardTourDateScope
@@ -365,6 +383,13 @@ export default function DashboardLayout() {
                   tours={selectableTours}
                   selectedTourKey={selectedTour?.tour ?? null}
                   onSelectTour={setTourKey}
+                />
+              ) : meta.showYearScopePicker ? (
+                <StandingsYearScopeSelect
+                  variant="desktop"
+                  years={selectableYears}
+                  selectedYearKey={selectedYear?.year ?? null}
+                  onSelectYear={setYearKey}
                 />
               ) : null}
             </DashboardStickyChromeStack>
@@ -405,6 +430,7 @@ export default function DashboardLayout() {
                 path="picks/scorecard"
                 element={<PicksScorecardPage />}
               />
+              <Route path="rewind" element={<RewindPlayPage user={user} />} />
             </Route>
             <Route
               path="scoring"

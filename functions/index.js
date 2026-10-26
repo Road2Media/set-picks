@@ -53,6 +53,8 @@ const {
   normalizeFcmSendMessageId,
 } = require("./fcmMessagingCore");
 const { applyRevertRollupForShow } = require("./revertRollupCore");
+const { recordAcceptedInviteForCaller } = require("./acceptedInvites");
+const { freezeClosedRankSnapshots } = require("./badgeSnapshotJobs");
 const { deliverSphere2026TourRecapInbox } = require("./sphereTourRecapDelivery");
 const { deliverMarketingSummerTour2026Launch } = require("./marketingBatchDelivery");
 const { deliverMarketingSummer2026AlmostEnd } = require("./marketingAlmostEndDelivery");
@@ -74,6 +76,16 @@ const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorke
 const { getTriggerSpec } = require("./commsCatalog");
 const { tourCountdownDeliveryPlan } = require("./commsTemplates");
 const { refreshPublicTourStats } = require("./publicTourStats");
+const {
+  assertRewindAdmin,
+  assertRewindPlayer,
+  lockRewindPick: lockRewindPickDoc,
+  readRewindReveal: readRewindRevealDoc,
+  refreshRewindAnswer: refreshRewindAnswerDoc,
+  runScheduledRewindAnswerRefresh,
+  saveRewindWeek: saveRewindWeekDoc,
+} = require("./rewindMode");
+const { refreshPublicMsgGardenStats } = require("./msgGardenStats");
 const {
   rebuildGlobalStatsLeaderboards,
 } = require("./globalStatsLeaderboards");
@@ -483,6 +495,64 @@ exports.revertRollupForShow = onCall(
       revertedPicks: result.revertedPicks,
       noop: result.noop === true,
     };
+  }
+);
+
+/**
+ * Count one finished signup toward the inviter (#1115).
+ * A click is not a join. The client must not write the counter.
+ */
+exports.recordAcceptedInvite = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    if (!request.auth?.uid) {
+      throw new HttpsError("unauthenticated", "Sign in required.");
+    }
+    return recordAcceptedInviteForCaller({
+      db,
+      admin,
+      callerUid: request.auth.uid,
+      handle: request.data?.handle,
+      now: new Date(),
+    });
+  }
+);
+
+/**
+ * Freeze finished tour and calendar-year rank snapshots and award badges.
+ * Already-closed periods without a snapshot are included (the backfill).
+ * Awards stay once `awardsAppliedAt` is set.
+ */
+exports.scheduledBadgeRankSnapshots = onSchedule(
+  {
+    schedule: "15 9 * * *",
+    timeZone: "America/Los_Angeles",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 540,
+    memory: "1GiB",
+  },
+  async () => {
+    try {
+      const summary = await freezeClosedRankSnapshots({
+        db,
+        admin,
+        logger,
+        now: new Date(),
+        dryRun: false,
+      });
+      logger.info("scheduledBadgeRankSnapshots", {
+        tours: summary.tours.length,
+        years: summary.years.length,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error("scheduledBadgeRankSnapshots failed", { msg, err: e });
+    }
+    return null;
   }
 );
 
@@ -2096,6 +2166,59 @@ exports.refreshPublicTourStats = onCall(
 );
 
 /**
+ * Nightly aggregate-only MSG Garden stats (#1139).
+ * Runs after tour stats (07:30) and global boards (08:00).
+ * Fetches Phish.net venue 157, discards the raw rows, writes public_venue_stats/msg.
+ */
+exports.scheduledPublicMsgGardenStats = onSchedule(
+  {
+    schedule: "10 8 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 120,
+    secrets: [phishnetApiKey],
+  },
+  async () => {
+    await refreshPublicMsgGardenStats(db, {
+      logger,
+      phishnetApiKey: String(phishnetApiKey.value() || "").trim(),
+    });
+    return null;
+  }
+);
+
+/**
+ * Admin-only on-demand rebuild of `public_venue_stats/msg` (#1139).
+ */
+exports.refreshPublicMsgGardenStats = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    timeoutSeconds: 120,
+    secrets: [phishnetApiKey],
+  },
+  async (request) => {
+    try {
+      assertAdminClaim(request);
+      const result = await refreshPublicMsgGardenStats(db, {
+        logger,
+        phishnetApiKey: String(phishnetApiKey.value() || "").trim(),
+      });
+      return { ok: true, ...result };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error("refreshPublicMsgGardenStats unexpected error", msg, e);
+      throw new HttpsError(
+        "failed-precondition",
+        `refreshPublicMsgGardenStats failed: ${msg}`
+      );
+    }
+  }
+);
+
+/**
  * Sync Phish.net v5 `songs.json` → Storage `song-catalog.json` every 6h
  * (issue #158; freshness tightened in #261). Running at 00/06/12/18 ET keeps
  * autocomplete `gap` + `last_played` aligned with tonight's show by the time
@@ -2325,5 +2448,101 @@ exports.refreshPickRecommendationHistory = onCall(
         `refreshPickRecommendationHistory failed: ${msg}`
       );
     }
+  }
+);
+
+/**
+ * Admin-chosen Rewind week (#1142). Public metadata only — no setlist songs.
+ */
+exports.saveRewindWeek = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    assertRewindAdmin(request);
+    return saveRewindWeekDoc({ db, input: request.data, now: new Date() });
+  }
+);
+
+/**
+ * One historical show, cached on `rewind_answers`. Force skips the 24h wait.
+ * Does not write `official_setlists` or live `picks`.
+ */
+exports.refreshRewindAnswer = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    secrets: [phishnetApiKey],
+    timeoutSeconds: 60,
+  },
+  async (request) => {
+    assertRewindAdmin(request);
+    const key = phishnetApiKey.value();
+    return refreshRewindAnswerDoc({
+      db,
+      weekId: request.data?.weekId,
+      apiKey: String(key || "").trim(),
+      now: new Date(),
+      force: request.data?.force === true,
+    });
+  }
+);
+
+/**
+ * Daily refresh of the open Rewind week when its cache is 24h old.
+ * No fetch when there is no open week.
+ */
+exports.scheduledRewindAnswerRefresh = onSchedule(
+  {
+    schedule: "20 8 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 60,
+    secrets: [phishnetApiKey],
+  },
+  async () => {
+    const summary = await runScheduledRewindAnswerRefresh({
+      db,
+      apiKey: String(phishnetApiKey.value() || "").trim(),
+      now: new Date(),
+    });
+    logger.info("scheduledRewindAnswerRefresh", summary);
+    return null;
+  }
+);
+
+/**
+ * Score a Rewind card onto `rewind_picks`. Never touches live leaderboards.
+ */
+exports.lockRewindPick = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    const uid = assertRewindPlayer(request);
+    return lockRewindPickDoc({
+      db,
+      uid,
+      input: request.data,
+      now: new Date(),
+    });
+  }
+);
+
+/** Rebuild the caller's reveal after a reload. Refused before they lock. */
+exports.readRewindReveal = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+  },
+  async (request) => {
+    const uid = assertRewindPlayer(request);
+    return readRewindRevealDoc({ db, uid, input: request.data });
   }
 );

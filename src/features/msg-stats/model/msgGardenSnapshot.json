@@ -1,0 +1,324 @@
+{
+  "venueId": 157,
+  "venueName": "Madison Square Garden",
+  "city": "New York, NY",
+  "showCount": 96,
+  "uniqueSongs": 372,
+  "firstShowDate": "1994-12-30",
+  "lastShowDate": "2026-07-29",
+  "lastShowOrdinal": 96,
+  "nyeShowCount": 17,
+  "openerShowCount": 96,
+  "milestoneShowDate": "2027-01-02",
+  "milestoneShowNumber": 100,
+  "upcomingShowDates": [
+    "2026-12-30",
+    "2026-12-31",
+    "2027-01-01",
+    "2027-01-02"
+  ],
+  "topSongs": [
+    {
+      "title": "Tweezer",
+      "timesPlayed": 33
+    },
+    {
+      "title": "Chalk Dust Torture",
+      "timesPlayed": 23
+    },
+    {
+      "title": "Down with Disease",
+      "timesPlayed": 23
+    },
+    {
+      "title": "Harry Hood",
+      "timesPlayed": 23
+    },
+    {
+      "title": "Weekapaug Groove",
+      "timesPlayed": 23
+    },
+    {
+      "title": "Character Zero",
+      "timesPlayed": 22
+    },
+    {
+      "title": "You Enjoy Myself",
+      "timesPlayed": 22
+    },
+    {
+      "title": "Free",
+      "timesPlayed": 21
+    },
+    {
+      "title": "Mike's Song",
+      "timesPlayed": 21
+    },
+    {
+      "title": "Possum",
+      "timesPlayed": 21
+    }
+  ],
+  "openers": [
+    {
+      "title": "AC/DC Bag",
+      "timesPlayed": 5
+    },
+    {
+      "title": "Buried Alive",
+      "timesPlayed": 4
+    },
+    {
+      "title": "Punch You in the Eye",
+      "timesPlayed": 4
+    },
+    {
+      "title": "Carini",
+      "timesPlayed": 3
+    },
+    {
+      "title": "Free",
+      "timesPlayed": 3
+    },
+    {
+      "title": "Sample in a Jar",
+      "timesPlayed": 3
+    },
+    {
+      "title": "The Moma Dance",
+      "timesPlayed": 3
+    },
+    {
+      "title": "The Star-Spangled Banner",
+      "timesPlayed": 3
+    }
+  ],
+  "nyeOpeners": [
+    {
+      "title": "AC/DC Bag",
+      "timesPlayed": 2
+    },
+    {
+      "title": "Punch You in the Eye",
+      "timesPlayed": 2
+    },
+    {
+      "title": "The Moma Dance",
+      "timesPlayed": 2
+    },
+    {
+      "title": "1999",
+      "timesPlayed": 1
+    },
+    {
+      "title": "Carini",
+      "timesPlayed": 1
+    }
+  ],
+  "debuts": [
+    {
+      "title": "Shine",
+      "showDate": "1995-12-31"
+    },
+    {
+      "title": "I'm Gonna Be (500 Miles)",
+      "showDate": "1997-12-30"
+    },
+    {
+      "title": "Theme from New York, New York",
+      "showDate": "1997-12-31"
+    },
+    {
+      "title": "1999",
+      "showDate": "1998-12-31"
+    },
+    {
+      "title": "Burn That Bridge",
+      "showDate": "2010-12-31"
+    },
+    {
+      "title": "Fly Like an Eagle",
+      "showDate": "2012-12-31"
+    },
+    {
+      "title": "Garden Party",
+      "showDate": "2012-12-31"
+    },
+    {
+      "title": "Coconut",
+      "showDate": "2017-07-21"
+    },
+    {
+      "title": "Shake Your Coconuts",
+      "showDate": "2017-07-21"
+    },
+    {
+      "title": "Strawberry Fields Forever",
+      "showDate": "2017-07-22"
+    },
+    {
+      "title": "Strawberry Letter 23",
+      "showDate": "2017-07-22"
+    },
+    {
+      "title": "Sunday Morning",
+      "showDate": "2017-07-23"
+    },
+    {
+      "title": "Powderfinger",
+      "showDate": "2017-07-26"
+    },
+    {
+      "title": "White Winter Hymnal",
+      "showDate": "2017-07-26"
+    },
+    {
+      "title": "Chocolate Rain",
+      "showDate": "2017-07-28"
+    },
+    {
+      "title": "You Sexy Thing",
+      "showDate": "2017-07-28"
+    },
+    {
+      "title": "The Wind Cries Mary",
+      "showDate": "2017-07-30"
+    },
+    {
+      "title": "Maple Leaf Rag",
+      "showDate": "2017-08-01"
+    },
+    {
+      "title": "O Canada",
+      "showDate": "2017-08-01"
+    },
+    {
+      "title": "O Holy Night",
+      "showDate": "2017-08-02"
+    },
+    {
+      "title": "Way Down in the Hole",
+      "showDate": "2017-08-02"
+    },
+    {
+      "title": "Everything In Its Right Place",
+      "showDate": "2017-08-04"
+    },
+    {
+      "title": "See That My Grave Is Kept Clean",
+      "showDate": "2017-08-04"
+    },
+    {
+      "title": "Most Events Aren't Planned",
+      "showDate": "2017-08-06"
+    },
+    {
+      "title": "Soul Planet",
+      "showDate": "2017-12-31"
+    },
+    {
+      "title": "Bliss",
+      "showDate": "2018-12-30"
+    },
+    {
+      "title": "20-20 Vision",
+      "showDate": "2019-12-28"
+    },
+    {
+      "title": "Send in the Clowns",
+      "showDate": "2019-12-31"
+    },
+    {
+      "title": "Hey Stranger",
+      "showDate": "2022-12-29"
+    },
+    {
+      "title": "Broken Into Pieces",
+      "showDate": "2023-08-01"
+    },
+    {
+      "title": "Back in the Bubble",
+      "showDate": "2023-08-04"
+    },
+    {
+      "title": "Cream",
+      "showDate": "2025-12-31"
+    },
+    {
+      "title": "Sincere",
+      "showDate": "2025-12-31"
+    }
+  ],
+  "longestVisitGaps": [
+    {
+      "fromDate": "2002-12-31",
+      "toDate": "2009-12-02",
+      "days": 2528
+    },
+    {
+      "fromDate": "1998-12-31",
+      "toDate": "2002-12-31",
+      "days": 1461
+    },
+    {
+      "fromDate": "2019-12-31",
+      "toDate": "2022-04-20",
+      "days": 841
+    },
+    {
+      "fromDate": "2013-12-31",
+      "toDate": "2015-12-30",
+      "days": 729
+    },
+    {
+      "fromDate": "1996-10-22",
+      "toDate": "1997-12-29",
+      "days": 433
+    }
+  ],
+  "longestBustouts": [
+    {
+      "title": "Cold as Ice",
+      "gap": 1469,
+      "showDate": "2026-07-22"
+    },
+    {
+      "title": "Big Ball Jam",
+      "gap": 1171,
+      "showDate": "2026-07-24"
+    },
+    {
+      "title": "The Vibration of Life",
+      "gap": 1028,
+      "showDate": "2026-07-22"
+    },
+    {
+      "title": "Suspicious Minds",
+      "gap": 1022,
+      "showDate": "2026-07-29"
+    },
+    {
+      "title": "Johnny B. Goode",
+      "gap": 928,
+      "showDate": "2026-07-27"
+    },
+    {
+      "title": "Sneakin' Sally Thru the Alley",
+      "gap": 925,
+      "showDate": "1997-12-30"
+    },
+    {
+      "title": "Glide II",
+      "gap": 874,
+      "showDate": "2018-12-30"
+    },
+    {
+      "title": "Bohemian Rhapsody",
+      "gap": 852,
+      "showDate": "2022-12-31"
+    }
+  ],
+  "checkedOn": "2026-10-22",
+  "credit": "Data courtesy of Phish.net / The Mockingbird Foundation",
+  "sourceUrl": "https://phish.net/venue/157/Madison_Square_Garden.html"
+}

@@ -97,7 +97,12 @@ npm run lint                    # ESLint flat config, FSD import boundaries
 npm test                        # Vitest (src/**/*.test.js)
 npm run verify:dashboard-meta   # Dashboard route ↔ meta consistency
 npm run verify:dashboard-ui     # Banned legacy Tailwind token scan
+npm run test:shipped-issue-close # Promote close-issue collector (#1149, #1174)
 ```
+
+`test:shipped-issue-close` is part of the `verify` job (2026-10-22).
+
+`ci-gate` always reports (#1148, 2026-10-22). `build`, `functions`, and `rules` still skip when their paths did not change. The gate fails only when one of those jobs, or `verify`, failed. Dependabot policy tests are `npm run test:dependabot-auto-merge`.
 
 `npm test` exit code **134** is a known Vitest worker-teardown flake —
 re-run once before flagging.

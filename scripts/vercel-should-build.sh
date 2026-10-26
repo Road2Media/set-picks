@@ -6,15 +6,13 @@
 
 set -euo pipefail
 
-# Dependabot CI-only branches never change the Vite app.
-if [[ "${VERCEL_GIT_COMMIT_REF:-}" == dependabot/github_actions/* ]]; then
-  exit 0
-fi
-
-# Functions-only lockfile bumps (no root package / src change).
-if [[ "${VERCEL_GIT_COMMIT_REF:-}" == dependabot/npm_and_yarn/functions/* ]]; then
-  exit 0
-fi
+# Every Dependabot ref skips the preview (#1148). Root npm groups only change
+# the lockfile, and a rebase used to force a new preview because the tip was
+# always that lockfile commit. The staging deploy after merge is the Vercel
+# check that still runs. Actions-only and functions-only refs are included.
+case "${VERCEL_GIT_COMMIT_REF:-}" in
+  dependabot/*) exit 0 ;;
+esac
 
 # Build only when SPA-relevant paths changed vs parent commit.
 if git diff HEAD^ HEAD --quiet -- \

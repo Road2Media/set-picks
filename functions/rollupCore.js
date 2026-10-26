@@ -23,6 +23,7 @@
 
 const {
   calculateTotalScore,
+  countBustoutBoosts,
   countCorrectSlots,
   persistableActualSetlistFromOfficialDoc,
   setlistHasAnyPlayedSong,
@@ -38,6 +39,7 @@ const {
 } = require("./postShowRollupPush");
 const { deliverPostRollupComms } = require("./commsEventAdapters");
 const { awardBadgesForUsers } = require("./badgeAwards");
+const { freezeRankSnapshotsAfterShow } = require("./badgeSnapshotJobs");
 const {
   rebuildGlobalStatsLeaderboardsSafe,
 } = require("./globalStatsLeaderboards");
@@ -101,6 +103,26 @@ async function runRollupForShow({
     .where("showDate", "==", showDate)
     .get();
 
+  // Load show calendar once for `showDate` → `tourKey` (#244). If the
+  // calendar snapshot does not list the date, tour-scoped `seasonStats`
+  // writes are skipped; global totals and wins still materialize. The skip
+  // is an error plus `rollup_audit.tourKeyMissing` (#298) so it is visible
+  // without log diving. A later rollup that finds the key clears the flag.
+  // It does not replay first-grade tour increments that were skipped.
+  const calendarSnap = await db.collection("show_calendar").doc("snapshot").get();
+  const showDatesByTour = calendarSnap.exists
+    ? (calendarSnap.data() || {}).showDatesByTour
+    : null;
+  const tourKey = resolveTourKeyForDate(showDate, showDatesByTour);
+  const tourAudit = rollupAuditTourFields(showDate, tourKey);
+  if (!tourKey) {
+    logger?.error?.("runRollupForShow: tourKey missing for showDate", {
+      showDate,
+      trigger,
+      tourKeyMissing: true,
+    });
+  }
+
   if (picksSnap.empty) {
     await writeRollupAuditDoc({
       db,
@@ -113,6 +135,7 @@ async function runRollupForShow({
       trigger,
       logger,
       manualTimingGate,
+      tourAudit,
     });
     logger?.info?.("runRollupForShow", {
       showDate,
@@ -121,6 +144,16 @@ async function runRollupForShow({
       skippedPicks: 0,
       totalPicks: 0,
       callerUid,
+      tourKey: tourAudit.tourKey,
+      tourKeyMissing: tourAudit.tourKeyMissing,
+    });
+    await freezeSnapshotsSafe({
+      db,
+      admin,
+      showDate,
+      showDatesByTour,
+      tourKey,
+      logger,
     });
     return {
       processedPicks: 0,
@@ -128,21 +161,6 @@ async function runRollupForShow({
       totalPicks: 0,
       setlistExists: true,
     };
-  }
-
-  // Load show calendar once for `showDate` → `tourKey` (#244). If the
-  // calendar is stale (missing the date), tour-scoped writes are skipped
-  // with a warn; global totals/wins still materialize.
-  const calendarSnap = await db.collection("show_calendar").doc("snapshot").get();
-  const showDatesByTour = calendarSnap.exists
-    ? (calendarSnap.data() || {}).showDatesByTour
-    : null;
-  const tourKey = resolveTourKeyForDate(showDate, showDatesByTour);
-  if (!tourKey) {
-    logger?.warn?.("runRollupForShow: tourKey missing for showDate", {
-      showDate,
-      trigger,
-    });
   }
 
   // Pre-compute every pick's new score to derive `newGlobalMax` before any
@@ -190,11 +208,13 @@ async function runRollupForShow({
     const newScore = newScoresById.get(pickDoc.id) || 0;
     const userPicks = pickData.picks || {};
     const newCorrectSlots = countCorrectSlots(userPicks, actualSetlist);
+    const newBustoutBoosts = countBustoutBoosts(userPicks, actualSetlist);
     const plan = computePerPickRollup({
       pickData,
       newScore,
       newGlobalMax,
       newCorrectSlots,
+      newBustoutBoosts,
     });
 
     if (pickData.userId && plan.isFirstGrade) {
@@ -226,6 +246,7 @@ async function runRollupForShow({
       isGraded: true,
       winCredited: plan.newIsWin,
       correctSlotsCredited: plan.newCorrectSlots,
+      bustoutBoostsCredited: plan.newBustoutBoosts,
     };
     if (plan.isFirstGrade) {
       pickUpdate.gradedAt = admin.firestore.FieldValue.serverTimestamp();
@@ -243,6 +264,9 @@ async function runRollupForShow({
       ),
       seasonStatsSnapshotAt: admin.firestore.FieldValue.serverTimestamp(),
       seasonStatsThroughShow: showDate,
+      // #298: pre-launch user docs carry an unread nested `stats` blob.
+      // Merge writes never named it, so it survived every rollup.
+      stats: admin.firestore.FieldValue.delete(),
     };
     if (tourKey) {
       userUpdate.seasonStats = {
@@ -255,6 +279,7 @@ async function runRollupForShow({
           correctSlots: admin.firestore.FieldValue.increment(
             plan.countsTowardSeason ? plan.correctSlotsDiff : 0
           ),
+          bustoutBoosts: admin.firestore.FieldValue.increment(plan.bustoutBoostsDiff),
         },
       };
     }
@@ -284,6 +309,7 @@ async function runRollupForShow({
     trigger,
     logger,
     manualTimingGate,
+    tourAudit,
   });
   logger?.info?.("runRollupForShow", {
     showDate,
@@ -292,6 +318,8 @@ async function runRollupForShow({
     skippedPicks,
     totalPicks,
     callerUid,
+    tourKey: tourAudit.tourKey,
+    tourKeyMissing: tourAudit.tourKeyMissing,
   });
 
   if (rollupPushHints.length > 0) {
@@ -358,6 +386,15 @@ async function runRollupForShow({
     });
   }
 
+  await freezeSnapshotsSafe({
+    db,
+    admin,
+    showDate,
+    showDatesByTour,
+    tourKey,
+    logger,
+  });
+
   return {
     processedPicks,
     skippedPicks,
@@ -373,6 +410,25 @@ async function runRollupForShow({
  * re-triggers `gradePicksOnSetlistWrite`. Soft-fails so a transient audit
  * write failure never loses a successful grading pass.
  */
+/**
+ * Latest-run tour attribution for `rollup_audit/{showDate}` (#298).
+ * `showDate` is repeated on the doc so operators do not have to infer it
+ * from the document id. `tourKeyMissing: false` overwrites a prior `true`
+ * when a later rollup resolves the key.
+ *
+ * @param {string} showDate
+ * @param {string | null} tourKey
+ * @returns {{ showDate: string, tourKey: string | null, tourKeyMissing: boolean }}
+ */
+function rollupAuditTourFields(showDate, tourKey) {
+  const resolved = typeof tourKey === "string" && tourKey.trim() ? tourKey.trim() : null;
+  return {
+    showDate,
+    tourKey: resolved,
+    tourKeyMissing: resolved == null,
+  };
+}
+
 async function writeRollupAuditDoc({
   db,
   admin,
@@ -384,6 +440,7 @@ async function writeRollupAuditDoc({
   trigger,
   logger,
   manualTimingGate = null,
+  tourAudit = null,
 }) {
   try {
     const timingExtras =
@@ -395,6 +452,8 @@ async function writeRollupAuditDoc({
               manualTimingGate.forceEarlyFinalizeOverride === true,
           }
         : {};
+    const tourExtras =
+      tourAudit && typeof tourAudit === "object" ? tourAudit : {};
     await db
       .collection("rollup_audit")
       .doc(showDate)
@@ -407,6 +466,7 @@ async function writeRollupAuditDoc({
           callerUid: callerUid || null,
           trigger: trigger || "manual",
           ...timingExtras,
+          ...tourExtras,
         },
         { merge: true }
       );
@@ -420,8 +480,34 @@ async function writeRollupAuditDoc({
   }
 }
 
+/**
+ * Tour and year badge snapshots. A failure here must not undo the rollup.
+ *
+ * @param {{
+ *   db: import("firebase-admin").firestore.Firestore,
+ *   admin: typeof import("firebase-admin"),
+ *   showDate: string,
+ *   showDatesByTour: unknown,
+ *   tourKey: string | null,
+ *   logger?: { info?: Function, warn?: Function },
+ * }} params
+ */
+async function freezeSnapshotsSafe(params) {
+  try {
+    await freezeRankSnapshotsAfterShow(params);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    params.logger?.warn?.("runRollupForShow.rankSnapshots failed", {
+      showDate: params.showDate,
+      tourKey: params.tourKey,
+      msg,
+    });
+  }
+}
+
 module.exports = {
   MAX_FIRESTORE_BATCH_WRITES,
+  rollupAuditTourFields,
   runRollupForShow,
   writeRollupAuditDoc,
 };

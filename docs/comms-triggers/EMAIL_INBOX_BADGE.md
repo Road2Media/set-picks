@@ -1,113 +1,114 @@
 # Email inbox sender badge (BIMI / domain favicon)
 
-**Issue:** [#498](https://github.com/pat792/set-picks/issues/498)
+**Issue:** [#498](https://github.com/Road2Media/set-picks/issues/498)
 
 ## Two different logos (do not conflate)
 
 | Layer | What you see | Controlled by | Asset |
 |-------|--------------|---------------|-------|
-| **In-body header** | Large vinyl mark when the email is **open** | HTML `<img>` in `MarketingLayout` / `buildBrandedEmailHtml` | `comms/emailBranding.cjs` → `/favicon/web-app-manifest-512x512.png` |
-| **Inbox sender badge** | Small circle beside **Setlist Pick'em** in the **inbox list** | BIMI + DMARC (Gmail), domain favicon fallback — **not** the email template | DNS / certificates (#498 ops) |
+| **In-body header** | Gradient wordmark when the email is **open** | HTML in `MarketingLayout` / `buildBrandedEmailHtml` | `comms/emailBranding.cjs` → `/branding/email-gradient-wordmark.png` |
+| **Inbox sender badge** | Small circle beside **Setlist Pick'em** in the **inbox list** | BIMI on the From domain. Domain favicon is only a partial fallback. **Not** the email template | `public/bimi/logo.svg` + DNS (#498) |
 
-**Typical symptom (see QA screenshot):** opened email shows the vinyl logo correctly; inbox list shows a **generic blue person icon**. That means in-body branding works and only the **inbox badge** layer is missing.
-
-Changing the in-body `<img>` URL will **not** fix the inbox circle. Gmail does not use the HTML header image for the list avatar.
+**Typical symptom:** the opened email shows the wordmark; the inbox list shows a generic letter or blue person icon. Changing the in-body image will not fix that circle. Gmail does not use the HTML header for the list avatar.
 
 ---
 
 ## In-body logo (working — keep separate)
 
-- Shared helper: `comms/emailBranding.cjs` → `buildEmailInBodyLogoUrl()`
+- Shared helper: `comms/emailBranding.cjs` → `buildEmailWordmarkUrl()` / `buildEmailWordmarkHeroHtml()`
 - Marketing: `emails/src/components/MarketingLayout.jsx`
 - Service comms: `functions/commsEmailWorker.js` → `buildBrandedEmailHtml()`
-- Display size in template: 48×48 CSS pixels; source is the 512×512 vinyl PNG
+- Legacy path `buildEmailInBodyLogoUrl()` still returns `/favicon/web-app-manifest-512x512.png` for old call sites. Do not point BIMI at it.
 
 ---
 
-## Inbox badge — what actually fixes the blue circle
+## Inbox badge — what actually fixes the circle
 
-### Primary: BIMI (Gmail, Yahoo)
+Both marketing and service mail use `Setlist Pick'em <updates@setlistpickem.com>`. One BIMI record covers both. There is no per-template avatar.
 
-Gmail shows a verified brand mark in the inbox list only when **BIMI** is fully configured:
+### Primary: BIMI
 
-1. **DMARC** on `setlistpickem.com` at `p=quarantine` or `p=reject`, with SPF/DKIM alignment for `updates@setlistpickem.com` (Resend verified domain).
-2. **BIMI DNS** — publish `default._bimi.setlistpickem.com` TXT referencing an **SVG** logo URL + **VMC** (Verified Mark Certificate from an approved CA).
-3. **Logo asset** — simple square SVG (BIMI spec limits complexity; a dedicated asset — the old 854 KB embedded-raster `favicon.svg` was removed in #662).
-4. **Enrollment** — register with mailbox providers; propagation can take days.
+1. **DMARC** on `setlistpickem.com` at `p=quarantine` or `p=reject`, with SPF or DKIM alignment for `updates@setlistpickem.com`. Already true (see audit below).
+2. **Logo** — square SVG Tiny PS, solid background, no scripts, no external refs, under 32 KB. Shipped at `public/bimi/logo.svg` (traced from `public/favicon/favicon-96x96.png`, the same mark as the site icon).
+3. **Stable URL with no redirect** — `https://www.setlistpickem.com/bimi/logo.svg`. The apex 308s to www, so the BIMI `l=` tag must use **www**. `vercel.json` sets `Content-Type: image/svg+xml` on `/bimi/*`.
+4. **DNS TXT** (human, Cloudflare — not an app deploy):
 
-This is **DNS + certificate ops**, not an app deploy. Track on #498.
+   ```text
+   default._bimi.setlistpickem.com.  TXT  "v=BIMI1; l=https://www.setlistpickem.com/bimi/logo.svg;"
+   ```
+
+   That string is `buildBimiTxtRecord()` in `comms/emailBranding.cjs`. Do not publish it until production `www` returns the SVG as `image/svg+xml`. Today, before this ships to production, that path is the SPA HTML fallback.
+
+5. **Evidence certificate** — Gmail shows the logo only with a VMC or a CMC in the `a=` tag (`buildBimiTxtRecord(pemUrl)`). Publishing `l=` alone does nothing in Gmail. Apple Mail can show a BIMI logo without a certificate; treat that as client-dependent, not as a guarantee.
 
 ### Partial fallback: domain favicon
 
-Some clients (not reliably Gmail) fetch `https://<from-domain>/favicon.ico` when BIMI is absent.
+Some non-Gmail clients fetch `https://<from-domain>/favicon.ico` when BIMI is absent. Apex and www already return `200 image/vnd.microsoft.icon` (apex 308s to www). That fallback does not fix Gmail's generic circle.
 
 | Check | URL |
 |-------|-----|
-| www (Vercel rewrite) | `https://www.setlistpickem.com/favicon.ico` → `/favicon/favicon.ico` |
-| Nested ICO | `https://www.setlistpickem.com/favicon/favicon.ico` |
-| Apex | `https://setlistpickem.com/favicon.ico` — confirm apex DNS/hosting matches `From` domain |
-
-Candidate badge asset for BIMI prep: `EMAIL_INBOX_BADGE_FAVICON_PATH` in `comms/emailBranding.cjs` (`/favicon/favicon-96x96.png`).
+| www | `https://www.setlistpickem.com/favicon.ico` → `/favicon/favicon.ico` |
+| Apex | `https://setlistpickem.com/favicon.ico` → 308 → www |
+| BIMI logo | `https://www.setlistpickem.com/bimi/logo.svg` |
 
 ---
 
-## DNS audit results — 2026-08-03 (#498)
+## DNS audit — rechecked 2026-10-22 (#498)
 
-Live `dig`/`curl` audit against public DNS. Everything below is **DNS/registrar ops**, not an app deploy.
+Live `dig` against public DNS. SPF on the Resend return-path is no longer missing.
 
 | Record | Found | Verdict |
 |--------|-------|---------|
-| SPF (apex TXT) | `v=spf1 include:_spf.firebasemail.com ~all` | Firebase only — fine; Resend mail authenticates via the `send.` return-path, not the apex |
-| MX `send.setlistpickem.com` | `10 feedback-smtp.us-east-1.amazonses.com` | Resend return-path MX present ✅ |
-| **TXT `send.setlistpickem.com`** | **— none —** | ❌ **Missing the SPF half of Resend's record pair.** SPF on the Return-Path domain fails/none; DMARC currently passes on **DKIM alignment alone** |
-| DKIM `resend._domainkey` | RSA key published (1024-bit) | ✅ signs `d=setlistpickem.com`, relaxed alignment satisfies DMARC |
-| DMARC `_dmarc` | `v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;` | ✅ `p=quarantine` meets the BIMI prerequisite. ⚠️ `rua` points at the registrar's default aggregator — reports are not monitored by us |
-| BIMI `default._bimi` | — none — | Expected; not yet configured |
-| Favicon apex | `https://setlistpickem.com/favicon.ico` → 301 → www → `200 image/vnd.microsoft.icon` | ✅ apex + www both resolve (nightly `favicon-prod` CI job guards this, #662) |
+| DMARC `_dmarc` | `v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;` | BIMI policy prerequisite met. `rua` is still the registrar default |
+| DKIM `resend._domainkey` | RSA key published | Signs `d=setlistpickem.com` |
+| TXT `send.setlistpickem.com` | `v=spf1 include:amazonses.com ~all` | Present (was missing on 2026-08-03) |
+| MX `send.setlistpickem.com` | `10 feedback-smtp.us-east-1.amazonses.com` | Resend return-path |
+| BIMI `default._bimi` | none | Not published. Logo file is in the repo as of v1.91.0; DNS is still human |
+| Favicon apex / www | 308 → www, then `200 image/vnd.microsoft.icon` | Reachable |
 
-### Human actions required (in priority order)
+August 2026 detail (SPF gap, since closed) stays in git history of this file. Do not re-add the `send` SPF TXT.
 
-1. **Add the missing SPF TXT on the send subdomain** — in the DNS zone add
-   `send.setlistpickem.com TXT "v=spf1 include:amazonses.com ~all"`
-   (confirm the exact value in the Resend dashboard → Domains → setlistpickem.com; the MX half of the pair is already live). Zero-cost deliverability + alignment fix; do this regardless of the BIMI decision.
-2. **BIMI logo decision (business call, not just ops):**
-   - **VMC** (Verified Mark Certificate, DigiCert/Entrust, ≈ $1,000–1,500/yr) requires a **registered trademark** of the logo — full Gmail + Yahoo badge with blue verified check.
-   - **Gmail CMC** (Common Mark Certificate) drops the trademark requirement if the mark has 12+ months of verifiable prior use — cheaper path, Gmail badge without the check mark.
-   - Until a certificate exists, publishing `default._bimi` TXT alone does nothing in Gmail.
-3. **Prepare the BIMI SVG** once (2) is decided — SVG Tiny PS profile, square, solid background; the vinyl mark needs conversion (the old 854 KB `favicon.svg` was removed in #662 and was never BIMI-suitable). Repo work, can ship ahead of the cert.
-4. **Zero-cost partial fallback (optional):** give `updates@setlistpickem.com` a Google account with the brand mark as its profile photo — Gmail shows the sender's Google profile avatar for that address without BIMI. Covers Gmail only.
-5. **Repoint DMARC `rua`** to a monitored mailbox or DMARC-report service so alignment regressions (like finding 1) surface.
+### Human actions still required
+
+Do these in order. None of them are an app or Firebase deploy.
+
+1. **Wait until production serves the logo.** After this change is on `www`, `curl -sI https://www.setlistpickem.com/bimi/logo.svg` must show `200` and `content-type: image/svg+xml`. Publishing the TXT earlier fetches the SPA HTML shell.
+2. **Publish the TXT** in the `setlistpickem.com` DNS zone (Cloudflare):
+
+   `default._bimi.setlistpickem.com TXT "v=BIMI1; l=https://www.setlistpickem.com/bimi/logo.svg;"`
+
+3. **Decide the Gmail certificate** (business call):
+   - **VMC** (DigiCert or Entrust, about $1,000–1,500/yr) needs a registered trademark of the logo. Gmail shows the logo plus the verified check.
+   - **CMC** (Common Mark Certificate) drops the trademark requirement when the mark has 12+ months of verifiable use. Gmail shows the logo without the check.
+   - Host the PEM at an HTTPS URL that does not redirect, then change the TXT to `buildBimiTxtRecord(pemUrl)` (adds `a=`). The certificate embeds this SVG. VMC and CMC use the same file. Do not replace `public/bimi/logo.svg` after the certificate is issued unless the certificate is reissued to match.
+4. **Optional Gmail-only fallback:** a Google account for `updates@setlistpickem.com` with the brand mark as its profile photo. Gmail shows that avatar without BIMI. Covers Gmail only.
+5. **Optional:** repoint DMARC `rua` to a mailbox someone reads.
 
 ---
 
 ## DNS audit commands (human)
 
 ```bash
-# DMARC (required before BIMI)
 dig +short TXT _dmarc.setlistpickem.com
-
-# SPF on sending domain
-dig +short TXT setlistpickem.com | grep spf
-
-# BIMI (after VMC obtained)
+dig +short TXT send.setlistpickem.com
 dig +short TXT default._bimi.setlistpickem.com
-
-# Favicon reachability
+curl -sI https://www.setlistpickem.com/bimi/logo.svg | head -15
 curl -sI https://www.setlistpickem.com/favicon.ico | head -5
-curl -sI https://setlistpickem.com/favicon.ico | head -5
+curl -sI https://setlistpickem.com/favicon.ico | head -8
 ```
 
-Resend dashboard: confirm `setlistpickem.com` verified, DKIM active, `updates@setlistpickem.com` sender identity matches DMARC alignment.
+Resend: `setlistpickem.com` verified, DKIM active, From `updates@setlistpickem.com`.
 
 ---
 
 ## QA checklist
 
-- [ ] **Opened email** — large vinyl logo in header (regression guard)
-- [ ] **Gmail inbox list** — brand icon instead of blue person circle (#498 AC)
+- [ ] **Opened email** — gradient wordmark in the header (regression guard)
+- [ ] **Production logo** — `https://www.setlistpickem.com/bimi/logo.svg` is `200` + `image/svg+xml` before any TXT publish
+- [ ] **Gmail inbox list** — brand icon instead of the generic circle, only after TXT + VMC or CMC
 - [ ] Gmail web + iOS
-- [ ] Apple Mail inbox list
-- [ ] Service comms from `updates@setlistpickem.com` — same badge
+- [ ] Apple Mail inbox list (may show BIMI from `l=` alone; confirm on a device)
+- [ ] Service comms from `updates@setlistpickem.com` — same badge as marketing (same From domain)
 
 ---
 
@@ -115,4 +116,6 @@ Resend dashboard: confirm `setlistpickem.com` verified, DKIM active, `updates@se
 
 - #456 branded HTML shell (in-body — working)
 - #497 closed as duplicate (mis-scoped in-body bug)
+- #662 SERP favicon (separate from this inbox badge)
 - `vercel.json` `/favicon.ico` rewrite (domain favicon fallback only)
+- `comms/bimiLogo.test.js` — Tiny PS contract and the TXT string

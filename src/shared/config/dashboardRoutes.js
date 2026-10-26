@@ -28,6 +28,7 @@ export const PICKS_CLUSTER_PATHS = Object.freeze({
   makePicks: '/dashboard/picks',
   lab: '/dashboard/picks/lab',
   scorecard: '/dashboard/picks/scorecard',
+  rewind: '/dashboard/rewind',
 });
 
 /**
@@ -102,6 +103,7 @@ export function isPicksClusterPath(pathname) {
   if (path === PICKS_CLUSTER_PATHS.makePicks) return true;
   if (path === PICKS_CLUSTER_PATHS.lab) return true;
   if (path === PICKS_CLUSTER_PATHS.scorecard) return true;
+  if (path === PICKS_CLUSTER_PATHS.rewind) return true;
   return false;
 }
 

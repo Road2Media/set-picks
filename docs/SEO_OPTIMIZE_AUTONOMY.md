@@ -175,11 +175,12 @@ When the live calendar label changes (new tour with newest `lastShowDate` on `pu
 
 ### Sitemap `lastmod`
 
-`public/sitemap.xml` today lists locs + `changefreq` / `priority` and has **no** `<lastmod>`. When prerender HTML snapshots refresh (new crawlable bustout names, unique counts, or title/FAQ edits that ship to `main`):
+`scripts/prerender-seo.mjs` stamps `<lastmod>` on `/tour-stats` and each prerendered `/tour-stats/{slug}` from `public_tour_stats.lastShowDate` (#930). The hub date is the newest of those slug dates. `public/sitemap.xml` in git stays the loc list without dates; `dist/sitemap.xml` is what production serves. Google ignores `<changefreq>` and `<priority>`.
 
-1. Stamp `<lastmod>YYYY-MM-DD</lastmod>` on the URLs whose HTML actually changed (`/tour-stats`, current-tour slug, `/llms.txt` is not in the sitemap — request index separately).
-2. Do not bump `lastmod` on unchanged legal/about URLs.
-3. After promote: human URL-Inspect + Request indexing on those www URLs (playbook §2). Re-submit the sitemap only if GSC shows a durable error.
+1. Do not hand-stamp “today”, and do not use `writtenAt` (the nightly refresh rewrites it when the show list did not change).
+2. Do not bump `lastmod` on unchanged legal/about/home URLs. The stamper only touches tour-stats locs it has a show date for.
+3. `/llms.txt` is not in the sitemap — request index separately.
+4. After promote: human URL-Inspect + Request indexing on the www URLs in playbook §9 (property `sc-domain:setlistpickem.com`). Re-submit the sitemap only if GSC shows a durable error.
 
 ---
 

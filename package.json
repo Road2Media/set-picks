@@ -1,7 +1,7 @@
 {
   "name": "setlistpickem",
   "private": true,
-  "version": "1.89.0",
+  "version": "1.97.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -55,6 +55,9 @@
     "test:tour-stats-seo-facts": "node --test scripts/lib/tourStatsSeoFacts.test.mjs scripts/lib/tourStatsSeoAutoExpand.test.mjs scripts/lib/firestoreRestDecode.test.mjs",
     "test:seo-query-registry": "node --test scripts/lib/queryRegistry.test.mjs",
     "test:seo-gsc-snapshot": "node --test scripts/lib/seoGscSnapshot.test.mjs",
+    "test:dependabot-auto-merge": "node --test scripts/lib/dependabotAutoMergePolicy.test.mjs scripts/lib/dependabotScheduledExecution.test.mjs scripts/lib/ciGate.test.mjs scripts/lib/vercelShouldBuild.test.mjs scripts/lib/dependabotMajorMigration.test.mjs scripts/lib/runtimeQuarterlyCheck.test.mjs",
+    "test:shipped-issue-close": "node --test scripts/lib/shippedIssueClose.test.mjs",
+    "test:sphere-recap-recipients": "node --test scripts/lib/sphereRecapCorrectionRecipients.test.mjs",
     "seo:gsc-weekly-snapshot": "node scripts/seo/gsc-weekly-snapshot.mjs",
     "seo:title-h1-scan": "python3 -m crew.scripts.seo_title_h1_scan",
     "emails:build": "npm run build --prefix emails",

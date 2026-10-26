@@ -10,6 +10,8 @@
  * #959: additional `/tour-stats/{slug}` pages auto-expand from `_index` when
  * the thin-page gate passes (see `scripts/lib/tourStatsSeoAutoExpand.mjs`).
  * Sitemap + `llms.txt` in `dist/` are rewritten from the same registry.
+ * #930: tour-stats `<lastmod>` comes from `lastShowDate` (hub = newest).
+ * `/llms.txt` stays out of the sitemap — Request indexing on that URL is human.
  * #869: also writes `dist/tour-stats-data/{slug}.json` so public `/tour-stats`
  * can paint aggregates without App Check / Firestore SDK.
  * Boot shells: `dashboard` / `spa-boot` use `dist/app.html`;
@@ -38,9 +40,12 @@ import { fetchFirestoreRestDocument } from './lib/firestoreRestDecode.mjs';
 import {
   appendLlmsTourStatsLinks,
   appendSitemapTourStatsUrls,
+  applySitemapLastmods,
   isTourStatsSeoAutoExpandEnabled,
   resolveAutoExpandTourStatsRoutes,
+  sitemapLastmodDate,
   tourStatsDiscoveryFromRoutes,
+  tourStatsSitemapLastmodMap,
 } from './lib/tourStatsSeoAutoExpand.mjs';
 import {
   buildTourStatsFactsHtml,
@@ -56,6 +61,13 @@ import {
   finishedTourWrapShareImageUrl,
 } from '../src/features/tour-stats/model/finishedTourWrap.js';
 import { TOUR_STATS_SEO_FACT_SLUGS } from '../src/shared/config/seoRoutes.js';
+import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
+import { buildAnnualPrerenderEnrichment } from '../src/features/tour-stats/model/annualTourStatsFacts.js';
+import {
+  ANNUAL_TOUR_STATS_YEAR,
+  annualYearDocId,
+  normalizePublishedYearStats,
+} from '../src/features/tour-stats/model/rollUpAnnualTourStats.js';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const distDir = join(root, 'dist');
@@ -86,7 +98,12 @@ const appShell = readFileSync(distApp, 'utf8');
 const loginEntryShell = readFileSync(distLogin, 'utf8');
 
 function isTourStatsPrerenderRoute(path) {
-  return typeof path === 'string' && path.startsWith('/tour-stats');
+  return (
+    typeof path === 'string' &&
+    path.startsWith('/tour-stats') &&
+    path !== '/tour-stats/msg' &&
+    path !== '/tour-stats/2026'
+  );
 }
 
 function isLegalPrerenderRoute(path) {
@@ -162,6 +179,13 @@ async function emitPublicTourStatsCdnJson() {
     if (seoSlug) slugs.add(seoSlug);
   }
 
+  for (const [id, cached] of publicTourStatsDocCache) {
+    if (!id.startsWith('_year_') || !cached) continue;
+    const rel = `tour-stats-data/${id}.json`;
+    writeFileSync(join(outDir, `${id}.json`), JSON.stringify({ id, ...cached }));
+    console.log(`prerender-seo: wrote dist/${rel}`);
+  }
+
   for (const slug of slugs) {
     try {
       const doc = await loadPublicTourStatsDoc(slug);
@@ -220,6 +244,86 @@ async function maybeWriteTourWrapShareImage(doc, slug) {
     );
     return { wrap, ogImage: '' };
   }
+}
+
+async function loadMsgGardenEnrichment(route) {
+  if (route.path !== '/tour-stats/msg') return null;
+  let liveDoc = null;
+  try {
+    liveDoc = await fetchFirestoreRestDocument(
+      FIRESTORE_PROJECT_ID,
+      'public_venue_stats/msg',
+    );
+  } catch (err) {
+    console.warn(
+      'prerender-seo: public_venue_stats/msg unavailable, using snapshot',
+      err?.message || err,
+    );
+  }
+  const enrichment = buildMsgGardenPrerenderEnrichment(
+    liveDoc,
+    route.canonicalUrl,
+  );
+  console.log(
+    `prerender-seo: /tour-stats/msg facts (${enrichment.stats.showCount} shows through ${enrichment.stats.lastShowDate})`,
+  );
+  return enrichment;
+}
+
+async function loadAnnualTourStatsEnrichment(route) {
+  if (route.path !== '/tour-stats/2026') return null;
+  const docId = annualYearDocId(ANNUAL_TOUR_STATS_YEAR);
+  let yearDoc = null;
+  try {
+    yearDoc = await loadPublicTourStatsDoc(docId);
+  } catch (err) {
+    console.warn(
+      `prerender-seo: public_tour_stats/${docId} unavailable, rolling up tour pages`,
+      err?.message || err,
+    );
+  }
+  let indexDoc = null;
+  /** @type {Array<Record<string, unknown>>} */
+  const tourDocs = [];
+  const yearStats = normalizePublishedYearStats(yearDoc, ANNUAL_TOUR_STATS_YEAR);
+  if (!yearStats) {
+    try {
+      indexDoc = await loadPublicTourStatsDoc('_index');
+    } catch (err) {
+      console.warn(
+        'prerender-seo: annual roll-up skipped _index:',
+        err?.message || err,
+      );
+    }
+    const tours = Array.isArray(indexDoc?.tours) ? indexDoc.tours : [];
+    for (const tour of tours) {
+      const slug = typeof tour?.tourSlug === 'string' ? tour.tourSlug.trim() : '';
+      if (!slug || slug.startsWith('_')) continue;
+      try {
+        const doc = await loadPublicTourStatsDoc(slug);
+        if (doc) tourDocs.push({ id: slug, tourSlug: slug, ...doc });
+      } catch (err) {
+        console.warn(
+          `prerender-seo: annual roll-up skipped ${slug}:`,
+          err?.message || err,
+        );
+      }
+    }
+  }
+  const enrichment = buildAnnualPrerenderEnrichment({
+    yearDoc,
+    tourDocs,
+    indexLoaded: Boolean(indexDoc),
+    pageUrl: route.canonicalUrl,
+  });
+  if (!enrichment) {
+    console.warn('prerender-seo: /tour-stats/2026 has no year doc or tour index');
+    return {};
+  }
+  console.log(
+    `prerender-seo: /tour-stats/2026 facts (${enrichment.stats.showsWithSetlist} shows through ${enrichment.stats.lastShowDate}, source ${enrichment.stats.source})`,
+  );
+  return enrichment;
 }
 
 async function loadTourStatsEnrichment(route) {
@@ -305,7 +409,30 @@ async function resolvePrerenderRoutes() {
   return [...PRERENDER_ROUTES, ...extra];
 }
 
-function emitTourStatsDiscoveryFiles(allRoutes) {
+/**
+ * Dates already fetched into `publicTourStatsDocCache` during this build.
+ * Missing docs are omitted — we do not stamp "today".
+ *
+ * @param {Array<{ tourStatsSeoSlug?: string }>} routes
+ * @returns {Record<string, string>}
+ */
+function collectTourStatsSitemapLastmods(routes) {
+  /** @type {Record<string, string>} */
+  const slugDates = {};
+  for (const route of Array.isArray(routes) ? routes : []) {
+    const slug =
+      typeof route?.tourStatsSeoSlug === 'string'
+        ? route.tourStatsSeoSlug.trim()
+        : '';
+    if (!slug) continue;
+    const doc = publicTourStatsDocCache.get(slug);
+    const date = sitemapLastmodDate(doc?.lastShowDate);
+    if (date) slugDates[slug] = date;
+  }
+  return tourStatsSitemapLastmodMap(slugDates, { siteUrl: SEO_CONFIG.siteUrl });
+}
+
+function emitTourStatsDiscoveryFiles(allRoutes, msgLastShowDate = '', annualLastShowDate = '') {
   const { locs, llms } = tourStatsDiscoveryFromRoutes(allRoutes);
   const publicSitemap = join(root, 'public', 'sitemap.xml');
   const publicLlms = join(root, 'public', 'llms.txt');
@@ -313,9 +440,18 @@ function emitTourStatsDiscoveryFiles(allRoutes) {
     console.warn('prerender-seo: missing public/sitemap.xml or public/llms.txt');
     return;
   }
-  const sitemap = appendSitemapTourStatsUrls(
-    readFileSync(publicSitemap, 'utf8'),
-    locs,
+  const lastmods = collectTourStatsSitemapLastmods(allRoutes);
+  const msgDate = sitemapLastmodDate(msgLastShowDate);
+  if (msgDate) {
+    lastmods[`${SEO_CONFIG.siteUrl}/tour-stats/msg`] = msgDate;
+  }
+  const annualDate = sitemapLastmodDate(annualLastShowDate);
+  if (annualDate) {
+    lastmods[`${SEO_CONFIG.siteUrl}/tour-stats/2026`] = annualDate;
+  }
+  const sitemap = applySitemapLastmods(
+    appendSitemapTourStatsUrls(readFileSync(publicSitemap, 'utf8'), locs),
+    lastmods,
   );
   const llmsTxt = appendLlmsTourStatsLinks(readFileSync(publicLlms, 'utf8'), llms);
   writeFileSync(join(distDir, 'sitemap.xml'), sitemap, 'utf8');
@@ -330,13 +466,22 @@ function emitTourStatsDiscoveryFiles(allRoutes) {
 }
 
 const prerenderRoutes = await resolvePrerenderRoutes();
+let msgLastShowDate = '';
+let annualLastShowDate = '';
 
 for (const route of prerenderRoutes) {
   // Legal door shells are written separately (zero-JS; #916) — not marketing CSR.
   if (isLegalPrerenderRoute(route.path)) continue;
 
   const shell = marketingShell;
-  const enrichment = await loadTourStatsEnrichment(route);
+  const msgEnrichment = await loadMsgGardenEnrichment(route);
+  if (msgEnrichment?.lastShowDate) msgLastShowDate = msgEnrichment.lastShowDate;
+  const annualEnrichment = msgEnrichment
+    ? null
+    : await loadAnnualTourStatsEnrichment(route);
+  if (annualEnrichment?.lastShowDate) annualLastShowDate = annualEnrichment.lastShowDate;
+  const enrichment =
+    msgEnrichment || annualEnrichment || (await loadTourStatsEnrichment(route));
   let html = injectPrerenderHtml(shell, route, enrichment);
   // Marketing home statically imports splash UI via marketingMain — no lazy
   // HomeRoute waterfall, so no splash modulepreload injection (#832).
@@ -356,7 +501,7 @@ for (const route of prerenderRoutes) {
 }
 
 await emitPublicTourStatsCdnJson();
-emitTourStatsDiscoveryFiles(prerenderRoutes);
+emitTourStatsDiscoveryFiles(prerenderRoutes, msgLastShowDate, annualLastShowDate);
 
 // HTML-first legal door (#916): full policy body in first HTML, no module graph.
 for (const legalPath of ['/privacy', '/terms']) {

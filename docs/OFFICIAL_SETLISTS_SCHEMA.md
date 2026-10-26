@@ -73,6 +73,7 @@ Additional automation-doc state used by auto-finalize:
 | `lastRowsChangedAt` | Timestamp of the most recent poll where the full-rows signature changed. Drives the idle calculation. |
 | `autoFinalizedAt` | Stamped when auto-finalize first runs rollup. Prevents double-firing. |
 | `autoFinalizeTrigger` | `"encore-idle"` or `"safety-cap"` — which rule fired. |
+| `playedSongHighWater` | Highest song count accepted as the full played list (#626). A shorter poll before auto-finalize does not shrink `bustouts` or `songGaps`. After `autoFinalizedAt`, the current feed replaces that high-water mark. |
 
 **Reconciliation path:** if Phish.net edits a setlist after auto-finalize has fired (rare but possible within the ~4.5h post-encore poll window), the next changed-rows poll re-invokes `runRollupForShow` with `trigger: "auto-reconcile"`. The per-pick math in `computePerPickRollup` is delta-based, so `users.totalPoints` / `showsPlayed` / `wins` reconcile correctly rather than double-incrementing.
 
@@ -119,13 +120,24 @@ Write paths (both populate `bustouts`):
 | Path | File | Source for `gap` |
 |------|------|------------------|
 | Live automation | `functions/phishnetLiveSetlistAutomation.js` (`normalizeSetlistRows` → `buildSetlistDocFromRows` → `pollSingleShowDate`) | Phish.net row `gap` (direct). |
-| Admin save | `src/features/admin/model/useAdminSetlistForm.js` → `saveOfficialSetlistByDate` | Phish.net row `gap` via `setlistParser` when the admin ingested from Phish.net; otherwise a fetch-at-save call (`fetchBustoutsFromPhishnet`) hits the `getPhishnetSetlist` callable and derives from rows. On soft-failure we save with `bustouts: []` and surface a warning so the admin can retry. |
+| Admin save | `src/features/admin/model/useAdminSetlistForm.js` → `saveOfficialSetlistByDate` | Phish.net row `gap` via `setlistParser` when the admin ingested from Phish.net; otherwise a fetch-at-save call (`fetchBustoutsFromPhishnet`) hits the `getPhishnetSetlist` callable and derives from rows. On soft-failure the form passes `bustouts: []` and keeps any prior `songGaps`. The save then reconciles both to the played list, so a prior gap ≥ 30 still promotes a bustout and a title that was not played is dropped. The warning still asks the admin to retry the Phish.net fetch. |
 
 The live Storage `song-catalog.json` and the bundled fallbacks (`src/shared/data/phishSongs.js`, `functions/phishSongs.js`) are **no longer used for scoring**. They remain in place for UI autocomplete, scoring-rules copy, and future upcoming-show bustout-prediction features. See `docs/SONG_CATALOG.md` for their current (UI-only) role.
 
-### Partial-feed safety
+### Partial-feed safety and stale-title reconciliation (#626)
 
-Mid-show polls may carry a subset of the eventual rows. `buildSetlistDocFromRows` merges the prior `bustouts` with the newly-derived set so a bustout captured in an earlier poll is never shrunk away by a partial later one. `songGaps` keeps the first positive gap (`mergeSongGaps`). A live row `gap` of 0 is not stored and must not replace a positive gap already captured. A stored 0 is dropped so a later positive poll can record the actual. Songs absent from this poll keep their stored gap (partial set 1 must not wipe set 2). Same-show repeats stay at the first row's gap. A later poll does not replace a positive gap, including the +1 once tonight is in the Phish.net show index. Settled historical maps can still be rewritten with `npm run backfill:song-gaps -- --existing`.
+`songGaps` keeps the first positive gap (`mergeSongGaps`). A live row `gap` of 0 is not stored and must not replace a positive gap already captured. A stored 0 is dropped so a later positive poll can record the actual. Same-show repeats stay at the first row's gap. A later poll does not replace a positive gap for a song that is still in the feed, including the +1 once tonight is in the Phish.net show index.
+
+What changed in v1.91.1: titles that leave the played list are removed, unless this poll is a **shorter** feed than `live_setlist_automation.playedSongHighWater` and the show is not auto-finalized yet. That shorter payload is the partial-feed case (set 2 missing, or a glitch). It still unions `bustouts` and `songGaps` with the prior snapshot. Any other poll is authoritative:
+
+- `songGaps` has no key for a song that was not played. The writer puts `FieldValue.delete()` on removed keys because `set` + `merge` would otherwise deep-merge the map and keep the stale title.
+- `bustouts` contains every played song whose frozen gap is still ≥ 30, and no title that was not played. A played song with no frozen gap keeps a legacy bustout entry. A frozen gap under 30 removes it.
+- Replacing “The Curtain” with “The Curtain With” drops the old title on that poll, because the song count did not shrink.
+- After `autoFinalizedAt`, even a shorter feed is authoritative. If that change adds or removes a bustout for a song that was actually played, the poller re-runs rollup with `trigger: "auto-reconcile"`. A removed bustout that was not in the played list does not change scores. `songGaps` never does.
+
+Admin save (`saveOfficialSetlistByDate`) always reconciles to the `officialSetlist` being saved. An explicit gap map replaces the prior map; an omitted map keeps the prior gaps, then both are filtered to the played list.
+
+Settled historical maps can still be gap-corrected with `npm run backfill:song-gaps -- --existing` (gaps only). To overwrite **both** snapshots from a fresh fetch, use the reconcile backfill below. Neither script runs in CI.
 
 ### Per-song gap snapshot — display (#587 Phase B)
 
@@ -138,7 +150,9 @@ Mid-show polls may carry a subset of the eventual rows. `buildSetlistDocFromRows
 
 **Display:** `src/features/scoring/model/groupOfficialSetlistBySet.js` (`buildSongGapMap` / `getOfficialSetlistGap`) → `src/features/scoring/ui/StandingsOfficialSetlistCard.jsx` (4-col invisible grid: # / title / gap / bustout; every frozen gap including 0). Client read passes through `normalizeOfficialSetlistDocData` (`sanitizeSongGaps`). Not used for scoring — `songGaps` is in `NON_SONG_SETLIST_KEYS` on both the client and Cloud Function scoring paths.
 
-**Backfill:** `functions/scripts/backfillSongGaps.js` (`npm run backfill:song-gaps -- --missing --apply` or `--existing --apply` from `functions/`). Re-fetches Phish.net rows and merge-writes `songGaps` only — no score reconcile, and the patch does not include `bustouts`. `--existing` refreshes shows that already have a map (the #1062 off-by-one correction). Shows saved before Phase B omit the chip until backfilled; re-saving a past show from admin (Phish.net ingest) also freezes the snapshot.
+**Backfill (gaps only):** `functions/scripts/backfillSongGaps.js` (`npm run backfill:song-gaps -- --missing --apply` or `--existing --apply` from `functions/`). Re-fetches Phish.net rows and merge-writes `songGaps` only — no score reconcile, and the patch does not include `bustouts`. `--existing` refreshes shows that already have a map (the #1062 off-by-one correction). Shows saved before Phase B omit the chip until backfilled; re-saving a past show from admin (Phish.net ingest) also freezes the snapshot.
+
+**Backfill (stale bustouts + gaps, #626):** `functions/scripts/backfillReconcileSetlistSnapshots.js` (`npm run backfill:reconcile-snapshots -- --showDates=YYYY-MM-DD` from `functions/`). Dry-run is the default and prints before/after bustouts, gap diffs, and whether score reconciliation is required. `--apply` overwrites `bustouts` and `songGaps` from the fetched rows (no union) and does not rewrite `officialSetlist`. There is no scan-all mode. Score writes run only when a song in the stored played list gained or lost bustout membership. A human with Firestore credentials must run `--apply` for shows that already drifted; deploying functions does not rewrite them. `comms_show_context` highlight strings already copied from the old snapshot are not rewritten.
 
 ### Backfill
 

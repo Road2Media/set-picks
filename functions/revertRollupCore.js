@@ -9,6 +9,7 @@
 
 const {
   calculateTotalScore,
+  countBustoutBoosts,
   countCorrectSlots,
   persistableActualSetlistFromOfficialDoc,
 } = require("./scoringCore");
@@ -118,7 +119,7 @@ async function applyRevertRollupForShow({
   }
   const newGlobalMax = computeGlobalMaxScore(provisional, newScoresById);
 
-  /** @type {Map<string, { total: number, shows: number, wins: number, correctSlots: number, seasonTp: number, seasonShows: number, seasonWins: number, seasonCorrect: number }>} */
+  /** @type {Map<string, { total: number, shows: number, wins: number, correctSlots: number, seasonTp: number, seasonShows: number, seasonWins: number, seasonCorrect: number, seasonBustouts: number }>} */
   const userDeltas = new Map();
   for (const p of gradedRows) {
     const uid = String(p.userId || "");
@@ -126,11 +127,19 @@ async function applyRevertRollupForShow({
     const score = typeof p.score === "number" ? p.score : 0;
     const userPicks = p.picks || {};
     const newCorrectSlots = countCorrectSlots(userPicks, actualSetlist);
+    const newBustoutBoosts = countBustoutBoosts(userPicks, actualSetlist);
     const plan = computePerPickRollup({
-      pickData: { ...p, isGraded: false, winCredited: false, correctSlotsCredited: 0 },
+      pickData: {
+        ...p,
+        isGraded: false,
+        winCredited: false,
+        correctSlotsCredited: 0,
+        bustoutBoostsCredited: 0,
+      },
       newScore: score,
       newGlobalMax,
       newCorrectSlots,
+      newBustoutBoosts,
     });
     const row = userDeltas.get(uid) || {
       total: 0,
@@ -141,6 +150,7 @@ async function applyRevertRollupForShow({
       seasonShows: 0,
       seasonWins: 0,
       seasonCorrect: 0,
+      seasonBustouts: 0,
     };
     row.total += plan.scoreDiff;
     row.shows += plan.isFirstGrade ? 1 : 0;
@@ -155,6 +165,7 @@ async function applyRevertRollupForShow({
       if (plan.countsTowardSeason) {
         row.seasonCorrect += plan.correctSlotsDiff;
       }
+      row.seasonBustouts += plan.bustoutBoostsDiff;
     }
     userDeltas.set(uid, row);
   }
@@ -195,6 +206,8 @@ async function applyRevertRollupForShow({
             admin.firestore.FieldValue.increment(-d.seasonWins);
           upd[`seasonStats.${tourKey}.correctSlots`] =
             admin.firestore.FieldValue.increment(-d.seasonCorrect);
+          upd[`seasonStats.${tourKey}.bustoutBoosts`] =
+            admin.firestore.FieldValue.increment(-d.seasonBustouts);
         }
         batch.set(ref, upd, { merge: true });
         n += 1;
@@ -209,6 +222,7 @@ async function applyRevertRollupForShow({
           isGraded: false,
           winCredited: false,
           correctSlotsCredited: admin.firestore.FieldValue.delete(),
+          bustoutBoostsCredited: admin.firestore.FieldValue.delete(),
           score: newScore,
           gradedAt: admin.firestore.FieldValue.delete(),
         });

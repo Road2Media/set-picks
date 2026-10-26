@@ -1,0 +1,12 @@
+[
+  {
+    "email": "player-01@example.com",
+    "uid": "replace-with-firebase-uid",
+    "handle": "Player One"
+  },
+  {
+    "email": "player-02@example.com",
+    "uid": "replace-with-firebase-uid-2",
+    "handle": "Player Two"
+  }
+]

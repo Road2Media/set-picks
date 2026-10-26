@@ -4,6 +4,14 @@
 
 name: CI
 
+# Superseded pushes and PR updates cancel the older run (#967).
+# The nightly schedule stays in its own group so a push to the default
+# branch does not cancel the full-matrix backstop, and the backstop does
+# not cancel that push.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'schedule' && 'schedule' || github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, master, staging]
@@ -99,6 +107,15 @@ jobs:
 
       - name: Client tests (vitest)
         run: npm test
+
+      - name: Dependabot T0 auto-merge policy (#967, #1052)
+        run: npm run test:dependabot-auto-merge
+
+      - name: Shipped-issue close collector (#1149, #1174)
+        run: npm run test:shipped-issue-close
+
+      - name: Sphere recap recipient loader (#1194)
+        run: npm run test:sphere-recap-recipients
 
       # Informational only (#414) — does not fail the job. Triage notes in AGENTS.md.
       - name: npm audit (informational)
@@ -335,3 +352,25 @@ jobs:
 
       - name: qa:preview-headers (recipe §C)
         run: node scripts/qa/preview-cache-headers.mjs
+
+  # #1148: build, functions, and rules skip when their paths did not change.
+  # A ruleset that requires those job names treats a skip as "not successful".
+  # ci-gate always reports. Skipped path-filtered jobs pass. A real failure
+  # or a cancellation fails the gate. Patrick can require this check instead
+  # of Vercel / build / functions / rules.
+  ci-gate:
+    name: ci-gate
+    needs: [changes, verify, build, functions, rules]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Aggregate required CI results
+        env:
+          CI_GATE_CHANGES: ${{ needs.changes.result }}
+          CI_GATE_VERIFY: ${{ needs.verify.result }}
+          CI_GATE_BUILD: ${{ needs.build.result }}
+          CI_GATE_FUNCTIONS: ${{ needs.functions.result }}
+          CI_GATE_RULES: ${{ needs.rules.result }}
+        run: node scripts/ci-gate.mjs

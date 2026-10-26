@@ -22,7 +22,7 @@
 
 - **Frontend:** React (Vite), Tailwind, React Router.
 - **PWA / home screen performance (spike):** `docs/PWA_HOME_SCREEN_PERFORMANCE.md` — precache vs FCM service worker, measurement, deploy freshness.
-- **Public landing SEO:** `src/shared/config/seo.js` + `seoRoutes.js` (prerender registry), `og-home-html.mjs` + `middleware.js` (social scrapers only on `/` — not Googlebot/bingbot), post-build `scripts/prerender-seo.mjs` (tour-stats SEO auto-expand #959 from `public_tour_stats/_index`; finished-tour wrap HTML + `/tour-stats-share/{slug}.jpg` #1140), `src/features/landing/ui/LandingSeo.jsx` (Helmet + JSON-LD), `public/llms.txt`, `public/robots.txt`, `npm run verify:seo-strings` / `verify:og-home` / `verify:seo-prerender`, `public/branding/og-card-1200x630.jpg` (regenerate via `npm run generate:og-card` after changing splash SVGs; bump `OG_IMAGE_VERSION` in `seo.js` / `og-home-html.mjs`). Ops + GSC baseline: **`docs/SEO_GEO_PLAYBOOK.md`** (epic #657 / #664; Child D #930 / E0 #931 / E1 #932 / E3 #934 / auto-expand #959 / epic #926). Query registry: `docs/seo/query-registry.json`. Weekly facts packs: `npm run seo:gsc-weekly-snapshot`. Scored loop: **`docs/SEO_OPTIMIZE_AUTONOMY.md`**. Public profiles `/user/:userId` are **`noindex,follow`** (#661).
+- **Public landing SEO:** `src/shared/config/seo.js` + `seoRoutes.js` (prerender registry), `og-home-html.mjs` + `middleware.js` (social scrapers only on `/` — not Googlebot/bingbot), post-build `scripts/prerender-seo.mjs` (tour-stats SEO auto-expand #959 from `public_tour_stats/_index`; sitemap `<lastmod>` from `lastShowDate` #930; finished-tour wrap HTML + `/tour-stats-share/{slug}.jpg` #1140), `src/features/landing/ui/LandingSeo.jsx` (Helmet + JSON-LD), `public/llms.txt`, `public/robots.txt`, `npm run verify:seo-strings` / `verify:og-home` / `verify:seo-prerender`, `public/branding/og-card-1200x630.jpg` (regenerate via `npm run generate:og-card` after changing splash SVGs; bump `OG_IMAGE_VERSION` in `seo.js` / `og-home-html.mjs`). Ops + GSC baseline: **`docs/SEO_GEO_PLAYBOOK.md`** (epic #657 / #664; Child D #930 / E0 #931 / E1 #932 / E3 #934 / auto-expand #959 / epic #926). Query registry: `docs/seo/query-registry.json`. Weekly facts packs: `npm run seo:gsc-weekly-snapshot`. Scored loop: **`docs/SEO_OPTIMIZE_AUTONOMY.md`**. Public profiles `/user/:userId` are **`noindex,follow`** (#661).
 - **Backend / data:** Firebase Auth, Firestore, App Check; **Firebase Cloud Functions** live under repo root **`functions/`** (e.g. `functions/index.js`), not `firebase/functions/`. Auth / App Check boot sequencing (idle-warm Auth; never await App Check before `signInWithPopup`): **`docs/AUTH_BOOT_PRACTICES.md`** (#850). Cold-open train: **`docs/RELEASE_TRAIN_COLD_OPEN.md`**; outbound link classes: **`docs/OUTBOUND_AUTH_HANDOFF.md`**. Password reset mail is **`requestPasswordResetEmail`** (Resend link on `www.setlistpickem.com`, #1049). Do not fix that host with Customize action URL, Firebase Hosting, or `VITE_FIREBASE_AUTH_DOMAIN`. Verification and email-change templates stay on Firebase.
 - **Official setlists (Firestore):** `official_setlists/{showDate}` field semantics, scoring, save vs finalize — **`docs/OFFICIAL_SETLISTS_SCHEMA.md`**.
 - **Pool admin callables:** `deletePoolWithCleanup` (issue #138) handles server-side pool delete + member cleanup via Admin SDK — **`docs/POOL_DELETE_RUNBOOK.md`**. Owner-auth + activity check mirror `src/features/pools/api/poolFirestore.js`.
@@ -102,11 +102,17 @@ Name **existing** domains when known (e.g. `pools`, `picks`, `scoring`, `auth`, 
 
 ---
 
-## Dependabot (paused 2026-07-04)
+## Release issue close (#1149 / #1174)
 
-- **Runbook:** **`docs/DEPENDABOT_OPERATIONS.md`** — enablement-wave root cause, agent triage, ops-reset, re-enable checklist.
+- **Workflow:** `.github/workflows/close-shipped-issues.yml` on `release: published` (and `workflow_dispatch` for a dry run). It closes issues named with `Closes` / `Fixes` / `Resolves` on the staging PRs inside the promote. `Part of`, plain mentions, pull request numbers, closed issues, and the `keep-open` label stay open.
+- Active only once the workflow file is on the default branch (`main`). It does not merge, deploy, or edit branch protection.
+
+## Dependabot (active, #504 / #744 / #967)
+
+- **Runbook:** **`docs/DEPENDABOT_OPERATIONS.md`** — enablement-wave root cause, T0 auto-merge, ops-reset, re-enable checklist.
+- Config is `.github/dependabot.yml` on the **default branch** (`main`). Every entry has `target-branch: staging`. `open-pull-requests-limit` is **2** per entry. **0** is only for an ops reset.
+- `*-safe` groups are minor/patch version updates only (`applies-to: version-updates`), so security updates are not held for Monday. `.github/workflows/dependabot-auto-merge.yml` enables squash auto-merge for every Dependabot pull request into `staging`, majors included, after the workflow is on `main` (#1148 factory standard). A major that fails checks stays open and becomes an `agent-queue` `p3` issue. Visitor-facing packages get `ui-check`. `.github/workflows/dependabot-scheduled-execution.yml` (#1052) runs Mondays at 18:00 UTC from `main` as the backstop. It does not push or rebase. `rebase-strategy` is `disabled`.
 - **First enable dumps PRs immediately** (not weekly schedule). Ship `target-branch: staging` on day one or Dependabot opens against `main`.
-- **`open-pull-requests-limit: 0`** until human restores limits after triage.
 
 ---
 

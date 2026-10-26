@@ -22,6 +22,8 @@ import {
   buildFinishedTourWrap,
   buildFinishedTourWrapHtml,
 } from '../src/features/tour-stats/model/finishedTourWrap.js';
+import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
+import { buildAnnualPrerenderEnrichment } from '../src/features/tour-stats/model/annualTourStatsFacts.js';
 import {
   APP_BOOT_SHELL_REL_PATH,
   DASHBOARD_BOOT_PRELOAD_MARKER,
@@ -51,8 +53,10 @@ import {
 import {
   appendLlmsTourStatsLinks,
   appendSitemapTourStatsUrls,
+  applySitemapLastmods,
   resolveAutoExpandTourStatsRoutes,
   tourStatsDiscoveryFromRoutes,
+  tourStatsSitemapLastmodMap,
 } from './lib/tourStatsSeoAutoExpand.mjs';
 import { TOUR_STATS_SEO_FACT_SLUGS } from '../src/shared/config/seoRoutes.js';
 
@@ -112,6 +116,20 @@ assert(
   'expected 2026 Summer Tour tour-stats prerender entry (#927/#928)',
 );
 assert(
+  PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/msg'),
+  'expected Phish at MSG prerender entry (#1139)',
+);
+assert(
+  PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/2026'),
+  'expected 2026 annual tour-stats prerender entry (#1141)',
+);
+assert(
+  !PRERENDER_ROUTES.some(
+    (r) => r.path === '/tour-stats/2026' && r.tourStatsSeoSlug,
+  ),
+  '/tour-stats/2026 must not be a tour slug',
+);
+assert(
   PRERENDER_ROUTES.some((r) => r.path === '/phish-setlist-prediction-game'),
   'expected keyword-intent prerender entry',
 );
@@ -142,6 +160,112 @@ for (const route of PRERENDER_ROUTES) {
   const html = injectPrerenderHtml(shell, route);
   assertRouteHtml(html, route, `fixture ${route.path}`);
 }
+
+const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/msg');
+const msgEnrichment = buildMsgGardenPrerenderEnrichment(null, msgRoute.canonicalUrl);
+const msgHtml = injectPrerenderHtml(shell, msgRoute, msgEnrichment);
+assert(msgHtml.includes('96 times'), 'MSG prerender HTML must include the played-show count (#1139)');
+assert(msgHtml.includes('data-seo-msg-stats="top-songs"'), 'MSG prerender HTML must include most-played songs');
+assert(msgHtml.includes('FAQPage'), 'MSG prerender JSON-LD must include FAQPage');
+assert(msgHtml.includes('ItemList'), 'MSG prerender JSON-LD must include ItemList');
+assert(
+  msgHtml.includes('Data courtesy of <a href="https://phish.net">Phish.net</a>'),
+  'MSG prerender HTML must credit Phish.net',
+);
+assert(
+  msgHtml.includes('not a pick tip'),
+  'MSG opener copy must be labeled as frequencies',
+);
+assert(
+  readFileSync(join(root, 'public', 'sitemap.xml'), 'utf8').includes(
+    'https://www.setlistpickem.com/tour-stats/msg',
+  ),
+  'public sitemap must list /tour-stats/msg',
+);
+assert(
+  readFileSync(join(root, 'public', 'llms.txt'), 'utf8').includes(
+    'https://www.setlistpickem.com/tour-stats/msg',
+  ),
+  'public llms.txt must list /tour-stats/msg',
+);
+
+const annualRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/2026');
+const annualEnrichment = buildAnnualPrerenderEnrichment({
+  indexLoaded: true,
+  pageUrl: annualRoute.canonicalUrl,
+  tourDocs: [
+    {
+      tourSlug: '2026-sphere',
+      tourLabel: '2026 Sphere',
+      showDates: ['2026-04-16'],
+      showsWithSetlist: 1,
+      uniqueSongs: 1,
+      totalSongPlays: 1,
+      topSongs: [{ title: 'Tweezer', timesPlayed: 1, showAppearances: 1 }],
+      bustouts: [],
+    },
+    {
+      tourSlug: '2026-summer-tour',
+      tourLabel: '2026 Summer Tour',
+      showDates: ['2026-07-14'],
+      showsWithSetlist: 2,
+      uniqueSongs: 1,
+      totalSongPlays: 2,
+      topSongs: [{ title: 'Tweezer', timesPlayed: 2, showAppearances: 2 }],
+      bustouts: [{ title: 'Hood', gap: 40, showDate: '2026-07-14' }],
+    },
+    {
+      tourSlug: '2026-2027-nye-run',
+      tourLabel: '2026/2027 NYE Run',
+      showDates: ['2026-12-31', '2027-01-01'],
+      showsWithSetlist: 2,
+      uniqueSongs: 1,
+      totalSongPlays: 2,
+      topSongs: [{ title: 'Piper', timesPlayed: 2, showAppearances: 2 }],
+      bustouts: [{ title: 'Piper', gap: 80, showDate: '2027-01-01' }],
+    },
+  ],
+});
+const annualHtml = injectPrerenderHtml(shell, annualRoute, annualEnrichment);
+assert(
+  annualHtml.includes('3 shows'),
+  'annual prerender HTML must add the in-year tour pages (1 + 2), not the January show',
+);
+assert(
+  !annualHtml.includes('>Piper<') && !annualHtml.includes('Piper:'),
+  'annual prerender HTML must not count a January 1 song in 2026',
+);
+assert(
+  annualHtml.includes('data-seo-annual-stats="top-songs"'),
+  'annual prerender HTML must include most-played songs',
+);
+assert(
+  annualHtml.includes('January 1 counts for 2027'),
+  'annual prerender HTML must state the calendar-year rule',
+);
+assert(annualHtml.includes('FAQPage'), 'annual prerender JSON-LD must include FAQPage');
+assert(annualHtml.includes('ItemList'), 'annual prerender JSON-LD must include ItemList');
+assert(
+  annualHtml.includes('href="/dashboard/standings?view=year&amp;year=2026"') ||
+    annualHtml.includes('href="/dashboard/standings?view=year&year=2026"'),
+  'annual prerender HTML must link to the 2026 standings board',
+);
+assert(
+  annualHtml.includes('https://phish.net'),
+  'annual prerender HTML must credit Phish.net',
+);
+assert(
+  readFileSync(join(root, 'public', 'sitemap.xml'), 'utf8').includes(
+    'https://www.setlistpickem.com/tour-stats/2026',
+  ),
+  'public sitemap must list /tour-stats/2026',
+);
+assert(
+  readFileSync(join(root, 'public', 'llms.txt'), 'utf8').includes(
+    'https://www.setlistpickem.com/tour-stats/2026',
+  ),
+  'public llms.txt must list /tour-stats/2026',
+);
 
 // HTML-first legal door fixtures (no marketing/app/login module graph).
 for (const legalPath of ['/privacy', '/terms']) {
@@ -442,6 +566,81 @@ assert(
 assert(
   !autoSitemap.includes('thin-empty-night'),
   'auto-expand sitemap fixture: must not list the thin tour',
+);
+const childDLastmods = tourStatsSitemapLastmodMap(
+  {
+    '2026-summer-tour': '2026-09-06',
+    '2026-fall-tour': '2026-10-12',
+  },
+  { siteUrl: 'https://www.setlistpickem.com' },
+);
+const childDSitemap = applySitemapLastmods(
+  `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.setlistpickem.com/</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats/2026-summer-tour</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/llms.txt</loc>
+    <changefreq>weekly</changefreq>
+  </url>
+</urlset>
+`,
+  childDLastmods,
+);
+assert(
+  childDSitemap.includes(
+    '<loc>https://www.setlistpickem.com/tour-stats/2026-summer-tour</loc>\n    <lastmod>2026-09-06</lastmod>',
+  ),
+  'Child D sitemap: summer slug must carry lastShowDate lastmod',
+);
+assert(
+  childDSitemap.includes(
+    '<loc>https://www.setlistpickem.com/tour-stats</loc>\n    <lastmod>2026-10-12</lastmod>',
+  ),
+  'Child D sitemap: hub lastmod is the newest prerendered tour date',
+);
+assert(
+  !/<loc>https:\/\/www\.setlistpickem\.com\/llms\.txt<\/loc>\s*<lastmod>/.test(childDSitemap),
+  'Child D sitemap: /llms.txt stays out of lastmod stamping (Request indexing is human)',
+);
+const llmsBrief = readFileSync(join(root, 'public', 'llms.txt'), 'utf8');
+assert(
+  llmsBrief.includes('Unique songs:') &&
+    llmsBrief.includes('Song frequency:') &&
+    llmsBrief.includes('Bustouts:') &&
+    llmsBrief.includes('https://www.setlistpickem.com/tour-stats/2026-summer-tour') &&
+    llmsBrief.includes('https://www.setlistpickem.com/tour-stats'),
+  'Child D llms.txt: unique / frequency / bustout definitions and summer + hub links',
+);
+const playbook = readFileSync(join(root, 'docs', 'SEO_GEO_PLAYBOOK.md'), 'utf8');
+for (const needle of [
+  'bustouts summer tour 2026',
+  'phish bustout list this tour',
+  'unique songs played this tour',
+  'utm_campaign=seo_926',
+  'utm_content=tour-stats-summer-2026',
+  'https://www.setlistpickem.com/llms.txt',
+  'sc-domain:setlistpickem.com',
+]) {
+  assert(playbook.includes(needle), `Child D playbook missing ${needle}`);
+}
+assert(
+  /GSC URL Inspection[\s\S]*\| Human \| \*\*Open\*\*/.test(playbook),
+  'Child D playbook must keep GSC Request indexing as an open human step',
+);
+assert(
+  /UTM’d off-site share[\s\S]*\| Human \| \*\*Open\*\*/.test(playbook),
+  'Child D playbook must keep the off-site UTM share as an open human step',
 );
 const autoLlms = appendLlmsTourStatsLinks(
   `## Links

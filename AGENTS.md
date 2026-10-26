@@ -61,8 +61,8 @@ Core local commands:
 ### Dependabot / npm audit (#414)
 
 - **Runbook:** **`docs/DEPENDABOT_OPERATIONS.md`** — first-enable timeline, ops-reset procedure, re-enable steps. Read before touching `dependabot.yml` or triaging dep PRs.
-- **Dependabot** (`.github/dependabot.yml`) — **active** (re-enabled 2026-07-05, reworked 2026-07-28 #744): weekly npm groups contain **minor/patch only** (`*-safe` groups); **majors arrive as individual PRs** and require dedicated migration work (never merge on green alone — see `docs/DEPENDABOT_OPERATIONS.md` "Major upgrades"). Monthly Actions group; base `staging`; auto `skip-version-bump`; CI exempts `dependabot/*` and runs a `build` job on any dep/lockfile diff. Agents must **not** bump `package.json` on Dependabot PRs. `firebase-admin` majors ignored in `/functions` until `firebase-functions-test` supports admin 14.
-- **Vercel:** `ignoreCommand` → `scripts/vercel-should-build.sh` skips previews for Actions/functions-only dep PRs.
+- **Dependabot** (`.github/dependabot.yml`) — **active**. Factory standard (2026-10-22, #1148), shared with road2media and foco-pets: every Dependabot update, **majors included**, squash auto-merges into `staging` when required checks pass (`.github/workflows/dependabot-auto-merge.yml`, `gh pr merge --auto --squash`, `dependabot/fetch-metadata`, no checkout of the PR head). A major that **fails** checks stays open and becomes an `agent-queue` `p3` migration issue. Visitor-facing packages get `ui-check` so staging can be spot-checked before release; the label does not block the merge. `@types/node` ignores `>=25.0.0` because functions run Node 24. Security updates are not in the Monday groups and auto-merge when checks pass. `rebase-strategy` is `disabled`. A Monday 18:00 UTC sweep (`.github/workflows/dependabot-scheduled-execution.yml`, #1052) is the backstop and does not push or rebase. The workflow and `dependabot.yml` are read from `main`. `open-pull-requests-limit` is 2. Weekly minor/patch groups; monthly Actions group; base `staging`; `skip-version-bump`. Agents must **not** bump `package.json` on Dependabot PRs. `firebase-admin` majors stay ignored in `/functions`. A quarterly workflow reminds us to check the Node and Vercel runtimes and does not change them. Detail: `docs/DEPENDABOT_OPERATIONS.md` and `.cursor/rules/dependencies.mdc`.
+- **Vercel:** `ignoreCommand` → `scripts/vercel-should-build.sh` skips previews for every `dependabot/*` ref. `ci-gate` in `.github/workflows/ci.yml` is the always-reporting check for `verify`, `build`, `functions`, and `rules`.
 - **CI `npm audit`** on the `verify` job is **informational** (`continue-on-error: true`). It does not block merge.
 - **Triage:** Critical/high in **production** deps → fix or upgrade in a normal PR. Dev-only / low noise → defer or group into a maintenance PR. Do not mass-upgrade without running `npm test` and `cd functions && npm test`.
 
@@ -76,6 +76,7 @@ Core local commands:
 
 - **Base branch is `staging`**, not `main` (per `.cursorrules` §10).
 - Branch naming: `feat/<issue#>-<kebab-slug>`.
+- **Issue keywords:** `Closes #N` only when the PR fully finishes the issue. `Part of #N` for partial work. A merge to `staging` leaves the issue open. `.github/workflows/close-shipped-issues.yml` closes keyword references when the GitHub Release is published, and skips pull requests, closed issues, and the `keep-open` label. Dry run from Actions with the release `tag` and `dry_run` checked (workflow file must be on `main` first). See `.cursor/rules/promote-release.mdc`.
 - Firestore rules tests (`npm run test:rules`) require the Firebase emulator and are not part of the regular CI matrix for the web app.
 
 ### Gotchas

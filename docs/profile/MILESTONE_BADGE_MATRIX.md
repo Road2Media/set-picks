@@ -2,7 +2,7 @@
 
 **Parent epic:** [#565](https://github.com/pat792/set-picks/issues/565)  
 **Phase:** 0 / product matrix for [#566](https://github.com/pat792/set-picks/issues/566)  
-**Status:** Career ladder is on staging (#1116 / #712, 2026-10-13). Snapshot and invite badges remain #1115. Shelf order is the journey below; the standings pin still uses prestige `rank`.
+**Status:** Career ladder is on staging (#1116 / #712, 2026-10-13). Tour, year, and invite badges from [#1115](https://github.com/Road2Media/set-picks/issues/1115) are implemented (v1.93.0) and award only after a functions and rules deploy. Shelf order is the journey below; the standings pin still uses prestige `rank`. Annual slugging needs 10 graded shows in that year. Invites are forward-only. Optional rows below stay off the shelf.
 
 This matrix defines the first engagement badge system for Profile and public profile surfaces. It is intentionally conservative: badges reward verified play, streaks, and competitive outcomes from existing scoring data, while clearly calling out any rollup gaps before implementation.
 
@@ -51,19 +51,9 @@ Later badges join the end of the group they belong to. A second tour win follows
 
 ## Remaining work
 
-Do not put the rest of the list on the journey PR. [#1115](https://github.com/pat792/set-picks/issues/1115) needs frozen snapshots and an invite record the live boards do not provide.
+[#1115](https://github.com/Road2Media/set-picks/issues/1115) sections 1–4 are in the catalog: tour winner and top 5 (1/2/3), tour-leading batting average, points per show, bustout boosts, Triple Crown, year winner (1/2/3), annual slugging leader and top 5 (1/2/3), and Pick 'em Evangelist. They award from frozen snapshots and the accepted-invite counter, not from the live top 50. Production effect waits on the rules and functions deploy named in `docs/API.md` §2.9.
 
-| Next | What | Why it is separate |
-|------|------|--------------------|
-| 1 | [#1150](https://github.com/pat792/set-picks/issues/1150) shelf journey | Display only. `shelfOrder` plus group headings in `BadgeShelf`. Pin `rank` stays. PATCH. |
-| 2 | [#1115](https://github.com/pat792/set-picks/issues/1115) §1 | Tour rank snapshot, then Tour Winner and Top 5, including a second and third tour. Hook the finished-tour moment, not the recap email. |
-| 3 | [#1115](https://github.com/pat792/set-picks/issues/1115) §2 | Store or recount bustout boosts, then tour-leading average, points per show, bustouts, and Triple Crown. Depends on the §1 snapshot. |
-| 4 | [#1115](https://github.com/pat792/set-picks/issues/1115) §3 | Year snapshot after 31 December. Yearly winner, annual slugging leader, annual slugging top 5. Pick a minimum show count before awarding slugging. |
-| 5 | [#1115](https://github.com/pat792/set-picks/issues/1115) §4 | Pick 'em Evangelist. Forward-only. Signup must store the inviter. A click is not a join. |
-
-Each of 2–5 is its own PR to `staging`, MINOR, because it adds badge ids on `users.badges`.
-
-[#1115](https://github.com/pat792/set-picks/issues/1115) points back here. When that work starts, consider these as options: tour show counts (`tour_shows_5`, `tour_shows_10`), tour night wins (`tour_win_1`, `tour_win_3`), streaks, full-tour completion, personal bustout hits, a perfect night, podium count, days at tour #1, pool host, and `avatar_set`. Tour show counts and tour night wins can be awarded from `seasonStats` without a new snapshot. The win ladder stays 1, then 5, then 10.
+These rows stay off the shelf: tour show counts (`tour_shows_5`, `tour_shows_10`), tour night wins (`tour_win_1`, `tour_win_3`), streaks, full-tour completion, personal bustout hits, a perfect night, podium count, days at tour #1, pool host, and `avatar_set`. The win ladder stays 1, then 5, then 10. `win_3` stays off.
 
 ## Product Principles
 

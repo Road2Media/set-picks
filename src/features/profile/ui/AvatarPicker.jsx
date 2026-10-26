@@ -1,16 +1,19 @@
 import React from 'react';
+import { Plus } from 'lucide-react';
 
 import { FeatureNewBadge } from '../../feature-discovery';
-import { PROFILE_AVATARS } from '../model/avatarCatalog';
+import { PROFILE_AVATARS, explicitAvatarId } from '../model/avatarCatalog';
 import ProfileAvatar from './ProfileAvatar';
 
 /**
- * Curated avatar picker grid (#567).
+ * Curated avatar picker grid (#567). `value` null means nothing is selected
+ * (#643) — the preview matches the standings add control instead of Ticket.
  *
  * @param {{
- *   value: string,
+ *   value: string | null,
  *   onChange: (avatarId: string) => void,
  *   disabled?: boolean,
+ *   pending?: boolean,
  *   showNewBadge?: boolean,
  * }} props
  */
@@ -18,8 +21,12 @@ export default function AvatarPicker({
   value,
   onChange,
   disabled = false,
+  pending = false,
   showNewBadge = false,
 }) {
+  const selectedId = explicitAvatarId(value);
+  const showUnset = !selectedId && !pending;
+
   return (
     <fieldset disabled={disabled} className="min-w-0">
       <legend className="mb-2 ml-1 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
@@ -27,10 +34,20 @@ export default function AvatarPicker({
         {showNewBadge ? <FeatureNewBadge title="New: profile avatars" /> : null}
       </legend>
       <div className="mb-3 flex items-center gap-3">
-        <ProfileAvatar avatarId={value} size="lg" />
+        {selectedId ? (
+          <ProfileAvatar avatarId={selectedId} size="lg" />
+        ) : (
+          <span
+            aria-hidden
+            className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-dashed border-brand-primary/55 bg-surface-field text-brand-primary"
+          >
+            <Plus className="h-8 w-8" strokeWidth={2.5} />
+          </span>
+        )}
         <p className="text-[11px] font-medium leading-relaxed text-content-secondary">
-          Pick a mark for your Profile and public page. No uploads — curated
-          set only.
+          {showUnset
+            ? 'No avatar selected. Pick a mark for your Profile and public page. Saving without a pick leaves this unset.'
+            : 'Pick a mark for your Profile and public page. No uploads — curated set only.'}
         </p>
       </div>
       <div
@@ -39,7 +56,7 @@ export default function AvatarPicker({
         aria-label="Choose avatar"
       >
         {PROFILE_AVATARS.map((avatar) => {
-          const selected = value === avatar.id;
+          const selected = selectedId === avatar.id;
           return (
             <button
               key={avatar.id}

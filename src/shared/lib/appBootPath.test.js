@@ -65,6 +65,7 @@ describe('shouldWarmAppCheckOnBoot', () => {
     expect(shouldWarmAppCheckOnBoot('/join/ABC')).toBe(false);
     expect(shouldWarmAppCheckOnBoot('/invite/pat')).toBe(false);
     expect(shouldWarmAppCheckOnBoot('/how-it-works')).toBe(false);
+    expect(shouldWarmAppCheckOnBoot('/embed/stats')).toBe(false);
     expect(shouldWarmAppCheckOnBoot('/privacy')).toBe(false);
   });
 });

@@ -23,7 +23,7 @@ Metrics: **LCP**, **INP**, **CLS**, **TTFB**, **FCP**.
 | `value` | LCP/INP/TTFB/FCP: ms rounded; CLS: 3 decimals |
 | `metric_id` | web-vitals id (keeps CLS updates distinct from GA dedupe) |
 | `metric_rating` | `good` \| `needs-improvement` \| `poor` |
-| `route_group` | `splash` \| `login` \| `marketing` \| `tour_stats` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` (**v1.49.1 / #857**) |
+| `route_group` | `splash` \| `login` \| `marketing` \| `tour_stats` \| `embed` \| `rewind` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` (**v1.49.1 / #857**, `embed` in **v1.97.0**) |
 | `navigation_type` | `navigate` \| `reload` \| `back_forward` \| `prerender` |
 
 Declared in [`docs/API.md`](API.md) §3.
@@ -36,6 +36,7 @@ Declared in [`docs/API.md`](API.md) §3.
 | `/login` | `login` |
 | `/how-it-works`, `/how-scoring-works`, `/phish-setlist-prediction-game` | `marketing` |
 | `/tour-stats*` | `tour_stats` |
+| `/embed`, `/embed/*` | `embed` |
 | `/join*`, `/invite/*`, `/dashboard*`, `/setup*` | unchanged |
 
 ## GA4 Exploration recipe

@@ -24,10 +24,11 @@ describe('isPicksClusterPath', () => {
     expect(isPicksClusterPath('/dashboard/picks/')).toBe(true);
   });
 
-  it('includes Lab and Scorecard nested routes', () => {
+  it('includes Lab, Scorecard, and Rewind nested routes', () => {
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.lab)).toBe(true);
     expect(isPicksClusterPath(`${PICKS_CLUSTER_PATHS.lab}/`)).toBe(true);
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.scorecard)).toBe(true);
+    expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.rewind)).toBe(true);
   });
 
   it('does not match sibling primary tabs', () => {

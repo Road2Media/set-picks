@@ -4,6 +4,7 @@ import { Scale } from 'lucide-react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import { usePickRecommendations, usePicksForm } from '../../../features/picks';
+import { isRewindModeEnabled } from '../../../features/rewind';
 import { useScoringRulesModal } from '../../../features/scoring';
 import { useShowCalendar } from '../../../features/show-calendar';
 import {
@@ -51,7 +52,9 @@ export default function PicksClusterLayout({ user, selectedDate }) {
   const makePicksTo = isMakePicksPath(location.pathname)
     ? normalizeDashboardPathname(location.pathname)
     : PICKS_CLUSTER_PATHS.makePicks;
-  const items = buildPicksClusterNavItems(makePicksTo);
+  const items = buildPicksClusterNavItems(makePicksTo, {
+    includeRewind: isRewindModeEnabled(),
+  });
 
   return (
     <div className="max-w-xl mx-auto pb-6 md:pb-12">

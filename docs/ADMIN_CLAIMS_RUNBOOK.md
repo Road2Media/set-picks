@@ -173,8 +173,15 @@ Each successful `rollupScoresForShow` invocation writes a record to `rollup_audi
 | `skippedPicks` | number | Picks skipped (missing `userId`). |
 | `totalPicks` | number | Total matching `picks` docs for this `showDate`. |
 | `callerUid` | string \| null | Firebase UID of the admin who triggered it. |
+| `showDate` | string | `YYYY-MM-DD`. Same as the document id (**v1.90.0 / #298**). |
+| `tourKey` | string \| null | Tour label written into `seasonStats`, or null when the calendar snapshot did not list the date. |
+| `tourKeyMissing` | boolean | `true` when this rollup skipped per-tour `seasonStats`. `false` after a later rollup resolves the key. Clearing it does not repair counters that were skipped on the first grade. |
 
 This is a **Firestore-visible "when did the last rollup run"** signal, separate from per-pick `gradedAt` which only stamps the first grade. Useful for PM-level sanity-checking after idempotent re-runs (where pick `score` and `gradedAt` may not visibly change even though the batch committed).
+
+**Tour-key drift (#298):** War Room shows a badge when any `rollup_audit` doc has `tourKeyMissing: true`. That is the operator view — no log query required. The badge is empty until Cloud Functions that write the field are deployed and a rollup runs. Historical misses (for example a show graded before it was on `showDatesByTour`) stay invisible until that show is rolled up again. Repair the short `seasonStats.{tour}.shows` with `node scripts/backfillSeasonAggregates.js` from `functions/` after the calendar lists the date. Re-finalize alone will not add the skipped show.
+
+**Legacy `users.stats`:** `node scripts/cleanupLegacyUserStats.js` (dry-run) then `--apply` deletes only that field. Do not treat a dry-run as done.
 
 PR B rules: admin-only read, no client writes. The Admin SDK bypasses rules on the write path.
 

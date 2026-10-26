@@ -1,0 +1,354 @@
+# Dependabot auto-merge (#967, factory standard 2026-10-22, #1148).
+#
+# Enables GitHub squash auto-merge for every Dependabot pull request into
+# staging, majors included, once required checks pass. A red check leaves the
+# PR open. A major that fails checks becomes an agent-queue p3 migration issue.
+# Visitor-facing packages get the `ui-check` label. That label does not block
+# the merge.
+#
+# `pull_request_target` is required because Dependabot `pull_request` runs
+# get a read-only token. The workflow file that runs is the one on the
+# default branch (`main`), so this file does nothing until it is promoted.
+# Checkout stays on that default branch. Do not checkout the PR head and
+# do not run PR code: the token can write.
+#
+# `dependabot/fetch-metadata` `alert-lookup` is left off. That input needs a
+# personal access token, and this repo does not add one. Security updates are
+# still auto-merged: they are Dependabot pull requests, they are not grouped
+# into the Monday version-update batch, and this workflow enables auto-merge
+# for every Dependabot author.
+
+name: Dependabot auto-merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+    branches: [staging]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  enable:
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.actor == 'dependabot[bot]' &&
+      github.event.pull_request.base.ref == 'staging' &&
+      github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Dependabot metadata
+        id: metadata
+        continue-on-error: true
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ github.token }}
+
+      - name: Checkout policy from the default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Save the pull request body without putting it in the workflow
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require("fs");
+            fs.writeFileSync("/tmp/dependabot-pr-body.txt", context.payload.pull_request.body || "");
+
+      - name: Classify the Dependabot update
+        id: policy
+        env:
+          DEPENDABOT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          DEPENDABOT_ACTOR: ${{ github.actor }}
+          DEPENDABOT_BASE: ${{ github.event.pull_request.base.ref }}
+          DEPENDABOT_TITLE: ${{ github.event.pull_request.title }}
+          DEPENDABOT_BODY_FILE: /tmp/dependabot-pr-body.txt
+          DEPENDABOT_HEAD: ${{ github.event.pull_request.head.ref }}
+          DEPENDABOT_GROUP: ${{ steps.metadata.outputs.dependency-group }}
+          DEPENDABOT_NAMES: ${{ steps.metadata.outputs.dependency-names }}
+          DEPENDABOT_UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          DEPENDABOT_DRAFT: ${{ github.event.pull_request.draft }}
+          DEPENDABOT_STATE: ${{ github.event.pull_request.state }}
+          DEPENDABOT_METADATA_OK: ${{ steps.metadata.outcome == 'success' }}
+        run: node scripts/dependabot-auto-merge-decision.mjs
+
+      - name: Log the auto-merge decision
+        run: |
+          echo "action=${{ steps.policy.outputs.action }}"
+          echo "reason=${{ steps.policy.outputs.reason }}"
+          echo "group=${{ steps.policy.outputs.group }}"
+          echo "major=${{ steps.policy.outputs.major }}"
+          echo "ui-check=${{ steps.policy.outputs.ui-check }}"
+          echo "update-class=${{ steps.policy.outputs.update-class }}"
+
+      - name: Label visitor-facing package updates
+        if: steps.policy.outputs.action == 'enable' && steps.policy.outputs.ui-check == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --repo "$GH_REPO" --add-label ui-check
+
+      - name: Enable squash auto-merge
+        id: enable
+        if: steps.policy.outputs.action == 'enable'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if gh pr merge "$PR_NUMBER" --repo "$GH_REPO" --auto --squash; then
+            echo "Squash auto-merge enabled or the pull request merged."
+            exit 0
+          fi
+          method=$(gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json autoMergeRequest --jq '.autoMergeRequest.mergeMethod // ""')
+          if [ "$method" = "SQUASH" ]; then
+            echo "Squash auto-merge is already enabled."
+            exit 0
+          fi
+          echo "gh pr merge --auto --squash failed and squash auto-merge is not enabled."
+          exit 1
+
+      - name: Fail closed when metadata cannot verify the pull request
+        if: steps.policy.outputs.reason == 'metadata-unavailable'
+        run: |
+          echo "fetch-metadata did not verify this Dependabot pull request. Auto-merge was not enabled."
+          exit 1
+
+      - name: Comment when auto-merge did not enable
+        if: failure()
+        uses: actions/github-script@v9
+        env:
+          POLICY_REASON: ${{ steps.policy.outputs.reason }}
+          POLICY_GROUP: ${{ steps.policy.outputs.group }}
+        with:
+          script: |
+            const marker = "<!-- dependabot-t0-automerge-failure -->";
+            const reason = process.env.POLICY_REASON || "workflow-failed";
+            const group = process.env.POLICY_GROUP || "";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              marker,
+              "Dependabot auto-merge did not enable for this pull request.",
+              group ? `Group: \`${group}\`.` : "",
+              `Reason: \`${reason}\`.`,
+              "Required checks still have to pass before GitHub squash-merges. Majors are included when checks pass. A major that fails checks stays open and becomes an agent-queue p3 migration issue. This comment is the failure alert.",
+              runUrl,
+            ].filter(Boolean).join("\n\n");
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              return;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+
+  revoke:
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.actor != 'dependabot[bot]' &&
+      github.event.pull_request.base.ref == 'staging'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Disable auto-merge after a non-Dependabot update
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr merge "$PR_NUMBER" --repo "$GH_REPO" --disable-auto || echo "Auto-merge was not enabled."
+
+      - name: Comment that auto-merge was turned off
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const marker = "<!-- dependabot-t0-automerge-revoked -->";
+            const body = [
+              marker,
+              "Auto-merge was turned off because this Dependabot pull request was updated by someone other than `dependabot[bot]`.",
+              "Auto-merge stays off until Dependabot pushes again and the commits are only Dependabot's.",
+            ].join("\n\n");
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              per_page: 100,
+            });
+            if (comments.some((comment) => comment.body?.includes(marker))) return;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
+
+  ci-failure:
+    if: >-
+      github.event_name == 'workflow_run' &&
+      (github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'success') &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout policy from the default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Resolve the Dependabot pull request
+        id: pr
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require("fs");
+            const run = context.payload.workflow_run;
+            let number = run.pull_requests?.[0]?.number || 0;
+            if (!number) {
+              const associated = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                commit_sha: run.head_sha,
+              });
+              const match = associated.data.find((pr) =>
+                pr.user?.login === "dependabot[bot]" &&
+                pr.base?.ref === "staging" &&
+                pr.state === "open",
+              );
+              number = match?.number || 0;
+            }
+            if (!number) {
+              core.info("No open Dependabot pull request for this CI run.");
+              core.setOutput("found", "false");
+              return;
+            }
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: number,
+            });
+            const bodyFile = "/tmp/dependabot-pr-body.txt";
+            fs.writeFileSync(bodyFile, pr.body || "");
+            core.setOutput("found", "true");
+            core.setOutput("number", String(pr.number));
+            core.setOutput("author", pr.user?.login || "");
+            core.setOutput("base", pr.base?.ref || "");
+            core.setOutput("title", pr.title || "");
+            core.setOutput("head", pr.head?.ref || "");
+            core.setOutput("url", pr.html_url || "");
+            core.setOutput("body_file", bodyFile);
+            core.setOutput("draft", pr.draft ? "true" : "false");
+            core.setOutput("state", pr.state || "");
+
+      - name: Classify the Dependabot update
+        id: policy
+        if: steps.pr.outputs.found == 'true'
+        env:
+          DEPENDABOT_MODE: t0
+          DEPENDABOT_AUTHOR: ${{ steps.pr.outputs.author }}
+          DEPENDABOT_BASE: ${{ steps.pr.outputs.base }}
+          DEPENDABOT_TITLE: ${{ steps.pr.outputs.title }}
+          DEPENDABOT_HEAD: ${{ steps.pr.outputs.head }}
+          DEPENDABOT_BODY_FILE: ${{ steps.pr.outputs.body_file }}
+          DEPENDABOT_DRAFT: ${{ steps.pr.outputs.draft }}
+          DEPENDABOT_STATE: ${{ steps.pr.outputs.state }}
+          DEPENDABOT_METADATA_OK: "true"
+        run: node scripts/dependabot-auto-merge-decision.mjs
+
+      - name: Open a p3 migration issue when a major failed checks
+        if: steps.policy.outputs.major == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          PR_TITLE: ${{ steps.pr.outputs.title }}
+          PR_BODY_FILE: ${{ steps.pr.outputs.body_file }}
+          MIGRATION_MODE: ${{ github.event.workflow_run.conclusion }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: node scripts/dependabot-open-major-migration.mjs
+
+      - name: Comment when CI failed
+        if: steps.policy.outputs.action == 'enable'
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          POLICY_GROUP: ${{ steps.policy.outputs.group }}
+          POLICY_MAJOR: ${{ steps.policy.outputs.major }}
+        with:
+          script: |
+            const marker = "<!-- dependabot-t0-ci-failure -->";
+            const number = Number(process.env.PR_NUMBER);
+            const group = process.env.POLICY_GROUP || "";
+            const major = process.env.POLICY_MAJOR === "true";
+            const conclusion = context.payload.workflow_run.conclusion;
+            const runUrl = context.payload.workflow_run.html_url;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) => comment.body?.includes(marker));
+            if (conclusion !== "failure") {
+              if (!existing) return;
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: [
+                  marker,
+                  "The latest CI run for this Dependabot pull request succeeded. No further alert.",
+                  runUrl,
+                ].join("\n\n"),
+              });
+              return;
+            }
+            const body = [
+              marker,
+              "CI failed on this Dependabot pull request, so auto-merge will not land it.",
+              group ? `Group: \`${group}\`.` : "",
+              major
+                ? "This is a major update. It stays open and a p3 `agent-queue` migration issue is opened for it. It is not merged."
+                : "The pull request stays open. This is the only CI alert; a green run does not open a new comment.",
+              runUrl,
+            ].filter(Boolean).join("\n\n");
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+              return;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: number,
+              body,
+            });

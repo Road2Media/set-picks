@@ -10,7 +10,7 @@ import AvatarPicker from './AvatarPicker';
  * @param {{
  *   handle: string,
  *   favoriteSong: string,
- *   avatarId: string,
+ *   avatarId: string | null,
  *   onHandleChange: (v: string) => void,
  *   onFavoriteSongChange: (v: string) => void,
  *   onAvatarChange: (avatarId: string) => void,
@@ -43,6 +43,7 @@ export default function ProfileEditForm({
         value={avatarId}
         onChange={onAvatarChange}
         disabled={isLoading || isSaving}
+        pending={isLoading}
         showNewBadge={showAvatarNewBadge}
       />
 
