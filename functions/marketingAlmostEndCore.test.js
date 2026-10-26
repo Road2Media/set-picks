@@ -34,9 +34,10 @@ test("isExcludedQaUser matches qa / clouddev / test domains", () => {
     true
   );
   assert.equal(
-    isExcludedQaUser("abc", { handle: "Rivertranced", email: "hi@gmail.com" }),
-    false
+    isExcludedQaUser("abc", { handle: "Rivertranced", email: "user@example.com" }),
+    true
   );
+  assert.equal(isExcludedQaUser("player", { handle: "Rivertranced" }), false);
 });
 
 test("seasonStatsFromUser requires shows ≥ 1", () => {

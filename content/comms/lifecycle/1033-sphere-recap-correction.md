@@ -5,7 +5,7 @@
 | **Status** | sent — 21 emails, **2026-09-10 09:00 America/New_York** (13:00Z). Canary sent 2026-09-09. |
 | **Date** | 2026-09-09 |
 | **Related** | [#1033](https://github.com/pat792/set-picks/issues/1033) · `docs/comms-triggers/INCIDENT_2026-09-09_SPHERE_TOUR_RECAP.md` |
-| **Audience** | The **21** Resend recipients of `2026 Sphere recap is in` (2026-09-09 ~15:00Z). List lives on the incident note — do not copy emails into this file. |
+| **Audience** | The **21** Resend recipients of `2026 Sphere recap is in` (2026-09-09 ~15:00Z). Addresses are not stored in git. |
 | **Channels** | **email only**. No inbox. No push. A second in-app row would re-surface the bad wrap. |
 | **Trigger** | none — one-off, not a catalog trigger. Do **not** add `tour_recap` / `tour-recap`. Do **not** wire cron or `runCommsTrigger`. |
 | **Voice** | Short, fan-to-fan, a little funny. Own it. Do not explain the scanner, lookback, or state docs. |

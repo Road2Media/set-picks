@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.1] — 2026-10-25
+
+### Fixed
+- **Public recipient list (#1194)** — Removed the 21 Sphere recap correction recipients from the incident note and the one-off send script. The script reads that cohort at run time from a gitignored local file or from Firestore. A checked-in example file has placeholders only. A functions test fixture that used a consumer mailbox now uses a placeholder. Git history is unchanged. No declared API change.
+
 ## [1.97.0] — 2026-10-22
 
 ### Added

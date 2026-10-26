@@ -21,31 +21,7 @@ Summer 2026 (`2026 Summer Tour recap is in`, sent 2026-09-08) was protected by d
 - **21** unique emails / recipients
 - Subject: `2026 Sphere recap is in`
 - From: `Setlist Pick'em <updates@setlistpickem.com>`
-- Recipients (lowercase):
-
-```
-adamlassanske@gmail.com
-bradley.odice@gmail.com
-cukenchang@yahoo.com
-drgluhanick@gmail.com
-ethanice3@gmail.com
-gmholsom@gmail.com
-hi@chrisjensen.me
-jdk2champ@gmail.com
-jeffg9@gmail.com
-jeffreyursillo@gmail.com
-meaghanflynn@gmail.com
-mugleason@gmail.com
-pat@road2media.com
-pshea79@gmail.com
-pshea79@yahoo.com
-rtmeyer007@gmail.com
-ryanknisely@gmail.com
-sheamathew@gmail.com
-tjparker2112@googlemail.com
-trevorgagstetter@gmail.com
-wahector@gmail.com
-```
+- Addresses for those recipients are omitted from this public note and are not stored in git.
 
 Also check in-app `commsInbox` rows and FCM for the same cohort (channels share the delivery orchestrator).
 
@@ -70,3 +46,4 @@ Production behavior changes only after Cloud Functions and `firestore.rules` are
 - [x] Clarification email sent (2026-09-10 09:00 ET, 21 recipients). Copy: `content/comms/lifecycle/1033-sphere-recap-correction.md`.
 - [ ] Confirm no further Sphere subjects appear in Resend after deploy
 - [ ] Spot-check Messages inbox for mistaken `tour-recap` Sphere payloads vs archive `sphere-2026-inaugural`
+- [ ] Purge this recipient list from git history after Sprint 18 (separate step; this change does not rewrite history)
