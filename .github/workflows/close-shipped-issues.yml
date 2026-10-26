@@ -1,0 +1,69 @@
+# Close issues a staging → main promote shipped (#1149, #1174).
+#
+# GitHub applies Closes / Fixes / Resolves only when a pull request merges
+# into the default branch. Feature PRs merge to staging, and the promote
+# squash drops those lines. This job runs when the release is published,
+# reads closing keywords from the promote and the staging PRs it contains,
+# and closes those issues.
+#
+# `workflow_dispatch` with dry_run left on logs the same set and comments it
+# on the promote PR. It does not close anything. Re-running a tag does not
+# comment twice. Uncheck dry_run to close for real.
+#
+# The schedule and release events use the workflow file on the default
+# branch (`main`). This file does nothing until that promote lands.
+# `contents: read` is required to check out this script and to resolve the
+# tag commit. The job does not write contents, and it does not change
+# branch protection or required checks.
+
+name: Close shipped issues
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to evaluate (for example v1.96.0)
+        required: true
+        type: string
+      dry_run:
+        description: Log the would-close list and comment on the promote PR. Do not close issues.
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: close-shipped-issues-${{ github.event.release.tag_name || github.event.inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  close:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout this workflow's commit
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Close issues shipped in this release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || github.event.inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN_INPUT: ${{ github.event.inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          args=(--tag "$RELEASE_TAG")
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DRY_RUN_INPUT" != "false" ]; then
+            args+=(--dry-run)
+          else
+            args+=(--confirm)
+          fi
+          node scripts/close-shipped-issues.mjs "${args[@]}"

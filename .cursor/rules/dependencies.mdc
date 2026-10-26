@@ -1,0 +1,30 @@
+---
+description: Dependabot and dependency updates. Factory standard from 2026-10-22.
+globs: .github/dependabot.yml,.github/workflows/dependabot-auto-merge.yml,.github/workflows/dependabot-scheduled-execution.yml,.github/workflows/runtime-quarterly-check.yml,docs/DEPENDABOT_OPERATIONS.md,package.json,functions/package.json
+alwaysApply: false
+---
+
+# Dependencies
+
+The runbook is `docs/DEPENDABOT_OPERATIONS.md`. This is the same factory standard used for road2media, foco-pets, and set-picks (2026-10-22). It replaces “never auto-merge a major.”
+
+- Dependabot updates, majors included, auto-merge into `staging` when the required checks pass.
+- A major that fails checks stays open. It is not merged. It becomes an `agent-queue` `p3` migration issue.
+- Visitor-facing packages (React, React Router, Tailwind, the Firebase client SDK, icons, and the other names in `scripts/lib/dependabotAutoMergePolicy.mjs`) get the `ui-check` label. Patrick spot-checks staging before release. The label does not block the merge.
+- `@types/node` ignores majors beyond the Node LTS this project runs. That version is `functions/package.json` `engines.node` (24). The ignore is `>=25.0.0` in `dependabot.yml`.
+- Security updates are not grouped into the Monday batch. They auto-merge when checks pass.
+- A quarterly workflow reminds us to check the Node and Vercel runtimes. It does not change them.
+- Keep the `firebase-admin` major ignore in `/functions` until `firebase-functions-test` allows admin 14.
+
+## Never
+
+- `@dependabot rebase` the whole queue. Rebases are disabled on purpose.
+- Bump `package.json` `version` on a Dependabot PR.
+- Checkout or run the Dependabot pull request’s code from the auto-merge workflow. The token can write. Use `dependabot/fetch-metadata` and the policy script from the default branch.
+- Turn on `alert-lookup` unless a personal access token is already available. Do not add a secret for it.
+- Deploy Firebase, change Vercel settings, or edit branch protection from a dependency PR.
+
+## When a lockfile breaks
+
+- EUSAGE (lockfile out of sync): run `npm install` in that directory and push to the PR branch. Your push turns auto-merge off until Dependabot pushes again.
+- ERESOLVE: check the upstream peer range before treating it as something you can force. `firebase-admin` 14 is the known case. Leave the ignore in place.

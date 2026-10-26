@@ -9,6 +9,8 @@
  *   | 'legal'
  *   | 'marketing'
  *   | 'tour_stats'
+ *   | 'embed'
+ *   | 'rewind'
  *   | 'invite_join'
  *   | 'invite_site'
  *   | 'dashboard'
@@ -35,6 +37,12 @@ export function resolveRouteGroup(pathname) {
   }
   if (pathname === '/tour-stats' || pathname.startsWith('/tour-stats/')) {
     return 'tour_stats';
+  }
+  if (pathname === '/embed' || pathname.startsWith('/embed/')) {
+    return 'embed';
+  }
+  if (pathname === '/rewind' || pathname.startsWith('/rewind/')) {
+    return 'rewind';
   }
   if (pathname === '/setup' || pathname.startsWith('/setup/')) return 'setup';
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {

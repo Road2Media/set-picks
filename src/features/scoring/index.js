@@ -47,6 +47,8 @@ export { default as StandingsBannerWaitingSetlist } from './ui/StandingsBannerWa
 export { default as StandingsShowOrPoolView } from './ui/StandingsShowOrPoolView';
 export { default as StandingsTourScopeSelect } from './ui/StandingsTourScopeSelect';
 export { default as StandingsTourView } from './ui/StandingsTourView';
+export { default as StandingsYearScopeSelect } from './ui/StandingsYearScopeSelect';
+export { default as StandingsYearView } from './ui/StandingsYearView';
 export { default as StandingsViewToggle } from './ui/StandingsViewToggle';
 export { default as StandingsStickyChrome } from './ui/StandingsStickyChrome';
 export { default as StandingsMobileFixedChrome } from './ui/StandingsMobileFixedChrome';
@@ -61,6 +63,7 @@ export {
   getTourByKey,
 } from './model/resolveSelectableTours';
 export { useStandingsTourSelection } from './model/useStandingsTourSelection';
+export { useStandingsYearSelection } from './model/useStandingsYearSelection';
 export { useShowWinnerOfTheNight } from './model/useShowWinnerOfTheNight';
 export { usePreviousShowNightWinner } from './model/usePreviousShowNightWinner';
 export { useTourStandings } from './model/useTourStandings';

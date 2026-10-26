@@ -4,6 +4,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import { BrowserRouter } from 'react-router-dom'
 
 import MarketingApp from './app/MarketingApp.jsx'
+import { shouldStayOnMarketingDocument } from './marketingDocumentStay'
 import { PERSISTED_SESSION_HINT_STORAGE_KEY } from './shared/lib/persistedSessionHint'
 import './index.css'
 
@@ -19,8 +20,7 @@ try {
     // Public marketing surfaces that must stay reachable for returning
     // sessions — do not bounce them to /dashboard (#853 tour-stats).
     // Legal (`/privacy`|/terms`) is a separate zero-JS document (#916).
-    const stayOnMarketingDocument =
-      path === '/tour-stats' || path.startsWith('/tour-stats/')
+    const stayOnMarketingDocument = shouldStayOnMarketingDocument(path)
     if (
       !stayOnMarketingDocument &&
       window.localStorage?.getItem(PERSISTED_SESSION_HINT_STORAGE_KEY) === '1'

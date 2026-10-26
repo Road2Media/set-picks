@@ -22,6 +22,14 @@ const PhishSetlistPredictionGamePage = lazy(
 const PublicTourStatsPage = lazy(
   () => import('../pages/marketing/PublicTourStatsPage'),
 );
+const MsgGardenStatsPage = lazy(
+  () => import('../pages/marketing/MsgGardenStatsPage'),
+);
+const AnnualTourStatsPage = lazy(
+  () => import('../pages/marketing/AnnualTourStatsPage'),
+);
+const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
+const StatsEmbedPage = lazy(() => import('../pages/marketing/StatsEmbedPage'));
 
 /**
  * Paths that leave the marketing document (#832 / #892 / #916).
@@ -145,10 +153,51 @@ export default function MarketingApp() {
           }
         />
         <Route
+          path="/tour-stats/msg"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <MsgGardenStatsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tour-stats/2026"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <AnnualTourStatsPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="/tour-stats/:tourSlug"
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <PublicTourStatsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/rewind"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <RewindResultsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/rewind/:weekId"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <RewindResultsPage />
+            </Suspense>
+          }
+        />
+        <Route path="/embed" element={<Navigate to="/embed/stats" replace />} />
+        <Route
+          path="/embed/stats"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <StatsEmbedPage />
             </Suspense>
           }
         />

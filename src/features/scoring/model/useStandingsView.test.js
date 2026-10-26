@@ -55,6 +55,10 @@ describe('deriveStandingsView', () => {
       view: 'tour',
       poolId: null,
     });
+    expect(deriveStandingsView({ view: 'year' }, pools)).toEqual({
+      view: 'year',
+      poolId: null,
+    });
   });
 
   it('falls back to Show for an unknown view', () => {
@@ -71,6 +75,10 @@ describe('deriveStandingsView', () => {
     });
     expect(deriveStandingsView({ view: 'tour', pool: 'pool-a' }, pools)).toEqual({
       view: 'tour',
+      poolId: null,
+    });
+    expect(deriveStandingsView({ view: 'year', pool: 'pool-a' }, pools)).toEqual({
+      view: 'year',
       poolId: null,
     });
   });

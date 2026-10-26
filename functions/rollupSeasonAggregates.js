@@ -94,9 +94,12 @@ function computeGlobalMaxScore(picks, newScores) {
  * `users.{uid}.seasonStats.{tourKey}`) from `show_calendar.showDatesByTour`.
  *
  * Returns `null` when the show date isn't listed in the calendar; the
- * rollup skips the tour-scoped write in that case and logs a warning —
- * it's an indication that the calendar snapshot is behind the grading
- * pipeline, which should never happen in steady state.
+ * rollup skips the tour-scoped write in that case, logs an error, and
+ * stamps `rollup_audit.tourKeyMissing` (#298). That means the calendar
+ * snapshot is behind the grading pipeline, which should never happen in
+ * steady state. Global totals still materialize. A later rollup that
+ * finds the key clears the flag; it does not replay the skipped
+ * first-grade `seasonStats` increments.
  *
  * @param {string} showDate  YYYY-MM-DD
  * @param {unknown} showDatesByTour
@@ -159,6 +162,8 @@ function resolveTourKeyForDate(showDate, showDatesByTour) {
  *   countsTowardSeason: boolean,
  *   newCorrectSlots: number,
  *   correctSlotsDiff: number,
+ *   newBustoutBoosts: number,
+ *   bustoutBoostsDiff: number,
  * }}
  */
 function computePerPickRollup({
@@ -166,6 +171,7 @@ function computePerPickRollup({
   newScore,
   newGlobalMax,
   newCorrectSlots = 0,
+  newBustoutBoosts = 0,
 }) {
   const oldScore = typeof pickData?.score === "number" ? pickData.score : 0;
   const isFirstGrade = pickData?.isGraded !== true;
@@ -193,6 +199,19 @@ function computePerPickRollup({
     ? creditedCorrect
     : creditedCorrect - oldCorrectSlots;
 
+  const creditedBustouts =
+    typeof newBustoutBoosts === "number" && Number.isFinite(newBustoutBoosts)
+      ? Math.max(0, Math.trunc(newBustoutBoosts))
+      : 0;
+  const newBustout = countsTowardSeason ? creditedBustouts : 0;
+  const oldBustout = isFirstGrade
+    ? 0
+    : typeof pickData?.bustoutBoostsCredited === "number" &&
+        Number.isFinite(pickData.bustoutBoostsCredited)
+      ? Math.max(0, Math.trunc(pickData.bustoutBoostsCredited))
+      : 0;
+  const bustoutBoostsDiff = newBustout - oldBustout;
+
   return {
     scoreDiff,
     isFirstGrade,
@@ -202,6 +221,8 @@ function computePerPickRollup({
     countsTowardSeason,
     newCorrectSlots: creditedCorrect,
     correctSlotsDiff,
+    newBustoutBoosts: newBustout,
+    bustoutBoostsDiff,
   };
 }
 

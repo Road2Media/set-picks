@@ -1,0 +1,38 @@
+# Quarterly Node and Vercel runtime reminder (factory dependency standard, #1148).
+#
+# Opens one agent-queue p3 issue. It does not change Node, Vercel, DNS, or
+# repository settings. `schedule` uses the workflow on the default branch
+# (`main`), so this file does nothing until it is promoted.
+
+name: Runtime quarterly check
+
+on:
+  schedule:
+    - cron: "0 15 1 1,4,7,10 *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Plan only. Do not open an issue.
+        type: boolean
+        default: false
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout this workflow's commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Open the quarterly runtime check when one is not already open
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && 'true' || 'false' }}
+        run: node scripts/runtime-quarterly-check.mjs

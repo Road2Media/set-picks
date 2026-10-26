@@ -30,6 +30,7 @@ import { useStandings } from './useStandings';
 import { computeStandingsSelfRecap } from './standingsSelfRecap';
 import { useStandingsLeaderboardView } from './useStandingsLeaderboardView';
 import { useStandingsTourSelection } from './useStandingsTourSelection';
+import { useStandingsYearSelection } from './useStandingsYearSelection';
 import { useStandingsView } from './useStandingsView';
 import { useStandingsViewChange } from './useStandingsViewChange';
 import { useLiveSetlistServiceStatus } from './useLiveSetlistServiceStatus';
@@ -64,7 +65,7 @@ export function useStandingsScreen(selectedDate, options = {}) {
       : '';
 
   const { user } = useAuth();
-  const { showDates, showDatesByTour } = useShowCalendar();
+  const { showDates, showDatesByTour, loading: calendarLoading } = useShowCalendar();
   const { pools: userPools } = useUserPools(user?.uid);
   const inviteChooser = useInviteChooser({ pools: userPools });
 
@@ -179,11 +180,24 @@ export function useStandingsScreen(selectedDate, options = {}) {
   const { selectedTour, setTourKey, selectableTours } =
     useStandingsTourSelection(showDatesByTour);
 
+  const { selectedYear, setYearKey, selectableYears } = useStandingsYearSelection(
+    showDates,
+    { calendarReady: !calendarLoading },
+  );
+
   const {
     leaders: tourLeaders,
     loading: tourLoading,
     error: tourError,
   } = useTourStandings(view === 'tour' ? (selectedTour?.shows ?? null) : null);
+
+  // Same points / nightly-wins / shows rules as tour standings (#1110).
+  // Scope is that calendar year's show dates, not a tour name.
+  const {
+    leaders: yearLeaders,
+    loading: yearLoading,
+    error: yearError,
+  } = useTourStandings(view === 'year' ? (selectedYear?.shows ?? null) : null);
 
   // Crowd pulse leaders: tour points from shows *before* the selected night (#692).
   const crowdTourShows = useMemo(() => {
@@ -278,6 +292,12 @@ export function useStandingsScreen(selectedDate, options = {}) {
     tourLeaders,
     tourLoading,
     tourError,
+    selectedYear,
+    setYearKey,
+    selectableYears,
+    yearLeaders,
+    yearLoading: yearLoading || (!selectedYear && calendarLoading),
+    yearError,
     crowdTourLeaders,
     crowdTourLoading,
 

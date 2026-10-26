@@ -29,3 +29,6 @@ crew/venv/
 
 # Prediction backtest cache / reports (#648) — regenerated locally
 data/prediction-backtest/
+
+# Sphere recap correction cohort (#1194). Copy the example file to this path locally.
+scripts/private/sphere-recap-correction-recipients.json

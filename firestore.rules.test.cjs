@@ -119,6 +119,67 @@ test("users: owner may update their own profile", async () => {
   );
 });
 
+test("users: owner cannot write accepted invites, inviter, or badges (#1115)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "users", "alice"), {
+      handle: "alice",
+      badges: { shows_played_1: { scope: "career" } },
+    });
+  });
+  const db = signedInAs("alice");
+  await assertFails(
+    updateDoc(doc(db, "users", "alice"), { acceptedInviteCount: 5 })
+  );
+  await assertFails(
+    updateDoc(doc(db, "users", "alice"), {
+      invitedBy: { uid: "bob", handle: "bob" },
+    })
+  );
+  await assertFails(
+    updateDoc(doc(db, "users", "alice"), {
+      badges: { tour_winner_1: { scope: "tour:Summer" } },
+    })
+  );
+  await assertSucceeds(
+    updateDoc(doc(db, "users", "alice"), { favoriteSong: "Reba" })
+  );
+});
+
+test("users: create cannot seed the invite counter or badges (#1115)", async () => {
+  const db = signedInAs("alice");
+  await assertFails(
+    setDoc(doc(db, "users", "alice"), {
+      handle: "alice",
+      acceptedInviteCount: 5,
+    })
+  );
+});
+
+test("users: admin client cannot rewrite server-owned badge fields (#1115)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "users", "bob"), { handle: "bob", acceptedInviteCount: 1 });
+  });
+  const db = signedInAs("mod", { admin: true });
+  await assertFails(
+    updateDoc(doc(db, "users", "bob"), { acceptedInviteCount: 9 })
+  );
+  await assertSucceeds(
+    updateDoc(doc(db, "users", "bob"), { handle: "bob-fixed" })
+  );
+});
+
+test("rank snapshots: clients cannot read or write (#1115)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "tour_rank_snapshots", "Summer"), { tourKey: "Summer" });
+    await setDoc(doc(adminDb, "year_rank_snapshots", "2025"), { year: "2025" });
+  });
+  const db = signedInAs("alice");
+  await assertFails(getDoc(doc(db, "tour_rank_snapshots", "Summer")));
+  await assertFails(getDoc(doc(db, "year_rank_snapshots", "2025")));
+  await assertFails(setDoc(doc(db, "tour_rank_snapshots", "Other"), { tourKey: "Other" }));
+  await assertFails(setDoc(doc(db, "year_rank_snapshots", "2024"), { year: "2024" }));
+});
+
 test("users: non-owner non-admin cannot update another profile", async () => {
   await seed(async (adminDb) => {
     await setDoc(doc(adminDb, "users", "bob"), { handle: "bob" });
@@ -782,6 +843,60 @@ test("pools: self-join cannot rewrite another member's memberJoinedAt", async ()
         alice: "2026-01-01T00:00:00.000Z",
         bob: "2026-07-22T12:00:00.000Z",
       },
+    })
+  );
+});
+
+test("rewind: public week is readable and not client-writable (#1142)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "rewind_weeks", "2026-11-23"), {
+      weekId: "2026-11-23",
+      showDate: "1995-12-31",
+      playerCount: 0,
+    });
+  });
+
+  await assertSucceeds(getDoc(doc(anon(), "rewind_weeks", "2026-11-23")));
+  await assertFails(
+    setDoc(doc(signedInAs("fan"), "rewind_weeks", "2026-11-23"), {
+      playerCount: 99,
+    })
+  );
+});
+
+test("rewind: answers stay server-only (#1142)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "rewind_answers", "2026-11-23"), {
+      showDate: "1995-12-31",
+      setlist: { s1o: "AC/DC Bag" },
+    });
+  });
+
+  await assertFails(getDoc(doc(anon(), "rewind_answers", "2026-11-23")));
+  await assertFails(getDoc(doc(signedInAs("fan"), "rewind_answers", "2026-11-23")));
+  await assertFails(
+    setDoc(doc(signedInAs("fan", { admin: true }), "rewind_answers", "2026-11-23"), {
+      showDate: "1995-12-31",
+    })
+  );
+});
+
+test("rewind: picks are readable when signed in and never client-writable (#1142)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "rewind_picks", "2026-11-23_fan"), {
+      userId: "fan",
+      weekId: "2026-11-23",
+      score: 10,
+      picks: { s1o: "Tweezer" },
+    });
+  });
+
+  await assertFails(getDoc(doc(anon(), "rewind_picks", "2026-11-23_fan")));
+  await assertSucceeds(getDoc(doc(signedInAs("fan"), "rewind_picks", "2026-11-23_fan")));
+  await assertFails(
+    setDoc(doc(signedInAs("fan"), "rewind_picks", "2026-11-23_fan"), {
+      userId: "fan",
+      score: 999,
     })
   );
 });

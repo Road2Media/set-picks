@@ -56,7 +56,9 @@ export function decodeFirestoreRestDocument(docJson) {
 /**
  * @param {string} projectId
  * @param {string} documentPath e.g. `public_tour_stats/2026-summer-tour`
- * @param {{ signal?: AbortSignal }} [opts]
+ * @param {{ signal?: AbortSignal, fieldPaths?: string[] }} [opts]
+ *   `fieldPaths` is a Firestore REST field mask. When set, the response
+ *   includes only those top-level fields.
  * @returns {Promise<Record<string, unknown> | null>}
  */
 export async function fetchFirestoreRestDocument(
@@ -68,7 +70,15 @@ export async function fetchFirestoreRestDocument(
     .split('/')
     .map((p) => encodeURIComponent(p))
     .join('/');
-  const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/${path}`;
+  const url = new URL(
+    `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/${path}`,
+  );
+  const fieldPaths = Array.isArray(opts.fieldPaths) ? opts.fieldPaths : [];
+  for (const field of fieldPaths) {
+    if (typeof field === 'string' && field.trim()) {
+      url.searchParams.append('mask.fieldPaths', field.trim());
+    }
+  }
   const res = await fetch(url, {
     headers: { Accept: 'application/json' },
     signal: opts.signal,

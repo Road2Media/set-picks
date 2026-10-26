@@ -2,7 +2,7 @@
   "name": "functions",
   "description": "Cloud Functions for Firebase",
   "scripts": {
-    "test": "node --test phishnetShowCalendar.test.js phishnetSongCatalog.test.js phishnetLiveSetlistAutomation.test.js liveSetlistOutage.test.js songCatalogSource.test.js adminAuth.test.js accountDelete.test.js passwordResetEmail.test.js poolDelete.test.js rollupSeasonAggregates.test.js scoringCore.test.js showFinalizationGate.test.js revertRollupCore.test.js postShowRollupPush.test.js picksLockReminder.test.js fcmMessagingCore.test.js sphereTourRecapDelivery.test.js tourRankingsDailyCore.test.js tourRecapCore.test.js badgeAwards.test.js commsCatalog.test.js commsTemplates.test.js commsEmailWorker.test.js commsEmailSuppression.test.js commsEmailDailyCap.test.js commsEmailUnsubscribe.test.js commsEmailPrefs.test.js commsResendWebhook.test.js commsResendInboundWebhook.test.js commsDelivery.test.js commsFactLabel.test.js commsShowContextCore.test.js commsGa4Measurement.test.js commsEventAdapters.test.js calendarEdition.test.js commsProcessState.test.js commsInboxWorker.test.js commsDeployManifest.test.js marketingCommsTemplates.test.js marketingAlmostEndCore.test.js marketingRunLock.test.js aggregateTourSetlistStats.test.js publicTourWinners.test.js scripts/backfillSongGaps.test.js ../comms/emailLinks.test.cjs",
+    "test": "node --test phishnetShowCalendar.test.js phishnetSongCatalog.test.js phishnetLiveSetlistAutomation.test.js liveSetlistOutage.test.js songCatalogSource.test.js adminAuth.test.js accountDelete.test.js passwordResetEmail.test.js poolDelete.test.js rollupSeasonAggregates.test.js rollupCore.test.js scoringCore.test.js rewindMode.test.js showFinalizationGate.test.js revertRollupCore.test.js postShowRollupPush.test.js picksLockReminder.test.js fcmMessagingCore.test.js sphereTourRecapDelivery.test.js tourRankingsDailyCore.test.js tourRecapCore.test.js badgeAwards.test.js badgeRankSnapshots.test.js badgeSnapshotJobs.test.js msgGardenStats.test.js acceptedInvites.test.js commsCatalog.test.js commsTemplates.test.js commsEmailWorker.test.js commsEmailSuppression.test.js commsEmailDailyCap.test.js commsEmailUnsubscribe.test.js commsEmailPrefs.test.js commsResendWebhook.test.js commsResendInboundWebhook.test.js commsDelivery.test.js commsFactLabel.test.js commsShowContextCore.test.js commsGa4Measurement.test.js commsEventAdapters.test.js calendarEdition.test.js commsProcessState.test.js commsInboxWorker.test.js commsDeployManifest.test.js marketingCommsTemplates.test.js marketingAlmostEndCore.test.js marketingRunLock.test.js aggregateTourSetlistStats.test.js calendarYearTourStats.test.js publicTourWinners.test.js reconcileSetlistSnapshots.test.js scripts/backfillSongGaps.test.js scripts/cleanupLegacyUserStats.test.js scripts/backfillSeasonAggregates.test.js ../comms/emailLinks.test.cjs",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
@@ -17,7 +17,9 @@
     "qa:post-show-push-test": "node scripts/sendPostShowRollupPushTest.js",
     "backfill:bustouts": "node scripts/backfillBustouts.js",
     "backfill:song-gaps": "node scripts/backfillSongGaps.js",
+    "backfill:reconcile-snapshots": "node scripts/backfillReconcileSetlistSnapshots.js",
     "backfill:season-aggregates": "node scripts/backfillSeasonAggregates.js",
+    "cleanup:legacy-user-stats": "node scripts/cleanupLegacyUserStats.js",
     "rollup:reset-premature-grade": "node scripts/resetPrematureGrade.js",
     "comms:deliver-sphere-inbox": "node scripts/deliverSphere2026TourRecapInbox.js",
     "comms:deliver-summer-tour-launch": "node scripts/deliverMarketingSummerTour2026Launch.js",

@@ -8,6 +8,99 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.1] — 2026-10-25
+
+### Fixed
+- **Public recipient list (#1194)** — Removed the 21 Sphere recap correction recipients from the incident note and the one-off send script. The script reads that cohort at run time from a gitignored local file or from Firestore. A checked-in example file has placeholders only. A functions test fixture that used a consumer mailbox now uses a placeholder. Git history is unchanged. No declared API change.
+
+## [1.97.0] — 2026-10-22
+
+### Added
+- **Embeddable game card (part of #1145)** — `/embed/stats` is a small frameable card. It shows the tour leader and their points from `public_tour_stats.tourWinners` when that field exists, and a link card with no numbers otherwise. The read uses a Firestore field mask for `tourLabel`, `tourSlug`, and `tourWinners` only. Song titles, gaps, bustouts, play counts, and venue counts are not rendered. `?card=badge` forces the link card. `?tour=` accepts a kebab tour slug. The credit is a normal link to the homepage with `utm_source=embed` and `utm_campaign=seo_geo`. Copy embed sits on public Tour Insights (hub, tour, MSG, and 2026) and on the dashboard Stats tab. Returning sessions stay on the marketing document for `/embed` instead of bouncing to the dashboard. The route is `noindex` and disallowed in `robots.txt`. It is not in the sitemap.
+- **Framing exception** — `X-Frame-Options` stays off `/embed` and `/embed/*`. Those routes send `Content-Security-Policy-Report-Only` with `frame-ancestors *`. Every other listed app route still sends `DENY`, and the catch-all report-only policy still uses `frame-ancestors 'none'`.
+
+### Changed
+- **Route group** — `/embed` and `/embed/*` report GA4 `route_group=embed`.
+- **Dependabot (#1148)** — Factory standard: updates, majors included, squash auto-merge into `staging` when required checks pass. A failed major stays open as an `agent-queue` `p3` issue. Visitor-facing packages get `ui-check`. `@types/node` majors beyond Node 24 are ignored. Rebases are disabled, and `dependabot/*` previews are skipped. `ci-gate` always reports `verify`, `build`, `functions`, and `rules`. No public API change.
+
+
+
+## [1.96.0] — 2026-10-22
+
+### Added
+- **Rewind Mode (#1142)** — One admin-chosen past show per week. Same six slots and scoring as a live card. Scores live on `rewind_picks` and `rewind_weeks`. They do not write `picks`, `users` totals, or `official_setlists`, so show, tour, and year boards stay unchanged. The setlist stays hidden until that player locks. The reveal is the six slots plus a Phish.net link, not the full song list. The public page `/rewind` and `/rewind/:weekId` shows player count, average score, and slot hit counts. Share text is the emoji grid and the score. GA4: `rewind_start`, `rewind_lock`, `rewind_share`.
+- **Dark by default** — Player routes render a closed shell unless `VITE_ENABLE_REWIND_MODE=true` at build time. The Rewind segment on the Picks tab is hidden until then. `/rewind` is `noindex` while the flag is off and is not in the sitemap.
+- **War Room** — Admins save the week (MSG NYE dates are suggestions) and refresh one show into `rewind_answers`. A daily job refreshes that cache when it is older than 24 hours and the week is open. No archive crawl.
+
+### Changed
+- **Shipped-issue close (#1149, #1174)** — Publishing a GitHub Release closes issues named with `Closes` / `Fixes` / `Resolves` on the staging pull requests in that promote. The comment names the tag, the promote PR, and the source PR. `Part of` and the `keep-open` label stay open. Actions → Close shipped issues, with `dry_run` checked, lists the same set and does not close anything.
+
+## [1.95.0] — 2026-10-22
+
+### Added
+- **2026 annual tour statistics (#1141)** — Public `/tour-stats/2026` (not a tour slug). Shows, unique songs, most-played songs, and bustouts across every 2026 tour. A show counts for the calendar year of its date: December 30 and December 31 stay in 2026, and January 1 and January 2 count for 2027 (#1109). Show counts and song-row totals add the tour pages. A song played on two tours counts once. The page links to the 2026 standings board (`/dashboard/standings?view=year&year=2026`). Prerender embeds the facts plus FAQ and ItemList JSON-LD. Sitemap and `llms.txt` include the URL. The hub links here.
+- **`public_tour_stats/_year_YYYY`** — The existing tour-stats refresh writes one doc per calendar year from the same setlist aggregator the tour pages use. `schemaVersion` is 3 so the tour picker does not list it. No new collection and no rules change. The page uses that doc when it exists. Until the functions deploy, it adds tour pages whose dates all sit inside the year and leaves a cross-year tour out of the song totals. Deploy `scheduledPublicTourStatsRefresh`, `refreshPublicTourStats`, `scheduledPhishnetShowCalendar`, and `refreshPhishnetShowCalendar` before 2027-01-01, then call `refreshPublicTourStats` once if the year doc is needed before the next nightly run. Search Console Request indexing on the new URL stays a human step after `main` is READY.
+
+## [1.94.0] — 2026-10-22
+
+### Added
+- **Phish at MSG, by the numbers (#1139)** — Public `/tour-stats/msg` (not a tour slug). Aggregates only: played shows, most-played songs, songs debuted at the Garden, longest stretches between visits, bustouts, New Year's Eve counts, and how often each song has opened set 1. Frequencies, not a pick tip. Prerender embeds the facts plus FAQ and ItemList JSON-LD. Sitemap and `llms.txt` include the URL. Visible credit: "Data courtesy of Phish.net / The Mockingbird Foundation," linking to phish.net. CTA locks New Year's Run picks.
+- **Show count** — 96 played Phish shows through 2026-07-29 (Phish.net: "96th performance"). Four 2021–22 Garden dates were canceled and are not counted. Jan 2, 2027 is show 100. The issue text's "99 before Dec 30" does not match Phish.net.
+- **`public_venue_stats/msg`** — Nightly `scheduledPublicMsgGardenStats` (08:10 ET) and admin `refreshPublicMsgGardenStats` fetch Phish.net venue 157, discard the raw rows, and write aggregates. A count under 90 does not overwrite the doc. The page ships from a committed snapshot until a human deploys rules, then those two functions, then runs the admin callable once. Not part of `npm run deploy:functions:phishnet`. No setlists are stored.
+
+## [1.93.0] — 2026-10-22
+
+### Added
+- **Tour and year badge snapshots (#1115)** — Finished tours freeze a full-field rank snapshot (`tour_rank_snapshots/{tourKey}`) after every date on that tour has a rollup audit. Calendar years freeze (`year_rank_snapshots/{YYYY}`) after 31 December UTC, once every show dated in that year is graded. Points use the same competition rank as standings and the year board (#1110): a tie shares a place. Tour winner, tour top 5, year winner, annual slugging leader, and annual slugging top 5 each award a 1/2/3 ladder so a later tour or year is a different badge. Tour-leading batting average, points per show, and bustout boosts, plus Triple Crown, award once. A second run does not change `awardedAt`. Live top-50 boards are not the source.
+- **Bustout boost count (#1115)** — Finalize stores `picks.bustoutBoostsCredited` and increments `users.seasonStats.{tourKey}.bustoutBoosts`. Regrade and revert adjust the difference. Snapshot bustout rank recounts graded picks and does not read that counter.
+- **Pick 'em Evangelist (#1115)** — `recordAcceptedInvite` counts a finished signup from a profile invite or a pool `?from=` invite. A click does not count. At 5 accepted invites the inviter earns `pickem_evangelist` once. There is no invite backfill.
+- **Rank-snapshot backfill script (#1115)** — `node scripts/backfillRankSnapshots.js` from `functions/` is a dry-run. `--apply` writes snapshots and badges. Do not run `--apply` from CI. The daily `scheduledBadgeRankSnapshots` job does the same write on its first tick.
+
+### Changed
+- **Annual slugging floor (#1115)** — Year slugging badges need 10 graded shows in that calendar year. Players under 10 stay on the year points board with no slugging rank. The all-time floor stays 15. The in-progress tour rate gate stays 3.
+
+## [1.92.0] — 2026-10-22
+
+### Added
+- **Annual standings (#1110)** — Standings tray is Show / Tour / Year / Pools. `?view=year` is the global board for one calendar year of show dates (optional `?year=YYYY` when it is not the newest year). A Dec 31 show stays in that year. A Jan 1 show is the next year. Points, nightly wins, and shows played use the tour-standings rules. A points tie shares a rank. The date picker hides and a year picker shows. An empty year says so. All-time standings stay the career board. No Cloud Functions, rules, or index deploy.
+
+## [1.91.2] — 2026-10-22
+
+### Fixed
+- **Tour-stats sitemap `lastmod` (#930)** — production `sitemap.xml` now stamps `<lastmod>` on `/tour-stats` and each prerendered `/tour-stats/{slug}` from that tour’s `public_tour_stats.lastShowDate` (hub = newest of those dates). Google ignores `changefreq`. `writtenAt` is not used, because the nightly refresh rewrites it when the show list did not change. Home, about, and the keyword page stay unstamped. `/llms.txt` stays out of the sitemap.
+
+### Changed
+- **Child D ops log (#930)** — playbook §4 records the 2026-10-12 live GSC pack (71 impressions, 5 clicks, registry 0/17). §6 holds an unposted summer-URL draft (`utm_campaign=seo_926`, `utm_content=tour-stats-summer-2026`). Search Console Request indexing and the off-site post stay human steps on property `sc-domain:setlistpickem.com`.
+
+## [1.91.1] — 2026-10-22
+
+### Fixed
+- **Stale bustout and song-gap snapshots (#626)** — a live poll that still has the full played list drops `bustouts` and `songGaps` titles that are no longer in that list, and adds every played song whose frozen gap is still 30 or more. A shorter in-progress feed still keeps the prior snapshot so a partial Phish.net payload cannot erase set 2. Firestore map merges do not keep deleted gap keys. Admin save applies the same played-list rule. After a show is auto-finalized, a bustout change on a song that was actually played re-runs rollup. A title that was never played does not change scores. `songGaps` stays display-only.
+
+### Added
+- **Snapshot reconcile backfill (#626)** — `npm run backfill:reconcile-snapshots -- --showDates=YYYY-MM-DD` from `functions/` re-fetches those shows and overwrites `bustouts` and `songGaps` (dry-run unless `--apply`). It does not scan the whole collection. `--apply` recomputes pick scores and graded point totals only when a played song's bustout membership changes. Do not run it against production from CI. Existing shows stay stale until a human runs it, and the live poller change does not apply until Cloud Functions are deployed.
+
+## [1.91.0] — 2026-10-22
+
+### Added
+- **BIMI inbox logo (#498)** — `https://www.setlistpickem.com/bimi/logo.svg` is a square SVG Tiny PS mark traced from the site favicon. `comms/emailBranding.cjs` exports that URL and the `default._bimi.setlistpickem.com` TXT value (`v=BIMI1; l=…;` with no `a=` until a certificate exists). `vercel.json` serves `/bimi/*` as `image/svg+xml`.
+
+### Fixed
+- **Inbox sender badge asset (#498)** — the missing circle beside Setlist Pick'em is not an HTML logo bug. Inbox clients resolve BIMI on the From domain, and there was no Tiny PS logo at a non-redirecting HTTPS URL. The logo is now in the site. The badge stays generic until a human publishes that TXT after this file is on production. Gmail also needs a VMC or CMC. No Cloud Functions deploy. See `docs/comms-triggers/EMAIL_INBOX_BADGE.md`.
+
+## [1.90.0] — 2026-10-22
+
+### Added
+- **Tour-key-missing rollup signal (#298)** — when a show is finalized and `show_calendar/snapshot` has no tour for that date, `rollup_audit/{showDate}` stores `tourKeyMissing: true`, `tourKey: null`, and `showDate`, and Cloud Logging records an error instead of a warning. War Room lists those dates. A later rollup that resolves the tour key sets `tourKeyMissing: false`. That clears the badge. It does not replay first-grade `seasonStats` increments that were skipped. Repair those counters with `functions/scripts/backfillSeasonAggregates.js` after the calendar lists the date. Taking effect in production requires a Cloud Functions deploy. The badge stays empty until a rollup runs on that deploy.
+
+### Changed
+- **Legacy `users/{uid}.stats` (#298)** — rollup and the season-aggregate backfill now delete the unread pre-launch `stats` map on every user doc they merge. `functions/scripts/cleanupLegacyUserStats.js` (`npm run cleanup:legacy-user-stats` from `functions/`) deletes that field on every user doc, including accounts the backfill never touches. Dry-run is the default. `--apply` writes. This does not run in CI. A human with Firestore credentials must run it once against production. The live delete on rollup also needs the Cloud Functions deploy.
+
+## [1.89.1] — 2026-10-22
+
+### Fixed
+- **Unset profile avatar (#643)** — Profile no longer treats a missing `avatarId` as Ticket. The picker shows no selection and the same dashed add mark as standings. Saving a handle or favorite song without picking an avatar does not write `avatarId`, so your standings row keeps the add control. Choosing Ticket, or any other mark, still saves that id and shows it on standings. Accounts that already have `avatarId: ticket` stored stay on Ticket; this does not clear them.
+
 ## [1.89.0] — 2026-10-22
 
 ### Added

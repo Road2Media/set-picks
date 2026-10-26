@@ -31,6 +31,17 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.setlistpickem.com/tour-stats/msg</loc>
+    <lastmod>2026-07-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats/2026</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.setlistpickem.com/phish-setlist-prediction-game</loc>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>

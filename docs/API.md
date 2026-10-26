@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.84.1  
+**Version:** 1.96.0  
 
 
 **SemVer:** https://semver.org  
@@ -21,8 +21,8 @@ All collections live in the default `(default)` Firestore database for project `
 | `handle` | string | Display name |
 | `email` | string | Auth email — used for comms delivery |
 | `photoURL` | string? | Legacy optional URL field (unused by curated avatar picker) |
-| `avatarId` | string? | **v1.27.0+ (#567)** Curated avatar catalog id (e.g. `ticket`, `flame`). Missing/unknown → default `ticket` |
-| `badges` | map? | **v1.28.0+ (#568)** Earned milestone badges `{ [badgeId]: { awardedAt, scope, sourceThroughShow } }`. Written server-side at rollup; idempotent merge. **v1.82.0+ (#712)** also awards `shows_played_25`, `shows_played_50`, `win_5`, `win_10`, `points_500`, `points_1000`, `anniversary_1`, `anniversary_2`, `anniversary_3`, and `style_picker` from `showsPlayed`, `wins`, `totalPoints`, `createdAt`, and `favoriteSong`. Same map shape. |
+| `avatarId` | string? | **v1.27.0+ (#567)** Curated avatar catalog id (e.g. `ticket`, `flame`). Optional. **v1.89.1 (#643)** Profile save writes this field only after an explicit catalog pick, including `ticket`. A missing field stays missing. Public profile display may still resolve a missing id to the `ticket` mark. Standings treats a missing or unknown id as unset: other players get an initial chip, and your own row shows the add control. |
+| `badges` | map? | **v1.28.0+ (#568)** Earned milestone badges `{ [badgeId]: { awardedAt, scope, sourceThroughShow } }`. Written server-side at rollup; idempotent merge. **v1.82.0+ (#712)** also awards `shows_played_25`, `shows_played_50`, `win_5`, `win_10`, `points_500`, `points_1000`, `anniversary_1`, `anniversary_2`, `anniversary_3`, and `style_picker` from `showsPlayed`, `wins`, `totalPoints`, `createdAt`, and `favoriteSong`. Same map shape. **v1.93.0+ (#1115)** also awards tour winner / top 5 (including a second and third), tour-leading batting average, points per show, and bustout boosts, Triple Crown, year winner (including a second and third), annual slugging leader and top 5 (including a second and third), and Pick 'em Evangelist. Scope is `tour:{tourKey}`, `year:{YYYY}`, or `career`. Clients cannot create or change `badges`. A later regrade does not clear `awardedAt`. |
 | `favoriteSong` | string? | Display favorite; empty/`Unknown` treated as unset in UI |
 | `termsPrivacyAcceptedAt` | Timestamp? | Legal consent gate |
 | `createdAt` | Timestamp | Account creation |
@@ -34,7 +34,9 @@ All collections live in the default `(default)` Firestore database for project `
 | `careerCorrectSlots` | number? | **v1.26.0+ (#554)** Sum of pick slots that scored > 0 across graded shows. Used for avg correct / show. Absent until rollup/backfill. |
 | `seasonStatsThroughShow` | string? | YYYY-MM-DD freshness watermark for materialized career/tour stats |
 | `seasonStatsSnapshotAt` | Timestamp? | Last rollup write time |
-| `seasonStats.{tourKey}` | map | Per-tour aggregated scoring (`totalPoints`, `shows`, `wins`, and **v1.26.0+** `correctSlots`) |
+| `seasonStats.{tourKey}` | map | Per-tour aggregated scoring (`totalPoints`, `shows`, `wins`, **v1.26.0+** `correctSlots`, and **v1.93.0+** `bustoutBoosts`) |
+| `acceptedInviteCount` | number? | **v1.93.0+ (#1115)** Server-owned count of people who finished signup from this user's invite. Clients cannot write it. Profile invites and pool `?from=` invites both count. A link click does not. There is no backfill of old joins. |
+| `invitedBy` | map? | **v1.93.0+ (#1115)** `{ uid, handle }` set once on the new user when an accepted invite is recorded. Clients cannot write it. |
 
 ### 1.2 `users/{uid}` — `notificationPrefs` shape
 
@@ -88,6 +90,7 @@ Stores per-user, per-show slot picks and computed scores.
 | Field | Type | Notes |
 |-------|------|-------|
 | `correctSlotsCredited` | number? | **v1.26.0+ (#554)** Slots that scored > 0 on last finalize; used for regrade diffs into `users.careerCorrectSlots` |
+| `bustoutBoostsCredited` | number? | **v1.93.0+ (#1115)** Slots whose bustout boost fired on last finalize. Regrade diffs this into `seasonStats.{tourKey}.bustoutBoosts` so a second finalize does not double-count. |
 | `winCredited` | boolean? | Whether this pick currently counts as a global night win |
 
 ### 1.7 `fcm_notification_log/{dedupId}`
@@ -202,8 +205,8 @@ Per-show official results. Document ID is the show date (`YYYY-MM-DD`). Full sch
 |-------|------|-------|
 | `setlist` | Record<string,string> | Slot answers keyed by `FORM_FIELDS` id (`s1o`, `s1c`, …). |
 | `officialSetlist` | string[] | Ordered full-show song list. |
-| `bustouts` | string[] | Per-show bustout snapshot (pre-show gap ≥ 30). Scoring source of truth (#214). |
-| `songGaps` | Record<string,number> | **v1.29.0 (#587 Phase B)** — frozen pre-show gap per dated row, keyed by normalized title. Display-only (Standings “Gap N” signal); not read by scoring. Absent on pre-Phase-B shows. **v1.76.4** — the first positive gap sticks. A live row gap of 0 is not stored and does not replace a positive gap. Songs absent from a partial poll keep their stored gap. |
+| `bustouts` | string[] | Per-show bustout snapshot (pre-show gap ≥ 30). Scoring source of truth (#214). **v1.91.1 (#626)** — once the played list is authoritative, every played song whose frozen gap is still ≥ 30 is included, and titles that were not played are removed. A shorter in-progress live feed still unions with the prior list. |
+| `songGaps` | Record<string,number> | **v1.29.0 (#587 Phase B)** — frozen pre-show gap per dated row, keyed by normalized title. Display-only (Standings “Gap N” signal); not read by scoring. Absent on pre-Phase-B shows. **v1.76.4** — the first positive gap sticks. A live row gap of 0 is not stored and does not replace a positive gap. Songs absent from a partial poll keep their stored gap. **v1.91.1 (#626)** — an authoritative poll or admin save drops keys for songs that are not in the played list. The live writer deletes those keys explicitly because a merged map would keep them. |
 
 ### 1.13 `public_tour_stats/{tourSlug}` (**v1.33.0 / #665**)
 
@@ -241,6 +244,8 @@ Document ID is a kebab-case slug from the calendar tour label (`2026 Sphere` →
 `_index` fields: `tours[]` (`tourSlug`, `tourLabel`, `firstShowDate`, `lastShowDate`, `showCount`), `defaultTourSlug` (current tour = newest `lastShowDate` among indexed tours), `writtenAt`, `schemaVersion`. `showCount` matches doc `tourShowCount` (full post-launch itinerary). `firstShowDate` / `lastShowDate` remain through-today.
 
 Tour labels are ingested via **`scheduledPhishnetShowCalendar`** (daily 06:00 ET) from Phish.net as new dates publish; public stats rebuild after calendar sync and again at **07:30 ET** (`scheduledPublicTourStatsRefresh`).
+
+**Calendar-year roll-up (`_year_YYYY`, v1.95.0 / #1141):** the same refresh also writes `public_tour_stats/_year_YYYY` for each calendar year that has at least one show with a setlist. A December 31 show stays in that year. A January 1 show is the next year. The doc uses the same aggregate fields as a tour page (`showsWithSetlist`, `uniqueSongs`, `totalSongPlays`, `topSongs`, `bustouts`) plus `year`, `yearRule: "calendar-show-date"`, and `tours[]` (`tourSlug`, `tourLabel`, `showsWithSetlist`, `uniqueSongs`, `totalSongPlays`, `showDates`, `firstShowDate`, `lastShowDate`). Show counts, song-row totals, and bustout counts equal the sum of those year-scoped tour slices. `uniqueSongs` is the union, not the sum. `schemaVersion` is **3** so the tour-picker fallback query (`schemaVersion in [1, 2]`) does not list it. It is not an entry in `_index.tours`. No new collection and no rules change. Clients may read. Until this refresh is deployed, `/tour-stats/2026` adds the published tour pages whose show dates all fall in 2026 and leaves a cross-year tour out of the song totals.
 
 ### 1.14 `global_stats_leaderboards/{docId}` (**v1.70.0 / #1004**, slugging **v1.77.0**)
 
@@ -316,6 +321,7 @@ Admin-read, client-write denied. The scheduled poller and `pollLiveSetlistNow` w
 | `outageEscalatedAt` | Timestamp | Optional one-time escalation after the incident has lasted 30 minutes. |
 | `recoveredAt` / `recoveryAlertedAt` | Timestamp | First successful upstream response after an alerted outage, and the one-time recovery alert. |
 | `lastSuccessfulPollAt` / `lastSuccessfulPollMode` | Timestamp / `"scheduled"` \| `"force"` | Last upstream success. Force is a Phish.net poll, not a manual Save. |
+| `playedSongHighWater` | number | **v1.91.1 (#626).** Most songs seen on an authoritative poll for this show. A later poll with fewer songs, before auto-finalize, keeps the prior `bustouts` / `songGaps` instead of treating the short payload as the whole show. After `autoFinalizedAt` is set, a shorter feed is authoritative and this number follows it. |
 
 Ops inbox + email go to `SUPER_ADMIN_UIDS` (and optional `LIVE_SETLIST_OPS_ALERT_EMAILS`). They do not use player prefs, fatigue caps, or `fcm_notification_log`. Dedup lives in server-only `live_setlist_ops_alerts/{messageId}` (client read and write denied). Inbox template id is `live-setlist-ops`.
 
@@ -335,6 +341,86 @@ Sanitized player projection. Document id for live setlist is `live-setlist-{show
 | `clearOnRecovery` | boolean | Automation sets `true`. A manual pin stays until cleared unless the admin checked this. |
 | `resolvedAt` | Timestamp? | Set when the banner is cleared. |
 | `updatedAt` | Timestamp | |
+
+### 1.19 `rollup_audit/{showDate}` tour-key drift (**v1.90.0 / #298**)
+
+Admin-read, client-write denied. `rollupScoresForShow` (manual, auto, and auto-reconcile) merges this doc after every rollup that passes the hollow-setlist gate, including a show with zero picks. Document id is the show date.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `lastRolledUpAt` | Timestamp | When this invocation committed. |
+| `processedPicks` | number | Picks regraded. |
+| `skippedPicks` | number | Picks skipped (missing `userId`). |
+| `totalPicks` | number | Matching `picks` docs for this date. |
+| `callerUid` | string \| null | Admin uid, or null for the scheduler. |
+| `trigger` | `"manual"` \| `"auto"` \| `"auto-reconcile"` | |
+| `showDate` | string | **v1.90.0.** `YYYY-MM-DD`. Same as the document id. |
+| `tourKey` | string \| null | **v1.90.0.** Calendar tour label used for `seasonStats`, or null when the snapshot did not list the date. |
+| `tourKeyMissing` | boolean | **v1.90.0.** `true` when this invocation skipped per-tour `seasonStats` because `resolveTourKeyForDate` returned null. `false` when the key resolved. Merge overwrites a prior `true`. Clearing the flag does not replay skipped first-grade tour increments. |
+
+Global `totalPoints`, `showsPlayed`, and `wins` still update when `tourKeyMissing` is true. War Room reads `tourKeyMissing == true` (limit 50) and lists the dates. Docs written before the functions deploy omit `tourKeyMissing`, so they do not appear until that show is rolled up again.
+
+Rollup and `backfillSeasonAggregates.js` also `FieldValue.delete()` the legacy undeclared `users/{uid}.stats` map (`{ showsPlayed, totalPoints }` from launch-day docs). It was never part of this schema. `cleanupLegacyUserStats.js` is the one-shot that removes it from docs those writers do not touch. Production cleanup is a manual `--apply`, not a client or rules change.
+
+### 1.20 `tour_rank_snapshots/{tourKey}` (**v1.93.0 / #1115**)
+
+Full-field points board for one finished tour, plus batting average, points per show, and bustout-boost ranks. Written once by Cloud Functions when every date on that tour has a rollup audit (the finale included). A `/` in the tour key is stored as `-`. Clients cannot read or write (`allow read, write: if false`). This is not `global_stats_leaderboards`, which stays top 50 and keeps moving.
+
+Points rank matches tour standings and the year board (#1110): competition rank on total points, ties share a place. Batting average and points per show use the same tie rule and the 3-show gate. Bustout rank counts slots whose boost fired. A count of 0 is not ranked. `awardsAppliedAt` means the badge pass for this snapshot finished. A later regrade does not rewrite the doc.
+
+### 1.21 `year_rank_snapshots/{YYYY}` (**v1.93.0 / #1115**)
+
+Full-field points and slugging board for one calendar year of show dates. A Dec 31 show stays in that year. A Jan 1 show is the next year. Written once after 31 December UTC, when every show dated in that year has a rollup audit. Clients cannot read or write.
+
+Points rank uses the same aggregation and tie rule as the Standings year view. Slugging is `totalPoints / (shows × 30)`. The annual slugging badges require **10** graded shows. That is lower than the all-time floor of 15 and higher than the in-progress tour gate of 3. Players under 10 stay on the points board and do not receive a slugging rank. The all-time Global Stats doc is not an input.
+
+### 1.22 `public_venue_stats/msg` (**v1.94.0 / #1139**)
+
+Public, aggregate-only Madison Square Garden stats for `/tour-stats/msg`. Written by Cloud Functions Admin SDK (`refreshPublicMsgGardenStats` / `scheduledPublicMsgGardenStats`). **Never** contains a full setlist or Phish.net prose. Clients may read after the rules deploy; client writes are denied.
+
+Until rules and the functions are deployed, the page and prerender use the committed snapshot in `src/features/msg-stats/model/msgGardenSnapshot.json`. A live doc replaces that snapshot when `showCount` is at least 1. A short Phish.net payload (`showCount` under 90) does not overwrite the doc.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `venueId` | number | `157` (Madison Square Garden) |
+| `venueName` / `city` | string | Display labels |
+| `showCount` | number | Played Phish shows. Canceled nights are omitted. As of 2026-10-22 this is **96**, not the 100 venue-page rows (four 2021–22 dates were canceled). |
+| `uniqueSongs` | number | Distinct titles across counted shows |
+| `firstShowDate` / `lastShowDate` | string | `YYYY-MM-DD` of the first and latest counted show |
+| `lastShowOrdinal` | number\|null | Phish.net "Nth performance" from the latest counted show's notes, when present |
+| `nyeShowCount` | number | Counted shows on December 31 |
+| `openerShowCount` | number | Shows with a set-1 opener |
+| `milestoneShowDate` | string | `2027-01-02` |
+| `milestoneShowNumber` | number | `showCount` plus the index of that date among upcoming shows, plus 1. With 96 played and four announced nights, Jan 2 is **100**. |
+| `upcomingShowDates` | string[] | Announced Phish dates at the venue on or after the refresh day. Not counted in `showCount`. |
+| `topSongs` | `{ title, timesPlayed }[]` | Most-played titles. A same-night return counts twice. Capped at 10. |
+| `openers` | `{ title, timesPlayed }[]` | Set-1 openers (lowest position in set 1). Capped at 8. Frequencies, not a pick tip. |
+| `nyeOpeners` | `{ title, timesPlayed }[]` | Set-1 openers on December 31. Capped at 5. |
+| `debuts` | `{ title, showDate }[]` | Songs whose Phish.net footnote marks a Phish debut. Earliest date per title. |
+| `longestVisitGaps` | `{ days, fromDate, toDate }[]` | Gaps between consecutive counted shows. Top 5. |
+| `longestBustouts` | `{ title, gap, showDate }[]` | Max pre-show gap of at least 30 per title. Capped at 8. |
+| `checkedOn` | string | `YYYY-MM-DD` refresh day (`America/New_York`) |
+| `credit` | string | `Data courtesy of Phish.net / The Mockingbird Foundation` |
+| `sourceUrl` | string | `https://phish.net` |
+| `writtenAt` | string | ISO timestamp. Absent on the bundled snapshot. |
+| `schemaVersion` | number | `1` |
+
+**Deploy (human, not CI):** rules first, then `functions:scheduledPublicMsgGardenStats,functions:refreshPublicMsgGardenStats`, then one admin `refreshPublicMsgGardenStats` so the doc exists before 08:10 ET. The schedule uses secret `PHISHNET_API_KEY` (already provisioned for other Phish.net jobs). These two functions are not part of `npm run deploy:functions:phishnet`.
+
+### 1.23 Rewind Mode (`rewind_weeks`, `rewind_state`, `rewind_answers`, `rewind_picks`) (**v1.96.0 / #1142**)
+
+Off-tour week. One admin-chosen historical show. Player surfaces stay dark until `VITE_ENABLE_REWIND_MODE=true`. Live standings keep reading `picks` only.
+
+| Collection | Read | Write | Contents |
+|------------|------|-------|----------|
+| `rewind_weeks/{weekId}` | Public | Admin SDK | Week id (`YYYY-MM-DD` open date), `showDate`, `title`, `venue`, `status` (`open` \| `closed`), `opensAt`, `closesAt`, `phishNetUrl`, `playerCount`, `scoreSum`, `averageScore`, `correctSlotCounts` (six numbers), `answerCachedAt`, `attribution`, `schemaVersion`. No song titles. |
+| `rewind_state/current` | Public | Admin SDK | `{ weekId }` pointer to the featured week. |
+| `rewind_answers/{weekId}` | None | Admin SDK | Scoring payload for that one show: slot map, `officialSetlist`, `encoreSongs`, `bustouts`, `cachedAt`. |
+| `rewind_picks/{weekId}_{uid}` | Signed in | Admin SDK | That player's six guesses, `score`, `correctSlots`, `handle`, `lockedAt`. Not the ordered setlist. |
+
+`weekId` is the UTC date the week opens. `showDate` must be before the save day. A week that already has locks cannot change `showDate`.
+
+**Deploy (human, not CI):** see §2.10. Do not run a backfill. There is no historical pick migration.
 
 ---
 
@@ -476,7 +562,9 @@ Phish.net integration, live scoring, and public tour-stats refresh. Deployed via
 
 `action` is `publish` or `clear`. `messageKey` must be an allow-listed key (`phishnet_stalled` in v1.89.0). `clearOnRecovery: true` lets the next successful Phish.net poll remove a manual pin. Response: `{ ok, showDate, status, messageKey?, clearOnRecovery? }`.
 
-**`public_tour_stats` (#665):** `scheduledPublicTourStatsRefresh` (daily 07:30 ET) and admin callable `refreshPublicTourStats` rebuild aggregate docs. Calendar sync also triggers a refresh after writing `show_calendar/snapshot`.
+**`public_tour_stats` (#665, year docs #1141 / v1.95.0):** `scheduledPublicTourStatsRefresh` (daily 07:30 ET) and admin callable `refreshPublicTourStats` rebuild aggregate docs, including `public_tour_stats/_year_YYYY`. Calendar sync also triggers a refresh after writing `show_calendar/snapshot`. Callable response adds `yearsWritten` (array of calendar years written). No new callable. The year docs are not live until the functions that call `refreshPublicTourStats` are deployed. See §3 `/tour-stats/2026` for the order.
+
+**`public_venue_stats/msg` (#1139 / v1.94.0):** `scheduledPublicMsgGardenStats` (daily 08:10 ET) and admin callable `refreshPublicMsgGardenStats` rebuild the MSG aggregate. Request: none. Response: `{ ok, written, showCount?, lastShowDate?, reason? }`. Admin claim required. A `showCount` under 90 returns `{ ok: true, written: false, reason: "short-count" }` and does not write. Missing `PHISHNET_API_KEY` returns `reason: "missing-api-key"`. Not included in `npm run deploy:functions:phishnet`. See §1.22 for the deploy order.
 
 **`global_stats_leaderboards` (#1004 / v1.70.0):** `scheduledGlobalStatsLeaderboardsRefresh` (daily 08:00 ET) and admin callable `refreshGlobalStatsLeaderboards` rebuild all-time + every tour. `rollupScoresForShow` also rebuilds all-time + the finalized show’s tour (soft-fail). Request: none. Response: `{ ok, docsWritten, usersScanned, tourKeys }`. Admin claim required on the callable.
 
@@ -584,6 +672,42 @@ Provider check used after a failed email sign-in or a sign-up collision. It does
 
 **Deploy:** `firebase deploy --only functions:lookupSignInMethod --project set-picks`. Until that deploy, email sign-in and sign-up keep the short generic copy and do not call out Google.
 
+### 2.9 `recordAcceptedInvite` and `scheduledBadgeRankSnapshots` (v1.93.0, #1115)
+
+`recordAcceptedInvite` is an authenticated callable (`us-central1`). Body: `{ handle: string }`. It resolves that handle to one user, and only then may set `invitedBy` on the caller and increment the inviter's `acceptedInviteCount`. It counts a finished signup from a profile invite or a pool invite `?from=`. It does not count a click, a self-invite, an account older than 48 hours, or an account that already has `showsPlayed > 0`. At 5 it awards `pickem_evangelist` once. There is no invite backfill.
+
+`scheduledBadgeRankSnapshots` runs daily at 9:15 `America/Los_Angeles`. It freezes any finished tour or closed calendar year that does not yet have a snapshot, then awards badges. The first run after deploy writes historical snapshots and badges. That write is the backfill. Preview it with `node scripts/backfillRankSnapshots.js` from `functions/` (dry-run). `--apply` writes. Do not run `--apply` until the dry-run is reviewed.
+
+Taking effect in production requires a rules deploy and a functions deploy, in this order:
+
+1. `firebase deploy --only firestore:rules --project set-picks`
+2. `firebase deploy --only functions:rollupScoresForShow,functions:revertRollupForShow,functions:scheduledPhishnetLiveSetlistPoll,functions:recordAcceptedInvite --project set-picks`
+3. From `functions/`: `node scripts/backfillRankSnapshots.js` (dry-run; reads production, writes nothing)
+4. After that dry-run is reviewed, either `node scripts/backfillRankSnapshots.js --apply` or `firebase deploy --only functions:scheduledBadgeRankSnapshots --project set-picks`. The scheduler's first tick is the same historical write. Deploy it after the dry-run so the first write is reviewed.
+
+Until those deploys, signup does not increment the counter and finished tours do not freeze.
+
+### 2.10 Rewind Mode callables (**v1.96.0 / #1142**)
+
+Region `us-central1`. `saveRewindWeek` and `refreshRewindAnswer` require the admin claim. `lockRewindPick` and `readRewindReveal` require a signed-in user. `scheduledRewindAnswerRefresh` runs at 08:20 `America/New_York`.
+
+| Callable | Body | Result |
+|----------|------|--------|
+| `saveRewindWeek` | `{ weekId, showDate, title, venue, closesOn, status? }` | Public week doc. Strips any setlist fields. Sets `rewind_state/current` when `status` is `open`. |
+| `refreshRewindAnswer` | `{ weekId, force? }` | Fetches **that one** Phish.net showdate into `rewind_answers`. Skips the fetch when the cache is under 24 hours unless `force` is true. Rescores existing `rewind_picks` for the week. Response is `{ ok, skipped, weekId, showDate, songCount, playersRescored }` — a count, not titles. |
+| `scheduledRewindAnswerRefresh` | none | Refreshes the current week only when it is `open` and the cache is at least 24 hours old. A closed week does not call Phish.net. |
+| `lockRewindPick` | `{ weekId, picks }` | Writes `rewind_picks/{weekId}_{uid}` and increments week aggregates. A second call returns the first card. Reveal is six slots (`guess`, `actual`, `points`, `kind`). No `officialSetlist`. Fails closed when the cache is missing. |
+| `readRewindReveal` | `{ weekId }` | Same reveal after reload. Fails until that user has locked. |
+
+These writes never touch `picks`, `users`, or `official_setlists`.
+
+**Deploy (human, after this merges, before anyone sets the flag):**
+
+1. `firebase deploy --only firestore:rules --project set-picks`
+2. `firebase deploy --only functions:saveRewindWeek,functions:refreshRewindAnswer,functions:scheduledRewindAnswerRefresh,functions:lockRewindPick,functions:readRewindReveal --project set-picks`
+
+`refreshRewindAnswer` and the scheduler bind the existing `PHISHNET_API_KEY` secret. No new secret. Not part of `npm run deploy:functions:phishnet`. Then an admin saves a week in War Room and refreshes the cache once. Leave `VITE_ENABLE_REWIND_MODE` unset until that week should be visible. Setting it is a Vercel env change plus a rebuild (Production and Preview). Do not run a backfill.
+
 ---
 
 ## 3. Public URL Routes
@@ -596,9 +720,13 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/login` | `mode?` (`signin` \| `signup`), `signup=1` (compat) | **v1.47.0 (#832):** auth entry for marketing CTAs. **v1.48.0 (#834):** full-page inline sign-in / create-account (no modal). Marketing CTAs hard-navigate here (`?mode=signup` for create account). **v1.48.1:** app-shell splash CTAs also navigate here (no splash modals); `MarketingPageShell` Home hard-navigates to marketing `/`. **v1.48.2:** mid-page Get Started chooser removed — splash/marketing play CTAs go straight here. **v1.48.3 (#835):** branded `login/index.html` boot shell; form paints without Auth init on the critical path. **v1.48.4 (#850):** after form paint, warm Auth (+ parallel App Check); Google/`signInWithPopup` must not await App Check (Safari gesture). **v1.49.2 (#858):** warm starts **immediately** after paint; Continue with Google stays disabled until Auth + click-path modules are ready (brief “Preparing sign-in…”); ready click path invokes popup/redirect with no chunk awaits — standing rules in `docs/AUTH_BOOT_PRACTICES.md` (incl. rule 2b). **v1.49.3:** `login/index.html` paints a login auth-card skeleton (not dashboard bottom-tab chrome) while the SPA mounts. **v1.50.0 (#859):** Safari / iOS / in-app Google sign-in uses `signInWithRedirect` (desktop Chromium/Firefox keep popup; `auth/popup-blocked` → one-shot redirect). **v1.51.0 (#860):** marketing CTA intent prefetches `/login` UI assets (no Firebase execute on marketing `/`); login shell modulepreloads `firebase-core`; `auth_surface_timing.warm_path=intent` when prefetch contributed; Google continue chrome covers redirect blank gap. **v1.52.0 (#880):** after marketing first paint, idle speculative download of `/login` + login UI + `firebase-core` (still no `initializeApp` on marketing); `warm_path=speculative` when idle warm contributed without CTA intent; optional `auth_hop_timing` `{ phase: cta_to_form, value, intent, warm_path }`. **v1.53.0 (#881):** thin CSR `login.html` entry (form only after JS) — **retired in v1.53.1 (#890)** after Safari private hang. **v1.53.1 (#890):** restored `app.html` + branded shell. **v1.54.0 (#892 / #894 / epic #889 Phase 2):** **HTML-first auth door** — first document includes real form controls; `login.html` → auth-only `loginMain.jsx` hydrate (not dashboard `app-*.js` / react-query); Suspense fallback keeps form chrome; Terms/Privacy hard-nav; post-auth / unauth dashboard-setup hard-nav across documents. Compatibility: `signup=1` and `/?login=true` still resolve here. **v1.47.3 (#830):** unauthenticated `/dashboard/*` and `/setup` hard opens bounce here; outbound inventory in `docs/OUTBOUND_AUTH_HANDOFF.md`. Invite VIP (`/join`, `/invite`) keeps modal auth until #844. |
 | `/how-it-works` | None | How to play marketing page. **v1.32.0+ (#659):** served as prerendered `dist/how-it-works/index.html` when present. **v1.47.0:** marketing document. **v1.56.1 (#937):** show-night walkthrough (distinct from splash Game Format teaser). |
 | `/how-scoring-works` | None | Scoring rules marketing page. **v1.32.0+ (#659):** served as prerendered `dist/how-scoring-works/index.html` when present. **v1.47.0:** marketing document. **v1.58.0 (#944):** light editorial main + `ScoringRulesContent surface="light"` (in-app modal remains dark default). |
-| `/tour-stats` | None | **v1.33.0 (#665):** public aggregate tour song stats (filter + default Sphere). Prerendered shell; live data from `public_tour_stats`. Never full nightly setlists. **v1.47.1 (#827):** skeleton chrome + `PublicTourStatsPage` modulepreload. **v1.49.0 (#853):** boots the **marketing** document (no `AuthProvider`); App Check + Firestore load at fetch time only — restores cold-open feel after #835 login deferral regressed the app-shell path. **v1.60.0 (#929):** hub “current tour” blurb links to the live summer SEO slug; filter selection always uses slug URLs. **v1.62.0 (#869):** first meaningful stats prefer `/tour-stats-data/*.json` + Firestore REST (no App Check kick on marketing). |
-| `/tour-stats/:tourSlug` | None | **v1.33.0 (#665):** same surface for a kebab-case tour slug (e.g. `2026-sphere`). Default Sphere slug is also prerendered. **v1.49.0 (#853):** same marketing-document boot as `/tour-stats`. **v1.59.0 (#927/#928):** `2026-summer-tour` prerendered + sitemap/`llms.txt` (live calendar label **2026 Summer Tour**); crawler HTML includes aggregate bustout/frequency facts at build time. **v1.60.0 (#929):** fan-language H2s/intros on the public surface; selecting the current/default tour keeps the slug path (no collapse to `/tour-stats`). **v1.62.0 (#869):** same CDN/REST data plane as the hub. **v1.62.1 (#930):** `/llms.txt` restates unique / frequency / 30+ bustout definitions and deep-links this summer slug. **v1.63.0 (#959):** additional slugs auto-prerender (facts HTML + FAQ/ItemList, sitemap, `llms.txt`) when `public_tour_stats` meets the thin-page gate — no hand edit of `seoRoutes.js`. Gate: `showsWithSetlist ≥ 4` and `uniqueSongs ≥ 20` and `lastShowDate` in the current UTC year. Kill-switch / allowlist / denylist: `TOUR_STATS_SEO_AUTO_EXPAND`, `TOUR_STATS_SEO_ALLOWLIST`, `TOUR_STATS_SEO_DENYLIST`. Aggregates only; never full night setlists. No `/phish-picks`. |
+| `/tour-stats` | None | **v1.33.0 (#665):** public aggregate tour song stats (filter + default Sphere). Prerendered shell; live data from `public_tour_stats`. Never full nightly setlists. **v1.47.1 (#827):** skeleton chrome + `PublicTourStatsPage` modulepreload. **v1.49.0 (#853):** boots the **marketing** document (no `AuthProvider`); App Check + Firestore load at fetch time only — restores cold-open feel after #835 login deferral regressed the app-shell path. **v1.60.0 (#929):** hub “current tour” blurb links to the live summer SEO slug; filter selection always uses slug URLs. **v1.62.0 (#869):** first meaningful stats prefer `/tour-stats-data/*.json` + Firestore REST (no App Check kick on marketing). **v1.91.2 (#930):** build-time `dist/sitemap.xml` stamps `<lastmod>` on this hub from the newest prerendered slug `lastShowDate`. **v1.94.0 (#1139):** hub blurb also links to `/tour-stats/msg`. **v1.95.0 (#1141):** hub blurb also links to `/tour-stats/2026`. |
+| `/tour-stats/msg` | None | **v1.94.0 (#1139):** dedicated MSG Garden page (not a tour slug, not `PublicTourStatsPage`). Prerendered aggregates: played-show count, most-played songs, MSG debuts, longest visit gaps, bustouts, New Year's Eve counts, and set-1 opener frequencies. FAQ + ItemList JSON-LD, sitemap, `llms.txt`. On-page credit links to Phish.net. CTA is `/login?mode=signup`. Sitemap `<lastmod>` is the page's `lastShowDate` and is not folded into the `/tour-stats` hub max. Live numbers come from `public_venue_stats/msg` after that doc exists; until then the committed snapshot is the source. |
+| `/tour-stats/2026` | None | **v1.95.0 (#1141):** annual roll-up (not a tour slug, not `PublicTourStatsPage`). Shows, unique songs, most-played songs, and bustouts for every 2026 tour. A show counts for the calendar year of its date: December 30 and December 31, 2026 count here; January 1 and January 2, 2027 count for 2027. Show counts and song-row totals equal the sum of the included tour pages. Unique songs are the union. Links to `/dashboard/standings?view=year&year=2026` (#1110). Prerender, FAQ + ItemList JSON-LD, sitemap, `llms.txt`. Sitemap `<lastmod>` is this page's `lastShowDate` and is not folded into the `/tour-stats` hub max. Live numbers prefer `public_tour_stats/_year_2026` after the tour-stats refresh is deployed. Until then the page adds published tour docs whose dates all fall in 2026. **Deploy (human, before 2027-01-01, no rules change):** `firebase deploy --only functions:scheduledPublicTourStatsRefresh,functions:refreshPublicTourStats,functions:scheduledPhishnetShowCalendar,functions:refreshPhishnetShowCalendar --project set-picks`. Then an admin call to `refreshPublicTourStats` writes the year doc before the next 07:30 ET run. **Search Console (human, after `main` is READY):** property `sc-domain:setlistpickem.com`, URL Inspection, Request indexing on `https://www.setlistpickem.com/tour-stats/2026`. |
+| `/tour-stats/:tourSlug` | None | **v1.33.0 (#665):** same surface for a kebab-case tour slug (e.g. `2026-sphere`). Default Sphere slug is also prerendered. **v1.49.0 (#853):** same marketing-document boot as `/tour-stats`. **v1.59.0 (#927/#928):** `2026-summer-tour` prerendered + sitemap/`llms.txt` (live calendar label **2026 Summer Tour**); crawler HTML includes aggregate bustout/frequency facts at build time. **v1.60.0 (#929):** fan-language H2s/intros on the public surface; selecting the current/default tour keeps the slug path (no collapse to `/tour-stats`). **v1.62.0 (#869):** same CDN/REST data plane as the hub. **v1.62.1 (#930):** `/llms.txt` restates unique / frequency / 30+ bustout definitions and deep-links this summer slug. **v1.63.0 (#959):** additional slugs auto-prerender (facts HTML + FAQ/ItemList, sitemap, `llms.txt`) when `public_tour_stats` meets the thin-page gate — no hand edit of `seoRoutes.js`. Gate: `showsWithSetlist ≥ 4` and `uniqueSongs ≥ 20` and `lastShowDate` in the current UTC year. Kill-switch / allowlist / denylist: `TOUR_STATS_SEO_AUTO_EXPAND`, `TOUR_STATS_SEO_ALLOWLIST`, `TOUR_STATS_SEO_DENYLIST`. Aggregates only; never full night setlists. No `/phish-picks`. **v1.91.2 (#930):** each prerendered slug’s sitemap `<lastmod>` is that doc’s `lastShowDate` (not `writtenAt`). `/llms.txt` is not a sitemap URL. |
 | `/tour-stats-data/:docId.json` | None | **v1.62.0 (#869):** build-time JSON snapshot of `public_tour_stats/{docId}` (`_index` + each tour slug). Same-origin; `Cache-Control: public, max-age=300, stale-while-revalidate=86400`. Aggregates only — never full night setlists. Client revalidates via Firestore REST. |
+| `/embed/stats` | None (`?card=badge`, optional `?tour={slug}`) | **v1.97.0 (part of #1145):** frameable card for fan pages. Shows rank-1 handles and points from `public_tour_stats.tourWinners` when that field is present. Otherwise, or with `?card=badge`, a link card with no numbers. Firestore REST field mask is `tourSlug`, `tourLabel`, `tourWinners` (index read is `defaultTourSlug` only). No setlist, gap, bustout, play-count, most-played, or venue-count numbers. Credit is a normal link to `/` with `utm_source=embed` and `utm_campaign=seo_geo`. `noindex`. `robots.txt` disallows `/embed`. Not prerendered and not in the sitemap. Framing headers: `docs/SECURITY_HEADERS.md`. Copy embed is on public Tour Insights pages and dashboard Stats. |
+| `/embed` | None | **v1.97.0 (part of #1145):** redirects to `/embed/stats`. Same framing headers. |
 | `/phish-setlist-prediction-game` | None | **v1.34.0 (#660):** keyword-intent educational page for Phish setlist prediction game queries; prerendered HTML + FAQ JSON-LD. **v1.47.0:** marketing document. **v1.56.0 (#940):** tightened scannable definitional landing (epic #942). **v1.62.2 (#973):** title / description / FAQ bridge C6 (`phish setlist prediction`) and C7 (`phish picks`) on this same URL — no `/phish-picks` doorway. |
 | `/about` | None | **v1.56.0 (#941):** crawlable origin / brand narrative (extracted from splash About); prerendered marketing document. |
 | `/join/:code` | None | Pool invite deep link; optional `?from={handle}` for inviter personalization; VIP landing stores code and prompts auth (#580); personalized OG (#582) |
@@ -609,6 +737,9 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/password-reset-complete` | None | Password reset page. **v1.84.0 (#1049):** Resend mail links here with `oobCode`. The page calls `verifyPasswordResetCode` / `confirmPasswordReset`. Older Firebase `/__/auth/action` links still open until they expire. |
 | `/setup` | Auth | Profile setup (new users) |
 | `/dashboard/*` | Auth | Full game dashboard |
+| `/rewind` | None | **v1.96.0 (#1142):** public Rewind results for the featured week. Player count, average score, slot hit counts, Phish.net link. No setlist. `noindex` while `VITE_ENABLE_REWIND_MODE` is not `true`. Not prerendered and not in the sitemap. |
+| `/rewind/:weekId` | None | **v1.96.0 (#1142):** same page for one week id (`YYYY-MM-DD` open date). |
+| `/dashboard/rewind` | Auth | **v1.96.0 (#1142):** play the featured week. Picks tab stays active. Date picker hides. The Rewind segment is hidden unless `VITE_ENABLE_REWIND_MODE=true`. Coming-soon shell otherwise. |
 
 Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
@@ -624,11 +755,13 @@ Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
 **Pools tertiary (**v1.65.0 / #768**):** nested destinations under Pools — **`/dashboard/pools`** (My Pools), **`/dashboard/pools/create`** (Create Pool), **`/dashboard/pools/join`** (Join Pool). **`/dashboard/pool/:id`** (pool details) is unchanged; Pools primary stays active. Not `?view=`. Post-auth `/join/:code` with a pending invite lands on `/dashboard/pools/join`.
 
+**Standings year view (**v1.92.0 / #1110**):** `/dashboard/standings?view=year` is the global calendar-year board, beside `?view=show|tour|pools` (Show still omits `?view=`). Optional `?year=YYYY` remembers a year other than the newest selectable one. The year is the show's calendar date: a Dec 31 show stays in that year; a Jan 1 show is the next year. Rank, points, nightly wins, and shows played use the tour-standings rules scoped to that year's shows on or after game launch and on or before today. A points tie shares a rank. The date picker hides and a year picker shows. All-time standings are unchanged. A pool-scoped year view is not this surface. No new Firestore fields, callables, or indexes.
+
 **Standings Show — Crowd pulse (**v1.35.0 / #687**, productized **#694**, preview blur **v1.39.4**):** client-side aggregate of submitted picks for the selected `showDate`. While `showStatus === 'NEXT'`, preview **Song** + **Last** columns blur (pickers / gap stay clear); full deep stats (multi list / gaps / vintage / leaders) stay locked until showtime. **GA4 (client):** `crowd_pulse_view` `{ show_date, deep_stats: locked|open, pickers }`, `crowd_pulse_full_expand` `{ show_date }`, `crowd_pulse_section_open` `{ show_date, section }` where `section` is `top_songs` | `multi_picker` | `highest_gaps` | `vintage` | `leaders`.
 
 **Picks — Prediction Lab (**v1.38.0 / #651**, moved **v1.64.0 / #766**, add confirmation **v1.72.0**):** lives at **`/dashboard/picks/lab`**. Opt-in slot recommendations consuming Storage `pick-recommendations.json` (see §2.3). **Use** fills the shared cluster draft (same card as Make Picks) and does **not** persist — Lock In Picks / Update Picks still writes `picks/{showDate}_{uid}`. Lab shows a live Your card plus that save CTA when the draft is dirty. Manual autocomplete on Make Picks is unchanged. When `VITE_ENABLE_PREDICTION_LAB` is not `true`, the Lab route still renders (coming-soon shell) — the tertiary tab is not hidden. **GA4 (client):** `prediction_lab_open` `{ show_id, model_version }`, `prediction_lab_impression` `{ show_id, slot, model_version, risk_band, rank }`, `prediction_lab_select` `{ show_id, slot, model_version, risk_band, rank, song_normalized }`.
 
-**Field RUM — web-vitals (**v1.44.0 / #801**, route groups **v1.49.1 / #857**):** production hostnames only. Client emits GA4 `web_vital` for LCP, INP, CLS, TTFB, FCP after idle. Params: `{ metric_name, value, metric_id, metric_rating, route_group, navigation_type }` where `route_group` is `splash` \| `login` \| `marketing` \| `tour_stats` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` and `navigation_type` is `navigate` \| `reload` \| `back_forward` \| `prerender`. Ops: [`docs/WEB_VITALS_RUM.md`](WEB_VITALS_RUM.md).
+**Field RUM — web-vitals (**v1.44.0 / #801**, route groups **v1.49.1 / #857**):** production hostnames only. Client emits GA4 `web_vital` for LCP, INP, CLS, TTFB, FCP after idle. Params: `{ metric_name, value, metric_id, metric_rating, route_group, navigation_type }` where `route_group` is `splash` \| `login` \| `marketing` \| `tour_stats` \| `embed` \| `rewind` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` and `navigation_type` is `navigate` \| `reload` \| `back_forward` \| `prerender`. Ops: [`docs/WEB_VITALS_RUM.md`](WEB_VITALS_RUM.md).
 
 **Auth interaction timings (**v1.49.1 / #857**, hop **v1.52.0 / #880**):** production hostnames only (same `ga4Event` gate). `auth_surface_timing` `{ phase: paint_to_ready, value, route_group: login, warm_path, navigation_type }` once per `/login` warm (`warm_path`: `immediate` \| `idle` \| `intent` \| `speculative`). `auth_google_timing` `{ phase: click_to_popup \| credential_to_nav, value, method: google, auth_flow, outcome, error_code? }`. `auth_hop_timing` `{ phase: cta_to_form, value, intent: signin \| signup, warm_path, route_group: login }` when a marketing CTA stamped the hop. Ops: [`docs/AUTH_TELEMETRY_RUNBOOK.md`](AUTH_TELEMETRY_RUNBOOK.md) · plan [`docs/AUTH_SEAMLESS_PATH.md`](AUTH_SEAMLESS_PATH.md) §7.
 
@@ -650,7 +783,7 @@ Applied via `vercel.json` to all routes. Policy details: `docs/SECURITY_HEADERS.
 |--------|------|-------|
 | `X-Content-Type-Options` | Enforce | `nosniff` |
 | `Referrer-Policy` | Enforce | `strict-origin-when-cross-origin` |
-| `X-Frame-Options` | Enforce | `DENY` on listed app routes only; **omitted** on `/__/auth/*` and `/__/firebase/*` (Vercel does not honor negative-lookahead header sources) |
+| `X-Frame-Options` | Enforce | `DENY` on listed app routes only; **omitted** on `/__/auth/*`, `/__/firebase/*`, and `/embed` + `/embed/*` (the stats card is the only app route that may be framed). Vercel does not honor negative-lookahead header sources. |
 | `Permissions-Policy` | Enforce | camera/microphone/geolocation disabled |
 | `Content-Security-Policy-Report-Only` | Report-only | Flip to `Content-Security-Policy` after soak (promote-day) |
 
@@ -689,6 +822,21 @@ The profile link stays the long `utm_content=link-in-bio` URL. Local Vite does n
 
 **Tests:** `src/shared/config/socialShortLinks.test.js`.
 
+### 3.5 Inbox sender badge logo (`/bimi/logo.svg`)
+
+**v1.91.0 (#498).** Static SVG Tiny PS mark at `https://www.setlistpickem.com/bimi/logo.svg` (`public/bimi/logo.svg`). This is the BIMI `l=` logo for mail from `updates@setlistpickem.com`. It is not the in-body email image and it is not linked from email HTML.
+
+| Item | Value |
+|------|--------|
+| Path | `/bimi/logo.svg` |
+| Content-Type | `image/svg+xml` (`vercel.json` header on `/bimi/(.*)`) |
+| DNS name | `default._bimi.setlistpickem.com` |
+| TXT before a certificate | `v=BIMI1; l=https://www.setlistpickem.com/bimi/logo.svg;` |
+
+Helpers: `buildEmailInboxBadgeLogoUrl`, `buildBimiDnsHost`, `buildBimiTxtRecord` in `comms/emailBranding.cjs`. The logo URL is the `www` host because the apex 308s and BIMI will not follow that redirect. Removing or renaming this path is MAJOR. Publishing the TXT, and any VMC/CMC PEM, is DNS/registrar work outside this app.
+
+**Tests:** `comms/bimiLogo.test.js`.
+
 ---
 
 ## 4. Environment Variable Interface
@@ -711,6 +859,7 @@ These `VITE_*` variables are read at build time. Adding or removing one is a MIN
 | `VITE_PICK_RECOMMENDATIONS_URL` | No | CDN URL override for pick recommendations (#650) |
 | `VITE_ENABLE_SPONSOR_SLOTS` | No | `true` renders reserved sponsor/ad placements (`SponsorSlot`); omit to hide (default) |
 | `VITE_ENABLE_PREDICTION_LAB` | No | `true` renders Prediction Lab + loads pick-recommendations artifact on **`/dashboard/picks/lab`**. Omit to show the Lab coming-soon shell (default). The Lab tertiary segment stays visible either way (**v1.64.0 / #766**). Use on Preview/local for QA; leave unset in Production until launch |
+| `VITE_ENABLE_REWIND_MODE` | No | **v1.96.0 (#1142).** `true` shows the Rewind segment, the play card, and public `/rewind` results. Omit to keep the closed shell (default). Turning it on is a Vercel env change plus a rebuild. Do that after the §2.10 functions and rules deploy, and after an admin has cached the first week. |
 
 ### 4.1 Cloud Functions runtime env vars
 
@@ -766,6 +915,7 @@ Current rules version is not independently versioned — it is tied to the app r
 3. Open a PR to `staging`, merge, then promote `staging → main`.
 4. After the `main` merge: `git tag vX.Y.Z -m "Release X.Y.Z" && git push origin vX.Y.Z`.
 5. Update this document if any API surface changed.
+6. Publishing the GitHub Release runs `.github/workflows/close-shipped-issues.yml`. It closes issues referenced with `Closes` / `Fixes` / `Resolves` on the staging PRs in that promote, and comments `Shipped in <tag> (#<promote PR>) via #<source PR>`. `Part of` and other plain mentions stay open. Issues labeled `keep-open` stay open. To preview without closing: Actions → **Close shipped issues** → Run workflow, set `tag` to the release tag, leave `dry_run` checked. The job logs the list and comments it on the promote PR. Run the same workflow with `dry_run` unchecked to close again; a repeat run does not add a second comment. The workflow is active only after it is on `main`. Pre-release tags do not close issues.
 
 ---
 

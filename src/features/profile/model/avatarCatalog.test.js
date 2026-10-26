@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_AVATAR_ID,
   PROFILE_AVATARS,
+  explicitAvatarId,
   hasSelectedAvatar,
   normalizeAvatarId,
   resolveAvatar,
@@ -31,8 +32,20 @@ describe('avatarCatalog', () => {
 
   it('detects whether an avatar was explicitly selected', () => {
     expect(hasSelectedAvatar(undefined)).toBe(false);
+    expect(hasSelectedAvatar(null)).toBe(false);
     expect(hasSelectedAvatar('')).toBe(false);
     expect(hasSelectedAvatar('ticket')).toBe(true);
     expect(hasSelectedAvatar('nope')).toBe(false);
+  });
+
+  it('keeps an explicit catalog id and leaves unset values null (#643)', () => {
+    expect(explicitAvatarId(undefined)).toBeNull();
+    expect(explicitAvatarId(null)).toBeNull();
+    expect(explicitAvatarId('')).toBeNull();
+    expect(explicitAvatarId('not-a-real-avatar')).toBeNull();
+    expect(explicitAvatarId('ticket')).toBe('ticket');
+    expect(explicitAvatarId(' flame ')).toBe('flame');
+    expect(normalizeAvatarId(null)).toBe(DEFAULT_AVATAR_ID);
+    expect(resolveAvatar(null).id).toBe(DEFAULT_AVATAR_ID);
   });
 });

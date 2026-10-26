@@ -9,6 +9,7 @@ import {
   StandingsSponsorPreview,
   StandingsStickyChrome,
   StandingsTourView,
+  StandingsYearView,
   useStandingsScreen,
 } from '../../features/scoring';
 import {
@@ -85,6 +86,15 @@ export default function StandingsPage({ selectedDate, onSelectShowDate }) {
             loading={screen.tourLoading}
             error={screen.tourError}
             hasCurrentTour={Boolean(screen.selectedTour)}
+            selfUserId={screen.selfUserId}
+          />
+        ) : screen.view === 'year' ? (
+          <StandingsYearView
+            yearLabel={screen.selectedYear?.year}
+            leaders={screen.yearLeaders}
+            loading={screen.yearLoading}
+            error={screen.yearError}
+            hasYear={Boolean(screen.selectedYear)}
             selfUserId={screen.selfUserId}
           />
         ) : (

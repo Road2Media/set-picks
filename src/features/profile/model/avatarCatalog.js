@@ -26,26 +26,37 @@ export const PROFILE_AVATARS = Object.freeze([
 const AVATAR_BY_ID = new Map(PROFILE_AVATARS.map((a) => [a.id, a]));
 
 /**
+ * Catalog id when one was actually chosen. Missing, blank, and unknown
+ * values stay unset (`null`). Do not use this for display — `normalizeAvatarId`
+ * still falls back to `ticket` for public marks.
+ *
+ * @param {unknown} avatarId
+ * @returns {string | null}
+ */
+export function explicitAvatarId(avatarId) {
+  if (typeof avatarId !== 'string') return null;
+  const id = avatarId.trim();
+  return AVATAR_BY_ID.has(id) ? id : null;
+}
+
+/**
  * @param {unknown} avatarId
  * @returns {string}
  */
 export function normalizeAvatarId(avatarId) {
-  if (typeof avatarId !== 'string') return DEFAULT_AVATAR_ID;
-  const id = avatarId.trim();
-  return AVATAR_BY_ID.has(id) ? id : DEFAULT_AVATAR_ID;
+  return explicitAvatarId(avatarId) || DEFAULT_AVATAR_ID;
 }
 
 /**
  * True when the user has explicitly saved a catalog avatar id.
  * Missing/blank → empty (standings can show an “add” affordance for self).
+ * `ticket` counts — it is a real catalog choice, not the unset state.
  *
  * @param {unknown} avatarId
  * @returns {boolean}
  */
 export function hasSelectedAvatar(avatarId) {
-  if (typeof avatarId !== 'string') return false;
-  const id = avatarId.trim();
-  return AVATAR_BY_ID.has(id);
+  return explicitAvatarId(avatarId) != null;
 }
 
 /**

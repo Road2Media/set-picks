@@ -17,8 +17,8 @@ import StandingsViewToggle from './StandingsViewToggle';
  * portal content only.
  *
  * @param {{
- *   view: 'show' | 'tour' | 'pools',
- *   onChange: (next: 'show' | 'tour' | 'pools') => void,
+ *   view: 'show' | 'tour' | 'year' | 'pools',
+ *   onChange: (next: 'show' | 'tour' | 'year' | 'pools') => void,
  *   onOpenScoringRules: () => void,
  * }} props
  */
