@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.3] — 2026-11-06
+
+### Fixed
+- **Dependabot Monday sweep** — A normal Dependabot commit is authored by `dependabot[bot]` and committed by GitHub `web-flow` (`noreply@github.com`). The sweep treated that committer as a foreign rewrite and turned squash auto-merge off. Those commits stay eligible. A human or another bot as author or committer still turns auto-merge off. `rebase-strategy` stays disabled. No declared API change.
+
 ## [1.97.2] — 2026-11-06
 
 ### Added

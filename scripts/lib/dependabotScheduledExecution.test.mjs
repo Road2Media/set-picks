@@ -12,6 +12,7 @@ import {
   isDependabotCommit,
   planScheduledDependabotExecution,
   stuckCommentBody,
+  toCommitIdentity,
 } from "./dependabotScheduledExecution.mjs";
 import {
   applyScheduledPlan,
@@ -101,6 +102,116 @@ describe("dependabot scheduled execution plan", () => {
     assert.equal(isDependabotCommit(commit), true);
     const plan = planScheduledDependabotExecution(safeInput({ commits: [commit], autoMergeEnabled: true }));
     assert.equal(plan.reason, "t0-safe-group");
+  });
+
+  it("accepts a Dependabot commit whose committer is GitHub web-flow", () => {
+    const apiCommit = {
+      author: { login: "dependabot[bot]" },
+      committer: { login: "web-flow" },
+      commit: {
+        message: "chore(deps-dev): Bump the root-development-safe group",
+        author: {
+          name: "dependabot[bot]",
+          email: "49699333+dependabot[bot]@users.noreply.github.com",
+          date: isoDaysBefore(1),
+        },
+        committer: {
+          name: "GitHub",
+          email: "noreply@github.com",
+          date: isoDaysBefore(1),
+        },
+      },
+    };
+    const commit = toCommitIdentity(apiCommit);
+    assert.equal(commit.authorLogin, "dependabot[bot]");
+    assert.equal(commit.committerLogin, "web-flow");
+    assert.equal(commit.committerEmail, "noreply@github.com");
+    assert.equal(isDependabotCommit(commit), true);
+
+    const emailOnly = {
+      authorLogin: "dependabot[bot]",
+      committerLogin: "",
+      authorEmail: "49699333+dependabot[bot]@users.noreply.github.com",
+      committerEmail: "noreply@github.com",
+      committedAt: isoDaysBefore(1),
+    };
+    assert.equal(isDependabotCommit(emailOnly), true);
+
+    const enable = planScheduledDependabotExecution(
+      safeInput({ commits: [commit], autoMergeEnabled: false, labels: ["dependencies"] }),
+    );
+    assert.equal(enable.reason, "t0-safe-group");
+    assert.ok(types(enable).includes("enable-automerge"));
+    assert.equal(types(enable).includes("disable-automerge"), false);
+
+    const keep = planScheduledDependabotExecution(
+      safeInput({ commits: [commit], autoMergeEnabled: true }),
+    );
+    assert.equal(keep.reason, "t0-safe-group");
+    assert.equal(types(keep).includes("disable-automerge"), false);
+  });
+
+  it("revokes auto-merge when a foreign author or committer rewrote the branch", () => {
+    const humanCommitter = {
+      authorLogin: "dependabot[bot]",
+      committerLogin: "pat792",
+      authorEmail: "49699333+dependabot[bot]@users.noreply.github.com",
+      committerEmail: "pat792@users.noreply.github.com",
+      committedAt: isoDaysBefore(1),
+    };
+    const spoofedWebFlowEmail = {
+      ...humanCommitter,
+      committerEmail: "noreply@github.com",
+    };
+    const webUiEdit = {
+      authorLogin: "pat792",
+      committerLogin: "web-flow",
+      authorEmail: "pat792@users.noreply.github.com",
+      committerEmail: "noreply@github.com",
+      committedAt: isoDaysBefore(1),
+    };
+    const actionsCommitter = {
+      authorLogin: "dependabot[bot]",
+      committerLogin: "github-actions[bot]",
+      authorEmail: "49699333+dependabot[bot]@users.noreply.github.com",
+      committerEmail: "41898282+github-actions[bot]@users.noreply.github.com",
+      committedAt: isoDaysBefore(1),
+    };
+    const missingCommitter = {
+      authorLogin: "dependabot[bot]",
+      committerLogin: "",
+      authorEmail: "49699333+dependabot[bot]@users.noreply.github.com",
+      committerEmail: "",
+      committedAt: isoDaysBefore(1),
+    };
+    for (const commit of [humanCommitter, spoofedWebFlowEmail, webUiEdit, actionsCommitter, missingCommitter]) {
+      assert.equal(isDependabotCommit(commit), false, JSON.stringify(commit));
+    }
+
+    const revoke = planScheduledDependabotExecution(
+      safeInput({ commits: [humanCommitter], autoMergeEnabled: true }),
+    );
+    assert.equal(revoke.reason, "non-dependabot-commit");
+    assert.deepEqual(types(revoke), ["disable-automerge"]);
+    assert.equal(revoke.actions[0].reason, "non-dependabot-commit");
+
+    const mixed = planScheduledDependabotExecution(
+      safeInput({
+        commits: [
+          {
+            authorLogin: "dependabot[bot]",
+            committerLogin: "web-flow",
+            authorEmail: "49699333+dependabot[bot]@users.noreply.github.com",
+            committerEmail: "noreply@github.com",
+            committedAt: isoDaysBefore(2),
+          },
+          actionsCommitter,
+        ],
+        autoMergeEnabled: true,
+      }),
+    );
+    assert.equal(mixed.reason, "non-dependabot-commit");
+    assert.deepEqual(types(mixed), ["disable-automerge"]);
   });
 
   it("enables a major and actions-all, and skips a non-staging base or a human author", () => {
