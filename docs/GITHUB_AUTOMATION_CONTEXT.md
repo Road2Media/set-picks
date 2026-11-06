@@ -15,6 +15,7 @@
   - **`cursor-authored`** — treat as human/agent final copy; skip Action and groom rewrites.
   - **`skip-groom`** — skip **backlog groom** only (script `groom-backlog.js`).
   - **`AI-PRD`** — already groomed; groom script skips by convention.
+- **Queue and release labels** (`agent-queue`, `needs-human`, `allow-global`, `auto-merge-ok`, priorities): meanings and the ship / promote rule are in **`RELEASING.md`**. Do not invent a second definition in a PRD.
 
 ---
 

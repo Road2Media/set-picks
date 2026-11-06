@@ -98,9 +98,11 @@ npm test                        # Vitest (src/**/*.test.js)
 npm run verify:dashboard-meta   # Dashboard route ↔ meta consistency
 npm run verify:dashboard-ui     # Banned legacy Tailwind token scan
 npm run test:shipped-issue-close # Promote close-issue collector (#1149, #1174)
+npm run test:factory-guardrails  # scope-guard, label integrity, smoke, publish plan (#1162)
 ```
 
 `test:shipped-issue-close` is part of the `verify` job (2026-10-22).
+`test:factory-guardrails` is part of `verify` (2026-11-06, #1162). `scope-guard` and `label-integrity` are separate pull-request workflows. Release and smoke rules are in `RELEASING.md`.
 
 `ci-gate` always reports (#1148, 2026-10-22). `build`, `functions`, and `rules` still skip when their paths did not change. The gate fails only when one of those jobs, or `verify`, failed. Dependabot policy tests are `npm run test:dependabot-auto-merge`.
 
@@ -231,7 +233,7 @@ subset with the `deploy:functions:*` script in `package.json`.
 |---------|------|
 | `npm run release:gate` | Before tag/release; mirrors CI SemVer check |
 | `npm run release:gate:full` | Gate + full verify matrix |
-| `npm run release:publish -- --confirm` | Tag + GitHub Release (**user must request**) |
+| `npm run release:publish -- --confirm` | Tag + GitHub Release after Patrick says ship or promote to prod. Idempotent. `RELEASING.md` |
 | `npm run comms:deploy:validate` | After editing comms exports or `commsDeployManifest.js` |
 | `npm run comms:deploy:list` | Inspect dynamic deploy targets (6+N adapters) |
 | `npm run comms:deploy -- --confirm --group eventAdapters` | Deploy adapter cron/Firestore exports only |
