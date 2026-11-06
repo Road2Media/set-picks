@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.4] — 2026-11-06
+
+### Changed
+- **svix 2 in Cloud Functions (#1205, supersedes #1203)** — `functions` depends on `svix` 2.9.1. Resend webhook verification still accepts `whsec_` secrets and still returns the parsed event. svix 2 checks the signature and no longer JSON-parses the body, so the handler parses the raw payload after a successful check. The functions lockfile now includes the `firebase-functions-test` tree `npm ci` expects, which is what failed on Dependabot #1203. No declared API change.
+
 ## [1.97.3] — 2026-11-06
 
 ### Fixed
