@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.2] — 2026-11-06
+
+### Added
+- **Factory guardrails and release (#1162)** — Pull requests run `scope-guard` and `label-integrity` beside `verify`. Vercel stays its own check. `staging` promotes to `main` only when Patrick says ship or promote to prod. Publishing the GitHub Release is idempotent and uses `SYNC_BOT_TOKEN` when that Actions secret is set. `staging-smoke` and `production-smoke` sign in with the existing QA login secrets. Staging smoke sends `VERCEL_AUTOMATION_BYPASS_SECRET` only when it is set, because the staging preview is behind Vercel Deployment Protection. Agent queue labels and the release rule are in `RELEASING.md`. No declared API change.
+
 ## [1.97.1] — 2026-10-25
 
 ### Fixed

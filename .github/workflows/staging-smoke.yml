@@ -1,0 +1,48 @@
+# Smoke the staging branch alias after it updates (#1162).
+# Deployment Protection on set-picks-git-*.vercel.app returns SSO unless
+# VERCEL_AUTOMATION_BYPASS_SECRET is set. The script sends no bypass header
+# when that secret is empty. This job is not a required check.
+
+name: staging-smoke
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  staging-smoke:
+    name: staging-smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SMOKE_PROTECTION_BYPASS: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      QA_TEST_EMAIL: ${{ secrets.QA_TEST_EMAIL }}
+      QA_TEST_PASSWORD: ${{ secrets.QA_TEST_PASSWORD }}
+      QA_APPCHECK_DEBUG_TOKEN: ${{ secrets.QA_APPCHECK_DEBUG_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Staging smoke
+        run: node scripts/smoke-deploy.mjs --target staging

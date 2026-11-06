@@ -5,22 +5,24 @@ alwaysApply: true
 
 # Promote → tag / release (required)
 
-When an agent **merges or completes a promote** (`staging` → `main`, typically `promote/X.Y.Z`), they **MUST** publish the SemVer release on `main` in the same turn — do **not** wait for a separate “tag it” request.
+`staging` promotes to `main` only when Patrick says **ship** or **promote to prod**. Agents do not merge that pull request, tag, or publish a GitHub Release before that. The release pull request is `staging` → `main`. See `RELEASING.md`.
+
+When an agent **merges or completes that promote**, they **MUST** publish the SemVer release on `main` in the same turn — do **not** wait for a separate “tag it” request. `.github/workflows/release-publish.yml` runs the same command on the push to `main`. It is idempotent: a second run does not create another tag.
 
 ```bash
 git checkout main && git pull origin main
 npm run release:publish -- --confirm
 ```
 
-That runs release-gate → annotated tag `vX.Y.Z` → push tag → `gh release create` (notes from `CHANGELOG.md`).
+That runs release-gate → annotated tag `vX.Y.Z` → push tag → `gh release create` (notes from `CHANGELOG.md`). In Actions, tag push and release create use `SYNC_BOT_TOKEN` when that secret is set, so `close-shipped-issues` can start. Do not invent or print the token.
 
 ## Guards
 
 - Tag **only** on `main` after the promote merge lands (never mid-train, never on feature/`staging`-only tips).
-- Skip if `package.json` version already matches the latest GitHub Release tag (gate will fail — do not force).
-- Dependabot-only promotes with `skip-version-bump` and no version change: do not invent a tag.
+- If the GitHub Release for this version already exists, stop. The publish command exits 0. Do not force a second tag.
+- Skip a Dependabot-only promote with `skip-version-bump` and no version change: do not invent a tag. The publish command no-ops when that version is already released.
 - Never retag or move an existing `vX.Y.Z`; ship a new version instead.
-- Sync `staging` to `main` after promote when that is already part of the promote workflow.
+- After publish, `release-sync-staging` opens `release-sync/vX.Y.Z` into `staging` when `SYNC_BOT_TOKEN` is set. That sync is not a second promote.
 
 ## Closing issues
 
@@ -35,4 +37,4 @@ GitHub applies `Closes` / `Fixes` / `Resolves` when a pull request merges into t
 
 ## Related
 
-- `.cursorrules` §10 (SemVer) · `.cursor/rules/versioning.mdc` · `npm run release:gate` · `docs/API.md` §7
+- `.cursorrules` §10 (SemVer) · `.cursor/rules/versioning.mdc` · `RELEASING.md` · `npm run release:gate` · `docs/API.md` §7

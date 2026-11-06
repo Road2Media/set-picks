@@ -1,0 +1,39 @@
+# Label integrity (#1162). An agent cannot apply auto-merge-ok after
+# needs-human. A human repo admin can. Pull requests only.
+
+name: label-integrity
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: label-integrity-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label-integrity:
+    name: label-integrity
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Label integrity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/label-integrity.mjs

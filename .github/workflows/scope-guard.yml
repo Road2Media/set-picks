@@ -1,0 +1,36 @@
+# Pull-request scope guard (#1162). Reads the diff and the labels.
+# Not a push check: a push has no pull-request labels.
+# Required on staging and main only after this job has reported. This
+# workflow does not change branch protection.
+
+name: scope-guard
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: scope-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scope-guard:
+    name: scope-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Scope guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/scope-guard.mjs
