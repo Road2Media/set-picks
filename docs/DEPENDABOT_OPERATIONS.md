@@ -71,7 +71,7 @@ What it enables:
 
 - Author and actor are `dependabot[bot]`.
 - Base branch is `staging`.
-- `dependabot/fetch-metadata` succeeds, so every commit on the PR is Dependabot's. If that lookup fails, auto-merge stays off and the workflow comments. The branch name alone is not enough.
+- `dependabot/fetch-metadata` succeeds, so every commit on the PR is Dependabot's. If that lookup fails, auto-merge stays off and the workflow comments. The branch name alone is not enough. The action is pinned to **v3** (#1199). v3 runs on the Node 24 Actions runtime. Inputs and outputs match v2. `alert-lookup` stays off.
 - Minor, patch, major, security, and `actions-all` are all enabled. GitHub waits for the required checks. A red check does not merge.
 - A visitor-facing package gets `ui-check` before auto-merge is enabled.
 

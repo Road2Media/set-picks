@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.5] — 2026-11-06
+
+### Changed
+- **dependabot/fetch-metadata v3 (#1199)** — The auto-merge workflow uses `dependabot/fetch-metadata@v3`, which runs on the Node 24 Actions runtime. Inputs and outputs match v2, and `alert-lookup` stays off. The contract test pins v3. This replaces Dependabot #1198, whose `verify` job failed on the v2 pin. The other names on that issue (`qs`, `hono`, `@modelcontextprotocol/sdk`, `@hono/node-server`, `minimatch`, `actions/create-github-app-token`, `flatted`, `picomatch`, `actions/publish-immutable-action`, `actions/checkout`, `actions/setup-node`, `globals`) are bumps inside the fetch-metadata changelog, not packages in this repo. `rebase-strategy` stays disabled. No declared API change.
+
 ## [1.97.4] — 2026-11-06
 
 ### Changed
