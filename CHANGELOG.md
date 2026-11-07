@@ -8,6 +8,26 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.97.5] — 2026-11-06
+
+### Changed
+- **dependabot/fetch-metadata v3 (#1199)** — The auto-merge workflow uses `dependabot/fetch-metadata@v3`, which runs on the Node 24 Actions runtime. Inputs and outputs match v2, and `alert-lookup` stays off. The contract test pins v3. This replaces Dependabot #1198, whose `verify` job failed on the v2 pin. The other names on that issue (`qs`, `hono`, `@modelcontextprotocol/sdk`, `@hono/node-server`, `minimatch`, `actions/create-github-app-token`, `flatted`, `picomatch`, `actions/publish-immutable-action`, `actions/checkout`, `actions/setup-node`, `globals`) are bumps inside the fetch-metadata changelog, not packages in this repo. `rebase-strategy` stays disabled. No declared API change.
+
+## [1.97.4] — 2026-11-06
+
+### Changed
+- **svix 2 in Cloud Functions (#1205, supersedes #1203)** — `functions` depends on `svix` 2.9.1. Resend webhook verification still accepts `whsec_` secrets and still returns the parsed event. svix 2 checks the signature and no longer JSON-parses the body, so the handler parses the raw payload after a successful check. The functions lockfile now includes the `firebase-functions-test` tree `npm ci` expects, which is what failed on Dependabot #1203. No declared API change.
+
+## [1.97.3] — 2026-11-06
+
+### Fixed
+- **Dependabot Monday sweep** — A normal Dependabot commit is authored by `dependabot[bot]` and committed by GitHub `web-flow` (`noreply@github.com`). The sweep treated that committer as a foreign rewrite and turned squash auto-merge off. Those commits stay eligible. A human or another bot as author or committer still turns auto-merge off. `rebase-strategy` stays disabled. No declared API change.
+
+## [1.97.2] — 2026-11-06
+
+### Added
+- **Factory guardrails and release (#1162)** — Pull requests run `scope-guard` and `label-integrity` beside `verify`. Vercel stays its own check. `staging` promotes to `main` only when Patrick says ship or promote to prod. Publishing the GitHub Release is idempotent and uses `SYNC_BOT_TOKEN` when that Actions secret is set. `staging-smoke` and `production-smoke` sign in with the existing QA login secrets. Staging smoke sends `VERCEL_AUTOMATION_BYPASS_SECRET` only when it is set, because the staging preview is behind Vercel Deployment Protection. Agent queue labels and the release rule are in `RELEASING.md`. No declared API change.
+
 ## [1.97.1] — 2026-10-25
 
 ### Fixed

@@ -12,11 +12,13 @@
 # Checkout stays on that default branch. Do not checkout the PR head and
 # do not run PR code: the token can write.
 #
-# `dependabot/fetch-metadata` `alert-lookup` is left off. That input needs a
-# personal access token, and this repo does not add one. Security updates are
-# still auto-merged: they are Dependabot pull requests, they are not grouped
-# into the Monday version-update batch, and this workflow enables auto-merge
-# for every Dependabot author.
+# `dependabot/fetch-metadata` is pinned to v3 (#1199, replaces Dependabot
+# #1198). v3 runs on the Node 24 Actions runtime. Inputs and outputs match v2.
+# `alert-lookup` stays off. That input needs a personal access token, and this
+# repo does not add one. Security updates are still auto-merged: they are
+# Dependabot pull requests, they are not grouped into the Monday
+# version-update batch, and this workflow enables auto-merge for every
+# Dependabot author.
 
 name: Dependabot auto-merge
 
@@ -46,7 +48,7 @@ jobs:
       - name: Dependabot metadata
         id: metadata
         continue-on-error: true
-        uses: dependabot/fetch-metadata@v2
+        uses: dependabot/fetch-metadata@v3
         with:
           github-token: ${{ github.token }}
 

@@ -5,10 +5,25 @@ const assert = require("node:assert/strict");
 
 require("./commsEmailTags.test.js");
 
+const { Webhook } = require("svix");
 const {
   handleResendWebhookEvent,
   extractRecipientEmails,
+  verifyResendWebhookPayload,
 } = require("./commsResendWebhook");
+
+const webhookSecret =
+  "whsec_" + Buffer.from("test-secret-key-32bytes-pad!!").toString("base64");
+
+function signedResendHeaders(rawBody, { id = "msg_svix_2", secret = webhookSecret } = {}) {
+  const timestamp = new Date();
+  const signature = new Webhook(secret).sign(id, timestamp, rawBody);
+  return {
+    "svix-id": id,
+    "svix-timestamp": String(Math.floor(timestamp.getTime() / 1000)),
+    "svix-signature": signature,
+  };
+}
 
 function fakeDb() {
   const docs = new Map();
@@ -267,6 +282,38 @@ test("open without tags falls back to a unique user email match", async () => {
   assert.equal(result.applied, true);
   assert.equal(result.uid, "legacy_uid");
   assert.equal(db._docs.get("comms_email_engagement/re_legacy").uid, "legacy_uid");
+});
+
+test("verifyResendWebhookPayload returns the parsed event after svix 2 verification", () => {
+  const event = {
+    type: "email.opened",
+    data: { email_id: "re_1", to: ["fan@example.com"] },
+  };
+  const rawBody = JSON.stringify(event);
+  const parsed = verifyResendWebhookPayload(rawBody, signedResendHeaders(rawBody), webhookSecret);
+  assert.deepEqual(parsed, event);
+});
+
+test("verifyResendWebhookPayload rejects a bad signature", () => {
+  const rawBody = JSON.stringify({ type: "email.opened", data: { email_id: "re_bad" } });
+  assert.throws(() =>
+    verifyResendWebhookPayload(
+      rawBody,
+      {
+        "svix-id": "msg_bad",
+        "svix-timestamp": String(Math.floor(Date.now() / 1000)),
+        "svix-signature": "v1,not-a-real-signature",
+      },
+      webhookSecret
+    )
+  );
+});
+
+test("verifyResendWebhookPayload rejects a missing secret", () => {
+  assert.throws(
+    () => verifyResendWebhookPayload("{}", { "svix-id": "msg" }, ""),
+    /missing_webhook_secret/
+  );
 });
 
 test("engagement event without email_id is ignored", async () => {

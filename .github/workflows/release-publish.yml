@@ -1,0 +1,54 @@
+# Idempotent publish after a promote lands on main (#1162).
+#
+# Patrick says "ship" or "promote to prod" before the release pull request
+# merges. This workflow then tags and publishes if that version is not
+# already a GitHub Release. A second run does not create another tag.
+#
+# Checkout uses the job token with persist-credentials: false. Tag push,
+# release create, and the staging sync use SYNC_BOT_TOKEN so the release
+# event can start close-shipped-issues, and so git does not send two
+# Authorization headers. This file does nothing until it is on main.
+# It does not change branch protection or secrets.
+
+name: release-publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: release-publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+
+      - name: Publish the GitHub Release if it is not up yet
+        env:
+          SYNC_BOT_TOKEN: ${{ secrets.SYNC_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/release-publish.mjs --confirm
+
+      - name: Sync main back to a staging pull request
+        env:
+          SYNC_BOT_TOKEN: ${{ secrets.SYNC_BOT_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/release-sync-staging.mjs

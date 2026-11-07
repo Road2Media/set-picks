@@ -272,7 +272,8 @@ describe("dependabot auto-merge repo contract", () => {
     assert.match(yml, /branches:\s*\[staging\]/);
     assert.match(yml, /gh pr merge "\$PR_NUMBER" --repo "\$GH_REPO" --auto --squash/);
     assert.match(yml, /--disable-auto/);
-    assert.match(yml, /dependabot\/fetch-metadata@v2/);
+    assert.match(yml, /dependabot\/fetch-metadata@v3/);
+    assert.doesNotMatch(yml, /dependabot\/fetch-metadata@v2/);
     assert.match(yml, /--add-label ui-check/);
     assert.match(yml, /dependabot-open-major-migration\.mjs/);
     assert.match(yml, /dependabot-t0-automerge-failure/);

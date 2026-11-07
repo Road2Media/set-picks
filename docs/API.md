@@ -912,8 +912,8 @@ Current rules version is not independently versioned — it is tied to the app r
 
 1. Bump `version` in `package.json` per the table above.
 2. Add an entry to `CHANGELOG.md` under `## [X.Y.Z] — YYYY-MM-DD`.
-3. Open a PR to `staging`, merge, then promote `staging → main`.
-4. After the `main` merge: `git tag vX.Y.Z -m "Release X.Y.Z" && git push origin vX.Y.Z`.
+3. Open a PR to `staging` and merge it. Promote `staging` → `main` only when Patrick says **ship** or **promote to prod** (`RELEASING.md`).
+4. After that `main` merge, publish. `.github/workflows/release-publish.yml` runs `npm run release:publish -- --confirm` (release gate, annotated tag `vX.Y.Z`, GitHub Release). A second run exits 0 and does not create another tag. `SYNC_BOT_TOKEN` is the Actions secret used for the tag push and the Release when it is set. Do not move an existing tag.
 5. Update this document if any API surface changed.
 6. Publishing the GitHub Release runs `.github/workflows/close-shipped-issues.yml`. It closes issues referenced with `Closes` / `Fixes` / `Resolves` on the staging PRs in that promote, and comments `Shipped in <tag> (#<promote PR>) via #<source PR>`. `Part of` and other plain mentions stay open. Issues labeled `keep-open` stay open. To preview without closing: Actions → **Close shipped issues** → Run workflow, set `tag` to the release tag, leave `dry_run` checked. The job logs the list and comments it on the promote PR. Run the same workflow with `dry_run` unchecked to close again; a repeat run does not add a second comment. The workflow is active only after it is on `main`. Pre-release tags do not close issues.
 
