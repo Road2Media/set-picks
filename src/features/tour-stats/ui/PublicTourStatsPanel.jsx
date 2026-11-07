@@ -52,15 +52,17 @@ export default function PublicTourStatsPanel({
     : SUMMER_TOUR_SEO_PATH;
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-      <header className="mb-5 space-y-2 text-center sm:text-left">
+    <div className="mx-auto w-full max-w-3xl px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
+      <header className="mb-3 space-y-1.5 text-center sm:space-y-2 sm:text-left">
         <p className="text-[10px] font-black uppercase tracking-widest text-teal-400">
           Tour stats
         </p>
-        <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
+        <h1 className="font-display text-xl font-bold leading-tight text-white sm:text-4xl">
           {h1}
         </h1>
-        <p className="text-base leading-snug text-slate-300">
+        <p
+          className={`text-sm leading-snug text-slate-300 sm:text-base ${wrap ? 'hidden sm:block' : ''}`}
+        >
           {wrap ? FINISHED_TOUR_LEDE : LIVE_TOUR_LEDE}
         </p>
         {isHub ? (
@@ -82,10 +84,9 @@ export default function PublicTourStatsPanel({
         ) : null}
       </header>
 
-      <TourWrapBlock wrap={wrap} />
-
-      {tours.length > 0 ? (
-        <label className="mb-6 flex flex-col gap-2 sm:max-w-xs">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        {tours.length > 0 ? (
+          <label className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-xs">
           <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
             Tour filter
           </span>
@@ -95,7 +96,8 @@ export default function PublicTourStatsPanel({
           */}
           <div className="relative">
             <select
-              className="w-full cursor-pointer appearance-none rounded-xl border-2 border-teal-400 bg-brand-bg-deep py-2.5 pl-3 pr-10 text-sm font-semibold text-white outline-none transition-colors focus-visible:border-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
+              id="tour-stats-filter"
+              className="w-full cursor-pointer appearance-none rounded-xl border-2 border-teal-400 bg-brand-bg-deep py-2 pl-3 pr-10 text-sm font-semibold text-white outline-none transition-colors focus-visible:border-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
               value={activeSlug}
               onChange={(e) => onSelectTour(e.target.value)}
               disabled={indexLoading}
@@ -123,13 +125,24 @@ export default function PublicTourStatsPanel({
               </svg>
             </span>
           </div>
-        </label>
-      ) : indexLoading ? (
-        <div
-          className="mb-6 h-[4.25rem] animate-pulse rounded-xl border border-white/10 bg-white/5 sm:max-w-xs"
-          aria-hidden
-        />
-      ) : null}
+          </label>
+        ) : indexLoading ? (
+          <div
+            className="h-14 flex-1 animate-pulse rounded-xl border border-white/10 bg-white/5 sm:max-w-xs"
+            aria-hidden
+          />
+        ) : (
+          <span />
+        )}
+        <a
+          href="#tour-stats-start"
+          className={`${LINK_ON_DARK} mb-2 shrink-0 text-sm font-semibold`}
+        >
+          Stats
+        </a>
+      </div>
+
+      <TourWrapBlock wrap={wrap} />
 
       {error ? (
         <p className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
@@ -137,19 +150,21 @@ export default function PublicTourStatsPanel({
         </p>
       ) : null}
 
-      <TourStatsView
-        tourName={tourName}
-        hasTour={hasTour}
-        calendarLoading={indexLoading}
-        setlistLoading={statsLoading}
-        setlistError={error}
-        stats={stats}
-        setlistReads={0}
-        overlay={null}
-        overlayLoading={false}
-        showSelfOverlay={false}
-        surface="public"
-      />
+      <div id="tour-stats-start" className="scroll-mt-28">
+        <TourStatsView
+          tourName={tourName}
+          hasTour={hasTour}
+          calendarLoading={indexLoading}
+          setlistLoading={statsLoading}
+          setlistError={error}
+          stats={stats}
+          setlistReads={0}
+          overlay={null}
+          overlayLoading={false}
+          showSelfOverlay={false}
+          surface="public"
+        />
+      </div>
 
       <StatsEmbedShareRow tourSlug={activeSlug} />
 

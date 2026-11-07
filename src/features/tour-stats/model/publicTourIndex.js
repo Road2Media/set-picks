@@ -42,6 +42,27 @@ export function sortPublicTourIndex(tours) {
 }
 
 /**
+ * Not a tour. Phish at MSG is `/phish-at-msg` (#1192) and must stay out of
+ * this switcher even if a stale index row names the slug.
+ */
+export const PUBLIC_TOUR_SWITCHER_EXCLUDED_SLUGS = new Set(['msg']);
+
+/**
+ * Tours the public `<select>` may offer. Drops MSG, year rollups, and the
+ * index doc. Order matches `sortPublicTourIndex`.
+ *
+ * @param {Array<{ tourSlug?: string, tourLabel?: string, lastShowDate?: string | null }>} tours
+ * @returns {Array<{ tourSlug: string, tourLabel?: string, lastShowDate?: string | null }>}
+ */
+export function toursForPublicSwitcher(tours) {
+  return sortPublicTourIndex(tours).filter((tour) => {
+    const slug = String(tour.tourSlug || '').trim().toLowerCase();
+    if (!slug || slug.startsWith('_')) return false;
+    return !PUBLIC_TOUR_SWITCHER_EXCLUDED_SLUGS.has(slug);
+  });
+}
+
+/**
  * Current / most-recent tour for the public filter default.
  * Prefers newest `lastShowDate`; falls back to `preferredSlug` only when dates
  * are missing and that slug is in the list.
@@ -51,7 +72,7 @@ export function sortPublicTourIndex(tours) {
  * @returns {string}
  */
 export function resolveDefaultPublicTourSlug(tours, preferredSlug = '') {
-  const sorted = sortPublicTourIndex(tours);
+  const sorted = toursForPublicSwitcher(tours);
   if (sorted.length === 0) return '';
 
   const hasAnyDate = sorted.some(

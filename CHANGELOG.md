@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.98.1] — 2026-11-07
+
+### Changed
+- **Finished-tour wrap (#1193)** — A tie for most played names the whole tie. 2026 Fall Tour reads “22 songs played on two nights, including Possum, Mike's Song, Chalk Dust Torture.” A second sentence calls out Tweezer's 5 plays across those two nights. One song is named only when nothing else shares that night count. The same line is on the card, in the prerender HTML, in the share text, and on the share image. The card uses the preview's four headline counts and keeps bustouts and the longest gap in view. Scoring, the winner, and the Phish.net credit sit under More. The tour control stays a filter. Choosing a tour still opens `/tour-stats/{slug}`. Phish at MSG stays off that filter.
+
+### Fixed
+- **Tour wrap height (#1193)** — The filter sits above the wrap, with a Stats jump to the dates bar, so the filter and the start of the stats fit on an iPhone-sized and an Android-sized first screen when a finished tour shows the wrap.
+
 ## [1.98.0] — 2026-11-07
 
 ### Added

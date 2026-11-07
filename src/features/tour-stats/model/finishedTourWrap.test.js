@@ -12,6 +12,7 @@ import {
   pacificTodayIso,
   readPublicTourWinners,
 } from './finishedTourWrap';
+import { TOUR_WRAP_COLORS } from './tourWrapTokens';
 
 const require = createRequire(import.meta.url);
 const { isFinishedPublicTour: serverIsFinished } = require(
@@ -19,6 +20,54 @@ const { isFinishedPublicTour: serverIsFinished } = require(
 );
 
 const TODAY = '2026-10-22';
+
+/**
+ * 2026 Fall Tour songs at 2 nights, in the live snapshot's stored order
+ * (`/tour-stats-data/2026-fall-tour.json`, 8 shows). Tweezer is 5 plays
+ * and is not in the all-time top 3.
+ */
+const FALL_2026_TWO_NIGHTS = [
+  ['Possum', 2, 585],
+  ["Mike's Song", 2, 550],
+  ['Chalk Dust Torture', 2, 530],
+  ['Weekapaug Groove', 2, 524],
+  ['Run Like an Antelope', 2, 498],
+  ['Harry Hood', 2, 446],
+  ['Tweezer', 5, 421],
+  ['Tweezer Reprise', 2, 335],
+  ['Down with Disease', 2, 329],
+  ['Slave to the Traffic Light', 2, 301],
+  ['Character Zero', 2, 270],
+  ["Wolfman's Brother", 2, 256],
+  ['Free', 2, 245],
+  ['Ghost', 2, 239],
+  ['Sand', 2, 169],
+  ['Carini', 2, 163],
+  ['Backwards Down the Number Line', 2, 154],
+  ['Fuego', 2, 105],
+  ['Blaze On', 2, 102],
+  ['Sleeping Monkey', 2, 98],
+  ["No Men In No Man's Land", 2, 93],
+  ["Everything's Right", 2, 79],
+].map(([title, timesPlayed, lifetimePlays]) => ({
+  title,
+  showAppearances: 2,
+  timesPlayed,
+  lifetimePlays,
+}));
+
+const FALL_2026_MOST_PLAYED =
+  "Most played: 22 songs played on two nights, including Possum, Mike's Song, Chalk Dust Torture. Tweezer was played 5 times across those two nights.";
+
+function svgText(svg) {
+  return svg
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 function finishedDoc(overrides = {}) {
   return {
@@ -99,6 +148,19 @@ describe('buildFinishedTourWrap', () => {
       expect(wrap.mostPlayedLine).toContain('4 nights');
       expect(wrap.mostPlayedLine).toContain('5 plays');
       expect(wrap.mostPlayedLine).not.toContain('Ghost');
+      expect(wrap.mostPlayedLine).not.toContain('songs played on');
+      expect(wrap.statTiles.map((tile) => tile.label)).toEqual([
+        'Shows',
+        'Unique songs',
+        'Songs played',
+        'Bustouts',
+      ]);
+      expect(wrap.statTiles.map((tile) => tile.value)).toEqual([
+        '8',
+        '109',
+        '137',
+        '2',
+      ]);
       expect(wrap.bustoutsLine).toContain('Alumni Blues');
       expect(wrap.bustoutsLine).toContain('158');
       expect(wrap.boostLine).toContain(String(SCORING_RULES.BUSTOUT_MIN_GAP));
@@ -172,6 +234,17 @@ describe('buildFinishedTourWrap', () => {
     expect(svg).toContain('Tom &amp; Jerry');
     expect(svg).toContain('setlistpickem.com/tour-stats/2026-fall-tour');
     expect(svg).not.toContain('<script');
+    expect(svg).not.toContain('…');
+    expect(svg).toContain(TOUR_WRAP_COLORS.accent);
+    expect(svg).toContain(TOUR_WRAP_COLORS.panel);
+    expect(svg).toContain(TOUR_WRAP_COLORS.canvas);
+    expect(svgText(svg)).toContain('Most played: Tom & Jerry, 3 plays.');
+    for (const tile of wrap.statTiles) {
+      expect(html).toContain(tile.label);
+      expect(html).toContain(`>${tile.value}<`);
+      expect(svg).toContain(`>${tile.value}<`);
+      expect(svg).toContain(tile.label);
+    }
     expect(finishedTourWrapShareImageFile('2026-fall-tour')).toBe(
       'tour-stats-share/2026-fall-tour.jpg',
     );
@@ -199,5 +272,56 @@ describe('buildFinishedTourWrap', () => {
       wrap.shareText,
     ].join('\n');
     expect(prose).not.toMatch(/—|\bunlocks?\b|plays live/i);
+  });
+
+  it('names a tie as N songs on those nights, including the top 3 by all-time plays', () => {
+    const wrap = buildFinishedTourWrap(
+      finishedDoc({
+        topSongs: [
+          { title: 'Possum', showAppearances: 2, timesPlayed: 2, lifetimePlays: 10 },
+          { title: 'Low', showAppearances: 2, timesPlayed: 2, lifetimePlays: 1 },
+          { title: 'High', showAppearances: 2, timesPlayed: 4, lifetimePlays: 99 },
+          { title: 'Mid', showAppearances: 2, timesPlayed: 2, lifetimePlays: 50 },
+          { title: 'Foam', showAppearances: 1, timesPlayed: 1, lifetimePlays: 9000 },
+        ],
+      }),
+      { today: TODAY },
+    );
+    expect(wrap.mostPlayedLine).toBe(
+      'Most played: 4 songs played on two nights, including High, Mid, Possum. High was played 4 times across those two nights.',
+    );
+    expect(wrap.mostPlayedLine).not.toContain('Low');
+    expect(wrap.mostPlayedLine).not.toContain('Foam');
+  });
+
+  it('uses the 2026 Fall Tour tie: 22 songs, top 3 by all-time plays, Tweezer at 5 plays', () => {
+    const wrap = buildFinishedTourWrap(
+      finishedDoc({
+        topSongs: [
+          ...FALL_2026_TWO_NIGHTS,
+          { title: 'Foam', showAppearances: 1, timesPlayed: 1, lifetimePlays: 9000 },
+        ],
+      }),
+      { slug: '2026-fall-tour', today: TODAY },
+    );
+    expect(FALL_2026_TWO_NIGHTS).toHaveLength(22);
+    expect(wrap.mostPlayedLine).toBe(FALL_2026_MOST_PLAYED);
+    expect(wrap.shareText).toContain(FALL_2026_MOST_PLAYED);
+    expect(wrap.shareLines[0]).toBe(FALL_2026_MOST_PLAYED);
+    const html = buildFinishedTourWrapHtml(wrap);
+    const svg = buildFinishedTourWrapShareSvg(wrap);
+    expect(html).toContain(FALL_2026_MOST_PLAYED);
+    expect(svgText(svg)).toContain(FALL_2026_MOST_PLAYED);
+    expect(svg).not.toContain('…');
+    expect(svgText(svg)).not.toContain('Foam');
+    for (const tile of wrap.statTiles) {
+      expect(html).toContain(tile.label);
+      expect(svg).toContain(`>${tile.value}<`);
+      expect(svg).toContain(tile.label);
+    }
+    for (const line of wrap.shareLines) {
+      expect(svgText(svg)).toContain(line);
+      expect(html).toContain(line);
+    }
   });
 });
