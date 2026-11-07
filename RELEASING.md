@@ -99,7 +99,24 @@ When the secret is unset, the publish step warns and uses the workflow token. Th
 
 The token needs to push tags, create a Release, and open a pull request. Do not print it.
 
-After a published release, `.github/workflows/close-shipped-issues.yml` closes issues referenced with `Closes` / `Fixes` / `Resolves` on the staging pull requests in that promote. `Part of` and `keep-open` stay open.
+## Closing shipped issues
+
+GitHub applies `Closes` / `Fixes` / `Resolves` only when a pull request merges into the default branch (`main`). Feature pull requests merge into `staging`, and a squash promote does not keep those lines. `.github/workflows/close-shipped-issues.yml` runs on `release: published`.
+
+The promote pull request is the one whose merge commit is the tag. For v1.97.5 that was `Release 1.97.5` (#1210). A squash on `main` is not in `staging` history, so an older subject such as `promote: 1.89.0 (#1173)` can sit in the tag's ancestry. The closer does not use that ancestor.
+
+When the release pull request is a one-commit tree replacement (`staging at <sha>`), the closer compares that staging commit with the previous release's staging commit and reads closing keywords on those staging pull requests. A multi-commit promote still uses the commits on the promote pull request.
+
+It comments `Shipped in <tag> (#<promote PR>) via #<source PR>` and closes the issue with `state_reason: completed`. `Part of`, plain mentions, pull request numbers, issues that are already closed, and the `keep-open` label stay as they are. A second run for the same tag does not add another comment and does not reopen anything. Pre-release tags do not close issues.
+
+Dry run from Actions → **Close shipped issues** → Run workflow. Set `tag` (for example `v1.97.5`) and leave `dry_run` checked. The job logs the would-close list and comments it on the current promote pull request. Uncheck `dry_run` to close for real. From a checkout with `GITHUB_TOKEN` and `GITHUB_REPOSITORY`:
+
+```bash
+node scripts/close-shipped-issues.mjs --tag v1.97.5 --dry-run
+node scripts/close-shipped-issues.mjs --tag v1.97.5 --confirm
+```
+
+The workflow file is read from `main`, so a dispatch uses the copy on `main`. This does not change branch protection or required checks. The job token stays `contents: read`, `issues: write`, and `pull-requests: read`.
 
 ## Smoke
 

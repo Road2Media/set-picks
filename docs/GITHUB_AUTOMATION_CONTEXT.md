@@ -105,7 +105,7 @@ Name **existing** domains when known (e.g. `pools`, `picks`, `scoring`, `auth`, 
 
 ## Release issue close (#1149 / #1174)
 
-- **Workflow:** `.github/workflows/close-shipped-issues.yml` on `release: published` (and `workflow_dispatch` for a dry run). It closes issues named with `Closes` / `Fixes` / `Resolves` on the staging PRs inside the promote. `Part of`, plain mentions, pull request numbers, closed issues, and the `keep-open` label stay open.
+- **Workflow:** `.github/workflows/close-shipped-issues.yml` on `release: published` (and `workflow_dispatch` for a dry run). The promote pull request is the one whose merge commit is the tag. An older squash ancestor on `main` is not that PR. A one-commit tree replacement reads `Closes` / `Fixes` / `Resolves` from the staging commits between the previous release's `staging at <sha>` and this one. `Part of`, plain mentions, pull request numbers, closed issues, and the `keep-open` label stay open. A second run does not comment again. Detail: `RELEASING.md`.
 - Active only once the workflow file is on the default branch (`main`). It does not merge, deploy, or edit branch protection.
 
 ## Dependabot (active, #504 / #744 / #967)
