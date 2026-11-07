@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.98.4] — 2026-11-07
+
+### Changed
+- **Phish at MSG intro (Refs #1192)** — The sentences under the heading are now: “Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.” “July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics.” “This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027.” The same three paragraphs are in the prerender facts, the page JSON-LD, and `llms.txt`. No declared API change.
+
 ## [1.98.3] — 2026-11-07
 
 ### Changed

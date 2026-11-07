@@ -4,9 +4,16 @@ import {
   buildMsgGardenFactsHtml,
   buildMsgGardenJsonLd,
   msgGardenSnapshotStats,
+  msgGardenSummarySentences,
   normalizeMsgGardenStats,
   resolveMsgGardenStats,
 } from './msgGardenFacts.js';
+
+const INTRO = [
+  'Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.',
+  'July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics.',
+  'This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027.',
+];
 
 describe('msg garden snapshot (#1139)', () => {
   const stats = msgGardenSnapshotStats();
@@ -41,12 +48,17 @@ describe('msg garden snapshot (#1139)', () => {
     expect(JSON.stringify(stats)).not.toMatch(/officialSetlist|setlist-song/);
   });
 
+  it('uses the fixed intro paragraphs', () => {
+    expect(msgGardenSummarySentences()).toEqual(INTRO);
+  });
+
   it('embeds the facts for crawlers, including credit and the picks CTA', () => {
     const html = buildMsgGardenFactsHtml(stats);
     expect(html).toContain('data-seo-msg-stats="summary"');
-    expect(html).toContain('96 times');
-    expect(html).toContain('96th');
-    expect(html).toContain('100th show');
+    for (const line of INTRO) expect(html).toContain(line);
+    expect(html).not.toContain('Phish.net calls');
+    expect(html).not.toContain('100th show');
+    expect(html).not.toContain('nights before it');
     expect(html).toContain('Tweezer (33 plays)');
     expect(html).toContain('Songs that have opened a show at the Garden');
     expect(html).not.toContain('not a pick tip');
@@ -69,7 +81,11 @@ describe('msg garden snapshot (#1139)', () => {
     const types = json['@graph'].map((node) => node['@type']);
     expect(types).toContain('FAQPage');
     expect(types.filter((type) => type === 'ItemList').length).toBeGreaterThanOrEqual(3);
+    const page = json['@graph'].find((node) => node['@type'] === 'WebPage');
+    expect(page.description).toBe(INTRO.join(' '));
     const faq = json['@graph'].find((node) => node['@type'] === 'FAQPage');
+    const howMany = faq.mainEntity.find((q) => /how many phish shows/i.test(q.name));
+    expect(howMany.acceptedAnswer.text).toBe(INTRO.slice(0, 2).join(' '));
     const opener = faq.mainEntity.find((q) => /opened the most/i.test(q.name));
     expect(opener.acceptedAnswer.text).toMatch(/AC\/DC Bag/);
     expect(opener.acceptedAnswer.text).not.toMatch(/pick tip/);

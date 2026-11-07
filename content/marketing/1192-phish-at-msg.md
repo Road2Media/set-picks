@@ -45,6 +45,14 @@ The live and finished ledes are the shared panel, so a tour page shows the new s
 
 ### Phish at MSG
 
+Opening paragraphs under the heading (2026-11-07). The same three paragraphs are in the prerender facts, the page JSON-LD, and `llms.txt`.
+
+Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.
+
+July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics.
+
+This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027.
+
 | Surface | Before | After |
 | --- | --- | --- |
 | Title | Phish at MSG: 96 Shows by the Numbers \| Setlist Pick'Em | Phish at MSG \| Setlist Pick'Em |

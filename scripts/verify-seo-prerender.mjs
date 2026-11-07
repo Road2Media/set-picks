@@ -168,7 +168,24 @@ for (const route of PRERENDER_ROUTES) {
 const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/phish-at-msg');
 const msgEnrichment = buildMsgGardenPrerenderEnrichment(null, msgRoute.canonicalUrl);
 const msgHtml = injectPrerenderHtml(shell, msgRoute, msgEnrichment);
-assert(msgHtml.includes('96 times'), 'MSG prerender HTML must include the played-show count (#1139)');
+assert(
+  msgHtml.includes(
+    'Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.',
+  ),
+  'MSG prerender HTML must include the played-show intro',
+);
+assert(
+  msgHtml.includes('100th performance at the venue on January 2, 2027.'),
+  'MSG prerender HTML must include the 100th-performance sentence',
+);
+assert(
+  !msgHtml.includes('announced 100th show'),
+  'MSG prerender HTML must not keep the old 100th-show sentence',
+);
+assert(
+  !msgHtml.includes('Phish.net calls the'),
+  'MSG prerender HTML must not keep the old ordinal sentence',
+);
 assert(msgHtml.includes('data-seo-msg-stats="top-songs"'), 'MSG prerender HTML must include most-played songs');
 assert(msgHtml.includes('FAQPage'), 'MSG prerender JSON-LD must include FAQPage');
 assert(msgHtml.includes('ItemList'), 'MSG prerender JSON-LD must include ItemList');
@@ -197,6 +214,20 @@ const publicLlms = readFileSync(join(root, 'public', 'llms.txt'), 'utf8');
 assert(
   publicLlms.includes('https://www.setlistpickem.com/phish-at-msg'),
   'public llms.txt must list /phish-at-msg',
+);
+assert(
+  publicLlms.includes(
+    'Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.',
+  ),
+  'public llms.txt must include the Phish at MSG intro',
+);
+assert(
+  publicLlms.includes('100th performance at the venue on January 2, 2027.'),
+  'public llms.txt must include the 100th-performance sentence',
+);
+assert(
+  !publicLlms.includes('announced 100th show'),
+  'public llms.txt must not keep the old 100th-show sentence',
 );
 assert(
   !publicLlms.includes('https://www.setlistpickem.com/tour-stats/msg'),
