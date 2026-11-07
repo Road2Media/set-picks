@@ -9,12 +9,17 @@ import {
   collectFromPromote,
   classifyShippedIssue,
   commentsIncludeShipment,
+  commitsIncludeMergedPull,
   extractMergedPullNumber,
+  extractStagingPin,
+  featureCommitsForRelease,
   formatShippedComment,
   isPromotePullRequest,
+  isReleasePullRequest,
   planShippedCloses,
   selectPreviousRelease,
   selectPromotePullRequest,
+  stagingPinFromRelease,
 } from "./shippedIssueClose.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -62,6 +67,17 @@ describe("collectClosingIssueNumbers", () => {
   it("ignores closing keywords inside fenced or inline code", () => {
     const text = ["```", "Closes #1", "```", "Use `Fixes #2` in the body.", "Closes #3"].join("\n");
     assert.deepEqual(collectClosingIssueNumbers(text, repo), [3]);
+  });
+
+  it("keeps a closing keyword between the agent body markers on a squash commit", () => {
+    const text = [
+      "chore(deps): migrate dependabot/fetch-metadata to v3 (#1199) (#1209)",
+      "",
+      "<!-- CURSOR_AGENT_PR_BODY_BEGIN -->",
+      "Closes #1199",
+      "<!-- CURSOR_AGENT_PR_BODY_END -->",
+    ].join("\n");
+    assert.deepEqual(collectClosingIssueNumbers(text, repo), [1199]);
   });
 });
 
@@ -252,6 +268,156 @@ describe("release to promote PR", () => {
       { tag: "v1.89.0", publishedAt: "2026-10-22T03:17:38Z" },
     );
     assert.equal(tag, "v1.83.1");
+  });
+});
+
+describe("v1.97.5 diverged squash history", () => {
+  const tagSha = "acd38ca1ffcf595e30a6fd68b0543536c8ba191a";
+  const pulls = [
+    {
+      number: 1210,
+      title: "Release 1.97.5",
+      merged_at: "2026-11-07T19:43:29Z",
+      merge_commit_sha: tagSha,
+      base: { ref: "main" },
+      head: { ref: "cursor/release-1.97.5-0500" },
+    },
+    {
+      number: 1197,
+      title: "promote: 1.97.1",
+      merged_at: "2026-10-26T03:15:00Z",
+      merge_commit_sha: "7214fa21f853395c98afd4759e54f30d6b8ddafd",
+      base: { ref: "main" },
+      head: { ref: "release/1.97.1" },
+    },
+    {
+      number: 1173,
+      title: "promote: 1.89.0",
+      merged_at: "2026-10-22T03:17:28Z",
+      merge_commit_sha: "79c39f8366e813645a4b58ef13e7949df8a19a85",
+      base: { ref: "main" },
+      head: { ref: "staging" },
+    },
+  ];
+  const history = [
+    "Release 1.97.5 (#1210)",
+    "promote: 1.97.1 (#1197)",
+    "promote: 1.89.0 (#1173)",
+  ];
+
+  it("does not pick ancestor #1173 when the tag commit is release #1210", () => {
+    assert.equal(isPromotePullRequest(pulls[0]), false);
+    assert.equal(isReleasePullRequest(pulls[0]), true);
+    assert.equal(isPromotePullRequest(pulls[2]), true);
+
+    const byNumber = new Map(pulls.map((pr) => [pr.number, pr]));
+    const walked = history
+      .map((message) => byNumber.get(extractMergedPullNumber(message)))
+      .find((pr) => pr && isPromotePullRequest(pr));
+    assert.equal(walked.number, 1173);
+
+    const selected = selectPromotePullRequest(pulls, {
+      tag: "v1.97.5",
+      publishedAt: "2026-11-07T19:43:45Z",
+      mergeSha: tagSha,
+      ancestorCommits: history.slice(1),
+    });
+    assert.equal(selected.number, 1210);
+  });
+
+  it("still prefers the release title when the tag SHA is not on the pull request", () => {
+    const selected = selectPromotePullRequest(pulls, {
+      tag: "v1.97.5",
+      publishedAt: "2026-11-07T19:43:45Z",
+      ancestorCommits: history.slice(1),
+    });
+    assert.equal(selected.number, 1210);
+  });
+
+  it("reads the staging pin from a one-commit tree replacement", () => {
+    const message = [
+      "promote: 1.97.5",
+      "",
+      "Replace this branch's tree with staging at 68c9d47 so the 1.97.5 production promote matches staging exactly.",
+    ].join("\n");
+    assert.equal(extractStagingPin(message), "68c9d47");
+    assert.equal(extractStagingPin("Promotes current staging (`68c9d47`, package.json `1.97.5`)."), "68c9d47");
+    assert.equal(commitsIncludeMergedPull([{ message }]), false);
+    const pin = stagingPinFromRelease({
+      promotePr: { number: 1210, title: "Release 1.97.5", body: "See staging (`68c9d47`)." },
+      commits: [{ message }],
+    });
+    assert.equal(pin, "68c9d47");
+  });
+
+  it("attributes #1210 and collects closing keywords from the staging range", () => {
+    const promoteCommits = [
+      {
+        message: [
+          "promote: 1.97.5",
+          "",
+          "Replace this branch's tree with staging at 68c9d47 so the 1.97.5 production promote matches staging exactly.",
+          "The same squash-promote gap blocked #1196; #1197 used this tree replacement.",
+        ].join("\n"),
+      },
+    ];
+    const stagingRangeCommits = [
+      { message: "feat(ci): factory guardrails and idempotent release publish (#1206)\n\nRefs #1162\n" },
+      { message: "chore(deps): migrate svix 1.96.1 to 2.9.1 in functions (#1208)\n\nCloses #1205\n" },
+      {
+        message: [
+          "chore(deps): migrate dependabot/fetch-metadata to v3 (#1199) (#1209)",
+          "",
+          "<!-- CURSOR_AGENT_PR_BODY_BEGIN -->",
+          "Closes #1199",
+          "<!-- CURSOR_AGENT_PR_BODY_END -->",
+        ].join("\n"),
+      },
+    ];
+    const chosen = featureCommitsForRelease({
+      promoteCommits,
+      stagingRangeCommits: stagingRangeCommits,
+    });
+    assert.equal(chosen.source, "staging-range");
+
+    const plan = planShippedCloses({
+      ...repo,
+      tag: "v1.97.5",
+      promotePr: { number: 1210, title: "Release 1.97.5", body: "Promotes staging (`68c9d47`)." },
+      commits: chosen.commits,
+      pullRequests: [],
+      issues: [
+        { number: 1199, state: "open", labels: [] },
+        { number: 1205, state: "closed", labels: [] },
+      ],
+    });
+
+    assert.equal(plan.decisions.some((row) => row.number === 1162), false);
+    assert.equal(plan.decisions.some((row) => row.number === 1173), false);
+    assert.deepEqual(
+      plan.decisions.map((row) => ({ number: row.number, action: row.action, reason: row.reason })),
+      [
+        { number: 1199, action: "close", reason: "closing-keyword" },
+        { number: 1205, action: "skip", reason: "closed" },
+      ],
+    );
+    assert.equal(
+      plan.closeComments[0].body,
+      "<!-- shipped-close v1.97.5 -->\nShipped in v1.97.5 (#1210) via #1209.",
+    );
+    assert.deepEqual(plan.closeComments.map((row) => row.number), [1199]);
+    assert.match(plan.dryRunComment, /promote #1210/);
+    assert.doesNotMatch(plan.dryRunComment, /#1173/);
+  });
+
+  it("keeps feature commits that already sit on the promote pull request", () => {
+    const promoteCommits = [{ message: "Send password reset from Resend (#1166)\n\nCloses #1049\n" }];
+    const chosen = featureCommitsForRelease({
+      promoteCommits,
+      stagingRangeCommits: [{ message: "other (#9999)\n\nCloses #1\n" }],
+    });
+    assert.equal(chosen.source, "promote-commits");
+    assert.equal(chosen.commits, promoteCommits);
   });
 });
 

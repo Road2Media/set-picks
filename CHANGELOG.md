@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.98.2] — 2026-11-07
+
+### Fixed
+- **Shipped-issue close (#1174)** — Publishing a release names the pull request whose merge commit is that tag. A squash on `main` is not in `staging` history, so v1.97.5 was attributed to the older ancestor `promote: 1.89.0` (#1173) instead of `Release 1.97.5` (#1210). A one-commit tree replacement still reads `Closes` / `Fixes` / `Resolves` on the staging pull requests between the previous release's `staging at <sha>` and this one. Issues that are already closed stay closed, and a second run does not add another comment. No declared API change.
+
 ## [1.98.1] — 2026-11-07
 
 ### Changed
