@@ -23,7 +23,7 @@ Do not add the staging push run as a required status check. Branch protection is
 | `allow-global` | The diff touches `.github/**`, a `package-lock.json`, or `vercel.json`. |
 | `auto-merge-ok` | Safe to auto-merge after the required checks pass. Do not put this on a pull request that has `needs-human` unless a human repo admin adds it afterwards. |
 | `blocked` | A person is working this by hand. The cloud queue skips it. |
-| `ui-check` | A dependency update may change what visitors see. It can still auto-merge to `staging`. Patrick spot-checks `staging` before the release. |
+| `ui-check` | A dependency update may change what visitors see. It can still auto-merge to `staging`. The release pull request lists these under Staging spot-check. Patrick looks at `staging` before the release. |
 | `skip-version-bump` | No `package.json` version change. Used for CI, docs, and script-only pull requests. Dependabot pull requests use it too. |
 | `keep-open` | Do not auto-close this issue when a release ships a closing keyword. |
 
@@ -42,7 +42,23 @@ Two CI failures on the same pull request: stop, comment with the failure, and le
 
 ## Release pull request
 
-Open a pull request from `staging` to `main` titled `Release X.Y.Z`. The body states the version bump, the changelog section, and this rule: Patrick says "ship" or "promote to prod" before it merges.
+Open a pull request from `staging` to `main` titled `Release X.Y.Z`. The body states the version bump, the changelog section, and this rule: Patrick says "ship" or "promote to prod" before it merges. It also includes the release-ready note below.
+
+## Release-ready note
+
+The release pull request lists what Patrick spot-checks on `staging` before he says ship or promote to prod. Dependency updates in these lists already merged when their checks passed. Listing them does not block the release.
+
+### Staging spot-check
+
+List every pull request merged to `staging` since the previous release that carries `ui-check`. Each line has the pull request number, the package names, and the version change. These are the updates that can change what visitors see (UI, animation, styling, and component libraries, including React, React DOM, React Router, Tailwind, and the Firebase client SDK).
+
+If none merged in this release, write `None in this release.`
+
+### Security updates
+
+List security updates that auto-merged to `staging` in this release. When one should reach production before the next planned release, say that in this section. That is still a release pull request. Production moves from this pull request, after Patrick says ship or promote to prod.
+
+If none merged in this release, write `None in this release.`
 
 Agents do not merge that pull request on their own. When Patrick says **ship** or **promote to prod**, merge it. Publishing happens from `main` after that merge. Do not tag from `staging` or from a feature branch.
 
