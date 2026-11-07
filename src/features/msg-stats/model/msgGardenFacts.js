@@ -45,6 +45,15 @@ export function formatCount(n) {
 }
 
 /**
+ * Row count for the Most played and Show openers tables. `5` → `5X`.
+ * @param {number} n
+ * @returns {string}
+ */
+export function formatTimesMark(n) {
+  return `${formatCount(n)}X`;
+}
+
+/**
  * @param {unknown} raw
  * @returns {typeof snapshot | null}
  */
@@ -135,18 +144,8 @@ export function buildMsgGardenFactsHtml(stats) {
   const summary = msgGardenSummarySentences(stats)
     .map((line) => `    <p data-seo-msg-stats="summary">${escapeHtml(line)}</p>`)
     .join('\n');
-  const top = statList(
-    'top-songs',
-    stats.topSongs.map(
-      (row) => `${row.title} (${formatCount(row.timesPlayed)} plays)`,
-    ),
-  );
-  const openers = statList(
-    'openers',
-    stats.openers.map(
-      (row) => `${row.title} opened ${formatCount(row.timesPlayed)} shows`,
-    ),
-  );
+  const top = countTable('top-songs', 'times played', stats.topSongs);
+  const openers = countTable('openers', 'times opened', stats.openers);
   const debuts = statList(
     'debuts',
     stats.debuts.map((row) => `${row.title} (${formatFanDate(row.showDate)})`),
@@ -175,14 +174,10 @@ export function buildMsgGardenFactsHtml(stats) {
 
   return `${summary}
     <h2>Most-played songs at MSG</h2>
-    <ol data-seo-msg-stats="top-songs">
 ${top}
-    </ol>
     <h2>Show openers at MSG</h2>
     <p data-seo-msg-stats="opener-note">Songs that have opened a show at the Garden, and how many times, across ${formatCount(stats.openerShowCount || stats.showCount)} shows.</p>
-    <ol data-seo-msg-stats="openers">
 ${openers}
-    </ol>
     <h2>Songs debuted at MSG</h2>
     <ol data-seo-msg-stats="debuts">
 ${debuts}
@@ -241,7 +236,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most-played songs at Madison Square Garden',
       stats.topSongs.map((row) => ({
         name: row.title,
-        description: `${formatCount(row.timesPlayed)} plays at MSG`,
+        description: formatTimesMark(row.timesPlayed),
       })),
     ),
     itemList(
@@ -249,7 +244,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most frequent MSG show openers',
       stats.openers.map((row) => ({
         name: row.title,
-        description: `Opened ${formatCount(row.timesPlayed)} MSG shows`,
+        description: formatTimesMark(row.timesPlayed),
       })),
     ),
     itemList(
@@ -340,6 +335,30 @@ function faq(name, text) {
     name,
     acceptedAnswer: { '@type': 'Answer', text },
   };
+}
+
+/**
+ * @param {string} name
+ * @param {string} countHeader
+ * @param {Array<{ title: string, timesPlayed: number }>} rows
+ */
+function countTable(name, countHeader, rows) {
+  const body = rows.length
+    ? rows
+        .map(
+          (row) =>
+            `      <tr><td>${escapeHtml(row.title)}</td><td>${escapeHtml(formatTimesMark(row.timesPlayed))}</td></tr>`,
+        )
+        .join('\n')
+    : '      <tr><td colspan="2">None in this count.</td></tr>';
+  return `    <table data-seo-msg-stats="${name}">
+      <thead>
+        <tr><th>song</th><th>${escapeHtml(countHeader)}</th></tr>
+      </thead>
+      <tbody>
+${body}
+      </tbody>
+    </table>`;
 }
 
 function statList(name, lines) {
