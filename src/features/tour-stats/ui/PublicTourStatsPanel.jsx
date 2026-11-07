@@ -8,10 +8,10 @@ import TourWrapBlock from './TourWrapBlock';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
 
 const LIVE_TOUR_LEDE =
-  'Phish tour setlist statistics: most-played songs, song frequency, bustouts by tour, and gap highlights that keep you sharp between shows. Updated every night the band plays.';
+  'The songs Phish keeps playing, the bustouts, and the long gaps. Updated after every show.';
 
 const FINISHED_TOUR_LEDE =
-  'Phish tour setlist statistics for a finished run: most-played songs, song frequency, bustouts by tour, and gap highlights.';
+  'This run is done. The songs Phish played most, the bustouts, and the long gaps.';
 
 /** Live SEO slug for the current summer run (#927 / #929). */
 const SUMMER_TOUR_SEO_PATH = '/tour-stats/2026-summer-tour';
@@ -39,7 +39,7 @@ export default function PublicTourStatsPanel({
     heading ||
     (hasTour && tourName
       ? `${tourName} setlist statistics`
-      : 'Phish tour setlist statistics');
+      : 'What Phish is playing this tour');
 
   const isHub = !routeHasSlug;
   const currentSlug = (defaultTourSlug || activeSlug || '').trim();
@@ -55,7 +55,7 @@ export default function PublicTourStatsPanel({
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
       <header className="mb-5 space-y-2 text-center sm:text-left">
         <p className="text-[10px] font-black uppercase tracking-widest text-teal-400">
-          Tour Insights
+          Tour stats
         </p>
         <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
           {h1}
@@ -77,10 +77,6 @@ export default function PublicTourStatsPanel({
             {' · '}
             <Link to="/tour-stats/2026" className={LINK_ON_DARK}>
               2026 tours
-            </Link>
-            {' · '}
-            <Link to="/tour-stats/msg" className={LINK_ON_DARK}>
-              Phish at MSG
             </Link>
           </p>
         ) : null}
@@ -158,8 +154,7 @@ export default function PublicTourStatsPanel({
       <StatsEmbedShareRow tourSlug={activeSlug} />
 
       <p className="mt-8 text-center text-sm leading-snug text-slate-400 sm:text-left">
-        Tour-wide trends only, not a night-by-night archive. Play and your
-        personal stats start counting.{' '}
+        The songs that shaped the tour. Lock a card for the next show.{' '}
         <Link to="/how-it-works" className={LINK_ON_DARK}>
           How it works
         </Link>

@@ -26,8 +26,10 @@ export const TOUR_STATS_SEO_MIN_SHOWS_WITH_SETLIST = 4;
 export const TOUR_STATS_SEO_MIN_UNIQUE_SONGS = 20;
 
 /**
- * Paths that are not tour slugs. `/tour-stats/msg` and `/tour-stats/2026`
- * are their own pages (#1139 / #1141). Auto-expand must not overwrite them.
+ * Paths that are not tour slugs. `msg` stays reserved because
+ * `/tour-stats/msg` permanently redirects to `/phish-at-msg` (#1192).
+ * `/tour-stats/2026` is the annual page (#1141). Auto-expand must not
+ * overwrite either path.
  */
 export const TOUR_STATS_RESERVED_SLUGS = new Set(['msg', '2026']);
 

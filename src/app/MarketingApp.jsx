@@ -153,12 +153,16 @@ export default function MarketingApp() {
           }
         />
         <Route
-          path="/tour-stats/msg"
+          path="/phish-at-msg"
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <MsgGardenStatsPage />
             </Suspense>
           }
+        />
+        <Route
+          path="/tour-stats/msg"
+          element={<Navigate to="/phish-at-msg" replace />}
         />
         <Route
           path="/tour-stats/2026"

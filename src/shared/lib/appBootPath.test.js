@@ -49,6 +49,7 @@ describe('isPublicTourStatsPath', () => {
     expect(isPublicTourStatsPath('/')).toBe(false);
     expect(isPublicTourStatsPath('/dashboard/tour-stats')).toBe(false);
     expect(isPublicTourStatsPath('/how-it-works')).toBe(false);
+    expect(isPublicTourStatsPath('/phish-at-msg')).toBe(false);
   });
 });
 

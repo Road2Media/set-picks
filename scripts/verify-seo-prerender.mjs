@@ -116,8 +116,12 @@ assert(
   'expected 2026 Summer Tour tour-stats prerender entry (#927/#928)',
 );
 assert(
-  PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/msg'),
-  'expected Phish at MSG prerender entry (#1139)',
+  PRERENDER_ROUTES.some((r) => r.path === '/phish-at-msg'),
+  'expected Phish at MSG prerender entry (#1139 / #1192)',
+);
+assert(
+  !PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/msg'),
+  '/tour-stats/msg must not stay a prerendered page (#1192)',
 );
 assert(
   PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/2026'),
@@ -161,7 +165,7 @@ for (const route of PRERENDER_ROUTES) {
   assertRouteHtml(html, route, `fixture ${route.path}`);
 }
 
-const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/msg');
+const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/phish-at-msg');
 const msgEnrichment = buildMsgGardenPrerenderEnrichment(null, msgRoute.canonicalUrl);
 const msgHtml = injectPrerenderHtml(shell, msgRoute, msgEnrichment);
 assert(msgHtml.includes('96 times'), 'MSG prerender HTML must include the played-show count (#1139)');
@@ -173,20 +177,30 @@ assert(
   'MSG prerender HTML must credit Phish.net',
 );
 assert(
-  msgHtml.includes('not a pick tip'),
-  'MSG opener copy must be labeled as frequencies',
+  msgHtml.includes('Songs that have opened a show at the Garden'),
+  'MSG opener copy must tell a fan what the list is',
 );
 assert(
-  readFileSync(join(root, 'public', 'sitemap.xml'), 'utf8').includes(
-    'https://www.setlistpickem.com/tour-stats/msg',
-  ),
-  'public sitemap must list /tour-stats/msg',
+  !msgHtml.includes('not a pick tip'),
+  'MSG opener copy must not explain the mechanic',
+);
+const publicSitemap = readFileSync(join(root, 'public', 'sitemap.xml'), 'utf8');
+assert(
+  publicSitemap.includes('https://www.setlistpickem.com/phish-at-msg'),
+  'public sitemap must list /phish-at-msg',
 );
 assert(
-  readFileSync(join(root, 'public', 'llms.txt'), 'utf8').includes(
-    'https://www.setlistpickem.com/tour-stats/msg',
-  ),
-  'public llms.txt must list /tour-stats/msg',
+  !publicSitemap.includes('https://www.setlistpickem.com/tour-stats/msg'),
+  'public sitemap must not keep /tour-stats/msg (#1192)',
+);
+const publicLlms = readFileSync(join(root, 'public', 'llms.txt'), 'utf8');
+assert(
+  publicLlms.includes('https://www.setlistpickem.com/phish-at-msg'),
+  'public llms.txt must list /phish-at-msg',
+);
+assert(
+  !publicLlms.includes('https://www.setlistpickem.com/tour-stats/msg'),
+  'public llms.txt must not keep /tour-stats/msg (#1192)',
 );
 
 const annualRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/2026');
@@ -957,6 +971,33 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
     assert(
       llmsTxt.includes('https://www.setlistpickem.com/tour-stats/2026-summer-tour'),
       'dist llms.txt must keep the static summer SEO URL',
+    );
+    assert(
+      sitemapXml.includes('https://www.setlistpickem.com/phish-at-msg'),
+      'dist sitemap must list /phish-at-msg (#1192)',
+    );
+    assert(
+      !sitemapXml.includes('https://www.setlistpickem.com/tour-stats/msg'),
+      'dist sitemap must not list /tour-stats/msg (#1192)',
+    );
+    assert(
+      llmsTxt.includes('https://www.setlistpickem.com/phish-at-msg'),
+      'dist llms.txt must list /phish-at-msg (#1192)',
+    );
+    const distMsg = join(root, 'dist', 'phish-at-msg', 'index.html');
+    assert(existsSync(distMsg), 'dist missing prerendered /phish-at-msg (#1192)');
+    const msgPageHtml = readFileSync(distMsg, 'utf8');
+    assert(
+      msgPageHtml.includes('https://www.setlistpickem.com/phish-at-msg'),
+      'prerendered /phish-at-msg must use the new canonical',
+    );
+    assert(
+      /\/assets\/marketing-[^"]+\.js/.test(msgPageHtml),
+      'prerendered /phish-at-msg must boot the marketing entry',
+    );
+    assert(
+      !existsSync(join(root, 'dist', 'tour-stats', 'msg', 'index.html')),
+      'dist must not prerender /tour-stats/msg (#1192)',
     );
   }
   const howItWorksHtml = readFileSync(distHowItWorks, 'utf8');

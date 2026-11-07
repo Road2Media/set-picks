@@ -11,6 +11,7 @@ describe('isMarketingTourStatsPath', () => {
   it('rejects dashboard and other marketing paths', () => {
     expect(isMarketingTourStatsPath('/')).toBe(false);
     expect(isMarketingTourStatsPath('/how-it-works')).toBe(false);
+    expect(isMarketingTourStatsPath('/phish-at-msg')).toBe(false);
     expect(isMarketingTourStatsPath('/dashboard/tour-stats')).toBe(false);
   });
 });

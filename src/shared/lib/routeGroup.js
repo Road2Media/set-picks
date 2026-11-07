@@ -31,7 +31,9 @@ export function resolveRouteGroup(pathname) {
     pathname === '/phish-setlist-prediction-game' ||
     pathname.startsWith('/phish-setlist-prediction-game/') ||
     pathname === '/about' ||
-    pathname.startsWith('/about/')
+    pathname.startsWith('/about/') ||
+    pathname === '/phish-at-msg' ||
+    pathname.startsWith('/phish-at-msg/')
   ) {
     return 'marketing';
   }

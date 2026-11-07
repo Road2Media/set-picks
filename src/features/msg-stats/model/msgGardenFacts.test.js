@@ -48,11 +48,12 @@ describe('msg garden snapshot (#1139)', () => {
     expect(html).toContain('96th');
     expect(html).toContain('100th show');
     expect(html).toContain('Tweezer (33 plays)');
-    expect(html).toContain('Frequencies, not a pick tip.');
+    expect(html).toContain('Songs that have opened a show at the Garden');
+    expect(html).not.toContain('not a pick tip');
     expect(html).toContain('Burn That Bridge');
     expect(html).toContain('2,528 days');
     expect(html).toContain('Cold as Ice');
-    expect(html).toContain("New Year's Eve shows in this count: 17");
+    expect(html).toContain("Phish has played New Year's Eve at the Garden 17 times");
     expect(html).toContain(
       'Data courtesy of <a href="https://phish.net">Phish.net</a> / The Mockingbird Foundation.',
     );
@@ -63,15 +64,20 @@ describe('msg garden snapshot (#1139)', () => {
   it('publishes FAQ and ItemList JSON-LD without a night setlist', () => {
     const json = buildMsgGardenJsonLd(
       stats,
-      'https://www.setlistpickem.com/tour-stats/msg',
+      'https://www.setlistpickem.com/phish-at-msg',
     );
     const types = json['@graph'].map((node) => node['@type']);
     expect(types).toContain('FAQPage');
     expect(types.filter((type) => type === 'ItemList').length).toBeGreaterThanOrEqual(3);
     const faq = json['@graph'].find((node) => node['@type'] === 'FAQPage');
-    const opener = faq.mainEntity.find((q) => /show 100/i.test(q.name));
+    const opener = faq.mainEntity.find((q) => /opened the most/i.test(q.name));
     expect(opener.acceptedAnswer.text).toMatch(/AC\/DC Bag/);
-    expect(opener.acceptedAnswer.text).toMatch(/not a pick tip/);
+    expect(opener.acceptedAnswer.text).not.toMatch(/pick tip/);
+    const crumbs = json['@graph'].find((node) => node['@type'] === 'BreadcrumbList');
+    expect(crumbs.itemListElement.map((item) => item.name)).toEqual([
+      'Home',
+      'Phish at MSG',
+    ]);
     expect(JSON.stringify(json)).not.toMatch(/Wilson, Rift/);
   });
 

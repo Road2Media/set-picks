@@ -51,7 +51,7 @@ export default function MarketingPageShell({ children }) {
           </a>
 
           {/* Desktop: nav near center (slight right bias); Sign In + Join stay right. */}
-          <MarketingHeaderNav className="pointer-events-auto absolute left-[52%] top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:flex" />
+          <MarketingHeaderNav className="pointer-events-auto absolute left-[48%] top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:flex xl:left-[52%]" />
 
           <MarketingHeaderAuthCluster
             onSignIn={openSignIn}

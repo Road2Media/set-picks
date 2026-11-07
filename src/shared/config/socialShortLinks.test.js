@@ -25,6 +25,7 @@ const OCCUPIED_PREFIXES = [
   '/how-scoring-works',
   '/phish-setlist-prediction-game',
   '/tour-stats',
+  '/phish-at-msg',
   '/about',
   '/privacy',
   '/terms',
@@ -68,6 +69,19 @@ describe('social short-link redirects', () => {
     expect(redirects).toContainEqual({
       source: '/tour-stats/summer-tour-2026',
       destination: '/tour-stats/2026-summer-tour',
+      permanent: true,
+    });
+  });
+
+  it('permanently redirects the old Phish at MSG path (#1192)', () => {
+    expect(redirects).toContainEqual({
+      source: '/tour-stats/msg',
+      destination: '/phish-at-msg',
+      permanent: true,
+    });
+    expect(redirects).toContainEqual({
+      source: '/tour-stats/msg/',
+      destination: '/phish-at-msg',
       permanent: true,
     });
   });

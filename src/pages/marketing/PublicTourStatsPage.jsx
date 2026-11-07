@@ -40,13 +40,13 @@ export default function PublicTourStatsPage() {
     (liveLabel
       ? `${liveLabel} Setlist Statistics | ${SEO_CONFIG.siteName}`
       : hubRoute?.title ||
-        `Phish Tour Statistics & Insights | ${SEO_CONFIG.siteName}`);
+        `Phish Tour Stats | ${SEO_CONFIG.siteName}`);
   const description =
     slugRoute?.description ||
     (liveLabel
-      ? `Tour Insights for ${liveLabel}: setlist statistics, most-played songs, bustouts, and gap highlights.`
+      ? `Songs Phish played most on ${liveLabel}, plus the bustouts and the long gaps.`
       : hubRoute?.description ||
-        'Tour Insights: the latest Phish tour setlist statistics, most-played songs, bustouts by tour, and gap highlights.');
+        'See the songs Phish is playing most this tour, the bustouts, and the long gaps. Updated after every show.');
   const canonical =
     slugRoute?.canonicalUrl ||
     (screen.routeHasSlug && screen.activeSlug
@@ -69,7 +69,7 @@ export default function PublicTourStatsPage() {
     slugRoute?.h1 ||
     (liveLabel
       ? `${liveLabel} setlist statistics`
-      : hubRoute?.h1 || 'Phish tour setlist statistics');
+      : hubRoute?.h1 || 'What Phish is playing this tour');
 
   return (
     <>
