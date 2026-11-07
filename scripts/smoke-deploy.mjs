@@ -5,12 +5,19 @@
  * HTTP check first. Then email/password login with the existing QA_* secrets
  * when they are set. Staging sends VERCEL_AUTOMATION_BYPASS_SECRET as
  * SMOKE_PROTECTION_BYPASS. No bypass header is sent when that value is empty.
+ * The HTTP check does not send `x-vercel-set-bypass-cookie` (that header is a
+ * redirect, and Node fetch does not store the cookie). The browser check does.
  *
  *   node scripts/smoke-deploy.mjs --target staging
  *   node scripts/smoke-deploy.mjs --target production
  */
 
-import { classifySmokeHttp, smokeBaseUrl, smokeHeaders } from "./lib/smokeCheck.mjs";
+import {
+  classifySmokeHttp,
+  isSmokeRedirectLoop,
+  smokeBaseUrl,
+  smokeHeaders,
+} from "./lib/smokeCheck.mjs";
 
 const targetIndex = process.argv.indexOf("--target");
 const target = targetIndex >= 0 ? process.argv[targetIndex + 1] : "";
@@ -22,20 +29,33 @@ if (target !== "staging" && target !== "production") {
 const base = smokeBaseUrl(target, process.env.SMOKE_BASE_URL);
 const bypass = process.env.SMOKE_PROTECTION_BYPASS || "";
 const headers = smokeHeaders(bypass);
+const browserHeaders = smokeHeaders(bypass, { setBypassCookie: true });
 
 /**
  * @param {string} path
  */
 async function fetchPath(path) {
   const url = `${base}${path}`;
-  const response = await fetch(url, { headers, redirect: "follow" });
-  const body = await response.text();
-  return {
-    url,
-    status: response.status,
-    finalUrl: response.url,
-    body,
-  };
+  try {
+    const response = await fetch(url, { headers, redirect: "follow" });
+    const body = await response.text();
+    return {
+      url,
+      status: response.status,
+      finalUrl: response.url,
+      body,
+      redirectLoop: false,
+    };
+  } catch (error) {
+    if (!isSmokeRedirectLoop(error)) throw error;
+    return {
+      url,
+      status: 0,
+      finalUrl: url,
+      body: "",
+      redirectLoop: true,
+    };
+  }
 }
 
 /**
@@ -46,15 +66,16 @@ async function fetchPath(path) {
 function explain(kind, url, status) {
   if (kind === "ok") return;
   if (kind === "protection") {
+    const loop = status === 0 ? " The request never settled (redirect count exceeded)." : "";
     if (!bypass.trim()) {
       console.error(
-        `[smoke] ${url} is behind Vercel Deployment Protection (HTTP ${status}). ` +
+        `[smoke] ${url} is behind Vercel Deployment Protection (HTTP ${status}).${loop} ` +
           "Set the Actions secret VERCEL_AUTOMATION_BYPASS_SECRET. " +
           "staging-smoke maps it to SMOKE_PROTECTION_BYPASS. No header is sent when it is unset.",
       );
     } else {
       console.error(
-        `[smoke] ${url} is still behind Vercel protection after the bypass header (HTTP ${status}). ` +
+        `[smoke] ${url} is still behind Vercel protection after the bypass header (HTTP ${status}).${loop} ` +
           "Check VERCEL_AUTOMATION_BYPASS_SECRET against that project's Protection Bypass for Automation value.",
       );
     }
@@ -73,6 +94,7 @@ const homeKind = classifySmokeHttp({
   status: home.status,
   finalUrl: home.finalUrl,
   body: home.body,
+  redirectLoop: home.redirectLoop,
 });
 console.log(`[smoke] GET ${home.url} -> ${home.status} (${homeKind})`);
 if (homeKind !== "ok") {
@@ -86,6 +108,7 @@ const loginKind = classifySmokeHttp({
   status: login.status,
   finalUrl: login.finalUrl,
   body: login.body,
+  redirectLoop: login.redirectLoop,
 });
 console.log(`[smoke] GET ${login.url} -> ${login.status} (${loginKind})`);
 if (loginKind !== "ok") {
@@ -115,7 +138,7 @@ const { signInViaSplashEmailPassword } = await import("./qa/_lib/qaAuthSplash.mj
 
 const browser = await chromium.launch({ headless: true });
 try {
-  const context = await browser.newContext({ extraHTTPHeaders: headers });
+  const context = await browser.newContext({ extraHTTPHeaders: browserHeaders });
   await enableFirebaseAppCheckDebug(context);
   const page = await context.newPage();
   await signInViaSplashEmailPassword(page, base, email, password);

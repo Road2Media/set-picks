@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.98.3] — 2026-11-07
+
+### Changed
+- **CI stages (#1184)** — Release docs name the four stages: the pull request gate, the same CI on a push to `staging` (not a required check), the release pull request to `main`, and production smoke after the GitHub Release is published. The nightly favicon check is not that smoke. Release scripts do not read Actions runs. A missing staging run is unknown, not a failed release. No branch-protection change.
+
+### Fixed
+- **Staging smoke redirect loop (#1184)** — The HTTP check was sending `x-vercel-set-bypass-cookie` with the bypass secret. That header is a redirect that sets a cookie. Node `fetch` does not keep the cookie, so staging-smoke followed redirects until the count was exceeded, including when the Actions secret was set. The HTTP check now sends only `x-vercel-protection-bypass`. The browser step still asks Vercel to set the cookie. A leftover redirect loop is reported as protection. No declared API change.
+
 ## [1.98.2] — 2026-11-07
 
 ### Fixed

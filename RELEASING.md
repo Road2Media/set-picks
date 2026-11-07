@@ -6,12 +6,24 @@ This is the same rule as foco-pets and road2media, adapted to the checks this re
 
 ## CI stages
 
-1. **Pull request gate.** Every pull request to `staging` or `main` runs `verify`, `scope-guard`, and `label-integrity`. Vercel still reports its own check. `functions`, `rules`, and `qa-runners` stay path-gated inside `verify`'s workflow.
-2. **Push to `staging`.** `verify` already runs on that push. It is not a required check. `staging-smoke` runs against the staging branch alias. `scope-guard` and `label-integrity` stay pull-request-only because they read labels.
-3. **Release pull request.** The `staging` → `main` pull request runs the same pull-request checks again, including Vercel.
-4. **Production smoke.** `production-smoke` runs after the GitHub Release is published.
+Patrick approved this order on 2026-10-22. It is the same order for every Road2Media repo. `.github/workflows/ci.yml` already runs on `push` to `main`, `master`, and `staging`, on `pull_request`, and on the nightly `schedule`. `verify` runs on those pushes. `build`, `functions`, `rules`, and `qa-runners` stay path-gated. The SemVer gate stays pull-request-only. No extra trigger is required.
 
-Do not add the staging push run as a required status check. Branch protection is a human step. This repository does not change it from a pull request.
+1. **Pull request gate.** Every pull request to `staging` or `main` runs `verify`, `scope-guard`, and `label-integrity`. Vercel still reports its own check. `ci-gate` always reports `verify`, `build`, `functions`, and `rules`. `functions`, `rules`, and `qa-runners` stay path-gated inside the CI workflow. This gate is what branch protection may require. This repository does not change that protection from a pull request.
+2. **Push to `staging`.** The same CI workflow runs on the merge commit. It is not a required status check. A merge does not wait for it: the push run starts after the merge. `scope-guard` and `label-integrity` stay pull-request-only because they read labels. `staging-smoke` also runs against the staging branch alias. It is not a required check.
+3. **Release pull request.** The `staging` → `main` pull request runs the same pull-request checks again, including Vercel.
+4. **Production smoke.** `production-smoke` runs after the GitHub Release is published (`release: published`), against `https://www.setlistpickem.com`. It requests `/` and `/login`, then signs in and expects `/dashboard`. The nightly `favicon-prod` job only checks favicon URLs. It does not replace production smoke.
+
+Do not add the staging push run as a required status check.
+
+### Staging push concurrency
+
+CI concurrency is `${{ github.workflow }}-${{ github.ref }}` (the nightly schedule uses its own group) with `cancel-in-progress: true`. A newer push cancels an older in-progress run on that ref. The latest `staging` SHA is the run that is left to finish. Checked on 2026-11-07 after #1211, #1212, #1213, #1214, and #1215: each merge commit had a completed `verify` job, and the last 50 staging CI runs had no cancellation. Leave `cancel-in-progress` as it is. Release tooling does not read those runs, so a cancelled older run is not a release failure.
+
+### Reading staging CI
+
+`scripts/release-gate.mjs` and `scripts/release-publish.mjs` compare `package.json` with the latest GitHub Release and `CHANGELOG.md`. They do not list Actions runs. There is no draft-release script in this repo. Road2Media/foco-pets was not readable from this checkout, so that repo's bug was not re-read here.
+
+If a later script does read staging CI, zero runs is **unknown**, not failed. A cancelled run on an older SHA is not a failure of the latest SHA. Only a completed failure on the SHA you are judging is a failure.
 
 ## Agent queue labels
 
@@ -129,7 +141,7 @@ There is no staging custom domain. `www.setlistpickem.com` is production.
 
 Both smokes request `/` and `/login`, then sign in with the existing `QA_TEST_EMAIL`, `QA_TEST_PASSWORD`, and `QA_APPCHECK_DEBUG_TOKEN` secrets and expect `/dashboard`. They do not add new login secrets.
 
-Staging previews (`set-picks-git-*.vercel.app`) use Vercel Deployment Protection, so anonymous requests are sent to Vercel SSO. `staging-smoke` maps `VERCEL_AUTOMATION_BYPASS_SECRET` to `SMOKE_PROTECTION_BYPASS`. `smokeHeaders()` sends `x-vercel-protection-bypass` only when that value is set, and sends no bypass header when it is empty. Production does not use the bypass secret. Copy the value from the Vercel project's Protection Bypass for Automation setting. Do not commit it.
+Staging previews (`set-picks-git-*.vercel.app`) use Vercel Deployment Protection, so anonymous requests are sent to Vercel SSO. `staging-smoke` maps `VERCEL_AUTOMATION_BYPASS_SECRET` to `SMOKE_PROTECTION_BYPASS`. The HTTP check sends `x-vercel-protection-bypass` only when that value is set, and sends no bypass header when it is empty. It does not send `x-vercel-set-bypass-cookie`. That header is a redirect that sets a cookie, and Node `fetch` does not keep the cookie, so following it loops. The browser step does send the cookie header. A redirect loop is reported as protection. Production does not use the bypass secret. Copy the value from the Vercel project's Protection Bypass for Automation setting. Do not commit it.
 
 ## Rollback
 
@@ -140,5 +152,5 @@ Roll back with Vercel's instant rollback, or revert the release pull request, th
 These stay human. Agents do not perform them.
 
 1. Add the Actions secret `SYNC_BOT_TOKEN` (contents: push tags and create Releases; pull requests: open the staging sync).
-2. Add `VERCEL_AUTOMATION_BYPASS_SECRET` so `staging-smoke` can pass Deployment Protection. Until then, `staging-smoke` fails closed on the SSO redirect.
+2. Keep `VERCEL_AUTOMATION_BYPASS_SECRET` equal to the Vercel project's Protection Bypass for Automation value. The job already maps that secret when it is set. A mismatch still fails `staging-smoke` as protection. The HTTP check must not follow the bypass-cookie redirect.
 3. After `scope-guard` and `label-integrity` have reported on a pull request, require those check names on `staging` and `main`. Leave `verify` and `Vercel` required. Do not require the staging push run.
