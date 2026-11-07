@@ -104,6 +104,8 @@ npm run test:factory-guardrails  # scope-guard, label integrity, smoke, publish 
 `test:shipped-issue-close` is part of the `verify` job (2026-10-22).
 `test:factory-guardrails` is part of `verify` (2026-11-06, #1162). `scope-guard` and `label-integrity` are separate pull-request workflows. Release and smoke rules are in `RELEASING.md`.
 
+The four CI stages (2026-11-07, #1184) are pull request gate, `staging` push (not required), release pull request, then `production-smoke`. The nightly `favicon-prod` job is not that smoke.
+
 `ci-gate` always reports (#1148, 2026-10-22). `build`, `functions`, and `rules` still skip when their paths did not change. The gate fails only when one of those jobs, or `verify`, failed. Dependabot policy tests are `npm run test:dependabot-auto-merge`.
 
 `npm test` exit code **134** is a known Vitest worker-teardown flake —

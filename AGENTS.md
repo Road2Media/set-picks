@@ -38,12 +38,18 @@ New secrets apply to the next agent boot. A running agent does not see them.
 
 Standard commands are in `package.json` scripts.
 
-CI is now risk-weighted:
+CI is now risk-weighted. The four stages (Patrick, 2026-10-22) are in `RELEASING.md`:
+
+1. **Pull request gate.** `verify`, `scope-guard`, `label-integrity`, and Vercel. `ci-gate` always reports. `functions`, `rules`, and `qa-runners` are path-gated.
+2. **Push to `staging`.** The same CI runs on the merge commit and is not a required check. `staging-smoke` runs too and is not required.
+3. **Release pull request.** `staging` → `main` runs the pull-request checks again.
+4. **Production smoke.** `production-smoke` runs after the GitHub Release is published. Nightly `favicon-prod` only checks favicon URLs.
+
 - Baseline checks run on all PRs/pushes (`verify` + Vercel).
-- Pull requests also run `scope-guard` and `label-integrity` (`.github/workflows/scope-guard.yml`, `.github/workflows/label-integrity.yml`). See `RELEASING.md`.
+- Pull requests also run `scope-guard` and `label-integrity` (`.github/workflows/scope-guard.yml`, `.github/workflows/label-integrity.yml`).
 - `functions`, `rules`, and `qa-runners` are conditional based on changed paths/risk.
 - Nightly scheduled CI runs the full matrix as a backstop.
-- `staging-smoke` runs on a push to `staging`. `production-smoke` runs after a published Release. `release-publish` on `main` tags and publishes idempotently, using `SYNC_BOT_TOKEN` when that Actions secret is set. Do not invent the token. Patrick adds it, and adds `VERCEL_AUTOMATION_BYPASS_SECRET` if staging smoke is blocked by Deployment Protection.
+- `release-publish` on `main` tags and publishes idempotently, using `SYNC_BOT_TOKEN` when that Actions secret is set. Do not invent the token. Patrick adds it. `VERCEL_AUTOMATION_BYPASS_SECRET` must match the Vercel Protection Bypass for Automation value or `staging-smoke` fails closed. Do not change branch protection or required checks from a pull request. A missing staging CI run is unknown, not a failed release.
 
 Core local commands:
 
