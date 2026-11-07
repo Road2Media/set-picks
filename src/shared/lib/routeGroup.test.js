@@ -19,6 +19,7 @@ describe('resolveRouteGroup', () => {
     expect(resolveRouteGroup('/how-scoring-works')).toBe('marketing');
     expect(resolveRouteGroup('/phish-setlist-prediction-game')).toBe('marketing');
     expect(resolveRouteGroup('/about')).toBe('marketing');
+    expect(resolveRouteGroup('/phish-at-msg')).toBe('marketing');
     expect(resolveRouteGroup('/tour-stats')).toBe('tour_stats');
     expect(resolveRouteGroup('/tour-stats/song/foo')).toBe('tour_stats');
     expect(resolveRouteGroup('/embed/stats')).toBe('embed');

@@ -73,7 +73,11 @@ function App() {
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/how-scoring-works" element={<HowScoringWorksPage />} />
         <Route path="/tour-stats" element={<PublicTourStatsPage />} />
-        <Route path="/tour-stats/msg" element={<MsgGardenStatsPage />} />
+        <Route path="/phish-at-msg" element={<MsgGardenStatsPage />} />
+        <Route
+          path="/tour-stats/msg"
+          element={<Navigate to="/phish-at-msg" replace />}
+        />
         <Route path="/tour-stats/2026" element={<AnnualTourStatsPage />} />
         <Route path="/tour-stats/:tourSlug" element={<PublicTourStatsPage />} />
         <Route path="/rewind" element={<RewindResultsPage />} />

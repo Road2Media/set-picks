@@ -18,10 +18,10 @@ export default function MsgGardenStatsView({ stats, heading }) {
     <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
       <header className="mb-6 space-y-3 text-center sm:text-left">
         <p className="text-[10px] font-black uppercase tracking-widest text-teal-400">
-          Tour Insights
+          The Garden
         </p>
         <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
-          {heading || 'Phish at MSG, by the numbers'}
+          {heading || 'Phish at MSG'}
         </h1>
         <div className="space-y-2 text-base leading-snug text-slate-300">
           {summary.map((line) => (
@@ -29,12 +29,13 @@ export default function MsgGardenStatsView({ stats, heading }) {
           ))}
         </div>
         <p className="text-sm leading-snug text-slate-400">
+          {formatCount(stats.uniqueSongs)} different songs across{' '}
+          {formatCount(stats.showCount)} shows at the Garden.
+          {' '}
           <Link to="/tour-stats" className={LINK_ON_DARK}>
-            Tour Insights
+            One tour at a time
           </Link>
-          {' · '}
-          {formatCount(stats.uniqueSongs)} different songs in {formatCount(stats.showCount)}{' '}
-          shows. Aggregates only, not a night-by-night archive.
+          .
         </p>
       </header>
 
@@ -50,12 +51,11 @@ export default function MsgGardenStatsView({ stats, heading }) {
 
       <section className="mb-8">
         <h2 className="mb-2 font-display text-xl font-bold text-white">
-          How MSG shows have opened
+          Show openers at MSG
         </h2>
         <p className="mb-3 text-sm leading-snug text-slate-300">
-          These are how often each song has opened a Phish show at MSG, across{' '}
-          {formatCount(stats.openerShowCount || stats.showCount)} shows. Frequencies, not
-          a pick tip.
+          Songs that have opened a show at the Garden, and how many times, across{' '}
+          {formatCount(stats.openerShowCount || stats.showCount)} shows.
         </p>
         <RankedList
           rows={stats.openers}
@@ -116,11 +116,12 @@ export default function MsgGardenStatsView({ stats, heading }) {
           New Year&apos;s Eve at the Garden
         </h2>
         <p className="text-sm leading-snug text-slate-300">
-          New Year&apos;s Eve shows in this count: {formatCount(stats.nyeShowCount)}.
+          Phish has played New Year&apos;s Eve at the Garden{' '}
+          {formatCount(stats.nyeShowCount)} times.
           {stats.nyeOpeners.length ? (
             <>
               {' '}
-              Most frequent NYE openers:{' '}
+              Those nights opened most often with{' '}
               {stats.nyeOpeners
                 .map((row) => `${row.title} (${formatCount(row.timesPlayed)})`)
                 .join(', ')}

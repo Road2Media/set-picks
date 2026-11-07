@@ -60,7 +60,10 @@ import {
   finishedTourWrapShareImageFile,
   finishedTourWrapShareImageUrl,
 } from '../src/features/tour-stats/model/finishedTourWrap.js';
-import { TOUR_STATS_SEO_FACT_SLUGS } from '../src/shared/config/seoRoutes.js';
+import {
+  MSG_GARDEN_PATH,
+  TOUR_STATS_SEO_FACT_SLUGS,
+} from '../src/shared/config/seoRoutes.js';
 import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
 import { buildAnnualPrerenderEnrichment } from '../src/features/tour-stats/model/annualTourStatsFacts.js';
 import {
@@ -101,7 +104,6 @@ function isTourStatsPrerenderRoute(path) {
   return (
     typeof path === 'string' &&
     path.startsWith('/tour-stats') &&
-    path !== '/tour-stats/msg' &&
     path !== '/tour-stats/2026'
   );
 }
@@ -247,7 +249,7 @@ async function maybeWriteTourWrapShareImage(doc, slug) {
 }
 
 async function loadMsgGardenEnrichment(route) {
-  if (route.path !== '/tour-stats/msg') return null;
+  if (route.path !== MSG_GARDEN_PATH) return null;
   let liveDoc = null;
   try {
     liveDoc = await fetchFirestoreRestDocument(
@@ -265,7 +267,7 @@ async function loadMsgGardenEnrichment(route) {
     route.canonicalUrl,
   );
   console.log(
-    `prerender-seo: /tour-stats/msg facts (${enrichment.stats.showCount} shows through ${enrichment.stats.lastShowDate})`,
+    `prerender-seo: ${MSG_GARDEN_PATH} facts (${enrichment.stats.showCount} shows through ${enrichment.stats.lastShowDate})`,
   );
   return enrichment;
 }
@@ -443,7 +445,7 @@ function emitTourStatsDiscoveryFiles(allRoutes, msgLastShowDate = '', annualLast
   const lastmods = collectTourStatsSitemapLastmods(allRoutes);
   const msgDate = sitemapLastmodDate(msgLastShowDate);
   if (msgDate) {
-    lastmods[`${SEO_CONFIG.siteUrl}/tour-stats/msg`] = msgDate;
+    lastmods[`${SEO_CONFIG.siteUrl}${MSG_GARDEN_PATH}`] = msgDate;
   }
   const annualDate = sitemapLastmodDate(annualLastShowDate);
   if (annualDate) {

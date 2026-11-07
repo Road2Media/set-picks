@@ -181,9 +181,9 @@ const HOW_SCORING_TITLE = "How Scoring Works | Setlist Pick'Em";
 const HOW_SCORING_DESCRIPTION = `Setlist Pick'Em scoring guide: In setlist (${IN_SETLIST} pts), exact slot (${EXACT_SLOT} pts), wildcard (${WILDCARD_HIT} pts), encore (${ENCORE_EXACT} pts), plus a Bustout Boost of ${BUSTOUT_BOOST} points for songs with a ${BUSTOUT_MIN_GAP}+ show gap.`;
 const HOW_SCORING_URL = `${SEO_CONFIG.siteUrl}/how-scoring-works`;
 
-const TOUR_STATS_HUB_TITLE = "Phish Tour Statistics & Insights | Setlist Pick'Em";
+const TOUR_STATS_HUB_TITLE = "Phish Tour Stats | Setlist Pick'Em";
 const TOUR_STATS_HUB_DESCRIPTION =
-  "Tour Insights: the latest Phish tour setlist statistics—most-played songs, bustouts by tour, and gap highlights. Updated every night the band plays live. Play Setlist Pick'Em to unlock personal stats.";
+  'See the songs Phish is playing most this tour, the bustouts, and the long gaps. Updated after every show.';
 const TOUR_STATS_HUB_URL = `${SEO_CONFIG.siteUrl}/tour-stats`;
 
 const TOUR_STATS_SPHERE_TITLE = "2026 Sphere Tour Statistics | Setlist Pick'Em";
@@ -198,12 +198,16 @@ const TOUR_STATS_SUMMER_DESCRIPTION =
   "2026 Summer Tour Phish setlist statistics—most-played songs, unique songs, summer tour bustouts, and gap highlights. Updated every night the band plays live. Play Setlist Pick'Em to unlock personal stats.";
 const TOUR_STATS_SUMMER_URL = `${SEO_CONFIG.siteUrl}/tour-stats/2026-summer-tour`;
 
-/** MSG milestone page (#1139). Not a tour slug. */
-const MSG_GARDEN_TITLE =
-  "Phish at MSG: 96 Shows by the Numbers | Setlist Pick'Em";
+/**
+ * Phish at MSG (#1139, moved #1192). A Garden compilation, not a tour slug.
+ * Canonical path is outside `/tour-stats`. The old path 308s here.
+ */
+export const MSG_GARDEN_PATH = '/phish-at-msg';
+export const MSG_GARDEN_LEGACY_PATH = '/tour-stats/msg';
+const MSG_GARDEN_TITLE = "Phish at MSG | Setlist Pick'Em";
 const MSG_GARDEN_DESCRIPTION =
-  'Phish at Madison Square Garden by the numbers: 96 shows through July 29, 2026, most-played songs, debuts, gaps, and New Year\'s Eve facts. January 2, 2027 is the 100th show.';
-const MSG_GARDEN_URL = `${SEO_CONFIG.siteUrl}/tour-stats/msg`;
+  'Phish at the Garden: the songs they play most, what opens the night, debuts, long gaps, and New Year\'s Eve.';
+const MSG_GARDEN_URL = `${SEO_CONFIG.siteUrl}${MSG_GARDEN_PATH}`;
 
 /** Annual roll-up (#1141). Not a tour slug. */
 const ANNUAL_2026_TITLE = "2026 Phish Tour Statistics | Setlist Pick'Em";
@@ -315,12 +319,6 @@ function buildMsgGardenJsonLdShell() {
           {
             '@type': 'ListItem',
             position: 2,
-            name: 'Tour Insights',
-            item: TOUR_STATS_HUB_URL,
-          },
-          {
-            '@type': 'ListItem',
-            position: 3,
             name: 'Phish at MSG',
             item: MSG_GARDEN_URL,
           },
@@ -645,11 +643,11 @@ export const PRERENDER_ROUTES = [
     title: TOUR_STATS_HUB_TITLE,
     description: TOUR_STATS_HUB_DESCRIPTION,
     canonicalUrl: TOUR_STATS_HUB_URL,
-    h1: 'Phish tour setlist statistics',
+    h1: 'What Phish is playing this tour',
     paragraphs: [
-      'Tour Insights tracks Phish tour setlist statistics: most-played songs, bustouts by tour, and gap highlights that help you make better picks.',
-      'Statistics update every night the band plays. Play the game and your personal stats start counting as you rack up points against other setlist pickers.',
-      'We\'re starting with Phish and building toward more bands soon. This page covers tour-wide song trends, not a full night-by-night setlist archive.',
+      'See which songs Phish keeps playing on this tour, which ones come back after a long gap, and how often each title shows up.',
+      'The list updates after every show. Lock a card and your own picks start counting too.',
+      'Phish is the band here. One tour at a time, the songs that keep coming back.',
     ],
     buildJsonLd: buildTourStatsHubJsonLd,
   },
@@ -683,15 +681,14 @@ export const PRERENDER_ROUTES = [
     buildJsonLd: buildTourStatsSummerJsonLd,
   },
   {
-    path: '/tour-stats/msg',
+    path: MSG_GARDEN_PATH,
     title: MSG_GARDEN_TITLE,
     description: MSG_GARDEN_DESCRIPTION,
     canonicalUrl: MSG_GARDEN_URL,
-    h1: 'Phish at MSG, by the numbers',
+    h1: 'Phish at MSG',
     paragraphs: [
-      'Phish at Madison Square Garden, counted from the shows Phish.net actually played. Canceled nights stay off the total.',
-      'Aggregates only: most-played songs, songs debuted at the Garden, the longest stretches between visits, bustouts that landed here, New Year\'s Eve counts, and how often each song has opened a show. Frequencies, not a pick tip.',
-      'Not a night-by-night setlist archive. The New Year\'s Run is the next reason to lock a card.',
+      'Phish at Madison Square Garden: the songs they play most, what opens the night, the debuts, the long waits between visits, and New Year\'s Eve.',
+      'January 2, 2027 is the announced 100th show at the Garden. The New Year\'s Run is the next time to lock a card.',
     ],
     buildJsonLd: buildMsgGardenJsonLdShell,
   },

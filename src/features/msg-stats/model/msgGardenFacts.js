@@ -1,5 +1,5 @@
 /**
- * Crawler copy + JSON-LD for `/tour-stats/msg` (#1139).
+ * Crawler copy + JSON-LD for `/phish-at-msg` (#1139, #1192).
  * Aggregates only. The show count comes from the snapshot or the nightly doc.
  */
 import snapshot from './msgGardenSnapshot.json' with { type: 'json' };
@@ -157,9 +157,6 @@ export function msgGardenSummarySentences(stats) {
       : '';
     sentences.push(`${lead}${nights}`);
   }
-  if (stats.checkedOn) {
-    sentences.push(`Setlist pages checked ${formatFanDate(stats.checkedOn)}.`);
-  }
   return sentences;
 }
 
@@ -205,8 +202,8 @@ export function buildMsgGardenFactsHtml(stats) {
     .slice(0, 3)
     .map((row) => `${row.title} (${formatCount(row.timesPlayed)})`)
     .join(', ');
-  const nye = `New Year's Eve shows in this count: ${formatCount(stats.nyeShowCount)}.${
-    nyeOpeners ? ` Most frequent NYE openers: ${nyeOpeners}.` : ''
+  const nye = `Phish has played New Year's Eve at the Garden ${formatCount(stats.nyeShowCount)} times.${
+    nyeOpeners ? ` Those nights opened most often with ${nyeOpeners}.` : ''
   }`;
 
   return `${summary}
@@ -214,8 +211,8 @@ export function buildMsgGardenFactsHtml(stats) {
     <ol data-seo-msg-stats="top-songs">
 ${top}
     </ol>
-    <h2>How MSG shows have opened</h2>
-    <p data-seo-msg-stats="opener-note">These are how often each song has opened a Phish show at MSG, across ${formatCount(stats.openerShowCount || stats.showCount)} shows. Frequencies, not a pick tip.</p>
+    <h2>Show openers at MSG</h2>
+    <p data-seo-msg-stats="opener-note">Songs that have opened a show at the Garden, and how many times, across ${formatCount(stats.openerShowCount || stats.showCount)} shows.</p>
     <ol data-seo-msg-stats="openers">
 ${openers}
     </ol>
@@ -252,7 +249,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       '@type': 'WebPage',
       '@id': pageUrl,
       url: pageUrl,
-      name: `Phish at MSG: ${formatCount(stats.showCount)} shows by the numbers`,
+      name: 'Phish at MSG',
       description: summary,
     },
     {
@@ -267,12 +264,6 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
         {
           '@type': 'ListItem',
           position: 2,
-          name: 'Tour Insights',
-          item: 'https://www.setlistpickem.com/tour-stats',
-        },
-        {
-          '@type': 'ListItem',
-          position: 3,
           name: 'Phish at MSG',
           item: pageUrl,
         },
@@ -313,18 +304,18 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
         faq(
           'What is the most-played Phish song at MSG?',
           topSong
-            ? `${topSong.title} has been played ${formatCount(topSong.timesPlayed)} times at Madison Square Garden in this count.`
+            ? `${topSong.title} has been played ${formatCount(topSong.timesPlayed)} times at Madison Square Garden.`
             : 'Song counts are still loading.',
         ),
         faq(
-          'What might Phish open show 100 with at MSG?',
+          'Which song has opened the most Phish shows at MSG?',
           topOpener
-            ? `${topOpener.title} has opened ${formatCount(topOpener.timesPlayed)} Phish shows at MSG, more than any other song in this count. That is a frequency, not a pick tip.`
+            ? `${topOpener.title} has opened ${formatCount(topOpener.timesPlayed)} Phish shows at MSG, more than any other song here.`
             : 'Opener frequencies are still loading.',
         ),
         faq(
           "How many New Year's Eve shows has Phish played at MSG?",
-          `This count includes ${formatCount(stats.nyeShowCount)} New Year's Eve shows at Madison Square Garden.`,
+          `Phish has played New Year's Eve at the Garden ${formatCount(stats.nyeShowCount)} times.`,
         ),
         faq(
           'What is the longest gap between Phish shows at MSG?',

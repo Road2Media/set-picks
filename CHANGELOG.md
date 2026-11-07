@@ -8,6 +8,19 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.98.0] — 2026-11-07
+
+### Added
+- **Phish at MSG has its own page (#1192)** — Canonical URL is `/phish-at-msg`. It is a compilation of Garden shows, not a tour, so it is no longer filed under Tour stats. Header and footer nav include “Phish at MSG”. Returning sessions stay on the marketing document. GA4 `route_group` is `marketing`. Prerender, sitemap, `llms.txt`, canonical, and JSON-LD breadcrumbs use the new URL. Breadcrumb is Home → Phish at MSG.
+
+### Changed
+- **Tour stats copy (#1192)** — The hub heading, intro, meta description, and footnote say what a fan gets from the page. The archive line is 2026 Sphere and 2026 tours. Phish at MSG is not on that line. Sphere, Summer, and the 2026 annual page keep their own headings.
+- **Marketing header (#1192)** — With the extra nav item, the desktop links sit slightly left of center below the xl breakpoint and use a tighter gap, so “Phish at MSG” does not cover Sign In at 1024px. At xl the nav is centered again.
+- **Phish at MSG copy (#1192)** — Headings, intro, meta description, opener note, New Year's Eve line, and footnotes are fan language. The Phish.net credit stays.
+
+### Fixed
+- **Old MSG URL (#1192)** — `/tour-stats/msg` and `/tour-stats/msg/` permanently redirect to `/phish-at-msg` (`vercel.json` `permanent: true`, HTTP 308, same as the summer slug). The `msg` slug stays reserved so a tour page cannot publish on that path. Local Vite follows the same path with a client redirect.
+
 ## [1.97.5] — 2026-11-06
 
 ### Changed

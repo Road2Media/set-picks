@@ -22,7 +22,7 @@ export function MarketingHeaderNav({ className = 'hidden lg:flex' }) {
   return (
     <nav
       aria-label="Marketing"
-      className={`items-center gap-3 xl:gap-4 ${className}`.trim()}
+      className={`items-center gap-2 whitespace-nowrap xl:gap-4 ${className}`.trim()}
     >
       {MARKETING_PRIMARY_NAV.map(({ to, label }) => {
         const active = pathname === to || pathname.startsWith(`${to}/`);
@@ -31,7 +31,7 @@ export function MarketingHeaderNav({ className = 'hidden lg:flex' }) {
             key={to}
             to={to}
             onClick={scrollMarketingToTop}
-            className={`${HEADER_LINK_ON_DARK} ${active ? HEADER_LINK_ACTIVE : ''}`.trim()}
+            className={`${HEADER_LINK_ON_DARK} whitespace-nowrap ${active ? HEADER_LINK_ACTIVE : ''}`.trim()}
             aria-current={active ? 'page' : undefined}
           >
             {label}

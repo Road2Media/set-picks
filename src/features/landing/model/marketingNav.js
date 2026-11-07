@@ -13,6 +13,7 @@ export const MARKETING_PRIMARY_NAV = [
   { to: '/how-it-works', label: 'How it works' },
   { to: '/how-scoring-works', label: 'Scoring' },
   { to: '/tour-stats', label: 'Tour stats' },
+  { to: '/phish-at-msg', label: 'Phish at MSG' },
   { to: '/phish-setlist-prediction-game', label: 'The game' },
   { to: '/about', label: 'About' },
 ];
