@@ -24,6 +24,8 @@ export const ENABLE_FAILURE_MARKER = "<!-- dependabot-t0-scheduled-enable-failur
 export const SCHEDULED_REVOKE_MARKER = "<!-- dependabot-t0-scheduled-revoke -->";
 
 const DEPENDABOT_LOGIN = "dependabot[bot]";
+const GITHUB_WEB_FLOW_LOGIN = "web-flow";
+const GITHUB_WEB_FLOW_EMAIL = "noreply@github.com";
 const FAILURE_CONCLUSIONS = new Set(["failure", "timed_out", "startup_failure", "error"]);
 const OBSERVED_JOBS = new Set(["verify", "build", "functions"]);
 
@@ -40,16 +42,34 @@ export function isDependabotIdentity(login, email) {
 }
 
 /**
- * Both author and committer must be Dependabot. A merge commit from
- * "Update branch" or a human push fails closed.
+ * GitHub records a Dependabot App commit with committer login `web-flow`
+ * and email `noreply@github.com` (git name `GitHub`). That is Dependabot's
+ * committer, not a rewrite. A different login is foreign even when the
+ * email is `noreply@github.com`.
+ *
+ * @param {string | undefined | null} login
+ * @param {string | undefined | null} email
+ * @returns {boolean}
+ */
+function isGitHubWebFlowCommitter(login, email) {
+  const normalizedLogin = String(login || "").trim().toLowerCase();
+  if (normalizedLogin === GITHUB_WEB_FLOW_LOGIN) return true;
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  return normalizedLogin === "" && normalizedEmail === GITHUB_WEB_FLOW_EMAIL;
+}
+
+/**
+ * The author must be Dependabot. The committer must be Dependabot or
+ * GitHub's web-flow identity. A human or another bot as author or
+ * committer fails closed, including an "Update branch" merge commit.
  *
  * @param {object | undefined | null} commit
  * @returns {boolean}
  */
 export function isDependabotCommit(commit) {
-  const authorOk = isDependabotIdentity(commit?.authorLogin, commit?.authorEmail);
-  const committerOk = isDependabotIdentity(commit?.committerLogin, commit?.committerEmail);
-  return authorOk && committerOk;
+  if (!isDependabotIdentity(commit?.authorLogin, commit?.authorEmail)) return false;
+  if (isDependabotIdentity(commit?.committerLogin, commit?.committerEmail)) return true;
+  return isGitHubWebFlowCommitter(commit?.committerLogin, commit?.committerEmail);
 }
 
 /**

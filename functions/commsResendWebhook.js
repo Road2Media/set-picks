@@ -21,6 +21,11 @@ const {
 const { persistResendEmailEngagement } = require("./commsEmailEngagement");
 
 /**
+ * Verify a Resend Svix signature and return the parsed event.
+ *
+ * svix 2 `Webhook.verify` checks the signature and returns undefined.
+ * It no longer JSON-parses the body (svix-webhooks v2.2.0).
+ *
  * @param {string} rawBody
  * @param {Record<string, string | string[] | undefined>} headers
  * @param {string} webhookSecret
@@ -31,11 +36,12 @@ function verifyResendWebhookPayload(rawBody, headers, webhookSecret) {
     throw new Error("missing_webhook_secret");
   }
   const wh = new Webhook(webhookSecret);
-  return wh.verify(rawBody, {
+  wh.verify(rawBody, {
     "svix-id": String(headers["svix-id"] || ""),
     "svix-timestamp": String(headers["svix-timestamp"] || ""),
     "svix-signature": String(headers["svix-signature"] || ""),
   });
+  return JSON.parse(rawBody);
 }
 
 /**

@@ -1,6 +1,10 @@
 # Runs fast baseline checks on every PR/push, then conditionally runs
 # slower risk-weighted jobs (`rules`, `functions`, `qa-runners`) based on
 # changed paths or explicit labels. A nightly schedule runs the full matrix.
+#
+# scope-guard and label-integrity are separate pull-request workflows
+# (#1162, RELEASING.md). They sit beside verify. Vercel stays its own check.
+# This file does not change branch protection.
 
 name: CI
 
@@ -113,6 +117,9 @@ jobs:
 
       - name: Shipped-issue close collector (#1149, #1174)
         run: npm run test:shipped-issue-close
+
+      - name: Factory guardrails (#1162)
+        run: npm run test:factory-guardrails
 
       - name: Sphere recap recipient loader (#1194)
         run: npm run test:sphere-recap-recipients

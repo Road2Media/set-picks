@@ -56,11 +56,11 @@ Never introduce a MAJOR bump silently. If your diff contains a breaking change:
 
 ## Git tag after every promote (required)
 
-After every `staging → main` promote merge, agents **MUST** publish on `main` in the same turn:
+`staging` moves to `main` only when Patrick says **ship** or **promote to prod**. After that promote merge, agents **MUST** publish on `main` in the same turn:
 
 ```bash
 git checkout main && git pull origin main
 npm run release:publish -- --confirm
 ```
 
-(`release:publish` = release-gate → annotated tag → push → `gh release create`.) Do not wait for a separate ask. Do not tag mid-train or on feature branches. See `.cursor/rules/promote-release.mdc`.
+(`release:publish` = release-gate → annotated tag → push → `gh release create`.) The `release-publish` workflow runs the same command and exits 0 if that version is already published. Do not wait for a separate ask. Do not tag mid-train or on feature branches. See `.cursor/rules/promote-release.mdc` and `RELEASING.md`.
