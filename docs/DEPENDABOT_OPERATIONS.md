@@ -22,7 +22,7 @@ This is **not** recurring weekly noise — it was a **one-time enablement avalan
 
 ## Factory dependency standard (2026-10-22)
 
-Patrick set one standard for road2media, foco-pets, and set-picks. It replaces the older “never auto-merge a major” wording in #967, #1052, and #1148.
+Patrick set one standard for road2media, foco-pets, and set-picks. It replaces the older “never auto-merge a major” wording in #967, #1052, and #1148. The engineering rules (semver, shipped vs build-time, coupled packages, runtime pins, release size, `ui-check`, security updates, the quarterly Node check) are in `docs/DEPENDENCY_POLICY.md` (#1187). This file stays the operations runbook.
 
 In plain language:
 
@@ -40,7 +40,7 @@ In plain language:
 |---------|-------|-----|
 | Groups | **minor/patch only** (`*-safe` groups) | One breaking major must never block a week of safe updates (July 2026 wave: #518/#519/#624 sat open ~3 weeks) |
 | Majors | **Individual PRs**, one dependency each | Auto-merge when checks pass. A failed major stays open as an `agent-queue` `p3` issue. See "Major upgrades" |
-| `firebase-admin` majors in `/functions` | **Ignored** | `firebase-functions-test@3.5.0` (latest as of 2026-09-24) still peers `firebase-admin` `^8`–`^13` only; admin 14 fails `npm ci` with ERESOLVE (#624, #799). `firebase-functions@7.4.0` now peers admin `^14`, but do not ship admin 14 until the test harness catches up. Remove the ignore when `firebase-functions-test` allows `firebase-admin ^14`. |
+| `firebase-admin` majors in `/functions` | **Ignored** | Re-checked 2026-11-07: `firebase-functions-test@3.5.0` (latest) still peers `firebase-admin` `^8`–`^13` only; admin 14 fails `npm ci` with ERESOLVE (#624, #799, #1067). `firebase-functions` now peers admin `^14`, but do not ship admin 14 until the test harness catches up. Remove the ignore when `firebase-functions-test` allows `firebase-admin ^14`. #1067 was conflicting and was closed instead of rebased. |
 | CI `build` job | Runs on any PR touching `package.json` / `package-lock.json` / build config | `verify` doesn't run the production build and qa-runners skip lockfile-only diffs, so Tailwind-4-class breaks were only visible on Vercel (#519) |
 | `open-pull-requests-limit` | **2** per updates entry (root npm, `/functions` npm, Actions) (#967) | Was **5/5/3** after the 2026-07-05 re-enable. 2 matches the two `*-safe` groups per npm directory. **0** is only for an ops reset |
 | Auto-merge | Every Dependabot PR into `staging`, majors included (#1148) | `.github/workflows/dependabot-auto-merge.yml` runs `gh pr merge --auto --squash` after `dependabot/fetch-metadata`. It checks out the default branch only, never the PR head |
@@ -52,6 +52,7 @@ In plain language:
 | Vercel | `ignoreCommand` → `scripts/vercel-should-build.sh` | Any `dependabot/*` ref skips the preview. The script on that commit has to contain the rule, so recreate old Dependabot branches after this lands on `staging` |
 | Security updates | Not grouped | `applies-to: version-updates` on every `*-safe` group. Security PRs auto-merge when checks pass. No Monday wait |
 | `@types/node` | Ignore `>=25.0.0` on `/` and `/functions` | One major above Node 24. Quarterly check compares this to `engines.node` |
+| Dependabot labels | `dependencies`, `skip-version-bump`, `allow-global` | `allow-global` is applied when the pull request opens (Patrick, 2026-11-06, #1187). Dependabot reads the file from `main` |
 | Quarterly runtime check | `.github/workflows/runtime-quarterly-check.yml` | Reminder issue only. Does not change Vercel or Node |
 
 ### Merge policy by PR class
@@ -171,7 +172,7 @@ Known pending majors (from the closed July 2026 group PRs — tracked in #744):
 ### On the same PR / release that adds or edits `dependabot.yml`
 
 - [ ] `target-branch: staging` on **every** `updates` entry (repo default is `main`).
-- [ ] `skip-version-bump` label on every entry.
+- [ ] `skip-version-bump` and `allow-global` labels on every entry.
 - [ ] Document first-scan behavior in this file + `CHANGELOG.md`.
 - [ ] Steady-state `open-pull-requests-limit` is **2** per entry (#967). Use `0` only for the first hour of a brand-new enablement or an ops reset, then restore 2.
 
