@@ -18,7 +18,7 @@ import {
 import {
   publicTourStatsPathForSlug,
   resolveDefaultPublicTourSlug,
-  sortPublicTourIndex,
+  toursForPublicSwitcher,
 } from './publicTourIndex';
 import { SEO_CONFIG } from '../../../shared/config/seo';
 
@@ -37,14 +37,14 @@ export function usePublicTourStatsScreen() {
   const [tours, setTours] = useState(() => {
     const cached = readCachedPublicTourStatsIndex();
     return cached
-      ? sortPublicTourIndex(Array.isArray(cached.tours) ? cached.tours : [])
+      ? toursForPublicSwitcher(Array.isArray(cached.tours) ? cached.tours : [])
       : [];
   });
   const [defaultTourSlug, setDefaultTourSlug] = useState(() => {
     const cached = readCachedPublicTourStatsIndex();
     if (!cached) return '';
     return resolveDefaultPublicTourSlug(
-      sortPublicTourIndex(Array.isArray(cached.tours) ? cached.tours : []),
+      toursForPublicSwitcher(Array.isArray(cached.tours) ? cached.tours : []),
       cached.defaultTourSlug,
     );
   });
@@ -68,7 +68,7 @@ export function usePublicTourStatsScreen() {
       try {
         const idx = await fetchPublicTourStatsIndex();
         if (cancelled) return;
-        const list = sortPublicTourIndex(Array.isArray(idx.tours) ? idx.tours : []);
+        const list = toursForPublicSwitcher(Array.isArray(idx.tours) ? idx.tours : []);
         setTours(list);
         setDefaultTourSlug(
           resolveDefaultPublicTourSlug(list, idx.defaultTourSlug),
@@ -76,7 +76,7 @@ export function usePublicTourStatsScreen() {
         writeCachedPublicTourStatsIndex(idx);
         void fetchPublicTourStatsIndex({ skipCdn: true }).then((fresh) => {
           if (cancelled || !fresh) return;
-          const next = sortPublicTourIndex(
+          const next = toursForPublicSwitcher(
             Array.isArray(fresh.tours) ? fresh.tours : [],
           );
           setTours(next);
