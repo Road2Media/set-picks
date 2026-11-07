@@ -7,6 +7,7 @@ import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
 import {
   formatCount,
   formatFanDate,
+  formatTimesMark,
   msgGardenSummarySentences,
 } from '../model/msgGardenFacts';
 
@@ -40,26 +41,28 @@ export default function MsgGardenStatsView({ stats, heading }) {
       </header>
 
       <section className="mb-8">
-        <h2 className="mb-3 font-display text-xl font-bold text-white">
+        <h2 id="msg-most-played" className="mb-3 font-display text-xl font-bold text-white">
           Most-played songs at MSG
         </h2>
-        <RankedList
+        <CountTable
+          labelledBy="msg-most-played"
+          countHeader="times played"
           rows={stats.topSongs}
-          label={(row) => `${formatCount(row.timesPlayed)} plays`}
         />
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-2 font-display text-xl font-bold text-white">
+        <h2 id="msg-show-openers" className="mb-2 font-display text-xl font-bold text-white">
           Show openers at MSG
         </h2>
         <p className="mb-3 text-sm leading-snug text-slate-300">
           Songs that have opened a show at the Garden, and how many times, across{' '}
           {formatCount(stats.openerShowCount || stats.showCount)} shows.
         </p>
-        <RankedList
+        <CountTable
+          labelledBy="msg-show-openers"
+          countHeader="times opened"
           rows={stats.openers}
-          label={(row) => `opened ${formatCount(row.timesPlayed)}`}
         />
       </section>
 
@@ -162,18 +165,32 @@ export default function MsgGardenStatsView({ stats, heading }) {
   );
 }
 
-function RankedList({ rows, label }) {
+function CountTable({ labelledBy, countHeader, rows }) {
   return (
-    <ol className="space-y-1.5 text-sm text-slate-200">
-      {rows.map((row, index) => (
-        <li key={row.title} className="flex items-baseline justify-between gap-4">
-          <span>
-            <span className="mr-2 text-slate-500">{index + 1}.</span>
-            <span className="font-semibold text-white">{row.title}</span>
-          </span>
-          <span className="shrink-0 text-slate-400">{label(row)}</span>
-        </li>
-      ))}
-    </ol>
+    <table
+      aria-labelledby={labelledBy}
+      className="mx-auto w-max max-w-full text-sm"
+    >
+      <thead>
+        <tr className="text-xs text-slate-500">
+          <th scope="col" className="pb-2 pr-8 text-left font-semibold">
+            song
+          </th>
+          <th scope="col" className="whitespace-nowrap pb-2 text-right font-semibold">
+            {countHeader}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.title}>
+            <td className="py-1 pr-8 font-semibold text-white">{row.title}</td>
+            <td className="whitespace-nowrap py-1 text-right tabular-nums text-slate-300">
+              {formatTimesMark(row.timesPlayed)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

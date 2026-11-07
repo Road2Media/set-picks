@@ -688,7 +688,6 @@ export const PRERENDER_ROUTES = [
     h1: 'Phish at MSG',
     paragraphs: [
       'Phish at Madison Square Garden: the songs they play most, what opens the night, the debuts, the long waits between visits, and New Year\'s Eve.',
-      'January 2, 2027 is the announced 100th show at the Garden. The New Year\'s Run is the next time to lock a card.',
     ],
     buildJsonLd: buildMsgGardenJsonLdShell,
   },

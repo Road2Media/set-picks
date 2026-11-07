@@ -38,31 +38,19 @@ export function formatFanDate(ymd) {
  * @param {number} n
  * @returns {string}
  */
-export function formatOrdinal(n) {
-  const value = Math.trunc(Number(n));
-  if (!Number.isFinite(value) || value <= 0) return '';
-  const mod100 = value % 100;
-  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
-  switch (value % 10) {
-    case 1:
-      return `${value}st`;
-    case 2:
-      return `${value}nd`;
-    case 3:
-      return `${value}rd`;
-    default:
-      return `${value}th`;
-  }
-}
-
-/**
- * @param {number} n
- * @returns {string}
- */
 export function formatCount(n) {
   const value = Number(n);
   if (!Number.isFinite(value)) return '0';
   return Math.trunc(value).toLocaleString('en-US');
+}
+
+/**
+ * Row count for the Most played and Show openers tables. `5` → `5X`.
+ * @param {number} n
+ * @returns {string}
+ */
+export function formatTimesMark(n) {
+  return `${formatCount(n)}X`;
 }
 
 /**
@@ -132,32 +120,20 @@ export function resolveMsgGardenStats(liveDoc) {
 }
 
 /**
- * @param {NonNullable<ReturnType<typeof normalizeMsgGardenStats>>} stats
+ * Intro under the heading on `/phish-at-msg`. Fixed copy. The lists below
+ * still follow the live counts.
+ */
+const MSG_GARDEN_INTRO_PARAGRAPHS = Object.freeze([
+  'Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.',
+  'July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics.',
+  'This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027.',
+]);
+
+/**
  * @returns {string[]}
  */
-export function msgGardenSummarySentences(stats) {
-  const sentences = [
-    `Phish has played Madison Square Garden ${formatCount(stats.showCount)} times, from ${formatFanDate(stats.firstShowDate)} through ${formatFanDate(stats.lastShowDate)}.`,
-  ];
-  if (stats.lastShowOrdinal && stats.lastShowDate) {
-    sentences.push(
-      `Phish.net calls the ${formatFanDate(stats.lastShowDate)} show the ${formatOrdinal(stats.lastShowOrdinal)} at the Garden.`,
-    );
-  }
-  if (stats.milestoneShowNumber && stats.milestoneShowDate) {
-    const before = stats.upcomingShowDates
-      .filter((date) => date < stats.milestoneShowDate)
-      .map((date) => formatFanDate(date));
-    const lead =
-      stats.milestoneShowNumber === 100
-        ? `${formatFanDate(stats.milestoneShowDate)} is the announced 100th show at the Garden.`
-        : `${formatFanDate(stats.milestoneShowDate)} would be show ${formatCount(stats.milestoneShowNumber)} at the Garden.`;
-    const nights = before.length
-      ? ` The nights before it on this run: ${joinList(before)}.`
-      : '';
-    sentences.push(`${lead}${nights}`);
-  }
-  return sentences;
+export function msgGardenSummarySentences() {
+  return MSG_GARDEN_INTRO_PARAGRAPHS;
 }
 
 /**
@@ -168,18 +144,8 @@ export function buildMsgGardenFactsHtml(stats) {
   const summary = msgGardenSummarySentences(stats)
     .map((line) => `    <p data-seo-msg-stats="summary">${escapeHtml(line)}</p>`)
     .join('\n');
-  const top = statList(
-    'top-songs',
-    stats.topSongs.map(
-      (row) => `${row.title} (${formatCount(row.timesPlayed)} plays)`,
-    ),
-  );
-  const openers = statList(
-    'openers',
-    stats.openers.map(
-      (row) => `${row.title} opened ${formatCount(row.timesPlayed)} shows`,
-    ),
-  );
+  const top = countTable('top-songs', 'times played', stats.topSongs);
+  const openers = countTable('openers', 'times opened', stats.openers);
   const debuts = statList(
     'debuts',
     stats.debuts.map((row) => `${row.title} (${formatFanDate(row.showDate)})`),
@@ -208,14 +174,10 @@ export function buildMsgGardenFactsHtml(stats) {
 
   return `${summary}
     <h2>Most-played songs at MSG</h2>
-    <ol data-seo-msg-stats="top-songs">
 ${top}
-    </ol>
     <h2>Show openers at MSG</h2>
     <p data-seo-msg-stats="opener-note">Songs that have opened a show at the Garden, and how many times, across ${formatCount(stats.openerShowCount || stats.showCount)} shows.</p>
-    <ol data-seo-msg-stats="openers">
 ${openers}
-    </ol>
     <h2>Songs debuted at MSG</h2>
     <ol data-seo-msg-stats="debuts">
 ${debuts}
@@ -274,7 +236,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most-played songs at Madison Square Garden',
       stats.topSongs.map((row) => ({
         name: row.title,
-        description: `${formatCount(row.timesPlayed)} plays at MSG`,
+        description: formatTimesMark(row.timesPlayed),
       })),
     ),
     itemList(
@@ -282,7 +244,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most frequent MSG show openers',
       stats.openers.map((row) => ({
         name: row.title,
-        description: `Opened ${formatCount(row.timesPlayed)} MSG shows`,
+        description: formatTimesMark(row.timesPlayed),
       })),
     ),
     itemList(
@@ -375,15 +337,33 @@ function faq(name, text) {
   };
 }
 
+/**
+ * @param {string} name
+ * @param {string} countHeader
+ * @param {Array<{ title: string, timesPlayed: number }>} rows
+ */
+function countTable(name, countHeader, rows) {
+  const body = rows.length
+    ? rows
+        .map(
+          (row) =>
+            `      <tr><td>${escapeHtml(row.title)}</td><td>${escapeHtml(formatTimesMark(row.timesPlayed))}</td></tr>`,
+        )
+        .join('\n')
+    : '      <tr><td colspan="2">None in this count.</td></tr>';
+  return `    <table data-seo-msg-stats="${name}">
+      <thead>
+        <tr><th>song</th><th>${escapeHtml(countHeader)}</th></tr>
+      </thead>
+      <tbody>
+${body}
+      </tbody>
+    </table>`;
+}
+
 function statList(name, lines) {
   if (!lines.length) return `    <li>None in this count.</li>`;
   return lines.map((line) => `    <li>${escapeHtml(line)}</li>`).join('\n');
-}
-
-function joinList(items) {
-  if (items.length <= 1) return items[0] || '';
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
 
 function escapeHtml(str) {
