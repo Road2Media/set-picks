@@ -99,6 +99,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 ### Fixed
 - **Old MSG URL (#1192)** — `/tour-stats/msg` and `/tour-stats/msg/` permanently redirect to `/phish-at-msg` (`vercel.json` `permanent: true`, HTTP 308, same as the summer slug). The `msg` slug stays reserved so a tour page cannot publish on that path. Local Vite follows the same path with a client redirect.
 
+## [1.97.6] — 2026-11-09
+
+### Changed
+- **Phish at MSG tables (production hotfix)** — Production `v1.97.6` on `/tour-stats/msg`. Most-played songs and Show openers are tables lined up with the section headings. Headers are "Song", "Times played", and "Times opened". The count is the number only, such as 33, with no trailing X. The prerender tables and the ItemList descriptions use the same labels and counts. This sync records that release. It does not change staging's Phish at MSG page.
+
 ## [1.97.5] — 2026-11-06
 
 ### Changed
