@@ -57,6 +57,11 @@ import {
 import { writeFinishedTourWrapShareImage } from './lib/tourWrapShareImage.mjs';
 import { SEO_CONFIG } from '../src/shared/config/seo.js';
 import {
+  appendMissingLlmsRoutes,
+  appendMissingSitemapRoutes,
+  assertPublicDiscovery,
+} from '../src/shared/config/publicSitemapRoutes.js';
+import {
   buildFinishedTourWrap,
   buildFinishedTourWrapHtml,
   finishedTourWrapShareImageFile,
@@ -67,6 +72,12 @@ import {
   TOUR_STATS_SEO_FACT_SLUGS,
 } from '../src/shared/config/seoRoutes.js';
 import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
+import {
+  announcedNyeRunShows,
+  buildNyeRunFactsHtml,
+  buildNyeRunJsonLd,
+} from '../src/features/msg-stats/model/nyeRunShows.js';
+import { NYE_RUN_PATH } from '../src/features/msg-stats/model/nyeRunContract.js';
 import { buildAnnualPrerenderEnrichment } from '../src/features/tour-stats/model/annualTourStatsFacts.js';
 import {
   ANNUAL_TOUR_STATS_YEAR,
@@ -330,6 +341,40 @@ async function loadAnnualTourStatsEnrichment(route) {
   return enrichment;
 }
 
+async function loadNyeRunEnrichment(route) {
+  if (route.path !== NYE_RUN_PATH) return null;
+  const shows = announcedNyeRunShows();
+  let factsHtml = buildNyeRunFactsHtml(shows);
+  let jsonLd = buildNyeRunJsonLd(shows, route.canonicalUrl);
+  const slug =
+    typeof route.tourStatsSeoSlug === 'string' ? route.tourStatsSeoSlug.trim() : '';
+  if (slug) {
+    try {
+      const doc = await loadPublicTourStatsDoc(slug);
+      if (doc) {
+        const facts = normalizeTourStatsFacts(doc);
+        if (facts.bustouts.length || facts.topSongs.length) {
+          factsHtml = `${factsHtml}\n${buildTourStatsFactsHtml(facts)}`;
+        }
+        jsonLd = mergeTourStatsFactsJsonLd(jsonLd, facts, route.canonicalUrl);
+      } else {
+        console.warn(
+          `prerender-seo: no public_tour_stats/${slug} — announced shows only`,
+        );
+      }
+    } catch (err) {
+      console.warn(
+        `prerender-seo: NYE tour stats unavailable, announced shows only:`,
+        err?.message || err,
+      );
+    }
+  }
+  console.log(
+    `prerender-seo: ${NYE_RUN_PATH} facts (${shows.length} announced shows)`,
+  );
+  return { factsHtml, jsonLd };
+}
+
 async function loadTourStatsEnrichment(route) {
   const slug =
     typeof route.tourStatsSeoSlug === 'string' ? route.tourStatsSeoSlug.trim() : '';
@@ -454,10 +499,20 @@ function emitTourStatsDiscoveryFiles(allRoutes, msgLastShowDate = '', annualLast
     lastmods[`${SEO_CONFIG.siteUrl}/tour-stats/2026`] = annualDate;
   }
   const sitemap = applySitemapLastmods(
-    appendSitemapTourStatsUrls(readFileSync(publicSitemap, 'utf8'), locs),
+    appendMissingSitemapRoutes(
+      appendSitemapTourStatsUrls(readFileSync(publicSitemap, 'utf8'), locs),
+    ),
     lastmods,
   );
-  const llmsTxt = appendLlmsTourStatsLinks(readFileSync(publicLlms, 'utf8'), llms);
+  const llmsTxt = appendMissingLlmsRoutes(
+    appendLlmsTourStatsLinks(readFileSync(publicLlms, 'utf8'), llms),
+  );
+  try {
+    assertPublicDiscovery(sitemap, llmsTxt);
+  } catch (err) {
+    console.error(`prerender-seo: ${err?.message || err}`);
+    process.exit(1);
+  }
   writeFileSync(join(distDir, 'sitemap.xml'), sitemap, 'utf8');
   writeFileSync(join(distDir, 'llms.txt'), llmsTxt, 'utf8');
   const extraCount = locs.filter(
@@ -484,8 +539,13 @@ for (const route of prerenderRoutes) {
     ? null
     : await loadAnnualTourStatsEnrichment(route);
   if (annualEnrichment?.lastShowDate) annualLastShowDate = annualEnrichment.lastShowDate;
+  const nyeEnrichment =
+    msgEnrichment || annualEnrichment ? null : await loadNyeRunEnrichment(route);
   const enrichment =
-    msgEnrichment || annualEnrichment || (await loadTourStatsEnrichment(route));
+    msgEnrichment ||
+    annualEnrichment ||
+    nyeEnrichment ||
+    (await loadTourStatsEnrichment(route));
   let html = injectPrerenderHtml(shell, route, enrichment);
   // Marketing home statically imports splash UI via marketingMain — no lazy
   // HomeRoute waterfall, so no splash modulepreload injection (#832).

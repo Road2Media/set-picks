@@ -37,6 +37,8 @@ export default function LoginAuthScreen({
   onClose,
   poolInvitePending = false,
   seedError = '',
+  /** When true, success stays on this page so `/login` can restore a dashboard path. */
+  postAuthHandled = false,
 }) {
   const isSignup = mode === 'signup';
 
@@ -82,6 +84,7 @@ export default function LoginAuthScreen({
           onSwitchToSignIn={onSwitchToSignIn}
           poolInvitePending={poolInvitePending}
           seedError={seedError}
+          postAuthHandled={postAuthHandled}
         />
       ) : (
         <LoginSignInPanel
@@ -89,6 +92,7 @@ export default function LoginAuthScreen({
           onSwitchToSignUp={onSwitchToSignUp}
           poolInvitePending={poolInvitePending}
           seedError={seedError}
+          postAuthHandled={postAuthHandled}
         />
       )}
     </div>
@@ -100,6 +104,7 @@ function LoginSignInPanel({
   onSwitchToSignUp,
   poolInvitePending,
   seedError,
+  postAuthHandled,
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const emailGuard = useDeferPasswordManagerAutofill();
@@ -116,7 +121,10 @@ function LoginSignInPanel({
     handleGoogle,
     handleEmailSignIn,
     handleSendPasswordResetEmail,
-  } = useSplashSignIn(true, onClose, { seedError });
+  } = useSplashSignIn(true, onClose, {
+    seedError,
+    closeOnSuccess: !postAuthHandled,
+  });
 
   const revealVisible = shouldShowPasswordReveal(email, password);
   const googlePreparing = !authSurfaceReady;
@@ -231,6 +239,7 @@ function LoginSignUpPanel({
   onSwitchToSignIn,
   poolInvitePending,
   seedError,
+  postAuthHandled,
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const emailGuard = useDeferPasswordManagerAutofill();
@@ -251,7 +260,10 @@ function LoginSignUpPanel({
     notice,
     handleGoogle,
     handleEmailSignUp,
-  } = useSplashSignUp(true, onClose, { seedError });
+  } = useSplashSignUp(true, onClose, {
+    seedError,
+    closeOnSuccess: !postAuthHandled,
+  });
 
   const revealVisible = shouldShowPasswordReveal(
     email,

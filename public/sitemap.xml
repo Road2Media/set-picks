@@ -56,4 +56,19 @@
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://www.setlistpickem.com/tour-stats/2026-2027-nye-run</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/rewind</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.setlistpickem.com/phish-iq</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
 </urlset>

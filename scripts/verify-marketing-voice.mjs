@@ -60,6 +60,7 @@ const SCAN_FILES = [
   join(root, 'src/features/msg-stats/ui/MsgGardenStatsView.jsx'),
   join(root, 'src/features/tour-stats/ui/TourWrapBlock.jsx'),
   join(root, 'src/features/tour-stats/ui/AnnualTourStatsView.jsx'),
+  join(root, 'src/features/tour-stats/ui/NyeRunStatsView.jsx'),
 ];
 
 /**

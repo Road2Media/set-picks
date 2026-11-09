@@ -75,6 +75,7 @@ describe('msg garden snapshot (#1139)', () => {
       'Data courtesy of <a href="https://phish.net">Phish.net</a> / The Mockingbird Foundation.',
     );
     expect(html).toContain('href="/login?mode=signup"');
+    expect(html).toContain('href="/tour-stats/2026-2027-nye-run"');
     expect(html).not.toContain('—');
   });
 

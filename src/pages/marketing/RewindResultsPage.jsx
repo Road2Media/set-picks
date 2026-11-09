@@ -11,7 +11,7 @@ import {
 
 /**
  * Public `/rewind` and `/rewind/:weekId` (#1142).
- * Aggregates only. Not prerendered and not in the sitemap while the flag is off.
+ * Aggregates only. In the sitemap. `noindex` while the flag is off.
  */
 export default function RewindResultsPage() {
   const { weekId } = useParams();

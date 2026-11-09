@@ -8,6 +8,12 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.105.0] — 2026-11-09
+
+### Added
+- **New Year's Run page (#1144)** — `/tour-stats/2026-2027-nye-run` is live before the run. It lists December 30, December 31, January 1, and January 2 at Madison Square Garden. January 2, 2027 is the 100th performance at the Garden. The dates and the venue come from the committed MSG snapshot. Each show has Event JSON-LD (name, date, venue, link to phish.com). The page credits Phish.net and does not list a night's setlist. **Create a NYE pool** opens `/dashboard/pools/create` with the name filled in. A signed-out visitor comes back to that form after login. Signing in or creating an account on `/login` stays there until the remembered dashboard path loads, instead of stopping at the home page. GA4: `public_tour_stats_view` and `nye_pool_cta`. Song totals appear after the nights are played.
+- **Public sitemap gate (#1144)** — MSG, the 2026 annual page, Rewind results, Phish IQ, and the New Year's Run page are in `sitemap.xml` and `llms.txt`. The build and `verify:seo-prerender` fail if an indexable public route is missing. A new static route has to be listed or explicitly excluded. `/phish-picks` is still not a page (#975).
+
 ## [1.104.0] — 2026-11-09
 
 ### Added

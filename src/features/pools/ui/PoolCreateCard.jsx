@@ -23,10 +23,11 @@ export default function PoolCreateCard({
   loading = false,
   error,
   onCreate,
+  initialName = '',
 }) {
   const createBusy =
     actionLoading === 'create' || (actionLoading == null && loading);
-  const [createName, setCreateName] = useState('');
+  const [createName, setCreateName] = useState(initialName);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [createSuccess, setCreateSuccess] = useState(null);
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import { NYE_RUN_PATH } from '../model/nyeRunContract';
 import { AppDocumentAuthLink } from '../../landing';
 import { StatsEmbedShareRow } from '../../stats-embed';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
@@ -151,7 +152,11 @@ export default function MsgGardenStatsView({ stats, heading }) {
 
       <div className="mt-6 flex flex-col items-center gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-400">
-          The New Year&apos;s Run is December 30, December 31, January 1, and January 2.
+          The{' '}
+          <Link to={NYE_RUN_PATH} className={LINK_ON_DARK}>
+            New Year&apos;s Run
+          </Link>{' '}
+          is December 30, December 31, January 1, and January 2.
           Lock a card before the lights go down.
         </p>
         <AppDocumentAuthLink
