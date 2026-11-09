@@ -7,7 +7,8 @@
  * mentions, "Part of", and "Related" never close.
  *
  * The workflow in `.github/workflows/close-shipped-issues.yml` applies the
- * plan when a release is published. Tests cover this file, not the network.
+ * plan when a release is published. The promote pull request is the one
+ * whose merge commit is the tag. Tests cover this file, not the network.
  */
 
 export const KEEP_OPEN_LABEL = "keep-open";
@@ -115,6 +116,22 @@ export function isPromotePullRequest(pr) {
   return head === "staging" || head.startsWith("promote/");
 }
 
+/**
+ * A release pull request merged to main. Squash-only history often cannot
+ * merge `staging` into `main`, so the current release may use `release/*`
+ * or `cursor/release-*` instead of `staging` / `promote/*`.
+ */
+export function isReleasePullRequest(pr) {
+  const view = pullRequestView(pr);
+  if (!view?.mergedAt) return false;
+  if (view.baseRef.toLowerCase() !== "main") return false;
+  if (isPromotePullRequest(pr)) return true;
+  const head = view.headRef.toLowerCase();
+  if (head.startsWith("release/")) return true;
+  if (/^cursor\/(?:release|promote)-/.test(head)) return true;
+  return /^(?:promote|release)\b/i.test(view.title || "");
+}
+
 function titleHasVersion(title, version) {
   if (!version) return false;
   const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -122,17 +139,32 @@ function titleHasVersion(title, version) {
 }
 
 /**
- * The staging → main (or promote/* → main) pull request this release shipped.
- * Prefer the merge commit the tag points at, then a title that names the
- * version, then the latest promote merged before the release was published.
+ * The pull request that produced this tag: its merge commit is the tag.
+ * That PR wins even when its branch is `cursor/release-*` or `release/*`.
+ * `ancestorCommits` are first-parent commits behind the tag. Their squash
+ * subjects (`promote: 1.89.0 (#1173)`) stay on main and must not win the
+ * fallback when the current release PR is also in the list.
  */
-export function selectPromotePullRequest(pulls, { tag, publishedAt, mergeSha } = {}) {
-  const version = String(tag || "").replace(/^v/, "");
-  const candidates = (pulls || []).filter((pr) => isPromotePullRequest(pr));
+export function selectPromotePullRequest(pulls, { tag, publishedAt, mergeSha, ancestorCommits } = {}) {
+  const mergedToMain = (pulls || []).filter((pr) => {
+    const view = pullRequestView(pr);
+    return Boolean(view?.mergedAt) && view.baseRef.toLowerCase() === "main";
+  });
   if (mergeSha) {
-    const shaHit = candidates.find((pr) => pullRequestView(pr).mergeSha === mergeSha);
+    const shaHit = mergedToMain.find((pr) => pullRequestView(pr).mergeSha === mergeSha);
     if (shaHit) return shaHit;
   }
+  const ancestorNumbers = new Set(
+    (ancestorCommits || [])
+      .map((commit) => extractMergedPullNumber(commitMessage(commit)))
+      .filter((number) => number),
+  );
+  let candidates = mergedToMain.filter((pr) => isReleasePullRequest(pr));
+  if (ancestorNumbers.size) {
+    const current = candidates.filter((pr) => !ancestorNumbers.has(pr.number));
+    if (current.length) candidates = current;
+  }
+  const version = String(tag || "").replace(/^v/, "");
   const titled = candidates.filter((pr) => titleHasVersion(pr.title, version));
   const pool = titled.length ? titled : candidates;
   const publishedMs = publishedAt ? Date.parse(publishedAt) : NaN;
@@ -144,6 +176,43 @@ export function selectPromotePullRequest(pulls, { tag, publishedAt, mergeSha } =
     (a, b) => Date.parse(pullRequestView(b).mergedAt) - Date.parse(pullRequestView(a).mergedAt),
   );
   return ranked[0] || null;
+}
+
+const STAGING_PIN_RE = /\bstaging(?:\s+at)?\s+\(?`?([0-9a-f]{7,40})\b/i;
+
+/** Staging commit named by a tree-replacement promote (`staging at <sha>`). */
+export function extractStagingPin(...parts) {
+  for (const part of parts) {
+    const match = STAGING_PIN_RE.exec(String(part || ""));
+    if (match) return match[1];
+  }
+  return null;
+}
+
+export function stagingPinFromRelease({ promotePr, commits } = {}) {
+  const texts = [];
+  for (const commit of commits || []) texts.push(commitMessage(commit));
+  if (promotePr) texts.push(promotePr.body, promotePr.title);
+  return extractStagingPin(...texts);
+}
+
+export function commitsIncludeMergedPull(commits) {
+  return (commits || []).some((commit) => extractMergedPullNumber(commitMessage(commit)));
+}
+
+/**
+ * Multi-commit promotes already list the staging squashes. A one-commit
+ * tree replacement does not, so the caller passes the staging range between
+ * the previous release's pin and this one.
+ */
+export function featureCommitsForRelease({ promoteCommits, stagingRangeCommits } = {}) {
+  if (commitsIncludeMergedPull(promoteCommits)) {
+    return { source: "promote-commits", commits: promoteCommits };
+  }
+  if (stagingRangeCommits && stagingRangeCommits.length) {
+    return { source: "staging-range", commits: stagingRangeCommits };
+  }
+  return { source: "promote-commits", commits: promoteCommits || [] };
 }
 
 /** Previous non-draft, non-prerelease tag, excluding the release under test. */

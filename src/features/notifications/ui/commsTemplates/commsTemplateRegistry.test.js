@@ -18,6 +18,7 @@ const EXPECTED_TEMPLATE_IDS = [
   'tour-rankings-daily',
   'picks-lock-reminder',
   'tour-engagement-reminder',
+  'annual-wrap',
   'tour-recap',
   'sphere-2026-inaugural',
   'summer-2026-almost-end',

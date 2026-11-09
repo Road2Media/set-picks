@@ -8,7 +8,7 @@ const TONES = {
     tray:
       'flex w-full min-w-0 gap-1 rounded-xl border border-border-subtle/60 bg-surface-panel-strong p-1 shadow-inset-glass',
     segment:
-      'relative flex min-w-0 flex-1 items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-[11px] font-black uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
+      'relative flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-[11px] font-black uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
     active:
       'bg-brand-primary/15 text-brand-primary ring-1 ring-inset ring-brand-primary/35',
     inactive: 'text-content-secondary hover:bg-surface-inset hover:text-white',
@@ -18,7 +18,7 @@ const TONES = {
     tray:
       'flex w-full min-w-0 gap-1 rounded-lg border border-border-subtle/30 bg-surface-field p-0.5',
     segment:
-      'relative flex min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
+      'relative flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
     active: 'bg-surface-panel-strong text-white',
     inactive: 'text-content-secondary hover:bg-surface-inset/70 hover:text-white',
   },
@@ -41,6 +41,7 @@ const TONES = {
  *   onChange?: (id: string) => void,
  *   scrollToTop?: boolean,
  *   tone?: 'chrome' | 'inset',
+ *   layout?: 'equal' | 'wrap',
  *   items: Array<{
  *     id?: string,
  *     to?: string,
@@ -60,15 +61,20 @@ export default function ChromeSegmentedControl({
   onChange,
   scrollToTop = true,
   tone = 'chrome',
+  layout = 'equal',
   items,
 }) {
   const palette = TONES[tone] ?? TONES.chrome;
+  const segmentLayout =
+    layout === 'wrap' ? 'shrink-0 whitespace-nowrap' : 'min-w-0 flex-1';
   const isNav = items.some((item) => item.to != null);
 
   if (isNav) {
     return (
       <nav
-        className={[palette.tray, className].filter(Boolean).join(' ')}
+        className={[palette.tray, layout === 'wrap' ? 'flex-wrap' : '', className]
+          .filter(Boolean)
+          .join(' ')}
         aria-label={ariaLabel}
       >
         {items.map(({ to, label, end, icon: Icon, badge, onClick }) => (
@@ -81,7 +87,9 @@ export default function ChromeSegmentedControl({
               onClick?.(event);
             }}
             className={({ isActive }) =>
-              [palette.segment, isActive ? palette.active : palette.inactive].join(' ')
+              [palette.segment, segmentLayout, isActive ? palette.active : palette.inactive].join(
+                ' ',
+              )
             }
           >
             {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden /> : null}
@@ -97,7 +105,9 @@ export default function ChromeSegmentedControl({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={[palette.tray, className].filter(Boolean).join(' ')}
+      className={[palette.tray, layout === 'wrap' ? 'flex-wrap' : '', className]
+        .filter(Boolean)
+        .join(' ')}
     >
       {items.map(({ id, label, icon: Icon, badge }) => {
         const selected = value === id;
@@ -113,6 +123,7 @@ export default function ChromeSegmentedControl({
             }}
             className={[
               palette.segment,
+              segmentLayout,
               selected ? palette.active : palette.inactive,
             ].join(' ')}
           >

@@ -105,12 +105,30 @@ async function deliverOneCommsRecipient({
   const dedupId = resolveDedupKey(triggerId, vars);
   const dedupRef = dedupId ? db.collection(DEDUP_COLLECTION).doc(dedupId) : null;
 
+  // A doc that lists `channels` can still take a later channel. The annual
+  // wrap writes in-app on grade and email plus push the next morning (#1111).
+  // A doc with no `channels` array is a completed legacy send and stays a hard skip.
+  /** @type {string[]} */
+  let channelsToSend = activeChannels;
+  /** @type {string[]} */
+  let priorChannels = [];
   if (dedupRef && !forceResend) {
     const existing = await dedupRef.get();
     if (existing.exists) {
-      bumpSkip("deduped");
-      summary.results.push({ uid, status: "skipped", reason: "deduped", dedupId });
-      return;
+      const data = existing.data() || {};
+      if (!Array.isArray(data.channels)) {
+        bumpSkip("deduped");
+        summary.results.push({ uid, status: "skipped", reason: "deduped", dedupId });
+        return;
+      }
+      priorChannels = data.channels.filter((channel) => typeof channel === "string");
+      const have = new Set(priorChannels);
+      channelsToSend = activeChannels.filter((channel) => !have.has(channel));
+      if (channelsToSend.length === 0) {
+        bumpSkip("deduped");
+        summary.results.push({ uid, status: "skipped", reason: "deduped", dedupId });
+        return;
+      }
     }
   }
 
@@ -142,7 +160,7 @@ async function deliverOneCommsRecipient({
 
   const deliveredChannels = [];
   const channelResults = {};
-  for (const channel of activeChannels) {
+  for (const channel of channelsToSend) {
     const worker = workers[channel];
     if (typeof worker !== "function") {
       channelResults[channel] = { ok: false, skipReason: "no_worker" };
@@ -197,7 +215,7 @@ async function deliverOneCommsRecipient({
         triggerId,
         templateId: spec.templateId,
         userId: uid,
-        channels: deliveredChannels,
+        channels: [...new Set([...priorChannels, ...deliveredChannels])],
         delivered: true,
         decidedAt: admin.firestore.FieldValue.serverTimestamp(),
         ...(campaignId ? { campaignId } : {}),

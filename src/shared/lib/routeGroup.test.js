@@ -17,14 +17,17 @@ describe('resolveRouteGroup', () => {
     expect(resolveRouteGroup('/login/')).toBe('login');
     expect(resolveRouteGroup('/how-it-works')).toBe('marketing');
     expect(resolveRouteGroup('/how-scoring-works')).toBe('marketing');
+    expect(resolveRouteGroup('/how-scoring-changed')).toBe('marketing');
     expect(resolveRouteGroup('/phish-setlist-prediction-game')).toBe('marketing');
     expect(resolveRouteGroup('/about')).toBe('marketing');
+    expect(resolveRouteGroup('/phish-at-msg')).toBe('marketing');
     expect(resolveRouteGroup('/tour-stats')).toBe('tour_stats');
     expect(resolveRouteGroup('/tour-stats/song/foo')).toBe('tour_stats');
     expect(resolveRouteGroup('/embed/stats')).toBe('embed');
     expect(resolveRouteGroup('/embed')).toBe('embed');
     expect(resolveRouteGroup('/rewind')).toBe('rewind');
     expect(resolveRouteGroup('/rewind/2026-11-23')).toBe('rewind');
+    expect(resolveRouteGroup('/phish-iq')).toBe('phish_iq');
   });
 
   it('maps legal door paths (#916)', () => {

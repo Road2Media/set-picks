@@ -16,7 +16,11 @@ import { markGoogleAuthClick } from './authLoginTiming';
 import { shouldPreferGoogleRedirectAuth } from './preferGoogleRedirectAuth';
 import { runGoogleSplashAuth } from './runGoogleSplashAuth';
 
-export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
+export function useSplashSignUp(
+  isOpen,
+  onClose,
+  { seedError = '', closeOnSuccess = true } = {},
+) {
   const [email, setEmailState] = useState('');
   const [password, setPasswordState] = useState('');
   const [confirmPassword, setConfirmPasswordState] = useState('');
@@ -82,6 +86,11 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
     setGoogleBusy(false);
   }, [onClose, resetForm]);
 
+  // Same as sign-in: `/login` must not go home on success (#1144).
+  const finishSuccess = useCallback(() => {
+    if (closeOnSuccess) closeModal();
+  }, [closeOnSuccess, closeModal]);
+
   useEffect(() => {
     if (!isOpen) return undefined;
     const onKey = (e) => {
@@ -136,7 +145,7 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
         }
         return;
       }
-      closeModal();
+      finishSuccess();
     } catch (err) {
       console.error('Google sign-in:', err);
       trackAuthError({
@@ -153,7 +162,7 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
         setGoogleBusy(false);
       }
     }
-  }, [closeModal, legalAccepted, preferGoogleRedirect, replaceNotice]);
+  }, [finishSuccess, legalAccepted, preferGoogleRedirect, replaceNotice]);
 
   const handleEmailSignUp = useCallback(
     async (e) => {
@@ -218,7 +227,7 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
           return;
         }
         trackAuthSignUp('email', { surface: 'create_account' });
-        closeModal();
+        finishSuccess();
       } catch (err) {
         console.error('Sign up:', err);
         trackAuthError({
@@ -241,7 +250,7 @@ export function useSplashSignUp(isOpen, onClose, { seedError = '' } = {}) {
         setBusy(false);
       }
     },
-    [closeModal, confirmPassword, email, legalAccepted, password, replaceNotice]
+    [finishSuccess, confirmPassword, email, legalAccepted, password, replaceNotice]
   );
 
   return {

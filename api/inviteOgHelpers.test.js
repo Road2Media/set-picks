@@ -13,6 +13,8 @@ import {
   resolveInviteOgContent,
   SITE_INVITE_DESCRIPTION,
   injectOgIntoSpa,
+  resolveInviteBootKind,
+  selectInviteBootPreloadHrefs,
   stripPrerenderBodyFromSpaShell,
 } from './inviteOgHelpers.mjs';
 
@@ -99,5 +101,30 @@ describe('inviteOgHelpers', () => {
     expect(injected).toContain('<div id="root"></div>');
     expect(injected).not.toContain('About Setlist Pick');
     expect(injected).toContain('property="og:title"');
+  });
+});
+
+describe('invite boot preload selection', () => {
+  const manifest = {
+    pool: ['/assets/PoolInvitePage-aaaaaaaa.js', 'not a url', 'https://evil.example/x.js'],
+    site: ['/assets/InviteLandingPage-bbbbbbbb.js'],
+  };
+
+  it('selects pool vs site from the request', () => {
+    expect(resolveInviteBootKind({ code: 'YEM42' })).toBe('pool');
+    expect(resolveInviteBootKind({ handle: 'Mikey' })).toBe('site');
+    expect(resolveInviteBootKind({ code: 'YEM42', handle: 'Mikey' })).toBe('pool');
+    expect(resolveInviteBootKind({})).toBeNull();
+  });
+
+  it('returns only hashed asset hrefs for the matching kind', () => {
+    expect(selectInviteBootPreloadHrefs(manifest, { code: 'yem42' })).toEqual([
+      '/assets/PoolInvitePage-aaaaaaaa.js',
+    ]);
+    expect(selectInviteBootPreloadHrefs(manifest, { handle: '@Mikey' })).toEqual([
+      '/assets/InviteLandingPage-bbbbbbbb.js',
+    ]);
+    expect(selectInviteBootPreloadHrefs(null, { code: 'YEM42' })).toEqual([]);
+    expect(selectInviteBootPreloadHrefs(manifest, {})).toEqual([]);
   });
 });

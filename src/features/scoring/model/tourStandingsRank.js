@@ -1,59 +1,29 @@
 /**
- * Official tour rank for the tour standings board (#1135).
+ * Official place on tour and year boards (#1218).
  *
- * Competition rank on total points. Same points share a rank. The next rank
- * skips. Nightly wins, then handle, only order names inside a tie — they do
- * not award a sole place. Shows played do not order a tie.
- *
- * The input is already in that list order (`aggregateTourStandings`). This
- * function does not re-sort. Mirrors `assignDisplayRanks` in
- * `functions/tourRankingsDailyCore.js`.
+ * Full tie-break: points, then exact slots, then correct picks, then nightly
+ * wins, then handle. The helper also supports shared ranks and a
+ * display-order breaker. Those policies are not the live rule.
  */
+
+import { LIVE_RANK_POLICY, rankScoredRows } from './pointsTieRanking';
 
 /**
- * @param {Array<{ uid?: string, handle?: string, totalPoints?: number }>} sortedRows
+ * @param {Array<Record<string, unknown>> | null | undefined} rows
+ * @param {{ policy?: string, surface?: 'show' | 'tour' | 'year' }} [options]
  * @returns {Array<Record<string, unknown> & { rank: number, tiedCount: number, tiedHandles: string[] }>}
  */
-export function assignTourDisplayRanks(sortedRows) {
-  const rows = Array.isArray(sortedRows) ? sortedRows : [];
-  /** @type {Map<number, Array<{ index: number, handle: string }>>} */
-  const groupByRank = new Map();
-  /** @type {number[]} */
-  const ranks = [];
-  let rank = 0;
-  let prevPoints = null;
-
-  for (let i = 0; i < rows.length; i++) {
-    const points = rows[i].totalPoints;
-    if (prevPoints === null || points < prevPoints) {
-      rank = i + 1;
-      prevPoints = points;
-    }
-    ranks.push(rank);
-    const group = groupByRank.get(rank) || [];
-    const handle =
-      typeof rows[i].handle === 'string' && rows[i].handle.trim()
-        ? rows[i].handle.trim()
-        : 'Anonymous';
-    group.push({ index: i, handle });
-    groupByRank.set(rank, group);
-  }
-
-  return rows.map((row, i) => {
-    const place = ranks[i];
-    const group = groupByRank.get(place) || [];
-    return {
-      ...row,
-      rank: place,
-      tiedCount: group.length,
-      tiedHandles: group.filter((member) => member.index !== i).map((member) => member.handle),
-    };
+export function assignTourDisplayRanks(rows, options = {}) {
+  const ranked = rankScoredRows(rows, {
+    policy: options.policy || LIVE_RANK_POLICY,
+    surface: options.surface || 'tour',
   });
+  return ranked.rows;
 }
 
 /**
- * Badge for one tour-standings row. The number is the official rank.
- * A tie is marked in the label; the row index is not a rank.
+ * Badge for one standings row. The number is the official rank.
+ * A tie is marked only when the cascade did not separate those rows.
  *
  * @param {{ rank?: number, tiedCount?: number } | null | undefined} row
  * @returns {{ text: string, tied: boolean, ariaLabel: string } | null}

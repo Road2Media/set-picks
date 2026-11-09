@@ -64,6 +64,18 @@ export function shouldWarmAppCheckOnBoot(pathname) {
 }
 
 /**
+ * Defer the GA4 library download until idle on anonymous public cold opens
+ * (#733). Dashboard, setup, and other app-document routes start the download
+ * immediately so signed-in pageviews are not held for idle.
+ *
+ * @param {string} [pathname]
+ * @returns {boolean}
+ */
+export function shouldDeferGa4Boot(pathname) {
+  return isPublicColdOpenPath(pathname);
+}
+
+/**
  * Should boot kick off the `DashboardRoute` import (#804)?
  *
  * Dashboard hard opens always do. Public cold-open surfaces only do when a

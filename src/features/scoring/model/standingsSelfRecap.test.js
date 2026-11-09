@@ -10,12 +10,20 @@ describe('computeStandingsSelfRecap', () => {
     expect(computeStandingsSelfRecap([{ userId: 'u1' }], setlist, null)).toBeNull();
   });
 
-  it('uses natural rank and score when setlist exists', () => {
+  it('uses the tie-break rank when the setlist exists', () => {
     const picks = [
-      { userId: 'a', handle: 'Top', picks: {} },
+      { userId: 'a', handle: 'Top', picks: { s1o: 'Tweezer' } },
       { userId: 'me', handle: 'Self', picks: {} },
     ];
-    const r = computeStandingsSelfRecap(picks, setlist, 'me');
+    const scored = {
+      s1o: 'Tweezer',
+      s1c: '',
+      s2o: '',
+      s2c: '',
+      enc: '',
+      officialSetlist: ['Tweezer'],
+    };
+    const r = computeStandingsSelfRecap(picks, scored, 'me');
     expect(r?.displayRank).toBe(2);
     expect(r?.rankNumber).toBe(2);
     expect(r?.totalPlayers).toBe(2);

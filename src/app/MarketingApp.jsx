@@ -16,6 +16,9 @@ const HowItWorksPage = lazy(() => import('../pages/marketing/HowItWorksPage'));
 const HowScoringWorksPage = lazy(
   () => import('../pages/marketing/HowScoringWorksPage'),
 );
+const HowScoringChangedPage = lazy(
+  () => import('../pages/marketing/HowScoringChangedPage'),
+);
 const PhishSetlistPredictionGamePage = lazy(
   () => import('../pages/marketing/PhishSetlistPredictionGamePage'),
 );
@@ -29,6 +32,7 @@ const AnnualTourStatsPage = lazy(
   () => import('../pages/marketing/AnnualTourStatsPage'),
 );
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
+const PhishIqPage = lazy(() => import('../pages/marketing/PhishIqPage'));
 const StatsEmbedPage = lazy(() => import('../pages/marketing/StatsEmbedPage'));
 
 /**
@@ -128,6 +132,14 @@ export default function MarketingApp() {
           }
         />
         <Route
+          path="/how-scoring-changed"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <HowScoringChangedPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="/phish-setlist-prediction-game"
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
@@ -153,12 +165,16 @@ export default function MarketingApp() {
           }
         />
         <Route
-          path="/tour-stats/msg"
+          path="/phish-at-msg"
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <MsgGardenStatsPage />
             </Suspense>
           }
+        />
+        <Route
+          path="/tour-stats/msg"
+          element={<Navigate to="/phish-at-msg" replace />}
         />
         <Route
           path="/tour-stats/2026"
@@ -189,6 +205,14 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <RewindResultsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/phish-iq"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <PhishIqPage />
             </Suspense>
           }
         />

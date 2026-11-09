@@ -18,6 +18,7 @@ Label rule: **never promise a surface the href does not deliver.** Inbox cards s
 | `picks-lock-reminder` | Make your picks / View / Edit picks | `/dashboard/picks` | yes | Prod skips secured users; secured CTA for preview (#509) |
 | `tour-engagement-reminder` | Make picks for next show / View / Edit picks | `/dashboard/picks` | yes | Branches on next-show `picks_secured` (#509) |
 | `tour-recap` | View Recap (email) → Messages; in-app **View tour standings** | email: `/dashboard/profile/notifications`; in-app: `/dashboard/standings?view=tour` | yes | Email teases full inbox body; in-app CTA closes the loop on Tour standings (#510) |
+| `annual-wrap` | View Recap (email) → Messages; in-app **View year standings** | email: `/dashboard/profile/notifications`; in-app: `/dashboard/standings?view=year&year={year}` | yes | Shared year note in the inbox. The year link is the board from #1110 (#1111) |
 | `sphere-2026-inaugural` | (bespoke) | — | n/a | Historical Sphere edition / War Room replay — not the live catalog trigger |
 
 ## Email (`functions/commsTemplates.js`)
@@ -30,6 +31,7 @@ Label rule: **never promise a surface the href does not deliver.** Inbox cards s
 | `show-recap` | `/dashboard/standings#self-recap` | Rare (email folded into morning send #451) |
 | `tour-rankings_daily` | `/dashboard/picks` | Catalog: “Make picks for next show”; includes invite share block when `invite_url` present (#583) |
 | `tour-recap` | `/dashboard/profile/notifications` (**View Recap**) | Abbreviated tease; full `TourRecapInApp` in Messages. In-app body CTA **View tour standings** → `/dashboard/standings?view=tour` (#510) |
+| `annual-wrap` | `/dashboard/profile/notifications` (**View Recap**) | Shared opening plus the personal section. In-app CTA **View year standings** → `/dashboard/standings?view=year&year={year}` (#1111) |
 | `summer-tour-2026-launch` | invite `shareUrl` / `invite_url` | Pool `/join/{code}?from={handle}` or site `/invite/{handle}` + UTMs (#583) |
 | `summer-2026-almost-end` | `/dashboard/standings` (invite / check it out) | Players: invite CTA; no-play: Standings CTA + UTMs `summer_2026_almost_end` |
 | `picks-lock-reminder` | `/dashboard/picks` | |

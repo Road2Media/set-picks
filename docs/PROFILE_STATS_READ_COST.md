@@ -77,7 +77,7 @@ reads_per_view = 1                          // global_stats_leaderboards/allTime
 
 Ratio boards (Points per show, Picking average, and Slugging percentage) require **`showsPlayed >= 3`** (tour boards: `seasonStats.{tourKey}.shows >= 3`) so a one-show spike cannot own the list. All-time slugging requires **`showsPlayed >= 15`**. Slugging is `totalPoints / (shows × 30)`, where 30 is one show of in-setlist hits. The deprecated Shows board has no ratio gate and is no longer rendered. Constants live in `functions/globalStatsLeaderboards.js` and `src/features/stats/model/globalLeaderboardRanking.js` (`GLOBAL_LEADERBOARD_MIN_SHOWS`, `GLOBAL_LEADERBOARD_SLUGGING_MIN_SHOWS_ALL_TIME`, `GLOBAL_LEADERBOARD_SLUGGING_BASE_POINTS`).
 
-Rebuild is Functions-owned (`rollupScoresForShow`, nightly schedule, admin callable) from materialized `users` fields. See `docs/API.md` §1.14.
+Rebuild is Functions-owned (`rollupScoresForShow`, nightly schedule, admin callable) from materialized `users` fields. **v1.100.0 (#1044)** adds Average vintage and Bustout Boost on the same all-time and this-tour docs. Bustout Boost reads `seasonStats.{tourKey}.bustoutBoosts` (all-time is the sum). Average vintage is computed inside that rebuild from graded `picks` and the song catalog, then copied onto `users.avgVintageYear` / `users.avgVintageByTour` for the you-row. The visit above still does not scan `users` or `picks`. See `docs/API.md` §1.14. In most played and pool-scoped boards stay out.
 
 ## Materialization follow-up (out of scope for #220)
 

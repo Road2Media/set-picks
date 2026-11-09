@@ -8,14 +8,43 @@
  * (#214); absence/empty → no boost, no catalog fallback.
  */
 
-const SCORING_RULES = {
+/**
+ * Ladder live through the 2026 Fall Tour. A missing show date stays here so
+ * an undated payload cannot re-score a night that already happened (#1086).
+ * Keep in sync with `SCORING_LADDER_V1` in `src/shared/utils/scoring.js`.
+ */
+const SCORING_LADDER_V1 = {
+  id: "v1",
   EXACT_SLOT: 10,
   ENCORE_EXACT: 15,
+  ENCORE_LATER: 15,
   IN_SETLIST: 5,
   WILDCARD_HIT: 10,
   BUSTOUT_BOOST: 20,
   BUSTOUT_MIN_GAP: 30,
 };
+
+/**
+ * First night of the New Year's Run 2026-2027 (MSG, 2026-12-30).
+ * Shows before this date keep the ladder that was live that night.
+ */
+const SCORING_LADDER_V2_EFFECTIVE_DATE = "2026-12-30";
+
+const SCORING_LADDER_V2 = {
+  id: "v2",
+  EXACT_SLOT: 10,
+  ENCORE_EXACT: 15,
+  ENCORE_LATER: 10,
+  IN_SETLIST: 5,
+  WILDCARD_HIT: 5,
+  BUSTOUT_BOOST: 20,
+  BUSTOUT_MIN_GAP: 30,
+};
+
+/** Ladder v1. Callers that need the show's ladder use `scoringRulesForShowDate`. */
+const SCORING_RULES = SCORING_LADDER_V1;
+
+const SHOW_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const SCORE_FIELDS = ["s1o", "s1c", "s2o", "s2c", "enc", "wild"];
 
@@ -25,19 +54,66 @@ const NON_SONG_SETLIST_KEYS = new Set([
   "id",
   "bustouts",
   "songGaps",
+  "showDate",
 ]);
+
+function normalizeShowDate(value) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return SHOW_DATE_RE.test(trimmed) ? trimmed : null;
+}
+
+function scoringRulesForShowDate(showDate) {
+  const date = normalizeShowDate(showDate);
+  if (date && date >= SCORING_LADDER_V2_EFFECTIVE_DATE) return SCORING_LADDER_V2;
+  return SCORING_LADDER_V1;
+}
+
+function rulesForPayload(actualSetlist, explicitShowDate) {
+  return scoringRulesForShowDate(
+    normalizeShowDate(explicitShowDate) ||
+      normalizeShowDate(actualSetlist && actualSetlist.showDate)
+  );
+}
+
+function attachScoringShowDate(actualSetlist, showDate) {
+  if (!actualSetlist || typeof actualSetlist !== "object") return actualSetlist;
+  const date = normalizeShowDate(showDate);
+  if (!date) return actualSetlist;
+  if (actualSetlist.showDate === date) return actualSetlist;
+  return { ...actualSetlist, showDate: date };
+}
 
 function normalizeSong(value) {
   return String(value ?? "").trim().toLowerCase();
 }
 
-function guessMatchesEncoreExact(actualSetlist, guessNorm) {
-  if (!guessNorm) return false;
+function encoreTitles(actualSetlist) {
+  const list = actualSetlist && actualSetlist.encoreSongs;
+  if (!Array.isArray(list)) return [];
+  return list.map((title) => normalizeSong(title)).filter(Boolean);
+}
+
+/**
+ * First encore is primary `enc` and the first `encoreSongs` entry.
+ * @returns {"none" | "first" | "later"}
+ */
+function encorePlacement(actualSetlist, guessNorm) {
+  if (!guessNorm || !actualSetlist) return "none";
   const primary = normalizeSong(actualSetlist.enc);
-  if (primary === guessNorm) return true;
-  const list = actualSetlist.encoreSongs;
-  if (!Array.isArray(list)) return false;
-  return list.some((t) => normalizeSong(t) === guessNorm);
+  const list = encoreTitles(actualSetlist);
+  const first = new Set();
+  if (primary) first.add(primary);
+  if (list[0]) first.add(list[0]);
+  if (first.has(guessNorm)) return "first";
+  if (list.some((title, index) => index > 0 && title === guessNorm)) return "later";
+  return "none";
+}
+
+/** Ladder v1 encore exact: primary `enc` or any `encoreSongs` entry. */
+function guessMatchesEncoreExact(actualSetlist, guessNorm) {
+  const place = encorePlacement(actualSetlist, guessNorm);
+  return place === "first" || place === "later";
 }
 
 function buildAllPlayedNormalized(actualSetlist) {
@@ -69,36 +145,51 @@ function setlistHasAnyPlayedSong(actualSetlist) {
   return buildAllPlayedNormalized(actualSetlist).length > 0;
 }
 
-function calculateSlotScore(fieldId, guessedSong, actualSetlist) {
-  if (!actualSetlist || !guessedSong) return 0;
+/**
+ * @returns {{ points: number, base: number, bustoutBoost: boolean, kind: string }}
+ */
+function slotScoreBreakdown(fieldId, guessedSong, actualSetlist, explicitShowDate) {
+  if (!actualSetlist || !guessedSong) {
+    return { points: 0, base: 0, bustoutBoost: false, kind: "none" };
+  }
 
   const guess = normalizeSong(guessedSong);
-  if (!guess) return 0;
+  if (!guess) return { points: 0, base: 0, bustoutBoost: false, kind: "none" };
 
+  const rules = rulesForPayload(actualSetlist, explicitShowDate);
   const allPlayed = buildAllPlayedNormalized(actualSetlist);
 
   let base = 0;
+  let kind = "exact_slot";
   if (fieldId === "wild") {
     if (allPlayed.includes(guess)) {
-      base = SCORING_RULES.WILDCARD_HIT;
+      base = rules.WILDCARD_HIT;
+      kind = "wildcard_hit";
     } else {
-      return 0;
+      return { points: 0, base: 0, bustoutBoost: false, kind: "miss" };
     }
-  } else {
-    const exactNonEnc =
-      fieldId !== "enc" && normalizeSong(actualSetlist[fieldId]) === guess;
-    const exactEnc =
-      fieldId === "enc" && guessMatchesEncoreExact(actualSetlist, guess);
-    if (exactNonEnc || exactEnc) {
-      base =
-        fieldId === "enc"
-          ? SCORING_RULES.ENCORE_EXACT
-          : SCORING_RULES.EXACT_SLOT;
+  } else if (fieldId === "enc") {
+    const place = encorePlacement(actualSetlist, guess);
+    if (place === "first") {
+      base = rules.ENCORE_EXACT;
+      kind = "encore_exact";
+    } else if (place === "later") {
+      base = rules.ENCORE_LATER;
+      kind = rules.id === "v2" ? "encore_later" : "encore_exact";
     } else if (allPlayed.includes(guess)) {
-      base = SCORING_RULES.IN_SETLIST;
+      base = rules.IN_SETLIST;
+      kind = "in_setlist";
     } else {
-      return 0;
+      return { points: 0, base: 0, bustoutBoost: false, kind: "miss" };
     }
+  } else if (normalizeSong(actualSetlist[fieldId]) === guess) {
+    base = rules.EXACT_SLOT;
+    kind = "exact_slot";
+  } else if (allPlayed.includes(guess)) {
+    base = rules.IN_SETLIST;
+    kind = "in_setlist";
+  } else {
+    return { points: 0, base: 0, bustoutBoost: false, kind: "miss" };
   }
 
   const bustoutList = Array.isArray(actualSetlist.bustouts)
@@ -113,7 +204,12 @@ function calculateSlotScore(fieldId, guessedSong, actualSetlist) {
     }
   }
 
-  return base + (bustoutBoost ? SCORING_RULES.BUSTOUT_BOOST : 0);
+  const points = base + (bustoutBoost ? rules.BUSTOUT_BOOST : 0);
+  return { points, base, bustoutBoost, kind };
+}
+
+function calculateSlotScore(fieldId, guessedSong, actualSetlist, showDate) {
+  return slotScoreBreakdown(fieldId, guessedSong, actualSetlist, showDate).points;
 }
 
 /**
@@ -159,11 +255,12 @@ function guessIsListedBustout(guessedSong, actualSetlist) {
   return false;
 }
 
-function calculateTotalScore(userPicks, actualSetlist) {
+function calculateTotalScore(userPicks, actualSetlist, showDate) {
   if (!actualSetlist || !userPicks) return 0;
   return SCORE_FIELDS.reduce((total, fieldId) => {
     return (
-      total + calculateSlotScore(fieldId, userPicks[fieldId], actualSetlist)
+      total +
+      calculateSlotScore(fieldId, userPicks[fieldId], actualSetlist, showDate)
     );
   }, 0);
 }
@@ -184,6 +281,32 @@ function countCorrectSlots(userPicks, actualSetlist) {
     if (calculateSlotScore(fieldId, userPicks[fieldId], actualSetlist) > 0) {
       n += 1;
     }
+  }
+  return n;
+}
+
+const EXACT_POSITION_FIELDS = ["s1o", "s1c", "s2o", "s2c"];
+
+/**
+ * Exact slots for the tie-break (#1172). Mirrors `countExactHits` in
+ * `src/shared/utils/scoring.js`. A later encore is not an exact slot.
+ *
+ * @param {Record<string, unknown> | null | undefined} userPicks
+ * @param {Record<string, unknown> | null | undefined} actualSetlist
+ * @returns {number}
+ */
+function countExactHits(userPicks, actualSetlist) {
+  if (!actualSetlist || !userPicks) return 0;
+  let n = 0;
+  for (const fieldId of EXACT_POSITION_FIELDS) {
+    const guessed = userPicks[fieldId];
+    if (guessed == null || String(guessed).trim() === "") continue;
+    const guess = normalizeSong(guessed);
+    if (guess && guess === normalizeSong(actualSetlist[fieldId])) n += 1;
+  }
+  const encoreGuess = userPicks.enc;
+  if (encoreGuess != null && String(encoreGuess).trim() !== "") {
+    if (encorePlacement(actualSetlist, normalizeSong(encoreGuess)) === "first") n += 1;
   }
   return n;
 }
@@ -287,16 +410,25 @@ function shouldSkipLiveScoreRecompute(beforeDoc, afterDoc) {
 
 module.exports = {
   SCORING_RULES,
+  SCORING_LADDER_V1,
+  SCORING_LADDER_V2,
+  SCORING_LADDER_V2_EFFECTIVE_DATE,
   SCORE_FIELDS,
   NON_SONG_SETLIST_KEYS,
   normalizeSong,
+  normalizeShowDate,
+  scoringRulesForShowDate,
+  attachScoringShowDate,
+  encorePlacement,
   guessMatchesEncoreExact,
   buildAllPlayedNormalized,
   setlistHasAnyPlayedSong,
+  slotScoreBreakdown,
   calculateSlotScore,
   calculateTotalScore,
   countBustoutBoosts,
   countCorrectSlots,
+  countExactHits,
   actualSetlistFromOfficialDoc,
   persistableActualSetlistFromOfficialDoc,
   playableSetlistFingerprint,

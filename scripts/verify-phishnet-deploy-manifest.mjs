@@ -24,6 +24,7 @@ const REQUIRED_EXPORTS = [
   "refreshLiveScoresForShow",
   "scheduledPhishnetSongCatalog",
   "refreshPhishnetSongCatalog",
+  "scheduledSongCatalogHealth",
   "scheduledPickRecommendations",
   "refreshPickRecommendations",
   "scheduledPickRecommendationHistory",

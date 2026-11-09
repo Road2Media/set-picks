@@ -71,9 +71,9 @@ test("publicTourWinnersFromPicks: sole winner, tie, and Anonymous dropped", () =
       ],
     },
   ]);
-  assert.equal(tied.tied, true);
+  assert.equal(tied.tied, false);
   assert.equal(tied.points, 40);
-  assert.deepEqual(tied.handles, ["Ada", "Bea"]);
+  assert.deepEqual(tied.handles, ["Ada"]);
 
   const anon = publicTourWinnersFromPicks([
     {

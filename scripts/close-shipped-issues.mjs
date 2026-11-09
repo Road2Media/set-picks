@@ -1,13 +1,18 @@
 /**
  * Close issues shipped by a staging → main promote when a release is published.
  *
- *   node scripts/close-shipped-issues.mjs --tag v1.96.0 --dry-run
- *   node scripts/close-shipped-issues.mjs --tag v1.96.0 --confirm
+ *   node scripts/close-shipped-issues.mjs --tag v1.97.5 --dry-run
+ *   node scripts/close-shipped-issues.mjs --tag v1.97.5 --confirm
  *
- * Dry run logs the would-close list and comments it on the promote PR.
+ * The promote pull request is the one whose merge commit is the tag. An older
+ * squash on main (for example promote: 1.89.0 (#1173)) is an ancestor, not
+ * the current release. A one-commit tree replacement reads closing keywords
+ * from the staging range named by `staging at <sha>`.
+ *
+ * Dry run logs the would-close list and comments it on that promote PR.
  * `--confirm` comments and closes. Re-running the same tag does not comment
- * twice and does not reopen anything. Pre-releases are logged and skipped
- * on `--confirm`.
+ * twice and does not reopen anything. Already-closed issues are left alone.
+ * Pre-releases are logged and skipped on `--confirm`.
  *
  * Requires GITHUB_TOKEN (or GH_TOKEN) and GITHUB_REPOSITORY (`owner/repo`).
  */
@@ -15,12 +20,15 @@ import { pathToFileURL } from "node:url";
 
 import {
   commitMessage,
+  commitsIncludeMergedPull,
   dryRunMarker,
-  isPromotePullRequest,
+  extractMergedPullNumber,
+  featureCommitsForRelease,
   planShippedCloses,
   selectPreviousRelease,
   selectPromotePullRequest,
   shippedCloseMarker,
+  stagingPinFromRelease,
 } from "./lib/shippedIssueClose.mjs";
 
 const PAGE_CAP = 10;
@@ -95,11 +103,53 @@ async function resolveTagCommitSha(owner, repo, tag) {
   return null;
 }
 
-async function listCandidatePromotes(owner, repo) {
-  const pulls = await ghPages(
+async function listPullsForCommit(owner, repo, sha) {
+  if (!sha) return [];
+  try {
+    return await ghPages(`/repos/${owner}/${repo}/commits/${sha}/pulls?per_page=100`);
+  } catch (error) {
+    if (error.status === 404 || error.status === 422) return [];
+    throw error;
+  }
+}
+
+async function listClosedMainPulls(owner, repo) {
+  return ghPages(
     `/repos/${owner}/${repo}/pulls?state=closed&base=main&per_page=100&sort=updated&direction=desc`,
   );
-  return pulls.filter((pr) => isPromotePullRequest(pr));
+}
+
+async function listHistory(owner, repo, sha) {
+  if (!sha) return [];
+  const { data } = await gh(`/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(sha)}&per_page=30`);
+  return Array.isArray(data) ? data : [];
+}
+
+async function commitTreeSha(owner, repo, sha) {
+  const { data } = await gh(`/repos/${owner}/${repo}/commits/${sha}`);
+  return data.commit?.tree?.sha || null;
+}
+
+async function findCommitWithTree(owner, repo, startSha, treeSha) {
+  if (!startSha || !treeSha) return null;
+  let url = `/repos/${owner}/${repo}/commits?sha=${encodeURIComponent(startSha)}&per_page=100`;
+  for (let page = 0; page < PAGE_CAP && url; page += 1) {
+    const { data, headers } = await gh(url);
+    const commits = Array.isArray(data) ? data : [];
+    for (const commit of commits) {
+      if (commit.commit?.tree?.sha === treeSha) return commit.sha;
+    }
+    url = nextUrl(headers);
+  }
+  return null;
+}
+
+function mergePulls(primary, extra) {
+  const byNumber = new Map();
+  for (const pr of [...primary, ...extra]) {
+    if (pr?.number && !byNumber.has(pr.number)) byNumber.set(pr.number, pr);
+  }
+  return [...byNumber.values()];
 }
 
 async function listPromoteCommits(owner, repo, number) {
@@ -166,35 +216,94 @@ async function main() {
   }
 
   const mergeSha = await resolveTagCommitSha(owner, repo, tag);
-  const promotes = await listCandidatePromotes(owner, repo);
-  const promotePr = selectPromotePullRequest(promotes, {
+  const associated = await listPullsForCommit(owner, repo, mergeSha);
+  const listed = await listClosedMainPulls(owner, repo);
+  const history = await listHistory(owner, repo, mergeSha);
+  const ancestorCommits = history.filter((commit) => commit.sha !== mergeSha);
+  const promotePr = selectPromotePullRequest(mergePulls(associated, listed), {
     tag,
     publishedAt: release.published_at,
     mergeSha,
+    ancestorCommits,
+  });
+  if (promotePr && mergeSha && promotePr.merge_commit_sha && promotePr.merge_commit_sha !== mergeSha) {
+    console.log(
+      `warning: promote #${promotePr.number} merge commit does not equal ${tag} (${mergeSha})`,
+    );
+  }
+
+  const { data: releases } = await gh(`/repos/${owner}/${repo}/releases?per_page=100`);
+  const previous = selectPreviousRelease(releases, {
+    tag,
+    publishedAt: release.published_at,
   });
 
-  let commits = [];
+  let promoteCommits = [];
   if (promotePr) {
-    commits = await listPromoteCommits(owner, repo, promotePr.number);
-  } else {
-    const { data: releases } = await gh(`/repos/${owner}/${repo}/releases?per_page=20`);
-    const previous = selectPreviousRelease(releases, {
-      tag,
-      publishedAt: release.published_at,
-    });
-    if (previous) {
-      console.log(`No promote PR matched ${tag}. Comparing ${previous}...${tag}.`);
-      commits = await compareCommits(owner, repo, previous, tag);
-    } else {
-      console.log(`No promote PR and no previous release for ${tag}.`);
+    promoteCommits = await listPromoteCommits(owner, repo, promotePr.number);
+  }
+
+  let stagingHead = null;
+  let stagingBase = null;
+  let stagingRangeCommits = [];
+  if (!commitsIncludeMergedPull(promoteCommits)) {
+    stagingHead = stagingPinFromRelease({ promotePr, commits: promoteCommits });
+    if (!stagingHead && mergeSha) {
+      const tree = await commitTreeSha(owner, repo, mergeSha);
+      stagingHead = await findCommitWithTree(owner, repo, "staging", tree);
+      if (stagingHead) console.log(`Matched ${tag} tree to staging ${stagingHead}.`);
     }
+    if (previous && stagingHead) {
+      const previousSha = await resolveTagCommitSha(owner, repo, previous);
+      if (previousSha) {
+        const previousPulls = await listPullsForCommit(owner, repo, previousSha);
+        const previousPromote = selectPromotePullRequest(previousPulls, {
+          tag: previous,
+          mergeSha: previousSha,
+        });
+        if (previousPromote) {
+          const previousCommits = await listPromoteCommits(owner, repo, previousPromote.number);
+          stagingBase = stagingPinFromRelease({
+            promotePr: previousPromote,
+            commits: previousCommits,
+          });
+        }
+        if (!stagingBase) {
+          const tree = await commitTreeSha(owner, repo, previousSha);
+          stagingBase = await findCommitWithTree(owner, repo, stagingHead, tree);
+        }
+      }
+    }
+    if (stagingHead && stagingBase) {
+      console.log(`Comparing staging ${stagingBase}...${stagingHead} for ${tag}.`);
+      try {
+        stagingRangeCommits = await compareCommits(owner, repo, stagingBase, stagingHead);
+      } catch (error) {
+        if (error.status !== 404) throw error;
+        console.log(`warning: compare ${stagingBase}...${stagingHead} returned 404`);
+      }
+    }
+  }
+
+  const chosen = featureCommitsForRelease({ promoteCommits, stagingRangeCommits });
+  let commits = chosen.commits;
+  let commitSource = chosen.source;
+  if (!commits.length && !promotePr && previous) {
+    console.log(`No promote PR matched ${tag}. Comparing ${previous}...${tag}.`);
+    commits = await compareCommits(owner, repo, previous, tag);
+    commitSource = "tag-range";
+  } else if (!commits.length && !promotePr) {
+    console.log(`No promote PR and no previous release for ${tag}.`);
+  } else if (chosen.source === "promote-commits" && promotePr && !commitsIncludeMergedPull(promoteCommits)) {
+    console.log(
+      `Promote #${promotePr.number} has no feature commits and no staging range (${stagingBase || "?"}...${stagingHead || "?"}).`,
+    );
   }
 
   const featureNumbers = new Set();
   for (const commit of commits) {
-    const subject = commitMessage(commit).split(/\r?\n/, 1)[0];
-    const matches = [...subject.matchAll(/\(#(\d+)\)/g)];
-    if (matches.length) featureNumbers.add(Number(matches[matches.length - 1][1]));
+    const merged = extractMergedPullNumber(commitMessage(commit));
+    if (merged) featureNumbers.add(merged);
   }
 
   const pullRequests = [];
@@ -251,6 +360,9 @@ async function main() {
         tag,
         dryRun,
         promotePr: promotePr?.number || null,
+        commitSource,
+        stagingBase,
+        stagingHead,
         decisions: plan.decisions,
       },
       null,

@@ -232,6 +232,8 @@ describe("dependabot auto-merge repo contract", () => {
     assert.deepEqual(limits, [2, 2, 2]);
     assert.equal((yml.match(/target-branch: "staging"/g) || []).length, 3);
     assert.equal((yml.match(/- skip-version-bump/g) || []).length, 3);
+    assert.equal((yml.match(/- allow-global/g) || []).length, 3);
+    assert.match(yml, /package-ecosystem: github-actions[\s\S]*interval: monthly/);
     assert.match(yml, /dependency-name: "firebase-admin"/);
     assert.match(yml, /version-update:semver-major/);
     assert.equal((yml.match(/rebase-strategy: disabled/g) || []).length, 3);

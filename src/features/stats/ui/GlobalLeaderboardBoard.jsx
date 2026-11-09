@@ -23,7 +23,7 @@ const rankBadgeClass = (rank, outsideTop) => {
 /**
  * @param {{
  *   title: string,
- *   boardKey: 'pointsPerShow' | 'pickingAverage' | 'sluggingPercentage',
+ *   boardKey: 'pointsPerShow' | 'pickingAverage' | 'sluggingPercentage' | 'averageVintage' | 'bustoutBoosts',
  *   rows: Array<{
  *     uid: string,
  *     handle: string,
@@ -33,6 +33,7 @@ const rankBadgeClass = (rank, outsideTop) => {
  *     isSelf?: boolean,
  *     outsideTop?: boolean,
  *     belowMinimum?: boolean,
+ *     belowMinimumReason?: 'shows' | 'value',
  *   }>,
  * }} props
  */
@@ -131,7 +132,9 @@ function LeaderboardRow({ row, boardKey }) {
           )}`}
           aria-label={
             row.belowMinimum
-              ? 'Not enough shows to rank'
+              ? row.belowMinimumReason === 'value'
+                ? 'Not ranked'
+                : 'Not enough shows to rank'
               : row.outsideTop
                 ? 'Outside top 50'
                 : `Rank ${rankLabel}`

@@ -290,6 +290,42 @@
       ]
     },
     {
+      "triggerId": "annual_wrap",
+      "displayName": "Annual wrap",
+      "status": "shipped",
+      "phase": "v1",
+      "family": "results_recap",
+      "priority": "P1",
+      "automation": "automated",
+      "processScope": "annual_wrap:{year}",
+      "lookbackDays": 14,
+      "archivePolicy": "A tour editionStatus does not gate the year. The year is every calendar show date on or after game launch. Terminal comms_process_state/annual_wrap:{year} hard-skips later ticks.",
+      "event": "In-app when the last show of the calendar year is graded. Email and push on the next 8am PT scheduledTourRankingsDailyComms tick, inside a 14-day lookback, once that finale is graded. A Dec 31 show stays in that year. A Jan 1 show is the next year.",
+      "audience": "users_with_graded_picks_in_calendar_year",
+      "channels": ["inApp", "push", "email"],
+      "prefKeys": ["results"],
+      "dedupKey": "annual_wrap:{year}:{uid}",
+      "templateId": "annual-wrap",
+      "implementationModule": "functions/annualWrapDelivery.js",
+      "githubIssue": 1111,
+      "inAppDeepLink": "/dashboard/profile/notifications",
+      "note": "Same family as tour_recap, scoped to the calendar year. The shared summary, including year crowd pulse, is the same in every copy. The personal section stays about that player. Push stays the rank tease. In-app can land on the grade; email and push wait for the morning job. A dedup doc that lists channels already sent can still take the missing morning channels. Samples are not sent. The job does not read the sample page. Avg on the email grid is blank until a year correct-slot count exists. Does not replace show_recap or tour_rankings_daily.",
+      "variables": [
+        { "name": "handle", "source": "users/{uid}.handle", "fallback": "Picker" },
+        { "name": "year", "source": "calendar year of the show date", "fallback": null },
+        { "name": "rank", "source": "competition rank on year points; a points tie shares one rank", "fallback": null },
+        { "name": "tiedCount", "source": "players sharing that official rank", "fallback": 1 },
+        { "name": "tiedHandles", "source": "other handles at that rank, list order", "fallback": [] },
+        { "name": "points", "source": "year points", "fallback": 0 },
+        { "name": "wins", "source": "nightly wins that year", "fallback": 0 },
+        { "name": "showsPlayed", "source": "graded shows that year", "fallback": 0 },
+        { "name": "participantCount", "source": "year leaderboard count", "fallback": null },
+        { "name": "show_count", "source": "show dates in that calendar year on or after game launch", "fallback": null },
+        { "name": "crowd_summary", "source": "buildYearCrowdPulse at send time; same string on every payload", "fallback": "" },
+        { "name": "podium", "source": "official ranks 1–5; Annual Winner, Runner-up, Third Place, then 4th and 5th", "fallback": null }
+      ]
+    },
+    {
       "triggerId": "picks_lock_reminder",
       "displayName": "Lock in picks (reminder)",
       "status": "shipped",
@@ -374,6 +410,28 @@
         { "name": "invite_code", "source": "users.pools[0] → pools.inviteCode", "fallback": null },
         { "name": "pool_name", "source": "users.pools[0] → pools.name", "fallback": null },
         { "name": "campaignId", "source": "vars.campaignId", "fallback": "summer_tour_2026" }
+      ]
+    },
+    {
+      "triggerId": "marketing_summer_tour_2026_reminder",
+      "displayName": "Marketing — Summer Tour 2026 non-opener reminder",
+      "status": "shipped",
+      "phase": "v1",
+      "family": "lifecycle",
+      "priority": "P1",
+      "automation": "batch",
+      "event": "admin batch send (callable / CLI) to launch non-openers; not scheduled",
+      "audience": "summer_tour_2026 launch cohort who were delivered the first email, have no openedAt, and are not suppressed or unsubscribed",
+      "channels": ["email"],
+      "prefKeys": ["lifecycle"],
+      "dedupKey": "marketing:{campaignId}:{uid}",
+      "templateId": "summer-tour-2026-reminder",
+      "implementationModule": "functions/marketingReminderDelivery.js",
+      "githubIssue": 512,
+      "variables": [
+        { "name": "greeting_name", "source": "users/{uid}.handle", "fallback": "friend" },
+        { "name": "opener_label", "source": "tour calendar", "fallback": "Tuesday, July 7" },
+        { "name": "campaignId", "source": "vars.campaignId", "fallback": "summer_tour_2026_reminder" }
       ]
     },
     {

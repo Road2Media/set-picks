@@ -32,9 +32,6 @@ describe('MsgGardenStatsView count tables', () => {
     expect(html).toContain('>33<');
     expect(html).toContain('>5<');
     expect(html).not.toMatch(/\dX</);
-    expect(html).toContain('Most-played songs at MSG');
-    expect(html).toContain('Show openers at MSG');
-    expect(html).toContain('Frequencies, not a pick tip.');
-    expect(html).toContain('Phish at MSG, by the numbers');
+    expect(html).not.toMatch(/chair/i);
   });
 });

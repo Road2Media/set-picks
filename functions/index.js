@@ -11,6 +11,13 @@ const {
   syncPhishnetSongCatalogToStorage,
 } = require("./phishnetSongCatalog");
 const {
+  emitSongCatalogHealth,
+  emitSongCatalogSync,
+  runSongCatalogHealthCheck,
+  scrubSongCatalogLogMessage,
+  songCatalogHealthReadFailure,
+} = require("./songCatalogObservability");
+const {
   syncPickRecommendationsToStorage,
 } = require("./pickRecommendations");
 const {
@@ -40,6 +47,7 @@ const {
   parseShowCalendarDates,
 } = require("./poolDelete");
 const {
+  attachScoringShowDate,
   calculateTotalScore,
   persistableActualSetlistFromOfficialDoc,
   shouldSkipLiveScoreRecompute,
@@ -57,6 +65,7 @@ const { recordAcceptedInviteForCaller } = require("./acceptedInvites");
 const { freezeClosedRankSnapshots } = require("./badgeSnapshotJobs");
 const { deliverSphere2026TourRecapInbox } = require("./sphereTourRecapDelivery");
 const { deliverMarketingSummerTour2026Launch } = require("./marketingBatchDelivery");
+const { deliverMarketingSummerTour2026Reminder } = require("./marketingReminderDelivery");
 const { deliverMarketingSummer2026AlmostEnd } = require("./marketingAlmostEndDelivery");
 const { claimMarketingRun, finishMarketingRun } = require("./marketingRunLock");
 const {
@@ -216,7 +225,10 @@ async function recomputeLiveScoresForShow(showDate, actualSetlistFromWrite = nul
     const userPicks = pickData.picks || {};
     const prevScore = typeof pickData.score === "number" ? pickData.score : 0;
     beforeScores.set(pickDoc.id, prevScore);
-    const score = calculateTotalScore(userPicks, actualSetlist);
+    const score = calculateTotalScore(
+      userPicks,
+      attachScoringShowDate(actualSetlist, showDate)
+    );
     afterScores.set(pickDoc.id, score);
 
     // Live scoring only: do not set gradedAt here (pool season uses isGraded from rollup).
@@ -605,6 +617,42 @@ exports.deliverMarketingSummerTour2026Launch = onCall(
       dryRun,
       forceResend,
       onlyUids,
+      resendApiKey: process.env.RESEND_API_KEY,
+      resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET,
+      logger,
+    });
+  }
+);
+
+/**
+ * Admin-only batch — Summer Tour 2026 reminder for launch non-openers (#512 Slice B).
+ * Defaults to dryRun. Does not schedule a send. `forceResend` retries this
+ * reminder's dedup key only, not the launch send.
+ */
+exports.deliverMarketingSummerTour2026Reminder = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    secrets: commsDeliverySecrets,
+  },
+  async (request) => {
+    assertAdminClaim(request);
+    const dryRun = request.data?.dryRun !== false;
+    const forceResend = request.data?.forceResend === true;
+    const onlyUids = Array.isArray(request.data?.onlyUids)
+      ? request.data.onlyUids.map((u) => String(u).trim()).filter(Boolean)
+      : undefined;
+    const waitHoursRaw = request.data?.waitHours;
+    const waitHours =
+      typeof waitHoursRaw === "number" && Number.isFinite(waitHoursRaw) ? waitHoursRaw : undefined;
+    return deliverMarketingSummerTour2026Reminder({
+      db,
+      admin,
+      dryRun,
+      forceResend,
+      onlyUids,
+      ...(waitHours !== undefined ? { waitHours } : {}),
       resendApiKey: process.env.RESEND_API_KEY,
       resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET,
       logger,
@@ -2051,8 +2099,9 @@ exports.refreshPhishnetShowCalendar = onCall(
 );
 
 /**
- * Nightly rebuild of Global Stats leaderboard aggregates (#1004).
- * Catch-up for rollup-hook misses; Admin SDK scan of `users` only.
+ * Nightly rebuild of Global Stats leaderboard aggregates (#1004, #1044).
+ * Catch-up for rollup-hook misses. Admin SDK scan of `users`, plus graded
+ * `picks` and the song catalog for Average vintage. Clients do not scan `users`.
  */
 exports.scheduledGlobalStatsLeaderboardsRefresh = onSchedule(
   {
@@ -2234,11 +2283,18 @@ exports.scheduledPhishnetSongCatalog = onSchedule(
     secrets: [phishnetApiKey],
   },
   async () => {
+    const started = Date.now();
     const key = phishnetApiKey.value();
     if (!key || !String(key).trim()) {
-      logger.error(
-        "scheduledPhishnetSongCatalog: PHISHNET_API_KEY missing; skip sync."
-      );
+      emitSongCatalogSync(logger, {
+        ok: false,
+        trigger: "schedule",
+        reason: "missing_api_key",
+        songCount: 0,
+        durationMs: Date.now() - started,
+        archivePath: null,
+        detail: "PHISHNET_API_KEY missing; skip sync.",
+      });
       return null;
     }
     try {
@@ -2246,10 +2302,55 @@ exports.scheduledPhishnetSongCatalog = onSchedule(
         String(key).trim(),
         { logger }
       );
-      logger.info("scheduledPhishnetSongCatalog public URL", result.publicUrl);
+      emitSongCatalogSync(logger, {
+        ok: true,
+        trigger: "schedule",
+        reason: "uploaded",
+        songCount: result.songCount,
+        durationMs: Date.now() - started,
+        archivePath: result.archivePath ?? null,
+        detail: "uploaded",
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      logger.error("scheduledPhishnetSongCatalog failed", msg, e);
+      emitSongCatalogSync(logger, {
+        ok: false,
+        trigger: "schedule",
+        reason: "exception",
+        songCount: 0,
+        durationMs: Date.now() - started,
+        archivePath: null,
+        detail: msg,
+      });
+    }
+    return null;
+  }
+);
+
+/**
+ * Metadata check for Storage `song-catalog.json` (#168).
+ * Runs 30 minutes after each catalog sync. Logs `songCatalogHealth`.
+ * Does not call Phish.net and does not download the object.
+ * A failure here returns null: Cloud Scheduler still shows success, so the
+ * alert is the ERROR log, not the function execution status.
+ */
+exports.scheduledSongCatalogHealth = onSchedule(
+  {
+    schedule: "30 */6 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 60,
+  },
+  async () => {
+    try {
+      await runSongCatalogHealthCheck({
+        bucket: admin.storage().bucket(),
+        logger,
+        nowMs: Date.now(),
+      });
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      emitSongCatalogHealth(logger, songCatalogHealthReadFailure(detail));
     }
     return null;
   }
@@ -2266,11 +2367,21 @@ exports.refreshPhishnetSongCatalog = onCall(
     enforceAppCheck: false,
   },
   async (request) => {
+    const started = Date.now();
     try {
       assertAdminClaim(request);
 
       const key = phishnetApiKey.value();
       if (!key || !String(key).trim()) {
+        emitSongCatalogSync(logger, {
+          ok: false,
+          trigger: "admin",
+          reason: "missing_api_key",
+          songCount: 0,
+          durationMs: Date.now() - started,
+          archivePath: null,
+          detail: "PHISHNET_API_KEY missing; skip sync.",
+        });
         throw new HttpsError(
           "failed-precondition",
           "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
@@ -2281,6 +2392,15 @@ exports.refreshPhishnetSongCatalog = onCall(
         String(key).trim(),
         { logger }
       );
+      emitSongCatalogSync(logger, {
+        ok: true,
+        trigger: "admin",
+        reason: "uploaded",
+        songCount: result.songCount,
+        durationMs: Date.now() - started,
+        archivePath: result.archivePath ?? null,
+        detail: "uploaded",
+      });
       return {
         ok: true,
         songCount: result.songCount,
@@ -2290,10 +2410,22 @@ exports.refreshPhishnetSongCatalog = onCall(
     } catch (e) {
       if (e instanceof HttpsError) throw e;
       const msg = e instanceof Error ? e.message : String(e);
-      logger.error("refreshPhishnetSongCatalog unexpected error", msg, e);
+      emitSongCatalogSync(logger, {
+        ok: false,
+        trigger: "admin",
+        reason: "exception",
+        songCount: 0,
+        durationMs: Date.now() - started,
+        archivePath: null,
+        detail: msg,
+      });
+      logger.error(
+        "refreshPhishnetSongCatalog unexpected error",
+        scrubSongCatalogLogMessage(msg)
+      );
       throw new HttpsError(
         "failed-precondition",
-        `refreshPhishnetSongCatalog failed: ${msg}`
+        `refreshPhishnetSongCatalog failed: ${scrubSongCatalogLogMessage(msg)}`
       );
     }
   }

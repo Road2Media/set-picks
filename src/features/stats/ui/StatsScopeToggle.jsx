@@ -22,6 +22,7 @@ const HINT_SLOT_CLASS =
  *   items: Array<{ id: string, label: string }>,
  *   hint?: string,
  *   hintLabel?: string,
+ *   layout?: 'equal' | 'wrap',
  * }} props
  */
 export default function StatsScopeToggle({
@@ -31,6 +32,7 @@ export default function StatsScopeToggle({
   items,
   hint,
   hintLabel,
+  layout = 'equal',
 }) {
   const hasHint = typeof hint === 'string' && hint.trim().length > 0;
 
@@ -44,6 +46,7 @@ export default function StatsScopeToggle({
           items={items}
           scrollToTop={false}
           tone="inset"
+          layout={layout}
           className="min-w-0 flex-1"
         />
         <div className={HINT_SLOT_CLASS} aria-hidden={!hasHint}>

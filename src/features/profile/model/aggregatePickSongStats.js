@@ -1,5 +1,5 @@
 import { FORM_FIELDS } from '../../../shared/data/gameConfig';
-import { getSlotScoreBreakdown } from '../../../shared/utils/scoring';
+import { attachScoringShowDate, getSlotScoreBreakdown } from '../../../shared/utils/scoring';
 
 /** Default top-N for the Profile frequency strip (#553). */
 export const PROFILE_TOP_PICKS_N = 10;
@@ -73,7 +73,11 @@ export function aggregatePickSongStats(gradedPicks, setlistsByDate, options = {}
       row.pickedCount += 1;
 
       if (!actual) continue;
-      const breakdown = getSlotScoreBreakdown(field.id, title, actual);
+      const breakdown = getSlotScoreBreakdown(
+        field.id,
+        title,
+        attachScoringShowDate(actual, showDate),
+      );
       if (breakdown.points > 0) {
         row.correctCount += 1;
       }

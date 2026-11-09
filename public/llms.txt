@@ -22,10 +22,12 @@ Sites like Phish.net and setlist.fm are outstanding archives of what was already
 
 ## Scoring (per slot)
 
-- In setlist: 5 pts
+Nights already played keep the ladder that was live that night. The new ladder starts December 30, 2026 (New Year's Run 2026-2027).
+
+- In setlist, wrong slot: 5 pts
 - Exact slot: 10 pts
-- Wildcard hit: 10 pts
-- Encore: 15 pts
+- Wildcard hit: 10 pts before December 30, 2026; 5 pts starting that date
+- Encore: 15 pts for any encore song before December 30, 2026. Starting that date, the first encore song is 15 and a later encore song is 10
 - Bustout Boost (song gap 30+ shows): +20 pts on top of base
 
 ## Tour Insights (tour setlist statistics)
@@ -38,9 +40,15 @@ Public aggregates only — never full night setlists. Numbers refresh every nigh
 
 Deep link — 2026 Summer Tour setlist statistics: https://www.setlistpickem.com/tour-stats/2026-summer-tour
 
-Phish at Madison Square Garden, aggregates only (played shows, most-played songs, debuts, visit gaps, bustouts that landed there, New Year's Eve counts, opener frequencies). Canceled nights are not counted. January 2, 2027 is the announced 100th show. Not a setlist archive. https://www.setlistpickem.com/tour-stats/msg
+Phish at Madison Square Garden: the songs they play most, what opens the night, the debuts, the long waits between visits, and New Year's Eve. Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026. July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics. This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027. https://www.setlistpickem.com/phish-at-msg
 
 2026 annual roll-up: every 2026 Phish tour on one page (shows, unique songs, most-played songs, bustouts). A show counts for the calendar year of its date. December 30 and December 31, 2026 count for 2026. January 1 and January 2, 2027 count for 2027. Show counts and song-row totals add the tour pages. A song on two tours counts once. Not a setlist archive. https://www.setlistpickem.com/tour-stats/2026
+
+New Year's Run 2026-2027 at Madison Square Garden: December 30, December 31, January 1, and January 2. January 2, 2027 is the 100th performance at the Garden. The page lists those four shows and links to phish.com. It does not list a night's setlist. Create a NYE pool from that page. https://www.setlistpickem.com/tour-stats/2026-2027-nye-run
+
+Rewind results: how many players locked a past show and how many hit each slot. No setlist. https://www.setlistpickem.com/rewind
+
+Phish IQ: five Phish questions a day. The share card shows a score, not the answers. No setlist. https://www.setlistpickem.com/phish-iq
 
 Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.com/tour-stats
 
@@ -49,11 +57,15 @@ Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.c
 - Home: https://www.setlistpickem.com/
 - How It Works: https://www.setlistpickem.com/how-it-works
 - How Scoring Works: https://www.setlistpickem.com/how-scoring-works
+- How Scoring Changed: https://www.setlistpickem.com/how-scoring-changed
 - Tour Insights / Phish tour setlist statistics: https://www.setlistpickem.com/tour-stats
 - 2026 Sphere tour statistics: https://www.setlistpickem.com/tour-stats/2026-sphere
 - 2026 Summer Tour setlist statistics: https://www.setlistpickem.com/tour-stats/2026-summer-tour
-- Phish at MSG, 96 shows by the numbers: https://www.setlistpickem.com/tour-stats/msg
+- Phish at MSG: https://www.setlistpickem.com/phish-at-msg
 - 2026 Phish tour statistics: https://www.setlistpickem.com/tour-stats/2026
+- New Year's Run 2026-2027 at MSG: https://www.setlistpickem.com/tour-stats/2026-2027-nye-run
+- Rewind results: https://www.setlistpickem.com/rewind
+- Phish IQ: https://www.setlistpickem.com/phish-iq
 - Phish Setlist Prediction Game: https://www.setlistpickem.com/phish-setlist-prediction-game
 - About: https://www.setlistpickem.com/about
 - Setlist data credit: https://phish.net (The Mockingbird Foundation)

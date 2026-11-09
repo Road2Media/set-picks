@@ -40,10 +40,12 @@ const InviteLandingPage = lazy(() => import('../pages/invite/InviteLandingPage')
 const AboutPage = lazy(() => import('../pages/marketing/AboutPage'));
 const HowItWorksPage = lazy(() => import('../pages/marketing/HowItWorksPage'));
 const HowScoringWorksPage = lazy(() => import('../pages/marketing/HowScoringWorksPage'));
+const HowScoringChangedPage = lazy(() => import('../pages/marketing/HowScoringChangedPage'));
 const PublicTourStatsPage = lazy(() => import('../pages/marketing/PublicTourStatsPage'));
 const MsgGardenStatsPage = lazy(() => import('../pages/marketing/MsgGardenStatsPage'));
 const AnnualTourStatsPage = lazy(() => import('../pages/marketing/AnnualTourStatsPage'));
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
+const PhishIqPage = lazy(() => import('../pages/marketing/PhishIqPage'));
 const StatsEmbedPage = lazy(() => import('../pages/marketing/StatsEmbedPage'));
 const PhishSetlistPredictionGamePage = lazy(
   () => import('../pages/marketing/PhishSetlistPredictionGamePage'),
@@ -72,12 +74,18 @@ function App() {
         {/* Marketing / educational pages — public, crawlable, no auth */}
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/how-scoring-works" element={<HowScoringWorksPage />} />
+        <Route path="/how-scoring-changed" element={<HowScoringChangedPage />} />
         <Route path="/tour-stats" element={<PublicTourStatsPage />} />
-        <Route path="/tour-stats/msg" element={<MsgGardenStatsPage />} />
+        <Route path="/phish-at-msg" element={<MsgGardenStatsPage />} />
+        <Route
+          path="/tour-stats/msg"
+          element={<Navigate to="/phish-at-msg" replace />}
+        />
         <Route path="/tour-stats/2026" element={<AnnualTourStatsPage />} />
         <Route path="/tour-stats/:tourSlug" element={<PublicTourStatsPage />} />
         <Route path="/rewind" element={<RewindResultsPage />} />
         <Route path="/rewind/:weekId" element={<RewindResultsPage />} />
+        <Route path="/phish-iq" element={<PhishIqPage />} />
         <Route path="/embed" element={<Navigate to="/embed/stats" replace />} />
         <Route path="/embed/stats" element={<StatsEmbedPage />} />
         <Route

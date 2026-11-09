@@ -10,7 +10,10 @@
 
 const {
   SCORE_FIELDS,
+  attachScoringShowDate,
   calculateSlotScore,
+  encorePlacement,
+  scoringRulesForShowDate,
   SCORING_RULES,
 } = require("./scoringCore");
 const { formatBustoutSongGap, composeNightSetFlow } = require("./commsShowContextCore");
@@ -115,11 +118,12 @@ function buildUserShowScorecard(userPicks, actualSetlist, bustoutEntries = []) {
       if (fieldId === "wild") {
         exact = true;
       } else if (fieldId === "enc") {
-        const enc = String(actualSetlist?.enc || "").trim().toLowerCase();
-        const encoreSongs = Array.isArray(actualSetlist?.encoreSongs)
-          ? actualSetlist.encoreSongs.map((title) => String(title).trim().toLowerCase())
-          : [];
-        exact = guessNorm === enc || encoreSongs.includes(guessNorm);
+        const place = encorePlacement(actualSetlist, guessNorm);
+        const ladder = scoringRulesForShowDate(actualSetlist?.showDate);
+        exact =
+          ladder.id === "v2"
+            ? place === "first"
+            : place === "first" || place === "later";
       } else {
         exact = guessNorm === String(actualSetlist?.[fieldId] || "").trim().toLowerCase();
       }
@@ -564,7 +568,11 @@ function buildShowRecapEnrichment({
   const bustoutEntries = Array.isArray(showLevel.bustout_entries)
     ? showLevel.bustout_entries
     : [];
-  const scorecard = buildUserShowScorecard(userPicks, actualSetlist, bustoutEntries);
+  const scorecard = buildUserShowScorecard(
+    userPicks,
+    attachScoringShowDate(actualSetlist, showDate),
+    bustoutEntries
+  );
   const { slot_hits, ...publicScorecard } = scorecard;
   const narrative_branch = resolveNarrativeBranch({
     ...scorecard,

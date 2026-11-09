@@ -38,12 +38,18 @@ New secrets apply to the next agent boot. A running agent does not see them.
 
 Standard commands are in `package.json` scripts.
 
-CI is now risk-weighted:
+CI is now risk-weighted. The four stages (Patrick, 2026-10-22) are in `RELEASING.md`:
+
+1. **Pull request gate.** `verify`, `scope-guard`, `label-integrity`, and Vercel. `ci-gate` always reports. `functions`, `rules`, and `qa-runners` are path-gated.
+2. **Push to `staging`.** The same CI runs on the merge commit and is not a required check. `staging-smoke` runs too and is not required.
+3. **Release pull request.** `staging` → `main` runs the pull-request checks again.
+4. **Production smoke.** `production-smoke` runs after the GitHub Release is published. Nightly `favicon-prod` only checks favicon URLs.
+
 - Baseline checks run on all PRs/pushes (`verify` + Vercel).
-- Pull requests also run `scope-guard` and `label-integrity` (`.github/workflows/scope-guard.yml`, `.github/workflows/label-integrity.yml`). See `RELEASING.md`.
+- Pull requests also run `scope-guard` and `label-integrity` (`.github/workflows/scope-guard.yml`, `.github/workflows/label-integrity.yml`).
 - `functions`, `rules`, and `qa-runners` are conditional based on changed paths/risk.
 - Nightly scheduled CI runs the full matrix as a backstop.
-- `staging-smoke` runs on a push to `staging`. `production-smoke` runs after a published Release. `release-publish` on `main` tags and publishes idempotently, using `SYNC_BOT_TOKEN` when that Actions secret is set. Do not invent the token. Patrick adds it, and adds `VERCEL_AUTOMATION_BYPASS_SECRET` if staging smoke is blocked by Deployment Protection.
+- `release-publish` on `main` tags and publishes idempotently, using `SYNC_BOT_TOKEN` when that Actions secret is set. Do not invent the token. Patrick adds it. `VERCEL_AUTOMATION_BYPASS_SECRET` must match the Vercel Protection Bypass for Automation value or `staging-smoke` fails closed. Do not change branch protection or required checks from a pull request. A missing staging CI run is unknown, not a failed release.
 
 Core local commands:
 
@@ -62,8 +68,8 @@ Core local commands:
 
 ### Dependabot / npm audit (#414)
 
-- **Runbook:** **`docs/DEPENDABOT_OPERATIONS.md`** — first-enable timeline, ops-reset procedure, re-enable steps. Read before touching `dependabot.yml` or triaging dep PRs.
-- **Dependabot** (`.github/dependabot.yml`) — **active**. Factory standard (2026-10-22, #1148), shared with road2media and foco-pets: every Dependabot update, **majors included**, squash auto-merges into `staging` when required checks pass (`.github/workflows/dependabot-auto-merge.yml`, `gh pr merge --auto --squash`, `dependabot/fetch-metadata`, no checkout of the PR head). A major that **fails** checks stays open and becomes an `agent-queue` `p3` migration issue. Visitor-facing packages get `ui-check` so staging can be spot-checked before release; the label does not block the merge. `@types/node` ignores `>=25.0.0` because functions run Node 24. Security updates are not in the Monday groups and auto-merge when checks pass. `rebase-strategy` is `disabled`. A Monday 18:00 UTC sweep (`.github/workflows/dependabot-scheduled-execution.yml`, #1052) is the backstop and does not push or rebase. The workflow and `dependabot.yml` are read from `main`. `open-pull-requests-limit` is 2. Weekly minor/patch groups; monthly Actions group; base `staging`; `skip-version-bump`. Agents must **not** bump `package.json` on Dependabot PRs. `firebase-admin` majors stay ignored in `/functions`. A quarterly workflow reminds us to check the Node and Vercel runtimes and does not change them. Detail: `docs/DEPENDABOT_OPERATIONS.md` and `.cursor/rules/dependencies.mdc`.
+- **Runbook:** **`docs/DEPENDABOT_OPERATIONS.md`** — first-enable timeline, ops-reset procedure, re-enable steps. Read before touching `dependabot.yml` or triaging dep PRs. Engineering rules: **`docs/DEPENDENCY_POLICY.md`**.
+- **Dependabot** (`.github/dependabot.yml`) — **active**. Factory standard (2026-10-22, #1148), shared with road2media and foco-pets: every Dependabot update, **majors included**, squash auto-merges into `staging` when required checks pass (`.github/workflows/dependabot-auto-merge.yml`, `gh pr merge --auto --squash`, `dependabot/fetch-metadata`, no checkout of the PR head). A major that **fails** checks stays open and becomes an `agent-queue` `p3` migration issue. Visitor-facing packages get `ui-check` so staging can be spot-checked before release; the label does not block the merge. `@types/node` ignores `>=25.0.0` because functions run Node 24. Security updates are not in the Monday groups and auto-merge when checks pass. `rebase-strategy` is `disabled`. A Monday 18:00 UTC sweep (`.github/workflows/dependabot-scheduled-execution.yml`, #1052) is the backstop and does not push or rebase. The workflow and `dependabot.yml` are read from `main`. `open-pull-requests-limit` is 2. Weekly minor/patch groups; monthly Actions group; base `staging`; labels `dependencies`, `skip-version-bump`, and `allow-global`. The release pull request lists `ui-check` items and security updates (`RELEASING.md`). Agents must **not** bump `package.json` on Dependabot PRs. `firebase-admin` majors stay ignored in `/functions`. A quarterly workflow reminds us to check the Node and Vercel runtimes and does not change them. Detail: `docs/DEPENDABOT_OPERATIONS.md` and `.cursor/rules/dependencies.mdc`.
 - **Vercel:** `ignoreCommand` → `scripts/vercel-should-build.sh` skips previews for every `dependabot/*` ref. `ci-gate` in `.github/workflows/ci.yml` is the always-reporting check for `verify`, `build`, `functions`, and `rules`.
 - **CI `npm audit`** on the `verify` job is **informational** (`continue-on-error: true`). It does not block merge.
 - **Triage:** Critical/high in **production** deps → fix or upgrade in a normal PR. Dev-only / low noise → defer or group into a maintenance PR. Do not mass-upgrade without running `npm test` and `cd functions && npm test`.
@@ -78,7 +84,7 @@ Core local commands:
 
 - **Base branch is `staging`**, not `main` (per `.cursorrules` §10).
 - Branch naming: `feat/<issue#>-<kebab-slug>`.
-- **Issue keywords:** `Closes #N` only when the PR fully finishes the issue. `Part of #N` for partial work. A merge to `staging` leaves the issue open. `.github/workflows/close-shipped-issues.yml` closes keyword references when the GitHub Release is published, and skips pull requests, closed issues, and the `keep-open` label. Dry run from Actions with the release `tag` and `dry_run` checked (workflow file must be on `main` first). See `.cursor/rules/promote-release.mdc` and `RELEASING.md`.
+- **Issue keywords:** `Closes #N` only when the PR fully finishes the issue. `Part of #N` for partial work. A merge to `staging` leaves the issue open. `.github/workflows/close-shipped-issues.yml` closes keyword references when the GitHub Release is published. The promote pull request is the one whose merge commit is the tag, not an older squash ancestor on `main`. It skips pull requests, closed issues, and the `keep-open` label. Dry run from Actions with the release `tag` and `dry_run` checked (workflow file must be on `main` first). See `.cursor/rules/promote-release.mdc` and `RELEASING.md`.
 - **Promote:** `staging` moves to `main` only when Patrick says **ship** or **promote to prod**. Agent queue labels (`agent-queue`, `needs-human`, `allow-global`, `auto-merge-ok`, and the rest) are in `RELEASING.md`.
 - Firestore rules tests (`npm run test:rules`) require the Firebase emulator and are not part of the regular CI matrix for the web app.
 

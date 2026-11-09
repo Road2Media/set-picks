@@ -49,7 +49,7 @@ export async function fetchTourOfficialSetlists(showDates, options = {}) {
       }
       docs.push({
         showDate,
-        setlist: normalizeOfficialSetlistDocData(snap.data()),
+        setlist: normalizeOfficialSetlistDocData(snap.data(), showDate),
       });
     }
   }

@@ -126,9 +126,29 @@ const TRIGGER_SPECS = {
     family: "results_recap",
     priority: "P1",
   },
+  annual_wrap: {
+    triggerId: "annual_wrap",
+    templateId: "annual-wrap",
+    channels: ["inApp", "push", "email"],
+    prefKeys: ["results"],
+    dedupKey: "annual_wrap:{year}:{uid}",
+    family: "results_recap",
+    priority: "P1",
+  },
   marketing_summer_tour_2026_launch: {
     triggerId: "marketing_summer_tour_2026_launch",
     templateId: "summer-tour-2026-launch",
+    channels: ["email"],
+    prefKeys: ["lifecycle"],
+    dedupKey: "marketing:{campaignId}:{uid}",
+    family: "lifecycle",
+    priority: "P1",
+  },
+  // Second wave for the launch cohort. Own campaignId so dedup does not
+  // collide with marketing:summer_tour_2026:{uid} (#512 Slice B).
+  marketing_summer_tour_2026_reminder: {
+    triggerId: "marketing_summer_tour_2026_reminder",
+    templateId: "summer-tour-2026-reminder",
     channels: ["email"],
     prefKeys: ["lifecycle"],
     dedupKey: "marketing:{campaignId}:{uid}",

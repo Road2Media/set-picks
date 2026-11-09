@@ -53,16 +53,11 @@ root.render(
 )
 
 // Analytics after first paint — keep GA/web-vitals off the login critical graph.
+// bootAnalytics loads web-vitals only after GA init so the first hit is not dropped (#733).
 const scheduleIdle =
   typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
     ? (fn) => window.requestIdleCallback(fn, { timeout: 2500 })
     : (fn) => setTimeout(fn, 1)
 scheduleIdle(() => {
-  void Promise.all([
-    import('./shared/lib/ga4'),
-    import('./shared/lib/webVitals'),
-  ]).then(([{ initGa4 }, { initWebVitals }]) => {
-    initGa4()
-    initWebVitals()
-  })
+  void import('./shared/lib/ga4').then(({ bootAnalytics }) => bootAnalytics())
 })

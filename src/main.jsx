@@ -8,32 +8,43 @@ import Ga4RouteListener from './app/Ga4RouteListener.jsx'
 import ScrollToTop from './app/ScrollToTop.jsx'
 import { AuthProvider } from './features/auth/provider'
 import {
+  shouldDeferGa4Boot,
   shouldDeferMessagingServiceWorker,
   shouldPrefetchDashboardOnBoot,
   shouldWarmAppCheckOnBoot,
 } from './shared/lib/appBootPath'
 import { shouldDeferFirebaseBoot } from './shared/lib/ensureFirebase'
-import { initGa4 } from './shared/lib/ga4'
 import {
   ensureAppCheckNow,
   initializeAppCheckDeferred,
 } from './shared/lib/firebaseAppCheck'
 import { hasPersistedSessionHint } from './shared/lib/persistedSessionHint'
 import { prefetchRouteChunk } from './shared/lib/routeChunkPrefetch'
-import { initWebVitals } from './shared/lib/webVitals'
 import { peekGoogleRedirectIntent } from './features/auth/utils/googleRedirectIntent'
 import './index.css'
 
-initGa4()
-initWebVitals()
+const bootPath =
+  typeof window !== 'undefined' ? window.location.pathname : ''
+
+// #733: react-ga4 lives in vendor-ga4 and is not on the entry modulepreload
+// graph. Public cold opens (/, /join, /invite) wait for idle so the library
+// does not compete with the VIP route chunks. Other app routes start it now.
+// Hits that fire first are queued inside ga4.js and flushed on init.
+function startAnalytics() {
+  void import('./shared/lib/ga4').then(({ bootAnalytics }) => bootAnalytics())
+}
+const scheduleIdle =
+  typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+    ? (fn) => window.requestIdleCallback(fn, { timeout: 2500 })
+    : (fn) => setTimeout(fn, 1)
+if (shouldDeferGa4Boot(bootPath)) scheduleIdle(startAnalytics)
+else startAnalytics()
 
 // #773 / #803: dashboard + setup warm App Check on boot; splash/join/invite
 // stay deferred for anonymous visitors (session + auth modal warm instead).
 // #853: public `/tour-stats*` hard-opens on the marketing document (not here).
 // #835: anon `/login` skips idle App Check entirely — first auth CTA calls
 // ensureAuthReady() so firebase-core is not downloaded to paint the form.
-const bootPath =
-  typeof window !== 'undefined' ? window.location.pathname : ''
 const deferFirebaseBoot = shouldDeferFirebaseBoot(bootPath, {
   hasSession: hasPersistedSessionHint(),
   hasRedirectIntent: Boolean(peekGoogleRedirectIntent()),

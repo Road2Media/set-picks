@@ -7,6 +7,7 @@ export { default as ChromeScopeStepper } from './ChromeScopeStepper';
 export { default as ChromeSegmentedControl } from './ChromeSegmentedControl';
 export { default as DashboardActionRow } from './DashboardActionRow';
 export { default as DashboardJobShell } from './DashboardJobShell';
+export { default as DashboardTileShell } from './DashboardTileShell';
 export { default as DashboardMobileChromeBar } from './DashboardMobileChromeBar';
 export { default as DashboardStickyPageChrome } from './DashboardStickyPageChrome';
 export { default as DashboardRowPill } from './DashboardRowPill';

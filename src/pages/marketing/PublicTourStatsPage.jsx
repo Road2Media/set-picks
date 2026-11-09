@@ -3,7 +3,15 @@ import { Helmet } from 'react-helmet-async';
 
 import { MarketingPageShell } from '../../features/landing';
 import {
+  announcedNyeRunShows,
+  buildNyeRunJsonLd,
+  NYE_RUN_SLUG,
+  nyePoolCreateHref,
+} from '../../features/msg-stats/nye';
+import {
+  NyeRunStatsView,
   PublicTourStatsPanel,
+  trackNyePoolCta,
   trackPublicTourStatsView,
   usePublicTourStatsScreen,
 } from '../../features/tour-stats/public';
@@ -40,21 +48,25 @@ export default function PublicTourStatsPage() {
     (liveLabel
       ? `${liveLabel} Setlist Statistics | ${SEO_CONFIG.siteName}`
       : hubRoute?.title ||
-        `Phish Tour Statistics & Insights | ${SEO_CONFIG.siteName}`);
+        `Phish Tour Stats | ${SEO_CONFIG.siteName}`);
   const description =
     slugRoute?.description ||
     (liveLabel
-      ? `Tour Insights for ${liveLabel}: setlist statistics, most-played songs, bustouts, and gap highlights.`
+      ? `Songs Phish played most on ${liveLabel}, plus the bustouts and the long gaps.`
       : hubRoute?.description ||
-        'Tour Insights: the latest Phish tour setlist statistics, most-played songs, bustouts by tour, and gap highlights.');
+        'See the songs Phish is playing most this tour, the bustouts, and the long gaps. Updated after every show.');
   const canonical =
     slugRoute?.canonicalUrl ||
     (screen.routeHasSlug && screen.activeSlug
       ? `${SEO_CONFIG.siteUrl}/tour-stats/${screen.activeSlug}`
       : hubRoute?.canonicalUrl || `${SEO_CONFIG.siteUrl}/tour-stats`);
   const shareImage = screen.shareImageUrl || SEO_CONFIG.ogImageUrl;
+  const nyeShows =
+    screen.activeSlug === NYE_RUN_SLUG ? announcedNyeRunShows() : null;
 
-  const jsonLd = slugRoute?.buildJsonLd?.() ||
+  const jsonLd = nyeShows
+    ? buildNyeRunJsonLd(nyeShows, canonical)
+    : slugRoute?.buildJsonLd?.() ||
     (!screen.routeHasSlug && hubRoute?.buildJsonLd?.()) || {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
@@ -69,7 +81,7 @@ export default function PublicTourStatsPage() {
     slugRoute?.h1 ||
     (liveLabel
       ? `${liveLabel} setlist statistics`
-      : hubRoute?.h1 || 'Phish tour setlist statistics');
+      : hubRoute?.h1 || 'What Phish is playing this tour');
 
   return (
     <>
@@ -93,6 +105,15 @@ export default function PublicTourStatsPage() {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
       <MarketingPageShell>
+        {nyeShows ? (
+          <NyeRunStatsView
+            shows={nyeShows}
+            heading={heading}
+            poolHref={nyePoolCreateHref()}
+            onPoolClick={() => trackNyePoolCta({ tourSlug: NYE_RUN_SLUG })}
+            stats={screen.hasTour ? screen.stats : null}
+          />
+        ) : (
         <PublicTourStatsPanel
           tours={screen.tours}
           activeSlug={screen.activeSlug}
@@ -108,6 +129,7 @@ export default function PublicTourStatsPage() {
           defaultTourSlug={screen.defaultTourSlug}
           wrap={screen.wrap}
         />
+        )}
       </MarketingPageShell>
     </>
   );

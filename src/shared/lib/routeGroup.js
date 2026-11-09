@@ -11,6 +11,7 @@
  *   | 'tour_stats'
  *   | 'embed'
  *   | 'rewind'
+ *   | 'phish_iq'
  *   | 'invite_join'
  *   | 'invite_site'
  *   | 'dashboard'
@@ -28,10 +29,14 @@ export function resolveRouteGroup(pathname) {
     pathname.startsWith('/how-it-works/') ||
     pathname === '/how-scoring-works' ||
     pathname.startsWith('/how-scoring-works/') ||
+    pathname === '/how-scoring-changed' ||
+    pathname.startsWith('/how-scoring-changed/') ||
     pathname === '/phish-setlist-prediction-game' ||
     pathname.startsWith('/phish-setlist-prediction-game/') ||
     pathname === '/about' ||
-    pathname.startsWith('/about/')
+    pathname.startsWith('/about/') ||
+    pathname === '/phish-at-msg' ||
+    pathname.startsWith('/phish-at-msg/')
   ) {
     return 'marketing';
   }
@@ -43,6 +48,9 @@ export function resolveRouteGroup(pathname) {
   }
   if (pathname === '/rewind' || pathname.startsWith('/rewind/')) {
     return 'rewind';
+  }
+  if (pathname === '/phish-iq' || pathname.startsWith('/phish-iq/')) {
+    return 'phish_iq';
   }
   if (pathname === '/setup' || pathname.startsWith('/setup/')) return 'setup';
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {

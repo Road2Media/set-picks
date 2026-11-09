@@ -96,6 +96,7 @@ export default function StandingsPage({ selectedDate, onSelectShowDate }) {
             error={screen.yearError}
             hasYear={Boolean(screen.selectedYear)}
             selfUserId={screen.selfUserId}
+            celebration={screen.yearCelebration}
           />
         ) : (
           <StandingsShowOrPoolView screen={screen} />

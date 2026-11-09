@@ -23,7 +23,12 @@ export default function ScoreBreakdownGrid({ userPicks, actualSetlist, maskPickT
         let markerColor = 'text-content-secondary';
 
         if (actualSetlist && trimmedGuess) {
-          if (kind === 'exact_slot' || kind === 'encore_exact' || kind === 'wildcard_hit') {
+          if (
+            kind === 'exact_slot' ||
+            kind === 'encore_exact' ||
+            kind === 'encore_later' ||
+            kind === 'wildcard_hit'
+          ) {
             borderStyle = 'border-brand-primary/50 bg-brand-primary/10';
             textColor = 'text-brand-primary';
             markerColor = 'text-brand-primary-strong';

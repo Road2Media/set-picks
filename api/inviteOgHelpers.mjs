@@ -163,6 +163,40 @@ export function resolveInviteOgContent({
   return { title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION };
 }
 
+/** Safe hashed asset href. Manifest injection must not accept arbitrary URLs. */
+const INVITE_PRELOAD_HREF_RE = /^\/assets\/[A-Za-z0-9._-]+\.js$/;
+
+/**
+ * Which invite boot graph this request paints (#733).
+ * `pool` = `/join/:code`, `site` = `/invite/:handle`.
+ *
+ * @param {{ code?: string, handle?: string }} params
+ * @returns {'pool' | 'site' | null}
+ */
+export function resolveInviteBootKind({ code = '', handle = '' } = {}) {
+  const normalizedHandle = normalizeInviteHandle(handle);
+  const normalizedCode = String(code ?? '').trim();
+  if (normalizedHandle && !normalizedCode) return 'site';
+  if (normalizedCode) return 'pool';
+  return null;
+}
+
+/**
+ * Pick the precomputed modulepreload list for this invite URL.
+ * Returns [] when the manifest is missing or the request is not an invite.
+ *
+ * @param {{ pool?: unknown, site?: unknown } | null | undefined} manifest
+ * @param {{ code?: string, handle?: string }} params
+ * @returns {string[]}
+ */
+export function selectInviteBootPreloadHrefs(manifest, { code = '', handle = '' } = {}) {
+  const kind = resolveInviteBootKind({ code, handle });
+  if (!kind || !manifest || typeof manifest !== 'object') return [];
+  const list = manifest[kind];
+  if (!Array.isArray(list)) return [];
+  return list.filter((href) => typeof href === 'string' && INVITE_PRELOAD_HREF_RE.test(href));
+}
+
 export function escapeHtml(str) {
   return String(str ?? '')
     .replace(/&/g, '&amp;')

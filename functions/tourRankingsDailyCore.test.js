@@ -32,7 +32,7 @@ test("formatRankChange: up / down / held / null", () => {
   assert.equal(formatRankChange(1, null), null);
 });
 
-test("assignDisplayRanks: ties share competition rank", () => {
+test("assignDisplayRanks: equal points break by handle when the rest of the cascade matches", () => {
   const rows = aggregateTourStandings([
     {
       date: "2026-07-07",
@@ -45,16 +45,16 @@ test("assignDisplayRanks: ties share competition rank", () => {
   ]);
   const board = assignDisplayRanks(rows);
   assert.equal(board.get("a")?.rank, 1);
-  assert.equal(board.get("b")?.rank, 1);
-  assert.equal(board.get("a")?.tiedCount, 2);
+  assert.equal(board.get("b")?.rank, 2);
+  assert.equal(board.get("a")?.tiedCount, 1);
   assert.equal(board.get("c")?.rank, 3);
   assert.equal(board.get("c")?.tiedCount, 1);
-  assert.deepEqual(board.get("a")?.tiedHandles, ["Bob"]);
-  assert.deepEqual(board.get("b")?.tiedHandles, ["Alice"]);
+  assert.deepEqual(board.get("a")?.tiedHandles, []);
+  assert.equal(board.get("b")?.tieBreak?.decisive, "username");
   assert.deepEqual(board.get("c")?.tiedHandles, []);
 });
 
-test("assignDisplayRanks: Fall Tour points tie is shared #3 and Jeff is #6", () => {
+test("assignDisplayRanks: Fall Tour points tie breaks on nightly wins, then handle", () => {
   const rows = [
     { uid: "book", handle: "I have the book", totalPoints: 115, wins: 3, shows: 8 },
     { uid: "meg", handle: "YarmouthMeg", totalPoints: 90, wins: 0, shows: 8 },
@@ -65,13 +65,12 @@ test("assignDisplayRanks: Fall Tour points tie is shared #3 and Jeff is #6", () 
   ];
   const board = assignDisplayRanks(rows);
   assert.equal(board.get("billy")?.rank, 3);
-  assert.equal(board.get("arm")?.rank, 3);
-  assert.equal(board.get("mul")?.rank, 3);
-  assert.equal(board.get("billy")?.tiedCount, 3);
+  assert.equal(board.get("arm")?.rank, 4);
+  assert.equal(board.get("mul")?.rank, 5);
+  assert.equal(board.get("billy")?.tiedCount, 1);
   assert.equal(board.get("jeff")?.rank, 6);
-  assert.deepEqual(board.get("billy")?.tiedHandles, ["ArmenianMan", "TheManMulcahy"]);
-  assert.deepEqual(board.get("arm")?.tiedHandles, ["HotDog Billy", "TheManMulcahy"]);
-  assert.deepEqual(board.get("mul")?.tiedHandles, ["HotDog Billy", "ArmenianMan"]);
+  assert.deepEqual(board.get("billy")?.tiedHandles, []);
+  assert.deepEqual(board.get("arm")?.tiedHandles, []);
   assert.deepEqual(board.get("jeff")?.tiedHandles, []);
 });
 
@@ -127,7 +126,7 @@ test("payload: night-one debut has no rank_change", () => {
   assert.deepEqual(payload.tour_tied_handles, []);
 });
 
-test("payload: a points tie names the other handles at that rank", () => {
+test("payload: a points tie breaks before the handle, so ArmenianMan is not tied", () => {
   const current = assignDisplayRanks([
     { uid: "book", handle: "I have the book", totalPoints: 115, wins: 3, shows: 8 },
     { uid: "meg", handle: "YarmouthMeg", totalPoints: 90, wins: 0, shows: 8 },
@@ -144,10 +143,10 @@ test("payload: a points tie names the other handles at that rank", () => {
     priorBoard: null,
     isTourNightOne: false,
   });
-  assert.equal(payload.tour_rank, 3);
-  assert.equal(payload.tour_rank_tied, true);
-  assert.equal(payload.tour_tied_count, 3);
-  assert.deepEqual(payload.tour_tied_handles, ["HotDog Billy", "TheManMulcahy"]);
+  assert.equal(payload.tour_rank, 4);
+  assert.equal(payload.tour_rank_tied, false);
+  assert.equal(payload.tour_tied_count, 1);
+  assert.deepEqual(payload.tour_tied_handles, []);
 });
 
 test("payload: slip from #1 to #6 (ArmenianMan case)", () => {

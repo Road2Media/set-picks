@@ -19,6 +19,7 @@ import PicksPage from '../../pages/picks/PicksPage';
 import PicksLabPage from '../../pages/picks/PicksLabPage';
 import PicksScorecardPage from '../../pages/picks/PicksScorecardPage';
 import RewindPlayPage from '../../pages/rewind/RewindPlayPage';
+import PhishIqDashboardPage from '../../pages/phish-iq/PhishIqDashboardPage';
 import PoolCreatePage from '../../pages/pools/PoolCreatePage';
 import PoolJoinPage from '../../pages/pools/PoolJoinPage';
 import PoolsPage from '../../pages/pools/PoolsPage';
@@ -431,6 +432,7 @@ export default function DashboardLayout() {
                 element={<PicksScorecardPage />}
               />
               <Route path="rewind" element={<RewindPlayPage user={user} />} />
+              <Route path="phish-iq" element={<PhishIqDashboardPage />} />
             </Route>
             <Route
               path="scoring"
