@@ -50,17 +50,12 @@ root.render(
 )
 
 // Analytics after first paint — dynamic import so GA/web-vitals stay off the
-// marketing modulepreload graph (#835).
+// marketing modulepreload graph (#835). bootAnalytics waits for GA init before
+// web-vitals, and queues the first hit if the route listener runs first (#733).
 const scheduleIdle =
   typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
     ? (fn) => window.requestIdleCallback(fn, { timeout: 2500 })
     : (fn) => setTimeout(fn, 1)
 scheduleIdle(() => {
-  void Promise.all([
-    import('./shared/lib/ga4'),
-    import('./shared/lib/webVitals'),
-  ]).then(([{ initGa4 }, { initWebVitals }]) => {
-    initGa4()
-    initWebVitals()
-  })
+  void import('./shared/lib/ga4').then(({ bootAnalytics }) => bootAnalytics())
 })

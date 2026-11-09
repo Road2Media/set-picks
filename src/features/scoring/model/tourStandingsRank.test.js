@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { TOUR_STANDINGS_DESCRIPTION } from '../../../shared/config/dashboardVocabulary';
+import {
+  SHOW_STANDINGS_DESCRIPTION,
+  TOUR_STANDINGS_DESCRIPTION,
+} from '../../../shared/config/dashboardVocabulary';
 import { aggregateTourStandings } from './aggregateTourStandings';
 import { assignTourDisplayRanks, tourStandingsBadge } from './tourStandingsRank';
 
@@ -25,19 +28,25 @@ const FALL_TOUR_BOARD = [
 ];
 
 describe('assignTourDisplayRanks', () => {
-  it('shares rank 3 on the Fall Tour points tie and skips to 6', () => {
+  it('breaks the Fall Tour points tie by nightly wins, then handle', () => {
     const board = assignTourDisplayRanks(FALL_TOUR_BOARD);
     const byUid = Object.fromEntries(board.map((row) => [row.uid, row]));
 
-    expect(board.map((row) => row.handle)).toEqual(FALL_TOUR_BOARD.map((row) => row.handle));
-    expect(byUid.billy).toMatchObject({ rank: 3, tiedCount: 3 });
-    expect(byUid.arm).toMatchObject({ rank: 3, tiedCount: 3 });
-    expect(byUid.mul).toMatchObject({ rank: 3, tiedCount: 3 });
+    expect(board.map((row) => row.handle)).toEqual([
+      'I have the book',
+      'YarmouthMeg',
+      'HotDog Billy',
+      'ArmenianMan',
+      'TheManMulcahy',
+      'Jeff',
+    ]);
+    expect(byUid.billy).toMatchObject({ rank: 3, tiedCount: 1, tiedHandles: [] });
+    expect(byUid.arm).toMatchObject({ rank: 4, tiedCount: 1 });
+    expect(byUid.mul).toMatchObject({ rank: 5, tiedCount: 1 });
     expect(byUid.jeff.rank).toBe(6);
     expect(byUid.book).toMatchObject({ rank: 1, tiedCount: 1, tiedHandles: [] });
-    expect(byUid.billy.tiedHandles).toEqual(['ArmenianMan', 'TheManMulcahy']);
-    expect(byUid.arm.tiedHandles).toEqual(['HotDog Billy', 'TheManMulcahy']);
-    expect(byUid.mul.tiedHandles).toEqual(['HotDog Billy', 'ArmenianMan']);
+    expect(byUid.arm.tieBreak.decisive).toBe('nightlyWins');
+    expect(byUid.mul.tieBreak.decisive).toBe('username');
   });
 
   it('does not let shows played reorder a tie', () => {
@@ -65,16 +74,17 @@ describe('assignTourDisplayRanks', () => {
       wins: 1,
       shows: 1,
       rank: 1,
-      tiedCount: 2,
-      tiedHandles: ['Zoe'],
+      tiedCount: 1,
+      tiedHandles: [],
     });
     expect(rows.find((row) => row.uid === 'zoe')).toMatchObject({
       totalPoints: 85,
       wins: 1,
       shows: 2,
-      rank: 1,
-      tiedHandles: ['Amy'],
+      rank: 2,
+      tiedHandles: [],
     });
+    expect(rows.find((row) => row.uid === 'zoe').tieBreak.decisive).toBe('username');
     expect(rows.find((row) => row.uid === 'jeff').rank).toBe(3);
   });
 });
@@ -87,8 +97,8 @@ describe('tourStandingsBadge', () => {
 
     expect(tourStandingsBadge(billy)).toEqual({
       text: '3',
-      tied: true,
-      ariaLabel: 'Tied for rank 3',
+      tied: false,
+      ariaLabel: 'Rank 3',
     });
     expect(tourStandingsBadge(jeff)).toEqual({
       text: '6',
@@ -96,11 +106,31 @@ describe('tourStandingsBadge', () => {
       ariaLabel: 'Rank 6',
     });
   });
+
+  it('marks a tie only when the cascade does not separate the rows', () => {
+    const board = assignTourDisplayRanks([
+      { uid: 'a', handle: 'Ada', totalPoints: 10, exactHits: 1, correctPicks: 1, wins: 1 },
+      { uid: 'b', handle: 'Ada', totalPoints: 10, exactHits: 1, correctPicks: 1, wins: 1 },
+    ]);
+    expect(tourStandingsBadge(board[0])).toMatchObject({
+      tied: true,
+      ariaLabel: 'Tied for rank 1',
+    });
+  });
 });
 
 describe('tour standings description', () => {
-  it('states the shared-rank rule', () => {
-    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/same points share a rank/i);
-    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/next rank skips/i);
+  it('states the tie-break cascade', () => {
+    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/exact slots/i);
+    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/correct picks/i);
+    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/nightly wins/i);
+    expect(TOUR_STANDINGS_DESCRIPTION).not.toMatch(/share a rank/i);
+  });
+
+  it('states the show cascade and skips nightly wins', () => {
+    expect(SHOW_STANDINGS_DESCRIPTION).toMatch(/exact slots/i);
+    expect(SHOW_STANDINGS_DESCRIPTION).toMatch(/correct picks/i);
+    expect(SHOW_STANDINGS_DESCRIPTION).toMatch(/skips nightly wins/i);
+    expect(SHOW_STANDINGS_DESCRIPTION).not.toMatch(/chair/i);
   });
 });

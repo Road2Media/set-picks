@@ -6,9 +6,15 @@
 # reads closing keywords from the promote and the staging PRs it contains,
 # and closes those issues.
 #
+# The promote pull request is the one whose merge commit is this tag.
+# A squash on main is not in staging history, so an older subject such as
+# `promote: 1.89.0 (#1173)` can be an ancestor of the tag. That ancestor is
+# not the current release. A one-commit tree replacement (`staging at <sha>`)
+# reads keywords from the staging commits since the previous release's pin.
+#
 # `workflow_dispatch` with dry_run left on logs the same set and comments it
-# on the promote PR. It does not close anything. Re-running a tag does not
-# comment twice. Uncheck dry_run to close for real.
+# on that promote PR. It does not close anything. Re-running a tag does not
+# comment twice and does not reopen anything. Uncheck dry_run to close for real.
 #
 # The schedule and release events use the workflow file on the default
 # branch (`main`). This file does nothing until that promote lands.

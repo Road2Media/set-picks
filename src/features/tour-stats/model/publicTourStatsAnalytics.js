@@ -11,3 +11,10 @@ export function trackPublicTourStatsView({ tourSlug }) {
   if (!slug) return;
   ga4Event('public_tour_stats_view', { tour_slug: slug });
 }
+
+/** Create-a-pool CTA on the New Year's Run page (#1144). */
+export function trackNyePoolCta({ tourSlug }) {
+  const slug = String(tourSlug ?? '').trim();
+  if (!slug) return;
+  ga4Event('nye_pool_cta', { tour_slug: slug });
+}

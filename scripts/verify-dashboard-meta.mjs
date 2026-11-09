@@ -75,6 +75,17 @@ const CASES = [
     },
   },
   {
+    // #1143: Phish IQ stays on the Picks tab. The show date picker is the wrong control.
+    path: '/dashboard/phish-iq',
+    expect: {
+      contextTitle: NAV_LABEL_PICKS,
+      showDatePicker: false,
+      layoutDesktopHeading: null,
+      ownsDesktopStickyChrome: true,
+      layoutDetailEyebrow: null,
+    },
+  },
+  {
     // #1142: Rewind stays on the Picks tab. The live date picker is the wrong control.
     path: '/dashboard/rewind',
     expect: {

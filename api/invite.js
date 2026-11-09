@@ -14,7 +14,8 @@
  *
  *   • Prefer the authenticated SPA shell (`dist/app.html`, #832) with static OG
  *     injection for **both** browsers and crawlers (crawlers read meta; browsers
- *     boot React + AuthProvider).
+ *     boot React + AuthProvider). Browser HTML also modulepreloads the invite
+ *     route chunk from `dist/invite-boot-preloads.json` (#733).
  *   • If the shell is missing from the function bundle, fetch the live site
  *     `/app.html` as a fallback (same hashed asset URLs on the CDN).
  *   • Only when the SPA shell is unavailable: crawlers get minimal OG HTML;
@@ -42,7 +43,9 @@ import {
   injectOgIntoSpa,
   normalizeInviteHandle,
   resolveInviteOgContent,
+  selectInviteBootPreloadHrefs,
 } from './inviteOgHelpers.mjs';
+import { injectInvitePreloadTags } from '../scripts/boot-modulepreload.mjs';
 
 // ---------------------------------------------------------------------------
 // Firebase Admin — dynamic import on crawler/OG path only (#732)
@@ -207,8 +210,34 @@ async function loadSpaTemplate() {
   return null;
 }
 
-function sendSpa(res, spaHtml, og) {
-  const html = injectOgIntoSpa(spaHtml, og);
+/** @type {{ pool?: string[], site?: string[] } | null | undefined} */
+let _invitePreloadManifest;
+
+function loadInvitePreloadManifest() {
+  if (_invitePreloadManifest !== undefined) return _invitePreloadManifest;
+  const candidates = [
+    join(process.cwd(), 'dist', 'invite-boot-preloads.json'),
+    join(__dirname, '..', 'dist', 'invite-boot-preloads.json'),
+    join(__dirname, 'dist', 'invite-boot-preloads.json'),
+  ];
+  for (const manifestPath of candidates) {
+    try {
+      const parsed = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (parsed && typeof parsed === 'object') {
+        _invitePreloadManifest = parsed;
+        return _invitePreloadManifest;
+      }
+    } catch {
+      // try next candidate
+    }
+  }
+  _invitePreloadManifest = null;
+  return null;
+}
+
+function sendSpa(res, spaHtml, og, preloadHrefs) {
+  const hinted = injectInvitePreloadTags(spaHtml, preloadHrefs);
+  const html = injectOgIntoSpa(hinted, og);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
   return res.status(200).send(html);
@@ -261,10 +290,14 @@ export default async function handler(req, res) {
   });
 
   const og = { title, description, url: pageUrl, image: DEFAULT_OG_IMAGE };
+  const preloadHrefs = selectInviteBootPreloadHrefs(loadInvitePreloadManifest(), {
+    code,
+    handle: isSiteInvite ? handle : '',
+  });
 
   const spaHtml = await loadSpaTemplate();
   if (spaHtml) {
-    return sendSpa(res, spaHtml, og);
+    return sendSpa(res, spaHtml, og, preloadHrefs);
   }
 
   // SPA shell unavailable — crawlers still need OG; browsers must not get a blank page.

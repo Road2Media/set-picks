@@ -1,9 +1,10 @@
 /**
- * Crawler copy + JSON-LD for `/tour-stats/msg` (#1139).
+ * Crawler copy + JSON-LD for `/phish-at-msg` (#1139, #1192).
  * Aggregates only. The show count comes from the snapshot or the nightly doc.
  */
 import snapshot from './msgGardenSnapshot.json' with { type: 'json' };
 import { MSG_GARDEN_CREDIT, MSG_GARDEN_SOURCE_URL } from './aggregateMsgGardenStats.js';
+import { NYE_RUN_PATH } from './nyeRunContract.js';
 
 const MONTHS = [
   'January',
@@ -32,27 +33,6 @@ export function formatFanDate(ymd) {
   const day = Number(match[3]);
   if (!month || !day) return '';
   return `${month} ${day}, ${match[1]}`;
-}
-
-/**
- * @param {number} n
- * @returns {string}
- */
-export function formatOrdinal(n) {
-  const value = Math.trunc(Number(n));
-  if (!Number.isFinite(value) || value <= 0) return '';
-  const mod100 = value % 100;
-  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
-  switch (value % 10) {
-    case 1:
-      return `${value}st`;
-    case 2:
-      return `${value}nd`;
-    case 3:
-      return `${value}rd`;
-    default:
-      return `${value}th`;
-  }
 }
 
 /**
@@ -137,35 +117,20 @@ export function resolveMsgGardenStats(liveDoc) {
 }
 
 /**
- * @param {NonNullable<ReturnType<typeof normalizeMsgGardenStats>>} stats
+ * Intro under the heading on `/phish-at-msg`. Fixed copy. The lists below
+ * still follow the live counts.
+ */
+const MSG_GARDEN_INTRO_PARAGRAPHS = Object.freeze([
+  'Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.',
+  'July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics.',
+  'This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027.',
+]);
+
+/**
  * @returns {string[]}
  */
-export function msgGardenSummarySentences(stats) {
-  const sentences = [
-    `Phish has played Madison Square Garden ${formatCount(stats.showCount)} times, from ${formatFanDate(stats.firstShowDate)} through ${formatFanDate(stats.lastShowDate)}.`,
-  ];
-  if (stats.lastShowOrdinal && stats.lastShowDate) {
-    sentences.push(
-      `Phish.net calls the ${formatFanDate(stats.lastShowDate)} show the ${formatOrdinal(stats.lastShowOrdinal)} at the Garden.`,
-    );
-  }
-  if (stats.milestoneShowNumber && stats.milestoneShowDate) {
-    const before = stats.upcomingShowDates
-      .filter((date) => date < stats.milestoneShowDate)
-      .map((date) => formatFanDate(date));
-    const lead =
-      stats.milestoneShowNumber === 100
-        ? `${formatFanDate(stats.milestoneShowDate)} is the announced 100th show at the Garden.`
-        : `${formatFanDate(stats.milestoneShowDate)} would be show ${formatCount(stats.milestoneShowNumber)} at the Garden.`;
-    const nights = before.length
-      ? ` The nights before it on this run: ${joinList(before)}.`
-      : '';
-    sentences.push(`${lead}${nights}`);
-  }
-  if (stats.checkedOn) {
-    sentences.push(`Setlist pages checked ${formatFanDate(stats.checkedOn)}.`);
-  }
-  return sentences;
+export function msgGardenSummarySentences() {
+  return MSG_GARDEN_INTRO_PARAGRAPHS;
 }
 
 /**
@@ -200,15 +165,15 @@ export function buildMsgGardenFactsHtml(stats) {
     .slice(0, 3)
     .map((row) => `${row.title} (${formatCount(row.timesPlayed)})`)
     .join(', ');
-  const nye = `New Year's Eve shows in this count: ${formatCount(stats.nyeShowCount)}.${
-    nyeOpeners ? ` Most frequent NYE openers: ${nyeOpeners}.` : ''
+  const nye = `Phish has played New Year's Eve at the Garden ${formatCount(stats.nyeShowCount)} times.${
+    nyeOpeners ? ` Those nights opened most often with ${nyeOpeners}.` : ''
   }`;
 
   return `${summary}
     <h2>Most-played songs at MSG</h2>
 ${top}
     <h2>Show openers at MSG</h2>
-    <p data-seo-msg-stats="opener-note">These are how often each song has opened a Phish show at MSG, across ${formatCount(stats.openerShowCount || stats.showCount)} shows. Frequencies, not a pick tip.</p>
+    <p data-seo-msg-stats="opener-note">Songs that have opened a show at the Garden, and how many times, across ${formatCount(stats.openerShowCount || stats.showCount)} shows.</p>
 ${openers}
     <h2>Songs debuted at MSG</h2>
     <ol data-seo-msg-stats="debuts">
@@ -225,6 +190,7 @@ ${bustouts}
     <h2>New Year's Eve at the Garden</h2>
     <p data-seo-msg-stats="nye">${escapeHtml(nye)}</p>
     <p data-seo-msg-stats="credit">${escapeHtml('Data courtesy of ')}<a href="https://phish.net">Phish.net</a> / The Mockingbird Foundation.</p>
+    <p data-seo-msg-stats="nye-run"><a href="${NYE_RUN_PATH}">New Year's Run at MSG</a></p>
     <p data-seo-msg-stats="cta"><a href="/login?mode=signup">Lock New Year's Run picks</a></p>`;
 }
 
@@ -243,7 +209,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       '@type': 'WebPage',
       '@id': pageUrl,
       url: pageUrl,
-      name: `Phish at MSG: ${formatCount(stats.showCount)} shows by the numbers`,
+      name: 'Phish at MSG',
       description: summary,
     },
     {
@@ -258,12 +224,6 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
         {
           '@type': 'ListItem',
           position: 2,
-          name: 'Tour Insights',
-          item: 'https://www.setlistpickem.com/tour-stats',
-        },
-        {
-          '@type': 'ListItem',
-          position: 3,
           name: 'Phish at MSG',
           item: pageUrl,
         },
@@ -304,18 +264,18 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
         faq(
           'What is the most-played Phish song at MSG?',
           topSong
-            ? `${topSong.title} has been played ${formatCount(topSong.timesPlayed)} times at Madison Square Garden in this count.`
+            ? `${topSong.title} has been played ${formatCount(topSong.timesPlayed)} times at Madison Square Garden.`
             : 'Song counts are still loading.',
         ),
         faq(
-          'What might Phish open show 100 with at MSG?',
+          'Which song has opened the most Phish shows at MSG?',
           topOpener
-            ? `${topOpener.title} has opened ${formatCount(topOpener.timesPlayed)} Phish shows at MSG, more than any other song in this count. That is a frequency, not a pick tip.`
+            ? `${topOpener.title} has opened ${formatCount(topOpener.timesPlayed)} Phish shows at MSG, more than any other song here.`
             : 'Opener frequencies are still loading.',
         ),
         faq(
           "How many New Year's Eve shows has Phish played at MSG?",
-          `This count includes ${formatCount(stats.nyeShowCount)} New Year's Eve shows at Madison Square Garden.`,
+          `Phish has played New Year's Eve at the Garden ${formatCount(stats.nyeShowCount)} times.`,
         ),
         faq(
           'What is the longest gap between Phish shows at MSG?',
@@ -375,6 +335,11 @@ function faq(name, text) {
   };
 }
 
+/**
+ * @param {string} name
+ * @param {string} countHeader
+ * @param {Array<{ title: string, timesPlayed: number }>} rows
+ */
 function countTable(name, countHeader, rows) {
   const body = rows.length
     ? rows
@@ -397,12 +362,6 @@ ${body}
 function statList(name, lines) {
   if (!lines.length) return `    <li>None in this count.</li>`;
   return lines.map((line) => `    <li>${escapeHtml(line)}</li>`).join('\n');
-}
-
-function joinList(items) {
-  if (items.length <= 1) return items[0] || '';
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
 }
 
 function escapeHtml(str) {

@@ -125,7 +125,7 @@ export async function computeProfilePickHeatmap(uid, options = {}) {
     for (let j = 0; j < slice.length; j += 1) {
       const snap = snaps[j];
       if (!snap.exists()) continue;
-      const normalized = normalizeOfficialSetlistDocData(snap.data() || {});
+      const normalized = normalizeOfficialSetlistDocData(snap.data() || {}, slice[j]);
       if (normalized) setlistsByDate.set(slice[j], normalized);
     }
   }

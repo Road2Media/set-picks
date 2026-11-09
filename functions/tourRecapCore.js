@@ -4,8 +4,8 @@
  * Night `show_recap` stays on `showRecapNarrativeCore.js`. The morning
  * standings paragraph stays on `tourRankingsDailyCore.js`. This module is
  * the end-of-tour wrap: a short multi-fact opening, a factual rank paragraph,
- * and at most two personal beats. Place labels follow official tour rank.
- * A points tie is one place that names everyone.
+ * and at most two personal beats. Place labels follow official tour rank
+ * (#1218). A tie that survives the cascade is one place that names everyone.
  */
 
 "use strict";
@@ -89,8 +89,8 @@ function placeLabel(rank, tied) {
 }
 
 /**
- * Published places are competition ranks 1 through 5. Each rank is one place.
- * A tie names everyone at that rank. List order inside the tie stays wins, then handle.
+ * Published places are official ranks 1 through 5. Each rank is one place.
+ * A tie that survives the cascade names everyone at that rank.
  *
  * `rows` and `honorableMentions` stay for already-sent messages and older clients.
  * `places` is what the in-app board reads.
@@ -102,6 +102,10 @@ function placeLabel(rank, tied) {
  *   honorableMentions: Array<{ handle: string, note: string, rank: number, label: string }>,
  * }}
  */
+function finiteOrZero(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
 function buildTourRecapPodium(leaders) {
   const source = Array.isArray(leaders) ? leaders : [];
   const list = source.map((row, i) => ({
@@ -110,15 +114,21 @@ function buildTourRecapPodium(leaders) {
     totalPoints: typeof row?.totalPoints === "number" ? row.totalPoints : 0,
     wins: typeof row?.wins === "number" ? row.wins : 0,
     shows: typeof row?.shows === "number" ? row.shows : 0,
+    exactHits: finiteOrZero(row?.exactHits),
+    correctPicks: finiteOrZero(
+      typeof row?.correctPicks === "number" ? row.correctPicks : row?.correctSlots
+    ),
   }));
-  const ranked = assignDisplayRanks(list);
+  const ordered = [...assignDisplayRanks(list).values()].sort(
+    (a, b) => a.displayOrder - b.displayOrder
+  );
   /** @type {Map<number, typeof list>} */
   const groups = new Map();
-  for (const row of list) {
-    const rank = ranked.get(row.uid)?.rank;
+  for (const info of ordered) {
+    const rank = info.rank;
     if (!rank || rank > PUBLISHED_RANK_MAX) continue;
     const group = groups.get(rank) || [];
-    group.push(row);
+    group.push(info.row);
     groups.set(rank, group);
   }
 
@@ -191,7 +201,7 @@ function formatPickingAvg(correctSlots, shows) {
 }
 
 /**
- * Email grid for ranks 1 through 5. A points tie keeps the shared rank and
+ * Email grid for official ranks 1 through 5. A tie that survives the cascade
  * names everyone at that rank, even when that is more than five people.
  * Avg is blank when the count is missing.
  *
@@ -199,23 +209,33 @@ function formatPickingAvg(correctSlots, shows) {
  * @returns {Array<{ rank: number, handle: string, points: number, wins: number, nights: number, avg: string }>}
  */
 function buildTourRecapEmailBoard(leaders) {
-  const list = Array.isArray(leaders) ? leaders : [];
-  let rank = 0;
-  let prevPoints = null;
+  const source = Array.isArray(leaders) ? leaders : [];
+  const list = source.map((row, i) => ({
+    uid: typeof row?.uid === "string" && row.uid.trim() ? row.uid.trim() : `board-${i}`,
+    handle: row?.handle || "Anonymous",
+    totalPoints: typeof row?.totalPoints === "number" ? row.totalPoints : 0,
+    wins: typeof row?.wins === "number" ? row.wins : 0,
+    shows: typeof row?.shows === "number" ? row.shows : 0,
+    exactHits: finiteOrZero(row?.exactHits),
+    correctPicks: finiteOrZero(
+      typeof row?.correctPicks === "number" ? row.correctPicks : row?.correctSlots
+    ),
+    correctSlots: row?.correctSlots,
+  }));
+  const ordered = [...assignDisplayRanks(list).values()].sort(
+    (a, b) => a.displayOrder - b.displayOrder
+  );
   /** @type {Array<{ rank: number, handle: string, points: number, wins: number, nights: number, avg: string }>} */
   const board = [];
-  for (let i = 0; i < list.length; i += 1) {
-    const row = list[i];
-    const points = typeof row.totalPoints === "number" ? row.totalPoints : 0;
-    if (prevPoints === null || points < prevPoints) rank = i + 1;
-    prevPoints = points;
-    if (rank > PUBLISHED_RANK_MAX) break;
+  for (const info of ordered) {
+    if (info.rank > PUBLISHED_RANK_MAX) break;
+    const row = info.row;
     const nights = typeof row.shows === "number" ? row.shows : 0;
     const correct = Number(row.correctSlots);
     board.push({
-      rank,
+      rank: info.rank,
       handle: row.handle || "Anonymous",
-      points,
+      points: typeof row.totalPoints === "number" ? row.totalPoints : 0,
       wins: typeof row.wins === "number" ? row.wins : 0,
       nights,
       avg: formatPickingAvg(correct, nights),

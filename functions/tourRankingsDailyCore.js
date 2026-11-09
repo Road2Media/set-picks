@@ -1,17 +1,24 @@
 /**
  * Pure helpers for `tour_rankings_daily` (#544).
  *
- * Tour standings aggregation mirrors `sphereTourRecapDelivery.aggregateTourStandings`
- * / dashboard `aggregateTourStandings` (points → wins → handle). Display ranks use
- * competition ranking on totalPoints (ties share a rank; the next rank skips).
- * Wins, then handle, only order names inside a tie. `tiedHandles` is the other
- * players at that rank, in list order. Shows played do not order a tie (#1135).
+ * Tour standings aggregation mirrors dashboard `aggregateTourStandings`.
+ * Official place is the full tie-break in `pointsTieRanking.cjs` (#1218):
+ * points, then exact slots, then correct picks, then nightly wins, then
+ * handle. `tiedHandles` names the other players only when that cascade
+ * still ties. Shows played do not order a tie. A nightly win is still a
+ * share of that night's top score.
  */
 
 "use strict";
 
 const { pickCountsTowardSeason } = require("./rollupSeasonAggregates");
 const { formatFanShowDate } = require("./fanShowDate.cjs");
+const {
+  countCorrectSlots,
+  countExactHits,
+  persistableActualSetlistFromOfficialDoc,
+} = require("./scoringCore");
+const { LIVE_RANK_POLICY, rankScoredRows } = require("./pointsTieRanking.cjs");
 
 /**
  * @param {Iterable<Record<string, unknown>>} pickList
@@ -48,9 +55,10 @@ function reduceShowWinners(pickList) {
 
 /**
  * @param {Array<{ date: string, picks: Array<Record<string, unknown>> }>} picksByDate
+ * @param {Record<string, unknown> | Map<string, unknown> | Array<Record<string, unknown>> | null} [setlistsByDate]
  * @returns {TourStandingsRow[]}
  */
-function aggregateTourStandings(picksByDate) {
+function aggregateTourStandings(picksByDate, setlistsByDate = null) {
   /** @type {Map<string, TourStandingsRow>} */
   const perUser = new Map();
 
@@ -79,68 +87,118 @@ function aggregateTourStandings(picksByDate) {
         totalPoints: 0,
         wins: 0,
         shows: 0,
+        exactHits: 0,
+        correctPicks: 0,
       };
+      const setlist = scoringSetlistForDate(setlistsByDate, entry?.date);
+      const payload = row.picks && typeof row.picks === "object" ? row.picks : null;
+      const tie = nightTieStats(row, payload, setlist);
       next.handle = handle;
       next.totalPoints += score;
       next.shows += 1;
+      next.exactHits += tie.exactHits;
+      next.correctPicks += tie.correctPicks;
       if (max != null && winnerUids.has(uid)) next.wins += 1;
       perUser.set(uid, next);
     }
   }
 
-  return [...perUser.values()].sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-    if (b.wins !== a.wins) return b.wins - a.wins;
-    return a.handle.localeCompare(b.handle);
-  });
+  return rankScoredRows([...perUser.values()], {
+    policy: LIVE_RANK_POLICY,
+    surface: "tour",
+  }).rows;
 }
 
 /**
- * Other handles at `rank`, in list order, excluding `uid`.
- *
- * @param {Map<number, Array<{ uid: string, handle: string }>>} handlesByRank
- * @param {number} rank
- * @param {string} uid
- * @returns {string[]}
+ * @param {unknown} raw
+ * @returns {Record<string, unknown> | null}
  */
-function tiedHandlesAtRank(handlesByRank, rank, uid) {
-  const group = handlesByRank.get(rank) || [];
-  return group.filter((member) => member.uid !== uid).map((member) => member.handle);
-}
-
-/**
- * Competition (display) ranks on totalPoints — ties share a rank.
- *
- * @param {TourStandingsRow[]} sortedRows
- * @returns {Map<string, { rank: number, tiedCount: number, tiedHandles: string[], total: number, row: TourStandingsRow }>}
- */
-function assignDisplayRanks(sortedRows) {
-  /** @type {Map<string, { rank: number, tiedCount: number, tiedHandles: string[], total: number, row: TourStandingsRow }>} */
-  const out = new Map();
-  const total = sortedRows.length;
-  /** @type {Map<number, number>} */
-  const tiedByRank = new Map();
-  /** @type {Map<number, Array<{ uid: string, handle: string }>>} */
-  const handlesByRank = new Map();
-
-  let rank = 0;
-  let prevPoints = null;
-  for (let i = 0; i < sortedRows.length; i++) {
-    const row = sortedRows[i];
-    if (prevPoints === null || row.totalPoints < prevPoints) {
-      rank = i + 1;
-      prevPoints = row.totalPoints;
-    }
-    tiedByRank.set(rank, (tiedByRank.get(rank) || 0) + 1);
-    const group = handlesByRank.get(rank) || [];
-    group.push({ uid: row.uid, handle: row.handle || "Anonymous" });
-    handlesByRank.set(rank, group);
-    out.set(row.uid, { rank, tiedCount: 1, tiedHandles: [], total, row });
+function asScoringSetlist(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const doc = /** @type {Record<string, unknown>} */ (raw);
+  if (doc.setlist && typeof doc.setlist === "object" && !Array.isArray(doc.setlist)) {
+    return persistableActualSetlistFromOfficialDoc(doc);
   }
+  if (
+    typeof doc.s1o === "string" ||
+    typeof doc.enc === "string" ||
+    Array.isArray(doc.officialSetlist) ||
+    Array.isArray(doc.encoreSongs)
+  ) {
+    return doc;
+  }
+  return null;
+}
 
-  for (const entry of out.values()) {
-    entry.tiedCount = tiedByRank.get(entry.rank) || 1;
-    entry.tiedHandles = tiedHandlesAtRank(handlesByRank, entry.rank, entry.row.uid);
+/**
+ * @param {unknown} setlistsByDate
+ * @param {unknown} date
+ * @returns {Record<string, unknown> | null}
+ */
+function scoringSetlistForDate(setlistsByDate, date) {
+  if (!setlistsByDate || typeof date !== "string" || !date) return null;
+  if (typeof setlistsByDate.get === "function") {
+    return asScoringSetlist(setlistsByDate.get(date));
+  }
+  if (Array.isArray(setlistsByDate)) {
+    const row = setlistsByDate.find((entry) => entry && entry.date === date);
+    if (!row) return null;
+    return asScoringSetlist(row.doc || row.setlist || row);
+  }
+  return asScoringSetlist(setlistsByDate[date]);
+}
+
+/**
+ * @param {Record<string, unknown>} row
+ * @param {Record<string, unknown> | null} payload
+ * @param {Record<string, unknown> | null} setlist
+ * @returns {{ exactHits: number, correctPicks: number }}
+ */
+function nightTieStats(row, payload, setlist) {
+  if (setlist && payload) {
+    return {
+      exactHits: countExactHits(payload, setlist),
+      correctPicks: countCorrectSlots(payload, setlist),
+    };
+  }
+  const exact = typeof row.exactHits === "number" && Number.isFinite(row.exactHits) ? row.exactHits : 0;
+  const stored =
+    typeof row.correctPicks === "number" && Number.isFinite(row.correctPicks)
+      ? row.correctPicks
+      : typeof row.correctSlots === "number" && Number.isFinite(row.correctSlots)
+        ? row.correctSlots
+        : 0;
+  return { exactHits: exact, correctPicks: stored };
+}
+
+/**
+ * Official place for a points board. Full tie-break unless `policy` says
+ * otherwise. `tiedHandles` is empty when the cascade separates the rows.
+ *
+ * @param {Array<Record<string, unknown>>} rows
+ * @param {{ policy?: string, surface?: string }} [options]
+ * @returns {Map<string, { rank: number, tiedCount: number, tiedHandles: string[], displayOrder: number, tieBreak: object, total: number, row: Record<string, unknown> }>}
+ */
+function assignDisplayRanks(rows, options = {}) {
+  /** @type {Map<string, { rank: number, tiedCount: number, tiedHandles: string[], displayOrder: number, tieBreak: object, total: number, row: Record<string, unknown> }>} */
+  const out = new Map();
+  const ranked = rankScoredRows(rows, {
+    policy: options.policy || LIVE_RANK_POLICY,
+    surface: options.surface || "tour",
+  });
+  const total = ranked.rows.length;
+  for (const row of ranked.rows) {
+    const uid = typeof row.uid === "string" ? row.uid : "";
+    if (!uid) continue;
+    out.set(uid, {
+      rank: row.rank,
+      tiedCount: row.tiedCount,
+      tiedHandles: row.tiedHandles,
+      displayOrder: row.displayOrder,
+      tieBreak: row.tieBreak,
+      total,
+      row,
+    });
   }
   return out;
 }

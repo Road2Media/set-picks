@@ -37,7 +37,12 @@ const {
   showLevelPayloadFields,
 } = require("./commsShowContext");
 const { buildShowRecapEnrichment } = require("./showRecapNarrativeCore");
-const { persistableActualSetlistFromOfficialDoc } = require("./scoringCore");
+const {
+  countCorrectSlots,
+  countExactHits,
+  persistableActualSetlistFromOfficialDoc,
+} = require("./scoringCore");
+const { LIVE_RANK_POLICY, rankScoredRows } = require("./pointsTieRanking.cjs");
 const { tourLabelToSlug } = require("./aggregateTourSetlistStats.cjs");
 const {
   isFinalShowOfTour,
@@ -50,6 +55,10 @@ const {
   derivePlayerWrapFacts,
 } = require("./tourRecapCore");
 const { tourRecapFanoutCompleted } = require("./tourRecapState");
+const {
+  deliverAnnualWrapInAppOnGrade,
+  deliverPendingAnnualWraps,
+} = require("./annualWrapDelivery");
 const {
   readProcessState,
   writeProcessState,
@@ -206,29 +215,38 @@ function findShowMeta(shows, showDate) {
  * @param {Map<string, number>} scoresByPickId
  * @returns {Map<string, { rank: number, score: number, total: number }>}
  */
-function computeGlobalRankByUid(pickDocs, scoresByPickId) {
-  /** @type {{ uid: string, score: number }[]} */
+function computeGlobalRankByUid(pickDocs, scoresByPickId, actualSetlist = null) {
+  /** @type {Array<Record<string, unknown>>} */
   const rows = [];
   for (const doc of pickDocs) {
     const d = doc.data?.() || doc.data || {};
     const uid = typeof d.userId === "string" ? d.userId.trim() : "";
     if (!uid || !hasNonEmptyPicksObject(d.picks)) continue;
     const score = scoresByPickId.get(doc.id) ?? (typeof d.score === "number" ? d.score : 0);
-    rows.push({ uid, score });
+    const picks = d.picks && typeof d.picks === "object" ? d.picks : {};
+    rows.push({
+      uid,
+      handle: typeof d.handle === "string" ? d.handle : "",
+      points: score,
+      exactHits: actualSetlist ? countExactHits(picks, actualSetlist) : 0,
+      correctPicks: actualSetlist ? countCorrectSlots(picks, actualSetlist) : 0,
+    });
   }
-  rows.sort((a, b) => b.score - a.score);
-  /** @type {Map<string, { rank: number, score: number, total: number }>} */
+  const ranked = rankScoredRows(rows, {
+    policy: LIVE_RANK_POLICY,
+    surface: "show",
+  });
+  /** @type {Map<string, { rank: number, score: number, total: number, handle: string, tiedCount: number }>} */
   const out = new Map();
-  const total = rows.length;
-  let rank = 0;
-  let prevScore = null;
-  for (let i = 0; i < rows.length; i++) {
-    const { uid, score } = rows[i];
-    if (prevScore === null || score < prevScore) {
-      rank = i + 1;
-      prevScore = score;
-    }
-    out.set(uid, { rank, score, total });
+  const total = ranked.rows.length;
+  for (const row of ranked.rows) {
+    out.set(String(row.uid), {
+      rank: row.rank,
+      score: typeof row.points === "number" ? row.points : 0,
+      total,
+      handle: typeof row.handle === "string" ? row.handle : "",
+      tiedCount: row.tiedCount,
+    });
   }
   return out;
 }
@@ -454,9 +472,17 @@ async function deliverPostRollupComms({
       editionStatus,
       tourStatus,
     });
+    const annualWrapSummary = await deliverAnnualWrapInAppOnGrade({
+      db,
+      runtime: createCommsAdapterRuntime({ db, admin, resendApiKey, logger }),
+      showDate,
+      showDatesByTour,
+      logger,
+    });
     return {
       recapSummary: { skipped: blockReason, showDate, tourKey: tourKey || null },
       engagementSummary: null,
+      annualWrapSummary,
     };
   }
 
@@ -464,7 +490,6 @@ async function deliverPostRollupComms({
   const calData = calSnap.exists ? calSnap.data() : null;
   const shows = parseShowCalendarSnapshotToShows(calData);
   const meta = findShowMeta(shows, showDate) || {};
-  const ranks = computeGlobalRankByUid(picksSnap.docs, newScoresById);
   const runtime = createCommsAdapterRuntime({ db, admin, resendApiKey, logger });
 
   const tourDates = tourKey ? tourDatesForKey(showDatesByTour, tourKey) : [];
@@ -502,15 +527,17 @@ async function deliverPostRollupComms({
     });
   }
 
+  const ranks = computeGlobalRankByUid(picksSnap.docs, newScoresById, actualSetlist);
   let topScorerHandle = null;
   let topScore = null;
-  for (const [, info] of ranks) {
+  for (const info of ranks.values()) {
     if (info?.rank === 1) {
       topScore = info.score;
+      topScorerHandle = info.handle || null;
       break;
     }
   }
-  if (topScore != null) {
+  if (!topScorerHandle && topScore != null) {
     for (const pickDoc of picksSnap.docs) {
       const pickData = pickDoc.data() || {};
       const uid = typeof pickData.userId === "string" ? pickData.userId.trim() : "";
@@ -601,8 +628,18 @@ async function deliverPostRollupComms({
       : null;
   // `tour_recap` waits for the next morning (8am PT cron). Last night of
   // tour stays a night `show_recap` only — same split as the Summer '26 one-off.
+  // The annual wrap's in-app note can appear on this grade when the show is
+  // the last night of its calendar year. Email and push wait for 8am PT.
 
-  return { recapSummary, engagementSummary };
+  const annualWrapSummary = await deliverAnnualWrapInAppOnGrade({
+    db,
+    runtime,
+    showDate,
+    showDatesByTour,
+    logger,
+  });
+
+  return { recapSummary, engagementSummary, annualWrapSummary };
 }
 
 /**
@@ -640,7 +677,16 @@ async function deliverTourRecapIfFinalShow({
     campaignIdForTourGroup(findTourGroup(showDatesByTour, tourKey));
 
   const picksByDate = await loadPicksByDates(db, tourDates);
-  const leaders = aggregateTourStandings(picksByDate);
+  let setlists = [];
+  try {
+    setlists = await loadOfficialSetlistsForDates(db, tourDates);
+  } catch (err) {
+    logger?.warn?.("deliverTourRecapIfFinalShow: setlist read failed", {
+      tourKey,
+      message: err?.message || String(err),
+    });
+  }
+  const leaders = aggregateTourStandings(picksByDate, setlists);
   if (leaders.length === 0) {
     logger?.info?.("deliverTourRecapIfFinalShow: no eligible players", {
       tourKey,
@@ -671,15 +717,6 @@ async function deliverTourRecapIfFinalShow({
   const participantCount = leaders.length;
   const showCount = tourDates.length;
   const tourName = tourKey;
-  let setlists = [];
-  try {
-    setlists = await loadOfficialSetlistsForDates(db, tourDates);
-  } catch (err) {
-    logger?.warn?.("deliverTourRecapIfFinalShow: setlist read failed", {
-      tourKey,
-      message: err?.message || String(err),
-    });
-  }
   let songFacts = null;
   try {
     songFacts = await loadTourRecapSongFacts(db, tourKey);
@@ -1226,6 +1263,7 @@ async function runScheduledTourRankingsDaily({
 
   const runtime = createCommsAdapterRuntime({ db, admin, resendApiKey, logger });
   let tourRecapSummaries = [];
+  let annualWrapSummaries = [];
   if (!collectOnly) {
     try {
       tourRecapSummaries = await deliverPendingTourRecaps({
@@ -1240,10 +1278,23 @@ async function runScheduledTourRankingsDaily({
       const msg = error instanceof Error ? error.message : String(error);
       logger?.error?.("runScheduledTourRankingsDaily.tourRecap failed", { msg });
     }
+    try {
+      annualWrapSummaries = await deliverPendingAnnualWraps({
+        db,
+        admin,
+        runtime,
+        showDatesByTour,
+        now,
+        logger,
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger?.error?.("runScheduledTourRankingsDaily.annualWrap failed", { msg });
+    }
   }
 
   if (yesterdayCandidates.length === 0) {
-    return { processed: 0, delivered: 0, tourRecapSummaries };
+    return { processed: 0, delivered: 0, tourRecapSummaries, annualWrapSummaries };
   }
   /** @type {Array<{ uid: string, userData?: object, payload: object, vars: object }>} */
   const recipients = [];
@@ -1269,17 +1320,24 @@ async function runScheduledTourRankingsDaily({
       const nextMeta = nextDate ? showMetaByDate.get(nextDate) : null;
       const isTourNightOne = !priorDate;
 
-      // #451: night-of show rank for the folded-in "your night" section.
-      const globalRanks = computeGlobalRankByUid(picksSnap.docs, new Map());
-
       // #544: full tour board through last night (+ prior night for rank_change).
       // eslint-disable-next-line no-await-in-loop
       const picksByDate = await loadPicksByDates(db, datesThrough);
-      const currentBoard = assignDisplayRanks(aggregateTourStandings(picksByDate));
+      let tourSetlists = [];
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        tourSetlists = await loadOfficialSetlistsForDates(db, datesThrough);
+      } catch (err) {
+        logger?.warn?.("runScheduledTourRankingsDaily: setlist read failed", {
+          showDate,
+          message: err?.message || String(err),
+        });
+      }
+      const currentBoard = assignDisplayRanks(aggregateTourStandings(picksByDate, tourSetlists));
       let priorBoard = null;
       if (priorDate) {
         const priorPicksByDate = picksByDate.filter((e) => e.date <= priorDate);
-        priorBoard = assignDisplayRanks(aggregateTourStandings(priorPicksByDate));
+        priorBoard = assignDisplayRanks(aggregateTourStandings(priorPicksByDate, tourSetlists));
       }
 
       /** @type {Set<string>} */
@@ -1320,6 +1378,9 @@ async function runScheduledTourRankingsDaily({
           msg: e instanceof Error ? e.message : String(e),
         });
       }
+
+      // Night rank uses the show cascade once the setlist is in hand (#1218).
+      const globalRanks = computeGlobalRankByUid(picksSnap.docs, new Map(), actualSetlist);
 
       for (const uid of lastNightUids) {
         // eslint-disable-next-line no-await-in-loop
@@ -1386,7 +1447,7 @@ async function runScheduledTourRankingsDaily({
   }
 
   if (collectOnly) {
-    return { processed: recipients.length, delivered: 0, recipients, tourRecapSummaries };
+    return { processed: recipients.length, delivered: 0, recipients, tourRecapSummaries, annualWrapSummaries };
   }
 
   let rankingsSummary = { processed: 0, delivered: 0, skipped: 0, results: [] };
@@ -1396,7 +1457,7 @@ async function runScheduledTourRankingsDaily({
     const msg = error instanceof Error ? error.message : String(error);
     logger?.error?.("runScheduledTourRankingsDaily.rankings failed", { msg });
   }
-  return { ...rankingsSummary, tourRecapSummaries };
+  return { ...rankingsSummary, tourRecapSummaries, annualWrapSummaries };
 }
 
 module.exports = {

@@ -32,6 +32,9 @@ export const NAV_LABEL_SCORECARD = 'Scorecard';
 /** Picks-cluster tertiary: Rewind (`/dashboard/rewind`). Hidden unless the build flag is on (#1142). */
 export const NAV_LABEL_REWIND = 'Rewind';
 
+/** Picks-cluster tertiary: Phish IQ (`/dashboard/phish-iq`). Daily quiz (#1143). */
+export const NAV_LABEL_PHISH_IQ = 'Phish IQ';
+
 /** Pools list tab + context + desktop H1 (`/dashboard/pools`) */
 export const NAV_LABEL_POOLS = 'Pools';
 
@@ -124,6 +127,27 @@ export const SHOW_STANDINGS_PHRASE = 'Show standings';
 export const SHOW_STANDINGS_EYEBROW = SHOW_STANDINGS_PHRASE;
 
 /**
+ * One-night board (#1218 / #1219). Nightly wins are not a step here.
+ * Tour and year boards use {@link TOUR_STANDINGS_DESCRIPTION}.
+ */
+export const SHOW_STANDINGS_DESCRIPTION =
+  'One night. When points match, more exact slots rank higher, then more correct picks. A handle only keeps the order. A single show skips nightly wins.';
+
+/**
+ * Rules modal, `/how-scoring-works`, and the `/how-scoring-changed` crawler
+ * paragraph. Ranking is live now. The scoring ladder on that page stays dated.
+ */
+export const RANK_TIE_EXPLANATION =
+  'When points match, the board does not share a rank. More exact slots rank higher, then more correct picks. On a tour or the year, nightly wins come next. A handle only keeps the order. A single show skips nightly wins.';
+
+/**
+ * Winner banner when more than one player hit the top score. The nightly win
+ * is still shared. The board rank is the cascade.
+ */
+export const TOP_SCORE_SHARED_WIN_NOTE =
+  'Same top score, so each of them gets a nightly win. The board does not share a rank: more exact slots, then more correct picks, then handle.';
+
+/**
  * Cumulative "across every finalized show" leaderboard heading. Canonical
  * name; retires **Season totals** in net-new copy. See #148.
  */
@@ -142,7 +166,7 @@ export const POOL_ALL_TIME_STANDINGS_DESCRIPTION =
  */
 export const TOUR_STANDINGS_HEADING = 'Tour standings';
 export const TOUR_STANDINGS_DESCRIPTION =
-  'Running totals for this tour across every graded show. Players with the same points share a rank, and the next rank skips. Inside a tie, nightly wins then name set the order.';
+  'Running totals for this tour across every graded show. When points match, more exact slots rank higher, then more correct picks, then more nightly wins. A handle only keeps the order when those are still tied.';
 
 /**
  * Calendar-year leaderboard on Standings (#1110). Scope is the calendar year
@@ -151,7 +175,25 @@ export const TOUR_STANDINGS_DESCRIPTION =
  */
 export const YEAR_STANDINGS_HEADING = 'Year standings';
 export const YEAR_STANDINGS_DESCRIPTION =
-  'Running totals for this calendar year across every graded show. Players with the same points share a rank, and the next rank skips. Inside a tie, nightly wins then name set the order.';
+  'Running totals for this calendar year across every graded show. When points match, more exact slots rank higher, then more correct picks, then more nightly wins. A handle only keeps the order when those are still tied.';
+
+/**
+ * Year-end celebration on the annual board (#1112). The opening line matches
+ * the annual wrap. Place names are the in-app podium labels.
+ */
+export const YEAR_END_ANNUAL_WINNER_LABEL = 'Annual Winner';
+export const YEAR_END_RUNNER_UP_LABEL = 'Runner-up';
+export const YEAR_END_THIRD_PLACE_LABEL = 'Third Place';
+export const YEAR_END_CELEBRATION_SKIP_LABEL = 'Skip';
+
+/**
+ * @param {unknown} year
+ * @returns {string}
+ */
+export function yearEndCelebrationHeadline(year) {
+  const label = typeof year === 'string' && /^\d{4}$/.test(year) ? year : 'This year';
+  return `${label} is officially in the books.`;
+}
 
 /** Pool-scoped alias of {@link TOUR_STANDINGS_HEADING} for pool details. */
 export const POOL_TOUR_STANDINGS_HEADING = TOUR_STANDINGS_HEADING;
@@ -171,25 +213,25 @@ export const SEASON_TOTALS_DESCRIPTION = POOL_ALL_TIME_STANDINGS_DESCRIPTION;
 export const LEADING_THIS_SHOW = 'Leading this show';
 
 /**
- * Copy for the Standings "overall winner of the night" banner (#218). Ties
- * render the plural heading; winners are a comma-separated list.
+ * Standings banner for everyone at the top score (#218). One player is
+ * "Tonight's winner". More than one is "Tonight's top score": they share the
+ * nightly win, and {@link TOP_SCORE_SHARED_WIN_NOTE} says the board does not
+ * share a rank.
  */
 export const TONIGHTS_WINNER_SINGULAR = "Tonight's winner";
-export const TONIGHTS_WINNERS_PLURAL = "Tonight's winners";
+export const TONIGHTS_TOP_SCORE = "Tonight's top score";
 
 /**
- * Pick the correct singular/plural heading for the winner(s) of the night.
- *
  * @param {number} winnerCount
  * @returns {string}
  */
 export function tonightsWinnerHeading(winnerCount) {
-  return winnerCount > 1 ? TONIGHTS_WINNERS_PLURAL : TONIGHTS_WINNER_SINGULAR;
+  return winnerCount > 1 ? TONIGHTS_TOP_SCORE : TONIGHTS_WINNER_SINGULAR;
 }
 
 /** Standings callout for the prior tour night when the selected show is next or live. */
 export const LAST_SHOW_WINNER_SINGULAR = "Last show's winner";
-export const LAST_SHOW_WINNERS_PLURAL = "Last show's winners";
+export const LAST_SHOW_TOP_SCORE = "Last show's top score";
 
 /**
  * @param {number} winnerCount
@@ -198,7 +240,7 @@ export const LAST_SHOW_WINNERS_PLURAL = "Last show's winners";
  */
 export function lastShowWinnerHeading(winnerCount, poolScopeLabel) {
   const phrase =
-    winnerCount > 1 ? LAST_SHOW_WINNERS_PLURAL : LAST_SHOW_WINNER_SINGULAR;
+    winnerCount > 1 ? LAST_SHOW_TOP_SCORE : LAST_SHOW_WINNER_SINGULAR;
   if (typeof poolScopeLabel === 'string' && poolScopeLabel.trim()) {
     return `${phrase} · ${poolScopeLabel.trim()}`;
   }

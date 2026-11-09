@@ -1,9 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import {
+  SCORING_LADDER_V1,
+  SCORING_LADDER_V2,
+  SCORING_LADDER_V2_EFFECTIVE_DATE,
   SCORING_RULES,
   calculateSlotScore,
   calculateTotalScore,
+  countCorrectPicks,
+  countExactHits,
   getSlotScoreBreakdown,
+  scoringLadderComparisonRows,
+  scoringRulesForShowDate,
+  scoringRulesInEffect,
 } from './scoring.js';
 
 /**
@@ -105,5 +113,126 @@ describe('scoring: bustout boost reads actualSetlist.bustouts (#214)', () => {
       wild: 'Down with Disease', // wildcard hit = 10
     };
     expect(calculateTotalScore(picks, actual)).toBe(10 + 10 + 30 + 0 + 15 + 10);
+  });
+});
+
+const encoreShow = {
+  s1o: 'AC/DC Bag',
+  s1c: 'Bathtub Gin',
+  s2o: 'Tweezer',
+  s2c: 'Harry Hood',
+  enc: 'Tweezer Reprise',
+  encoreSongs: ['Tweezer Reprise', 'Wilson'],
+  officialSetlist: [
+    'AC/DC Bag',
+    'Bathtub Gin',
+    'Tweezer',
+    'Harry Hood',
+    'Tweezer Reprise',
+    'Wilson',
+    'Farmhouse',
+  ],
+};
+
+describe('scoring ladder gate (#1086)', () => {
+  it('keeps ladder v1 when the show date is missing', () => {
+    expect(scoringRulesForShowDate(undefined).id).toBe('v1');
+    expect(scoringRulesForShowDate('not-a-date')).toBe(SCORING_LADDER_V1);
+    expect(calculateSlotScore('wild', 'Farmhouse', encoreShow)).toBe(10);
+    expect(calculateSlotScore('enc', 'Wilson', encoreShow)).toBe(15);
+    expect(getSlotScoreBreakdown('enc', 'Wilson', encoreShow).kind).toBe('encore_exact');
+  });
+
+  it('grades a Fall 2026 night on the ladder that was live that night', () => {
+    const fall = { ...encoreShow, showDate: '2026-10-11' };
+    expect(scoringRulesForShowDate('2026-12-29').id).toBe('v1');
+    expect(calculateSlotScore('wild', 'Farmhouse', fall)).toBe(SCORING_LADDER_V1.WILDCARD_HIT);
+    expect(calculateSlotScore('enc', 'Tweezer Reprise', fall)).toBe(15);
+    expect(calculateSlotScore('enc', 'Wilson', fall)).toBe(15);
+    expect(calculateSlotScore('enc', 'Farmhouse', fall)).toBe(5);
+    expect(calculateSlotScore('s1o', 'AC/DC Bag', fall)).toBe(10);
+    expect(
+      calculateSlotScore('wild', 'Farmhouse', { ...fall, bustouts: ['Farmhouse'] }),
+    ).toBe(30);
+    expect(
+      calculateSlotScore('enc', 'Wilson', { ...fall, bustouts: ['Wilson'] }),
+    ).toBe(35);
+  });
+
+  it('grades the New Year\'s Run opener and later nights on ladder v2', () => {
+    const nye = { ...encoreShow, showDate: SCORING_LADDER_V2_EFFECTIVE_DATE };
+    const later = { ...encoreShow, showDate: '2027-01-02' };
+    for (const actual of [nye, later]) {
+      expect(calculateSlotScore('wild', 'Farmhouse', actual)).toBe(5);
+      expect(calculateSlotScore('enc', 'Tweezer Reprise', actual)).toBe(15);
+      expect(getSlotScoreBreakdown('enc', 'Tweezer Reprise', actual).kind).toBe('encore_exact');
+      expect(calculateSlotScore('enc', 'Wilson', actual)).toBe(10);
+      expect(getSlotScoreBreakdown('enc', 'Wilson', actual).kind).toBe('encore_later');
+      expect(calculateSlotScore('enc', 'Farmhouse', actual)).toBe(5);
+      expect(calculateSlotScore('s2c', 'Harry Hood', actual)).toBe(10);
+      expect(calculateSlotScore('s1c', 'Tweezer', actual)).toBe(5);
+      expect(
+        calculateSlotScore('wild', 'Farmhouse', { ...actual, bustouts: ['Farmhouse'] }),
+      ).toBe(25);
+      expect(
+        calculateSlotScore('enc', 'Wilson', { ...actual, bustouts: ['Wilson'] }),
+      ).toBe(30);
+      expect(
+        calculateSlotScore('enc', 'Tweezer Reprise', { ...actual, bustouts: ['Tweezer Reprise'] }),
+      ).toBe(35);
+    }
+    expect(calculateTotalScore(
+      { s1o: 'nope', s1c: 'nope', s2o: 'nope', s2c: 'nope', enc: 'Wilson', wild: 'Farmhouse' },
+      nye,
+    )).toBe(15);
+  });
+
+  it('lets an explicit show date override a stale payload date', () => {
+    const stamped = { ...encoreShow, showDate: '2026-10-11' };
+    expect(calculateSlotScore('wild', 'Farmhouse', stamped, '2026-12-30')).toBe(5);
+    expect(calculateSlotScore('enc', 'Wilson', stamped, '2026-10-11')).toBe(15);
+  });
+
+  it('does not treat showDate as a played song', () => {
+    expect(calculateSlotScore('wild', '2026-12-30', { ...encoreShow, showDate: '2026-12-30' })).toBe(0);
+  });
+
+  it('comparison rows are the two ladders, not a third list of numbers', () => {
+    const rows = scoringLadderComparisonRows();
+    expect(rows.find((row) => row.id === 'wildcard')).toMatchObject({
+      before: SCORING_LADDER_V1.WILDCARD_HIT,
+      after: SCORING_LADDER_V2.WILDCARD_HIT,
+    });
+    expect(rows.find((row) => row.id === 'encore_later')).toMatchObject({
+      before: 15,
+      after: 10,
+    });
+    expect(rows.find((row) => row.id === 'bustout')).toMatchObject({ before: 20, after: 20 });
+  });
+
+  it('counts exact slots without treating a later encore as exact', () => {
+    const setlist = {
+      s1o: 'Tweezer',
+      s1c: 'Reba',
+      s2o: 'Mike',
+      s2c: 'Weekapaug',
+      enc: 'Harry Hood',
+      encoreSongs: ['Harry Hood', 'Tweezer Reprise'],
+      officialSetlist: ['Tweezer', 'Reba', 'Mike', 'Weekapaug', 'Harry Hood', 'Tweezer Reprise', 'Ghost'],
+    };
+    expect(
+      countExactHits(
+        { s1o: 'Tweezer', s1c: 'Ghost', enc: 'Harry Hood', wild: 'Reba' },
+        setlist,
+      ),
+    ).toBe(2);
+    expect(countExactHits({ enc: 'Tweezer Reprise' }, setlist)).toBe(0);
+    expect(countCorrectPicks({ s1o: 'Tweezer', s1c: 'Ghost', enc: 'Tweezer Reprise', wild: 'Reba' }, setlist)).toBe(4);
+  });
+
+  it('public rules follow the New York calendar, not the show being viewed', () => {
+    expect(scoringRulesInEffect(new Date('2026-12-29T23:30:00-05:00')).id).toBe('v1');
+    expect(scoringRulesInEffect(new Date('2026-12-30T00:30:00-05:00')).id).toBe('v2');
+    expect(SCORING_RULES).toBe(SCORING_LADDER_V1);
   });
 });

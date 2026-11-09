@@ -12,6 +12,10 @@
 # push to staging does not force a new preview for every open Dependabot PR.
 # Groups are version updates only, so security updates are not held for Monday.
 # `@types/node` majors beyond functions `engines.node` (24) are ignored.
+# Labels on open include `allow-global` (Patrick, 2026-11-06). Dependabot
+# reads this file from `main`, so the label applies after the next promote.
+# GitHub Actions stays monthly. npm stays weekly. Do not change the Actions
+# interval without the live cadence on Road2Media/road2media `staging`.
 # Never batch-rebase all PRs.
 version: 2
 updates:
@@ -26,6 +30,7 @@ updates:
     labels:
       - dependencies
       - skip-version-bump
+      - allow-global
     ignore:
       # Functions runtime is Node 24 (`functions/package.json` engines).
       # Ignore @types/node majors beyond that LTS. 25+ tracks Current Node.
@@ -52,11 +57,12 @@ updates:
     labels:
       - dependencies
       - skip-version-bump
+      - allow-global
     ignore:
-      # Re-checked 2026-09-24: firebase-functions-test@3.5.0 (latest) still
-      # peers firebase-admin ^8–^13 only. firebase-functions@7.4.0 now peers
-      # admin ^14, but functions `npm ci` still ERESOLVE on the test harness
-      # (#624, #744, #799). Remove once firebase-functions-test allows ^14.
+      # Re-checked 2026-11-07: firebase-functions-test@3.5.0 (latest) still
+      # peers firebase-admin ^8–^13 only. firebase-functions@7 peers admin ^14,
+      # but functions `npm ci` still ERESOLVE on the test harness
+      # (#624, #744, #799, #1067). Remove once firebase-functions-test allows ^14.
       - dependency-name: "firebase-admin"
         update-types: ["version-update:semver-major"]
       # Same Node 24 pin as the root entry. Majors beyond that LTS stay ignored.
@@ -82,6 +88,7 @@ updates:
     labels:
       - dependencies
       - skip-version-bump
+      - allow-global
     groups:
       actions-all:
         patterns: ["*"]

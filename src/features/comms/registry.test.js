@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SPHERE_2026_RECAP_ID, TOUR_RECAP_TEMPLATE_ID } from '../tour-recap';
+import { ANNUAL_WRAP_TEMPLATE_ID, SPHERE_2026_RECAP_ID, TOUR_RECAP_TEMPLATE_ID } from '../tour-recap';
 import {
   getRecapTemplateDefinition,
   recapTemplateSupportsChannel,
@@ -33,8 +33,17 @@ describe('RECAP_TEMPLATE_REGISTRY', () => {
     expect(recapTemplateSupportsChannel('nonexistent-id', 'push')).toBe(false);
   });
 
+  it('registers the annual wrap and its year-board draft', () => {
+    const def = getRecapTemplateDefinition(ANNUAL_WRAP_TEMPLATE_ID);
+    expect(def?.sourceDraftPath).toBe('content/comms/tours/annual-wrap.md');
+    expect(def?.supportedChannels).toEqual(
+      expect.arrayContaining(['inApp', 'emailAbbreviated', 'push']),
+    );
+  });
+
   it('keeps registry keys in sync with live + archive ids', () => {
     expect(Object.keys(RECAP_TEMPLATE_REGISTRY)).toContain(TOUR_RECAP_TEMPLATE_ID);
     expect(Object.keys(RECAP_TEMPLATE_REGISTRY)).toContain(SPHERE_2026_RECAP_ID);
+    expect(Object.keys(RECAP_TEMPLATE_REGISTRY)).toContain(ANNUAL_WRAP_TEMPLATE_ID);
   });
 });

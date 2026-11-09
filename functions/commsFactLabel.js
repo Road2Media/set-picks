@@ -8,6 +8,7 @@
  *
  * Night map: docs/comms-triggers/SHOW_RECAP_FACT_INVENTORY.md
  * Tour map: docs/comms-triggers/TOUR_RECAP_FACT_INVENTORY.md
+ * Year map: docs/comms-triggers/ANNUAL_WRAP_FACT_INVENTORY.md
  */
 
 "use strict";
@@ -33,6 +34,27 @@ const NIGHT_SLOTS = [
 ];
 
 const TOUR_BRANCHES = ["champion", "top5", "top10", "full_run", "partial", "fallback"];
+
+const ANNUAL_SLOTS = [
+  "rank",
+  "points",
+  "nightly_wins",
+  "shows_played",
+  "best_night",
+  "bustouts_caught",
+  "shows_sat_out",
+  "crowd_most_picked",
+  "crowd_highest_hit_rate",
+  "crowd_lowest_hit_rate",
+  "crowd_room_rates",
+  "rarest_hit",
+  "lead_changes",
+  "closing_stand",
+  "opening_fallback",
+  "rare_hit_picked",
+  "lead_change_involved",
+  "personal_mark",
+];
 
 const TOUR_SLOTS = [
   "rank",
@@ -118,6 +140,15 @@ function keepShowDate(value) {
  */
 function keepTourId(value) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string | null}
+ */
+function keepYear(value) {
+  const year = String(value ?? "").trim();
+  return /^\d{4}$/.test(year) ? year : null;
 }
 
 /**
@@ -226,6 +257,35 @@ function buildTourRecapFactLabel(input = {}) {
 }
 
 /**
+ * Facts the annual-wrap sentences spoke. The rank band is stored and does
+ * not choose a flavor sentence.
+ *
+ * @param {{
+ *   rank?: number,
+ *   points?: number,
+ *   wins?: number,
+ *   showsPlayed?: number,
+ *   showCount?: number,
+ *   year?: string | number | null,
+ *   slots?: string[],
+ * }} input
+ */
+function buildAnnualWrapFactLabel(input = {}) {
+  const branch = resolveTourRecapRankBranch({
+    rank: input.rank,
+    showsPlayed: input.showsPlayed,
+    showCount: input.showCount,
+  });
+  const year = keepYear(input.year);
+  return {
+    map: "annual_wrap",
+    branch,
+    slots: keepSlots(input.slots, ANNUAL_SLOTS),
+    ...(year ? { year } : {}),
+  };
+}
+
+/**
  * Copy a label onto the delivery log. Drops a map or id this module does not know.
  *
  * @param {unknown} raw
@@ -233,21 +293,21 @@ function buildTourRecapFactLabel(input = {}) {
  */
 function sanitizeFactLabel(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const map = /** @type {{ map?: unknown, branch?: unknown, slots?: unknown, showDate?: unknown, tourId?: unknown }} */ (
-    raw
-  ).map;
-  if (map !== "show_recap" && map !== "tour_recap") return null;
+  const map = /** @type {{ map?: unknown }} */ (raw).map;
+  if (map !== "show_recap" && map !== "tour_recap" && map !== "annual_wrap") return null;
   const branches = map === "show_recap" ? NIGHT_BRANCHES : TOUR_BRANCHES;
-  const allowed = map === "show_recap" ? NIGHT_SLOTS : TOUR_SLOTS;
+  const allowed = map === "show_recap" ? NIGHT_SLOTS : map === "annual_wrap" ? ANNUAL_SLOTS : TOUR_SLOTS;
   const branch = keepBranch(/** @type {{ branch?: unknown }} */ (raw).branch, branches);
   const showDate = map === "show_recap" ? keepShowDate(/** @type {{ showDate?: unknown }} */ (raw).showDate) : null;
   const tourId = map === "tour_recap" ? keepTourId(/** @type {{ tourId?: unknown }} */ (raw).tourId) : null;
+  const year = map === "annual_wrap" ? keepYear(/** @type {{ year?: unknown }} */ (raw).year) : null;
   return {
     map,
     ...(branch ? { branch } : {}),
     slots: keepSlots(/** @type {{ slots?: unknown }} */ (raw).slots, allowed),
     ...(showDate ? { showDate } : {}),
     ...(tourId ? { tourId } : {}),
+    ...(year ? { year } : {}),
   };
 }
 
@@ -256,8 +316,10 @@ module.exports = {
   NIGHT_SLOTS,
   TOUR_BRANCHES,
   TOUR_SLOTS,
+  ANNUAL_SLOTS,
   resolveTourRecapRankBranch,
   buildShowRecapFactLabel,
   buildTourRecapFactLabel,
+  buildAnnualWrapFactLabel,
   sanitizeFactLabel,
 };

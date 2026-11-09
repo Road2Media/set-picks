@@ -23,6 +23,16 @@ import {
   buildFinishedTourWrapHtml,
 } from '../src/features/tour-stats/model/finishedTourWrap.js';
 import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
+import {
+  announcedNyeRunShows,
+  buildNyeRunFactsHtml,
+  buildNyeRunJsonLd,
+} from '../src/features/msg-stats/model/nyeRunShows.js';
+import {
+  assertPublicDiscovery,
+  extractRoutePaths,
+  unclassifiedPublicPaths,
+} from '../src/shared/config/publicSitemapRoutes.js';
 import { buildAnnualPrerenderEnrichment } from '../src/features/tour-stats/model/annualTourStatsFacts.js';
 import {
   APP_BOOT_SHELL_REL_PATH,
@@ -39,11 +49,16 @@ import {
   PRERENDER_ROUTES,
   SPLASH_BOOT_PRELOAD_MARKER,
   TOUR_STATS_BOOT_PRELOAD_MARKER,
+  INVITE_BOOT_PRELOAD_MARKER,
+  INVITE_BOOT_PRELOAD_MANIFEST,
   buildDashboardBootShellHtml,
   buildFixtureShellHtml,
+  buildInviteBootPreloadManifest,
   buildLegalBootDocumentHtml,
   buildLoginBootShellHtml,
   injectDashboardBootModulepreloads,
+  injectInviteBootModulepreloads,
+  injectInvitePreloadTags,
   injectLoginBootModulepreloads,
   injectPrerenderHtml,
   injectSplashBootModulepreloads,
@@ -116,8 +131,12 @@ assert(
   'expected 2026 Summer Tour tour-stats prerender entry (#927/#928)',
 );
 assert(
-  PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/msg'),
-  'expected Phish at MSG prerender entry (#1139)',
+  PRERENDER_ROUTES.some((r) => r.path === '/phish-at-msg'),
+  'expected Phish at MSG prerender entry (#1139 / #1192)',
+);
+assert(
+  !PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/msg'),
+  '/tour-stats/msg must not stay a prerendered page (#1192)',
 );
 assert(
   PRERENDER_ROUTES.some((r) => r.path === '/tour-stats/2026'),
@@ -161,10 +180,27 @@ for (const route of PRERENDER_ROUTES) {
   assertRouteHtml(html, route, `fixture ${route.path}`);
 }
 
-const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/msg');
+const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/phish-at-msg');
 const msgEnrichment = buildMsgGardenPrerenderEnrichment(null, msgRoute.canonicalUrl);
 const msgHtml = injectPrerenderHtml(shell, msgRoute, msgEnrichment);
-assert(msgHtml.includes('96 times'), 'MSG prerender HTML must include the played-show count (#1139)');
+assert(
+  msgHtml.includes(
+    'Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.',
+  ),
+  'MSG prerender HTML must include the played-show intro',
+);
+assert(
+  msgHtml.includes('100th performance at the venue on January 2, 2027.'),
+  'MSG prerender HTML must include the 100th-performance sentence',
+);
+assert(
+  !msgHtml.includes('announced 100th show'),
+  'MSG prerender HTML must not keep the old 100th-show sentence',
+);
+assert(
+  !msgHtml.includes('Phish.net calls the'),
+  'MSG prerender HTML must not keep the old ordinal sentence',
+);
 assert(msgHtml.includes('data-seo-msg-stats="top-songs"'), 'MSG prerender HTML must include most-played songs');
 assert(msgHtml.includes('FAQPage'), 'MSG prerender JSON-LD must include FAQPage');
 assert(msgHtml.includes('ItemList'), 'MSG prerender JSON-LD must include ItemList');
@@ -173,20 +209,44 @@ assert(
   'MSG prerender HTML must credit Phish.net',
 );
 assert(
-  msgHtml.includes('not a pick tip'),
-  'MSG opener copy must be labeled as frequencies',
+  msgHtml.includes('Songs that have opened a show at the Garden'),
+  'MSG opener copy must tell a fan what the list is',
 );
 assert(
-  readFileSync(join(root, 'public', 'sitemap.xml'), 'utf8').includes(
-    'https://www.setlistpickem.com/tour-stats/msg',
-  ),
-  'public sitemap must list /tour-stats/msg',
+  !msgHtml.includes('not a pick tip'),
+  'MSG opener copy must not explain the mechanic',
+);
+const publicSitemap = readFileSync(join(root, 'public', 'sitemap.xml'), 'utf8');
+assert(
+  publicSitemap.includes('https://www.setlistpickem.com/phish-at-msg'),
+  'public sitemap must list /phish-at-msg',
 );
 assert(
-  readFileSync(join(root, 'public', 'llms.txt'), 'utf8').includes(
-    'https://www.setlistpickem.com/tour-stats/msg',
+  !publicSitemap.includes('https://www.setlistpickem.com/tour-stats/msg'),
+  'public sitemap must not keep /tour-stats/msg (#1192)',
+);
+const publicLlms = readFileSync(join(root, 'public', 'llms.txt'), 'utf8');
+assert(
+  publicLlms.includes('https://www.setlistpickem.com/phish-at-msg'),
+  'public llms.txt must list /phish-at-msg',
+);
+assert(
+  publicLlms.includes(
+    'Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.',
   ),
-  'public llms.txt must list /tour-stats/msg',
+  'public llms.txt must include the Phish at MSG intro',
+);
+assert(
+  publicLlms.includes('100th performance at the venue on January 2, 2027.'),
+  'public llms.txt must include the 100th-performance sentence',
+);
+assert(
+  !publicLlms.includes('announced 100th show'),
+  'public llms.txt must not keep the old 100th-show sentence',
+);
+assert(
+  !publicLlms.includes('https://www.setlistpickem.com/tour-stats/msg'),
+  'public llms.txt must not keep /tour-stats/msg (#1192)',
 );
 
 const annualRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/2026');
@@ -266,6 +326,67 @@ assert(
   ),
   'public llms.txt must list /tour-stats/2026',
 );
+
+const nyeRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/2026-2027-nye-run');
+assert(nyeRoute, 'expected /tour-stats/2026-2027-nye-run prerender entry');
+const nyeShows = announcedNyeRunShows();
+assert(nyeShows.length === 4, 'NYE run must list 4 announced shows');
+const nyeEnrichment = {
+  factsHtml: buildNyeRunFactsHtml(nyeShows),
+  jsonLd: buildNyeRunJsonLd(nyeShows, nyeRoute.canonicalUrl),
+};
+const nyeHtml = injectPrerenderHtml(shell, nyeRoute, nyeEnrichment);
+assert(
+  nyeHtml.includes("New Year's Run at MSG"),
+  'NYE prerender HTML must include the heading',
+);
+assert(nyeHtml.includes('Create a NYE pool'), 'NYE prerender HTML must include the pool CTA');
+assert(
+  nyeHtml.includes('https://phish.com/news/phish-100-at-the-garden'),
+  'NYE prerender HTML must link each show to phish.com',
+);
+assert(
+  nyeHtml.includes('Data courtesy of <a href="https://phish.net">Phish.net</a>'),
+  'NYE prerender HTML must credit Phish.net',
+);
+assert(!nyeHtml.includes('officialSetlist'), 'NYE prerender HTML must not include a setlist');
+for (const show of nyeShows) {
+  assert(nyeHtml.includes(show.date), `NYE prerender HTML must include ${show.date}`);
+  assert(nyeHtml.includes(show.fanDate), `NYE prerender HTML must include ${show.fanDate}`);
+}
+const nyeJsonMatch = nyeHtml.match(
+  /<script type="application\/ld\+json" data-seo-prerender="true">([\s\S]*?)<\/script>/,
+);
+assert(nyeJsonMatch, 'NYE prerender HTML must include JSON-LD');
+const nyeJson = JSON.parse(nyeJsonMatch[1]);
+const nyeEvents = nyeJson['@graph'].filter((node) => node['@type'] === 'Event');
+assert(nyeEvents.length === 4, 'NYE JSON-LD must include 4 Event nodes');
+for (const event of nyeEvents) {
+  assert(typeof event.name === 'string' && event.name.startsWith('Phish at '), 'Event name');
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(event.startDate), 'Event startDate');
+  assert(event.location?.['@type'] === 'Place', 'Event location');
+  assert(event.location?.name === 'Madison Square Garden', 'Event venue');
+  assert(event.url.startsWith('https://phish.com/'), 'Event url must be phish.com');
+}
+assert(
+  nyeEvents.some((event) => event.startDate === '2027-01-02' && event.name.includes('100th')),
+  'January 2 Event must name the 100th performance',
+);
+
+const appRoutePaths = extractRoutePaths(readFileSync(join(root, 'src/app/App.jsx'), 'utf8'));
+const marketingRoutePaths = extractRoutePaths(
+  readFileSync(join(root, 'src/app/MarketingApp.jsx'), 'utf8'),
+);
+const unclassified = unclassifiedPublicPaths([...appRoutePaths, ...marketingRoutePaths]);
+assert(
+  unclassified.length === 0,
+  `public routes missing from the sitemap registry: ${unclassified.join(', ')}`,
+);
+try {
+  assertPublicDiscovery(publicSitemap, publicLlms);
+} catch (err) {
+  assert(false, err.message);
+}
 
 // HTML-first legal door fixtures (no marketing/app/login module graph).
 for (const legalPath of ['/privacy', '/terms']) {
@@ -758,6 +879,97 @@ assert(
   'closure walker must follow static from "./chunk.js" edges',
 );
 
+// Invite HTML hints the page that URL paints, not the dashboard or modal stack (#733).
+writeFileSync(
+  join(fakeDist, 'assets', 'PoolInvitePage-a1b2c3d4.js'),
+  'import { v } from "./vip-shared-deadbeef.js";\nimport { d } from "./DashboardRoute-e5f6a7b8.js";\nimport { a } from "./firebase-appcheck-aabbccdd.js";\nimport { m } from "./modals-11223344.js";\nexport default v;\n',
+  'utf8',
+);
+writeFileSync(
+  join(fakeDist, 'assets', 'InviteLandingPage-b2c3d4e5.js'),
+  'import { v } from "./vip-shared-deadbeef.js";\nexport default v;\n',
+  'utf8',
+);
+writeFileSync(
+  join(fakeDist, 'assets', 'vip-shared-deadbeef.js'),
+  'export const v = 1;\n',
+  'utf8',
+);
+writeFileSync(
+  join(fakeDist, 'assets', 'firebase-appcheck-aabbccdd.js'),
+  'export const a = 1;\n',
+  'utf8',
+);
+writeFileSync(join(fakeDist, 'assets', 'modals-11223344.js'), 'export const m = 1;\n', 'utf8');
+
+const fixtureInvitePool = injectInviteBootModulepreloads(
+  buildFixtureShellHtml(),
+  fakeDist,
+  'pool',
+);
+assert(
+  fixtureInvitePool.includes(`${INVITE_BOOT_PRELOAD_MARKER}="true"`) &&
+    fixtureInvitePool.includes('/assets/PoolInvitePage-a1b2c3d4.js'),
+  'pool invite shell must modulepreload PoolInvitePage',
+);
+assert(
+  fixtureInvitePool.includes('/assets/vip-shared-deadbeef.js'),
+  'pool invite shell must modulepreload the VIP static closure',
+);
+assert(
+  !fixtureInvitePool.includes('InviteLandingPage-'),
+  'pool invite shell must not modulepreload the site-invite page',
+);
+assert(
+  !fixtureInvitePool.includes('DashboardRoute-') &&
+    !fixtureInvitePool.includes('firebase-appcheck-') &&
+    !fixtureInvitePool.includes('modals-') &&
+    !fixtureInvitePool.includes('HomeRoute-'),
+  'pool invite shell must not modulepreload dashboard, App Check, auth modals, or splash',
+);
+assert(
+  injectInviteBootModulepreloads(fixtureInvitePool, fakeDist, 'pool') === fixtureInvitePool,
+  'invite modulepreload injection must be idempotent',
+);
+
+const fixtureInviteSite = injectInviteBootModulepreloads(
+  buildFixtureShellHtml(),
+  fakeDist,
+  'site',
+);
+assert(
+  fixtureInviteSite.includes('/assets/InviteLandingPage-b2c3d4e5.js') &&
+    fixtureInviteSite.includes('/assets/vip-shared-deadbeef.js'),
+  'site invite shell must modulepreload InviteLandingPage and its closure',
+);
+assert(
+  !fixtureInviteSite.includes('PoolInvitePage-'),
+  'site invite shell must not modulepreload the pool page',
+);
+
+const inviteManifest = buildInviteBootPreloadManifest(fakeDist);
+assert(
+  inviteManifest.pool.includes('/assets/PoolInvitePage-a1b2c3d4.js') &&
+    inviteManifest.site.includes('/assets/InviteLandingPage-b2c3d4e5.js') &&
+    !inviteManifest.pool.some((href) => href.includes('DashboardRoute-')),
+  'invite preload manifest splits pool and site and drops DashboardRoute',
+);
+const poisonedInvite = injectInvitePreloadTags(buildFixtureShellHtml(), [
+  '/assets/PoolInvitePage-a1b2c3d4.js',
+  '/assets/DashboardRoute-e5f6a7b8.js',
+  'https://evil.example/x.js',
+  '/assets/vendor-ga4-deadbeef.js',
+  '/assets/modals-11223344.js',
+]);
+assert(
+  poisonedInvite.includes('/assets/PoolInvitePage-a1b2c3d4.js') &&
+    !poisonedInvite.includes('DashboardRoute-') &&
+    !poisonedInvite.includes('evil.example') &&
+    !poisonedInvite.includes('vendor-ga4-') &&
+    !poisonedInvite.includes('modals-'),
+  'invite tag injection rejects dashboard, GA4, modal, and off-origin hrefs',
+);
+
 const fixtureDashboardPreload = injectDashboardBootModulepreloads(
   buildDashboardBootShellHtml(buildFixtureShellHtml()),
   fakeDist,
@@ -865,6 +1077,10 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
     'home marketing document must not load firebase-core on cold open',
   );
   assert(
+    !homeHtml.includes('vendor-ga4-'),
+    'home marketing document must not modulepreload vendor-ga4 (#733)',
+  );
+  assert(
     homeHtml.includes(`${MARKETING_BOOT_SHELL_MARKER}="true"`),
     'home dist/index.html must include marketing boot overlay',
   );
@@ -880,6 +1096,61 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
     /\/assets\/app-[^"]+\.js/.test(appHtml),
     'dist/app.html must boot the authenticated SPA entry chunk',
   );
+  assert(
+    !appHtml.includes('vendor-ga4-'),
+    'dist/app.html must not modulepreload vendor-ga4 (public cold opens load it at idle, #733)',
+  );
+  assert(
+    !appHtml.includes(INVITE_BOOT_PRELOAD_MARKER),
+    'dist/app.html must not bake invite route modulepreloads (api/invite injects per URL)',
+  );
+
+  const inviteManifestPath = join(root, 'dist', INVITE_BOOT_PRELOAD_MANIFEST);
+  assert(
+    existsSync(inviteManifestPath),
+    `dist missing ${INVITE_BOOT_PRELOAD_MANIFEST} — run npm run build`,
+  );
+  const builtInviteManifest = JSON.parse(readFileSync(inviteManifestPath, 'utf8'));
+  assert(
+    Array.isArray(builtInviteManifest.pool) &&
+      builtInviteManifest.pool.some((href) => String(href).includes('PoolInvitePage-')),
+    'invite preload manifest must list PoolInvitePage for /join/:code',
+  );
+  assert(
+    Array.isArray(builtInviteManifest.site) &&
+      builtInviteManifest.site.some((href) => String(href).includes('InviteLandingPage-')),
+    'invite preload manifest must list InviteLandingPage for /invite/:handle',
+  );
+  for (const href of [...builtInviteManifest.pool, ...builtInviteManifest.site]) {
+    assert(
+      !String(href).includes('DashboardRoute-') &&
+        !String(href).includes('HomeRoute-') &&
+        !/firebase-appcheck/i.test(String(href)) &&
+        !String(href).includes('/assets/modals-') &&
+        !String(href).includes('vendor-ga4-'),
+      `invite preload manifest must not include ${href}`,
+    );
+  }
+  const hintedPool = injectInvitePreloadTags(appHtml, builtInviteManifest.pool);
+  assert(
+    hintedPool.includes('PoolInvitePage-') &&
+      hintedPool.includes(`${INVITE_BOOT_PRELOAD_MARKER}="true"`),
+    'injecting the pool manifest into app.html must hint PoolInvitePage',
+  );
+  assert(
+    !hintedPool.includes('InviteLandingPage-'),
+    'pool invite HTML must not hint the site-invite page',
+  );
+  if (!appHtml.includes('DashboardRoute-')) {
+    assert(
+      !hintedPool.includes('DashboardRoute-'),
+      'invite HTML must not add a DashboardRoute modulepreload',
+    );
+  }
+  assert(
+    injectInvitePreloadTags(hintedPool, builtInviteManifest.pool) === hintedPool,
+    'invite preload injection into app.html must be idempotent',
+  );
 
   const distLoginEntry = join(root, 'dist', 'login.html');
   assert(
@@ -894,6 +1165,10 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
   assert(
     !/\/assets\/app-[^"]+\.js/.test(loginEntryHtml),
     'dist/login.html must not boot the dashboard SPA entry',
+  );
+  assert(
+    !loginEntryHtml.includes('vendor-ga4-'),
+    'dist/login.html must not modulepreload vendor-ga4 (#733)',
   );
   assert(
     /id="si-email"/.test(loginEntryHtml) && /<input\b/i.test(loginEntryHtml),
@@ -957,6 +1232,38 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
     assert(
       llmsTxt.includes('https://www.setlistpickem.com/tour-stats/2026-summer-tour'),
       'dist llms.txt must keep the static summer SEO URL',
+    );
+    assert(
+      sitemapXml.includes('https://www.setlistpickem.com/phish-at-msg'),
+      'dist sitemap must list /phish-at-msg (#1192)',
+    );
+    assert(
+      !sitemapXml.includes('https://www.setlistpickem.com/tour-stats/msg'),
+      'dist sitemap must not list /tour-stats/msg (#1192)',
+    );
+    assert(
+      llmsTxt.includes('https://www.setlistpickem.com/phish-at-msg'),
+      'dist llms.txt must list /phish-at-msg (#1192)',
+    );
+    try {
+      assertPublicDiscovery(sitemapXml, llmsTxt);
+    } catch (err) {
+      assert(false, `dist discovery: ${err.message}`);
+    }
+    const distMsg = join(root, 'dist', 'phish-at-msg', 'index.html');
+    assert(existsSync(distMsg), 'dist missing prerendered /phish-at-msg (#1192)');
+    const msgPageHtml = readFileSync(distMsg, 'utf8');
+    assert(
+      msgPageHtml.includes('https://www.setlistpickem.com/phish-at-msg'),
+      'prerendered /phish-at-msg must use the new canonical',
+    );
+    assert(
+      /\/assets\/marketing-[^"]+\.js/.test(msgPageHtml),
+      'prerendered /phish-at-msg must boot the marketing entry',
+    );
+    assert(
+      !existsSync(join(root, 'dist', 'tour-stats', 'msg', 'index.html')),
+      'dist must not prerender /tour-stats/msg (#1192)',
     );
   }
   const howItWorksHtml = readFileSync(distHowItWorks, 'utf8');
@@ -1090,6 +1397,10 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
   assert(
     !/\/assets\/firebase-storage-[^"]+\.js/.test(loginBootHtml),
     'login boot shell must not modulepreload firebase-storage',
+  );
+  assert(
+    !loginBootHtml.includes('vendor-ga4-'),
+    'login boot shell must not modulepreload vendor-ga4 (#733)',
   );
   assert(
     !loginBootHtml.includes(DASHBOARD_BOOT_PRELOAD_MARKER) &&

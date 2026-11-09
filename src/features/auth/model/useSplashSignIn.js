@@ -12,7 +12,11 @@ import { markGoogleAuthClick } from './authLoginTiming';
 import { shouldPreferGoogleRedirectAuth } from './preferGoogleRedirectAuth';
 import { runGoogleSplashAuth } from './runGoogleSplashAuth';
 
-export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
+export function useSplashSignIn(
+  isOpen,
+  onClose,
+  { seedError = '', closeOnSuccess = true } = {},
+) {
   const [email, setEmailState] = useState('');
   const [password, setPasswordState] = useState('');
   const [busy, setBusy] = useState(false);
@@ -57,6 +61,12 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
     setBusy(false);
     setGoogleBusy(false);
   }, [onClose, resetForm]);
+
+  // Full-page `/login` redirects from the page effect. Calling onClose there
+  // sends the visitor home and drops a remembered dashboard path (#1144).
+  const finishSuccess = useCallback(() => {
+    if (closeOnSuccess) closeModal();
+  }, [closeOnSuccess, closeModal]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -109,7 +119,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
         }
         return;
       }
-      closeModal();
+      finishSuccess();
     } catch (err) {
       console.error('Google sign-in:', err);
       trackAuthError({
@@ -126,7 +136,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
         setGoogleBusy(false);
       }
     }
-  }, [closeModal, preferGoogleRedirect, replaceNotice]);
+  }, [finishSuccess, preferGoogleRedirect, replaceNotice]);
 
   const handleEmailSignIn = useCallback(
     async (e) => {
@@ -149,7 +159,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
         lookupEmailSignIn = api.lookupEmailSignIn;
         await api.signInWithEmail(auth, email, password);
         trackAuthLogin('email', { surface: 'sign_in' });
-        closeModal();
+        finishSuccess();
       } catch (err) {
         console.error('Sign in:', err);
         trackAuthError({
@@ -171,7 +181,7 @@ export function useSplashSignIn(isOpen, onClose, { seedError = '' } = {}) {
         setBusy(false);
       }
     },
-    [closeModal, email, password, replaceNotice],
+    [finishSuccess, email, password, replaceNotice],
   );
 
   const handleSendPasswordResetEmail = useCallback(async () => {

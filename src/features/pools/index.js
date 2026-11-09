@@ -19,6 +19,7 @@ export { usePoolStandingsSection } from './model/usePoolStandingsSection';
 export { invalidateUserPools } from './model/userPoolsRefreshBus';
 export { default as useUserPools } from './model/useUserPools';
 export { default as usePoolsClusterScreen } from './model/usePoolsClusterScreen';
+export { suggestedPoolName } from './model/suggestedPoolName';
 export { default as PoolAdminControls } from './ui/PoolAdminControls';
 export { default as PoolAdminSection } from './ui/PoolAdminSection';
 export { default as PendingPoolJoinBanner } from './ui/PendingPoolJoinBanner';

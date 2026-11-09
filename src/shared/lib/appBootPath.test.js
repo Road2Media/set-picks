@@ -5,6 +5,7 @@ import {
   isPublicColdOpenPath,
   isPublicTourStatsPath,
   shouldDeferMessagingServiceWorker,
+  shouldDeferGa4Boot,
   shouldPrefetchDashboardOnBoot,
   shouldWarmAppCheckOnBoot,
 } from './appBootPath.js';
@@ -49,6 +50,7 @@ describe('isPublicTourStatsPath', () => {
     expect(isPublicTourStatsPath('/')).toBe(false);
     expect(isPublicTourStatsPath('/dashboard/tour-stats')).toBe(false);
     expect(isPublicTourStatsPath('/how-it-works')).toBe(false);
+    expect(isPublicTourStatsPath('/phish-at-msg')).toBe(false);
   });
 });
 
@@ -86,6 +88,22 @@ describe('shouldDeferMessagingServiceWorker', () => {
     expect(shouldDeferMessagingServiceWorker('/privacy')).toBe(true);
     expect(shouldDeferMessagingServiceWorker('/terms')).toBe(true);
     expect(shouldDeferMessagingServiceWorker('/user/abc')).toBe(true);
+  });
+});
+
+describe('shouldDeferGa4Boot', () => {
+  it('defers the GA4 download on public cold opens (#733)', () => {
+    expect(shouldDeferGa4Boot('/')).toBe(true);
+    expect(shouldDeferGa4Boot('/join/ABC')).toBe(true);
+    expect(shouldDeferGa4Boot('/invite/pat')).toBe(true);
+  });
+
+  it('starts GA4 immediately on dashboard, setup, and other app routes', () => {
+    expect(shouldDeferGa4Boot('/dashboard')).toBe(false);
+    expect(shouldDeferGa4Boot('/dashboard/picks')).toBe(false);
+    expect(shouldDeferGa4Boot('/setup')).toBe(false);
+    expect(shouldDeferGa4Boot('/user/abc')).toBe(false);
+    expect(shouldDeferGa4Boot('/login')).toBe(false);
   });
 });
 

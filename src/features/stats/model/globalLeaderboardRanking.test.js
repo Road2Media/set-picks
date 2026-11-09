@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  GLOBAL_LEADERBOARD_BOARDS,
   GLOBAL_LEADERBOARD_MIN_SHOWS,
   GLOBAL_LEADERBOARD_PAGE_SIZE,
   GLOBAL_LEADERBOARD_SLOTS_PER_SHOW,
@@ -10,6 +11,8 @@ import {
   computePickingAverage,
   computePointsPerShow,
   computeSluggingPercentage,
+  formatAverageVintage,
+  formatBustoutBoosts,
   formatPickingAverage,
   formatPointsPerShow,
   formatSluggingPercentage,
@@ -231,5 +234,77 @@ describe('leaderboardPageWindow', () => {
       end: 12,
     });
     expect(leaderboardPageWindow(8, 0).maxPage).toBe(0);
+  });
+});
+
+describe('average vintage and bustout boost (#1044)', () => {
+  it('formats a debut year and a bustout count', () => {
+    expect(formatAverageVintage(1994.4)).toBe('1994');
+    expect(formatAverageVintage(null)).toBe('—');
+    expect(formatBustoutBoosts(4)).toBe('4');
+    expect(formatBustoutBoosts(0)).toBe('0');
+  });
+
+  it('ranks an older year ahead of a newer one and drops players under 3 shows', () => {
+    const ranked = rankBoard(
+      [
+        { uid: 'newSong', handle: 'New', value: 2004, shows: 6 },
+        { uid: 'old', handle: 'Old', value: 1988, shows: 4 },
+        { uid: 'spike', handle: 'Spike', value: 1970, shows: 1 },
+      ],
+      { minShows: 3, order: 'asc' }
+    );
+    expect(ranked.map((row) => row.uid)).toEqual(['old', 'newSong']);
+    expect(ranked[0].rank).toBe(1);
+  });
+
+  it('reads career and tour vintage plus bustout counts from the user doc', () => {
+    const user = {
+      handle: 'Pat',
+      totalPoints: 40,
+      showsPlayed: 4,
+      careerCorrectSlots: 12,
+      avgVintageYear: 1992,
+      avgVintageByTour: { '2026 Summer Tour': 1996 },
+      seasonStats: {
+        '2026 Summer Tour': {
+          totalPoints: 15,
+          shows: 3,
+          correctSlots: 6,
+          bustoutBoosts: 2,
+        },
+        '2026 Sphere': { totalPoints: 10, shows: 2, bustoutBoosts: 1 },
+      },
+    };
+    const career = viewerMetricsFromUserDoc(user, { uid: 'u1', scope: 'allTime' });
+    expect(career.values.averageVintage).toBe(1992);
+    expect(career.values.bustoutBoosts).toBe(3);
+    const tour = viewerMetricsFromUserDoc(user, {
+      uid: 'u1',
+      scope: 'tour',
+      tourKey: '2026 Summer Tour',
+    });
+    expect(tour.values.averageVintage).toBe(1996);
+    expect(tour.values.bustoutBoosts).toBe(2);
+  });
+
+  it('marks a zero bustout you-row as not ranked', () => {
+    const bustout = GLOBAL_LEADERBOARD_BOARDS.find((board) => board.key === 'bustoutBoosts');
+    const merged = mergeAllBoards(
+      { boards: { bustoutBoosts: [] } },
+      {
+        uid: 'me',
+        handle: 'Me',
+        shows: 8,
+        values: { bustoutBoosts: 0 },
+      },
+      'allTime'
+    );
+    expect(bustout.minValue).toBe(1);
+    expect(merged.bustoutBoosts[0]).toMatchObject({
+      belowMinimum: true,
+      belowMinimumReason: 'value',
+      value: 0,
+    });
   });
 });

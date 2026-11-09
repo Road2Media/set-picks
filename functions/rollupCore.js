@@ -22,6 +22,7 @@
  */
 
 const {
+  attachScoringShowDate,
   calculateTotalScore,
   countBustoutBoosts,
   countCorrectSlots,
@@ -82,7 +83,10 @@ async function runRollupForShow({
     };
   }
   const setlistDoc = setlistSnap.data() || {};
-  const actualSetlist = persistableActualSetlistFromOfficialDoc(setlistDoc);
+  const actualSetlist = attachScoringShowDate(
+    persistableActualSetlistFromOfficialDoc(setlistDoc),
+    showDate
+  );
 
   if (!setlistHasAnyPlayedSong(actualSetlist)) {
     logger?.warn?.("runRollupForShow: hollow setlist (no played songs); skipping rollup", {

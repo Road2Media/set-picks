@@ -7,4 +7,5 @@
 
 export { usePublicTourStatsScreen } from './model/usePublicTourStatsScreen';
 export { default as PublicTourStatsPanel } from './ui/PublicTourStatsPanel';
-export { trackPublicTourStatsView } from './model/publicTourStatsAnalytics';
+export { trackNyePoolCta, trackPublicTourStatsView } from './model/publicTourStatsAnalytics';
+export { default as NyeRunStatsView } from './ui/NyeRunStatsView';

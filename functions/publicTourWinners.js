@@ -1,7 +1,7 @@
 /**
  * Public-safe rank-1 snapshot for a finished tour (#1140).
  *
- * Official place is competition rank on total points, same aggregation as
+ * Official place is the full points tie-break (#1218), same aggregation as
  * tour standings and `tour_recap` (`tourRankingsDailyCore`). The public doc
  * stores display handles and points only. No uid, no email.
  *
@@ -78,9 +78,9 @@ function publicTourWinnersFromRanked(ranked) {
  * @param {Array<{ date: string, picks: Array<Record<string, unknown>> }>} picksByDate
  * @returns {{ handles: string[], points: number, tied: boolean } | null}
  */
-function publicTourWinnersFromPicks(picksByDate) {
+function publicTourWinnersFromPicks(picksByDate, setlistsByDate = null) {
   return publicTourWinnersFromRanked(
-    assignDisplayRanks(aggregateTourStandings(picksByDate))
+    assignDisplayRanks(aggregateTourStandings(picksByDate, setlistsByDate))
   );
 }
 
@@ -117,10 +117,30 @@ async function loadPicksByDates(db, dates) {
  * @param {string[]} showDates
  * @returns {Promise<{ handles: string[], points: number, tied: boolean } | null>}
  */
+async function loadSetlistsForDates(db, dates) {
+  /** @type {Array<{ date: string, doc: Record<string, unknown> | null }>} */
+  const out = [];
+  for (const date of dates) {
+    // eslint-disable-next-line no-await-in-loop
+    const snap = await db.collection("official_setlists").doc(date).get();
+    out.push({ date, doc: snap.exists ? snap.data() || null : null });
+  }
+  return out;
+}
+
 async function loadPublicTourWinners(db, showDates) {
   const picksByDate = await loadPicksByDates(db, showDates);
   if (!picksByDate.length) return null;
-  return publicTourWinnersFromPicks(picksByDate);
+  let setlists = [];
+  try {
+    setlists = await loadSetlistsForDates(
+      db,
+      picksByDate.map((row) => row.date)
+    );
+  } catch {
+    setlists = [];
+  }
+  return publicTourWinnersFromPicks(picksByDate, setlists);
 }
 
 module.exports = {

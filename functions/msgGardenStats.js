@@ -1,5 +1,5 @@
 /**
- * Nightly aggregate for `/tour-stats/msg` (#1139).
+ * Nightly aggregate for `/phish-at-msg` (#1139, #1192).
  * Writes `public_venue_stats/msg` only. Does not store setlists.
  * Phish.net source rows are fetched and discarded in the same run.
  */

@@ -1,16 +1,18 @@
 ---
 description: Dependabot and dependency updates. Factory standard from 2026-10-22.
-globs: .github/dependabot.yml,.github/workflows/dependabot-auto-merge.yml,.github/workflows/dependabot-scheduled-execution.yml,.github/workflows/runtime-quarterly-check.yml,docs/DEPENDABOT_OPERATIONS.md,package.json,functions/package.json
+globs: .github/dependabot.yml,.github/workflows/dependabot-auto-merge.yml,.github/workflows/dependabot-scheduled-execution.yml,.github/workflows/runtime-quarterly-check.yml,docs/DEPENDABOT_OPERATIONS.md,docs/DEPENDENCY_POLICY.md,package.json,functions/package.json
 alwaysApply: false
 ---
 
 # Dependencies
 
-The runbook is `docs/DEPENDABOT_OPERATIONS.md`. This is the same factory standard used for road2media, foco-pets, and set-picks (2026-10-22). It replaces “never auto-merge a major.”
+The engineering rules are `docs/DEPENDENCY_POLICY.md`. The runbook is `docs/DEPENDABOT_OPERATIONS.md`. This is the same factory standard used for road2media, foco-pets, and set-picks (2026-10-22). It replaces “never auto-merge a major.”
+
+- New Dependabot pull requests are labeled `dependencies`, `skip-version-bump`, and `allow-global`. Patrick authorized `allow-global` on 2026-11-06. Dependabot reads the config from `main`.
 
 - Dependabot updates, majors included, auto-merge into `staging` when the required checks pass.
 - A major that fails checks stays open. It is not merged. It becomes an `agent-queue` `p3` migration issue.
-- Visitor-facing packages (React, React Router, Tailwind, the Firebase client SDK, icons, and the other names in `scripts/lib/dependabotAutoMergePolicy.mjs`) get the `ui-check` label. Patrick spot-checks staging before release. The label does not block the merge.
+- Visitor-facing packages (React, React Router, Tailwind, the Firebase client SDK, icons, and the other names in `scripts/lib/dependabotAutoMergePolicy.mjs`) get the `ui-check` label. Patrick spot-checks staging before release. The release pull request lists them under Staging spot-check in `RELEASING.md`. The label does not block the merge.
 - `@types/node` ignores majors beyond the Node LTS this project runs. That version is `functions/package.json` `engines.node` (24). The ignore is `>=25.0.0` in `dependabot.yml`.
 - Security updates are not grouped into the Monday batch. They auto-merge when checks pass.
 - A quarterly workflow reminds us to check the Node and Vercel runtimes. It does not change them.

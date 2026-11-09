@@ -10,17 +10,17 @@ import { MarketingPageShell } from '../../features/landing';
 import { SEO_CONFIG } from '../../shared/config/seo';
 import { getPrerenderRoute } from '../../shared/config/seoRoutes';
 
-const route = getPrerenderRoute('/tour-stats/msg');
+const route = getPrerenderRoute('/phish-at-msg');
 
 /**
- * Public `/tour-stats/msg` (#1139). Marketing document. Facts are in the
+ * Public `/phish-at-msg` (#1139, #1192). Marketing document. Facts are in the
  * prerender HTML; this view repeats them after hydration.
  */
 export default function MsgGardenStatsPage() {
   const stats = useMsgGardenStats();
   const title = route?.title || "Phish at MSG | Setlist Pick'Em";
   const description = route?.description || '';
-  const canonical = route?.canonicalUrl || `${SEO_CONFIG.siteUrl}/tour-stats/msg`;
+  const canonical = route?.canonicalUrl || `${SEO_CONFIG.siteUrl}/phish-at-msg`;
   const jsonLd = buildMsgGardenJsonLd(stats, canonical);
 
   return (

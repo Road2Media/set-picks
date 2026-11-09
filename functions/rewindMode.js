@@ -23,11 +23,11 @@ const {
 } = require("./phishnetLiveSetlistAutomation");
 const {
   SCORE_FIELDS,
+  attachScoringShowDate,
   calculateSlotScore,
   calculateTotalScore,
   countCorrectSlots,
-  guessMatchesEncoreExact,
-  normalizeSong,
+  slotScoreBreakdown,
 } = require("./scoringCore");
 
 const REWIND_WEEKS = "rewind_weeks";
@@ -164,23 +164,26 @@ function phishNetUrl(showDate) {
   return `https://phish.net/setlists/?d=${encodeURIComponent(showDate)}`;
 }
 
-function scoringPayloadFromAnswer(answer) {
+function scoringPayloadFromAnswer(answer, showDate) {
   const slots =
     answer && answer.setlist && typeof answer.setlist === "object"
       ? answer.setlist
       : {};
-  return {
-    s1o: slots.s1o || "",
-    s1c: slots.s1c || "",
-    s2o: slots.s2o || "",
-    s2c: slots.s2c || "",
-    enc: slots.enc || "",
-    officialSetlist: Array.isArray(answer?.officialSetlist)
-      ? answer.officialSetlist
-      : [],
-    encoreSongs: Array.isArray(answer?.encoreSongs) ? answer.encoreSongs : [],
-    bustouts: Array.isArray(answer?.bustouts) ? answer.bustouts : [],
-  };
+  return attachScoringShowDate(
+    {
+      s1o: slots.s1o || "",
+      s1c: slots.s1c || "",
+      s2o: slots.s2o || "",
+      s2c: slots.s2c || "",
+      enc: slots.enc || "",
+      officialSetlist: Array.isArray(answer?.officialSetlist)
+        ? answer.officialSetlist
+        : [],
+      encoreSongs: Array.isArray(answer?.encoreSongs) ? answer.encoreSongs : [],
+      bustouts: Array.isArray(answer?.bustouts) ? answer.bustouts : [],
+    },
+    showDate || answer?.showDate
+  );
 }
 
 function normalizePicks(raw) {
@@ -203,25 +206,7 @@ function normalizePicks(raw) {
 }
 
 function describeSlot(fieldId, guess, actual) {
-  const points = calculateSlotScore(fieldId, guess, actual);
-  const withoutBoost = calculateSlotScore(fieldId, guess, {
-    ...actual,
-    bustouts: [],
-  });
-  const bustoutBoost = points > withoutBoost && withoutBoost > 0;
-  let kind = "miss";
-  if (!String(guess ?? "").trim()) kind = "none";
-  else if (withoutBoost <= 0) kind = "miss";
-  else if (fieldId === "wild") kind = "wildcard_hit";
-  else if (
-    fieldId === "enc" &&
-    guessMatchesEncoreExact(actual, normalizeSong(guess))
-  ) {
-    kind = "encore_exact";
-  } else if (normalizeSong(actual[fieldId]) === normalizeSong(guess)) {
-    kind = "exact_slot";
-  } else kind = "in_setlist";
-
+  const detail = slotScoreBreakdown(fieldId, guess, actual);
   const slotActual =
     fieldId === "wild"
       ? ""
@@ -234,9 +219,9 @@ function describeSlot(fieldId, guess, actual) {
     label: SLOT_LABELS[fieldId] || fieldId,
     guess: String(guess ?? "").trim(),
     actual: slotActual,
-    points,
-    kind,
-    bustoutBoost,
+    points: detail.points,
+    kind: detail.kind,
+    bustoutBoost: detail.bustoutBoost,
   };
 }
 
@@ -244,7 +229,7 @@ function describeSlot(fieldId, guess, actual) {
  * Player-facing result. Six slots only — no ordered song list.
  */
 function buildRewindReveal(week, pick, answer) {
-  const actual = scoringPayloadFromAnswer(answer);
+  const actual = scoringPayloadFromAnswer(answer, week.showDate);
   const guesses = pick?.picks || {};
   const slots = SCORE_FIELDS.map((id) => describeSlot(id, guesses[id], actual));
   const score = calculateTotalScore(guesses, actual);
@@ -284,7 +269,7 @@ async function lookupHandle(db, uid) {
 }
 
 async function rescoreRewindWeek({ db, weekId, answer, now }) {
-  const actual = scoringPayloadFromAnswer(answer);
+  const actual = scoringPayloadFromAnswer(answer, answer && answer.showDate);
   const snap = await db.collection(REWIND_PICKS).where("weekId", "==", weekId).get();
   const counts = emptySlotCounts();
   let playerCount = 0;
@@ -543,7 +528,7 @@ async function lockRewindPick({ db, uid, input, now = new Date() }) {
   }
 
   const picks = normalizePicks(body.picks);
-  const actual = scoringPayloadFromAnswer(answer);
+  const actual = scoringPayloadFromAnswer(answer, week.showDate);
   const score = calculateTotalScore(picks, actual);
   const correctSlots = countCorrectSlots(picks, actual);
   const handle = await lookupHandle(db, uid);

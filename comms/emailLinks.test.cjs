@@ -47,5 +47,6 @@ describe('emailLinks', () => {
     assert.equal(normalizeDestinationPath('/login?signup=1'), '/login?signup=1');
     assert.equal(normalizeDestinationPath('/invite/pat'), '/invite/pat');
     assert.equal(normalizeDestinationPath('/setup'), '/setup');
+    assert.equal(normalizeDestinationPath('/how-scoring-changed'), '/how-scoring-changed');
   });
 });

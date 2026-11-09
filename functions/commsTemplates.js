@@ -734,6 +734,69 @@ const BUILDERS = {
     };
   },
 
+  "annual-wrap": (p) => {
+    const year = p.year != null ? String(p.year) : "the year";
+    const rank = p.rank != null ? Number(p.rank) : null;
+    const points = p.points != null ? Number(p.points) : null;
+    const wins = p.wins != null ? Number(p.wins) : null;
+    const tied = Number(p.tiedCount) > 1;
+    const placeWord = rank == null ? "" : tied ? `tied for #${rank}` : `#${rank}`;
+    const board = Array.isArray(p.email_board) ? p.email_board : [];
+    const places = p?.podium && typeof p.podium === "object" && Array.isArray(p.podium.places)
+      ? p.podium.places
+      : [];
+    const first = places.find((place) => Number(place?.rank) === 1);
+    const names = (Array.isArray(first?.members) ? first.members : [])
+      .map((member) => (typeof member?.handle === "string" ? member.handle.trim() : ""))
+      .filter(Boolean);
+    const winnerLine = first?.tied === true && names.length > 1
+      ? `A huge congrats to our annual winners, ${joinHandleList(names)}.`
+      : names[0]
+        ? `A huge congrats to our annual winner, ${names[0]}.`
+        : "";
+    const opening = Array.isArray(p.opening_paras)
+      ? p.opening_paras.filter((line) => typeof line === "string" && line.trim())
+      : [];
+    const personal = typeof p.personal_line === "string" ? p.personal_line.trim() : "";
+    const boardText = tourRecapBoardText(board);
+    const assembled = assembleServiceEmail(
+      [
+        winnerLine,
+        ...opening,
+        board.length ? "" : null,
+        board.length ? boardText : null,
+        personal,
+        "The full recap is in the app.",
+      ].filter((line) => line != null && line !== undefined),
+      { ctaUrl: MESSAGES_CTA_URL }
+    );
+    return {
+      push: {
+        title: typeof p.push_title === "string" && p.push_title.trim()
+          ? p.push_title.trim()
+          : "Annual wrap is in",
+        body:
+          rank === 1 && !tied
+            ? `You took #1${points != null ? ` with ${points} pts` : ""}${
+                wins != null ? ` and ${wins} nightly wins` : ""
+              }. Open Messages for the full wrap-up.`
+            : rank != null
+              ? `You finished ${placeWord}${points != null ? ` (${points} pts` : ""}${
+                  wins != null ? `, ${wins} wins)` : points != null ? ")" : ""
+                }. Open Messages for your personalized recap.`
+              : "Your annual wrap is in. Open Messages to read it.",
+      },
+      email: {
+        subject: `${year} recap is in`,
+        text: assembled.text,
+        signOff: assembled.signOff,
+        ctaUrl: MESSAGES_CTA_URL,
+        ctaLabel: TOUR_RECAP_EMAIL_CTA_LABEL,
+        boardHtml: tourRecapBoardHtml(board),
+      },
+    };
+  },
+
   "tour-engagement-reminder": (p) => {
     const assembled = assembleServiceEmail([
       `${handleOf(p)}, you're off to a great start${
@@ -751,6 +814,44 @@ const BUILDERS = {
         text: assembled.text,
         signOff: assembled.signOff,
         ctaUrl: assembled.ctaUrl,
+      },
+    };
+  },
+
+  // #512 Slice B. Email-only trigger; push exists so the catalog render test
+  // still sees a title and body. Keep paragraphs aligned with
+  // src/features/marketing-comms/model/summerTour2026Reminder.js.
+  "summer-tour-2026-reminder": (p) => {
+    const name =
+      (typeof p.greetingName === "string" && p.greetingName.trim()) ||
+      (typeof p.handle === "string" && p.handle.trim()) ||
+      "friend";
+    const opener =
+      typeof p.openerLabel === "string" && p.openerLabel.trim()
+        ? p.openerLabel.trim()
+        : "Tuesday, July 7";
+    const ctaUrl =
+      typeof p.picksUrl === "string" && p.picksUrl.trim() ? p.picksUrl.trim() : PICKS_CTA_URL;
+    const assembled = assembleServiceEmail(
+      [
+        `${name}, the first note about Summer Tour might still be sitting unopened.`,
+        "",
+        `The opener is ${opener}. Six slots a night: openers, closers, encore, and a wildcard. Lock them before the lights go down.`,
+      ],
+      { ctaUrl }
+    );
+    return {
+      push: {
+        title: "Summer Tour slots are open",
+        body: "Six slots a night. Lock them before the opener.",
+      },
+      email: {
+        subject: "Your six slots for Summer Tour are still open",
+        preheader: "The first note might still be sitting unopened.",
+        text: assembled.text,
+        signOff: assembled.signOff,
+        ctaUrl: assembled.ctaUrl,
+        ctaLabel: "Make Your Picks",
       },
     };
   },

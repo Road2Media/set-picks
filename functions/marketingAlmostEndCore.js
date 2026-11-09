@@ -5,6 +5,8 @@
 
 "use strict";
 
+const { LIVE_RANK_POLICY, rankScoredRows } = require("./pointsTieRanking.cjs");
+
 const TOUR_KEY = "2026 Summer Tour";
 /** Explicit QA handles that may not contain the substring "qa". */
 const QA_HANDLES = new Set(["qatester", "mrpickphive"]);
@@ -104,22 +106,14 @@ function formatAvgPoints(n) {
  * @returns {Map<string, { rank: number, row: (typeof players)[0] }>}
  */
 function assignCompetitionRanks(players) {
-  const sorted = [...players].sort((a, b) => {
-    if (b.totalPoints !== a.totalPoints) return b.totalPoints - a.totalPoints;
-    if (b.wins !== a.wins) return b.wins - a.wins;
-    return a.handle.localeCompare(b.handle);
+  const ranked = rankScoredRows(players, {
+    policy: LIVE_RANK_POLICY,
+    surface: "tour",
   });
-  /** @type {Map<string, { rank: number, row: (typeof players)[0] }>} */
+  /** @type {Map<string, { rank: number, tiedCount: number, row: (typeof players)[0] }>} */
   const out = new Map();
-  let rank = 0;
-  let prevPoints = null;
-  for (let i = 0; i < sorted.length; i++) {
-    const row = sorted[i];
-    if (prevPoints === null || row.totalPoints < prevPoints) {
-      rank = i + 1;
-      prevPoints = row.totalPoints;
-    }
-    out.set(row.uid, { rank, row });
+  for (const row of ranked.rows) {
+    out.set(String(row.uid), { rank: row.rank, tiedCount: row.tiedCount, row });
   }
   return out;
 }

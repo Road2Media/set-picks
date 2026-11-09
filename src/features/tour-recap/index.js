@@ -24,6 +24,12 @@ export {
   buildTourRecapPushPayload,
 } from './model/tourRecap.js';
 
+export {
+  ANNUAL_WRAP_TEMPLATE_ID,
+  annualWrapStandingsHref,
+  ANNUAL_WRAP_INAPP_CTA_LABEL,
+} from './model/annualWrap.js';
+
 export { default as TourRecapInApp, TOUR_RECAP_INAPP_CTA } from './ui/TourRecapInApp.jsx';
 export { default as Sphere2026TourRecapInApp } from './ui/Sphere2026TourRecapInApp.jsx';
 export { default as AdminTourRecapPreview } from './ui/AdminTourRecapPreview.jsx';

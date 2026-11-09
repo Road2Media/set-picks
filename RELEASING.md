@@ -6,12 +6,24 @@ This is the same rule as foco-pets and road2media, adapted to the checks this re
 
 ## CI stages
 
-1. **Pull request gate.** Every pull request to `staging` or `main` runs `verify`, `scope-guard`, and `label-integrity`. Vercel still reports its own check. `functions`, `rules`, and `qa-runners` stay path-gated inside `verify`'s workflow.
-2. **Push to `staging`.** `verify` already runs on that push. It is not a required check. `staging-smoke` runs against the staging branch alias. `scope-guard` and `label-integrity` stay pull-request-only because they read labels.
-3. **Release pull request.** The `staging` → `main` pull request runs the same pull-request checks again, including Vercel.
-4. **Production smoke.** `production-smoke` runs after the GitHub Release is published.
+Patrick approved this order on 2026-10-22. It is the same order for every Road2Media repo. `.github/workflows/ci.yml` already runs on `push` to `main`, `master`, and `staging`, on `pull_request`, and on the nightly `schedule`. `verify` runs on those pushes. `build`, `functions`, `rules`, and `qa-runners` stay path-gated. The SemVer gate stays pull-request-only. No extra trigger is required.
 
-Do not add the staging push run as a required status check. Branch protection is a human step. This repository does not change it from a pull request.
+1. **Pull request gate.** Every pull request to `staging` or `main` runs `verify`, `scope-guard`, and `label-integrity`. Vercel still reports its own check. `ci-gate` always reports `verify`, `build`, `functions`, and `rules`. `functions`, `rules`, and `qa-runners` stay path-gated inside the CI workflow. This gate is what branch protection may require. This repository does not change that protection from a pull request.
+2. **Push to `staging`.** The same CI workflow runs on the merge commit. It is not a required status check. A merge does not wait for it: the push run starts after the merge. `scope-guard` and `label-integrity` stay pull-request-only because they read labels. `staging-smoke` also runs against the staging branch alias. It is not a required check.
+3. **Release pull request.** The `staging` → `main` pull request runs the same pull-request checks again, including Vercel.
+4. **Production smoke.** `production-smoke` runs after the GitHub Release is published (`release: published`), against `https://www.setlistpickem.com`. It requests `/` and `/login`, then signs in and expects `/dashboard`. The nightly `favicon-prod` job only checks favicon URLs. It does not replace production smoke.
+
+Do not add the staging push run as a required status check.
+
+### Staging push concurrency
+
+CI concurrency is `${{ github.workflow }}-${{ github.ref }}` (the nightly schedule uses its own group) with `cancel-in-progress: true`. A newer push cancels an older in-progress run on that ref. The latest `staging` SHA is the run that is left to finish. Checked on 2026-11-07 after #1211, #1212, #1213, #1214, and #1215: each merge commit had a completed `verify` job, and the last 50 staging CI runs had no cancellation. Leave `cancel-in-progress` as it is. Release tooling does not read those runs, so a cancelled older run is not a release failure.
+
+### Reading staging CI
+
+`scripts/release-gate.mjs` and `scripts/release-publish.mjs` compare `package.json` with the latest GitHub Release and `CHANGELOG.md`. They do not list Actions runs. There is no draft-release script in this repo. Road2Media/foco-pets was not readable from this checkout, so that repo's bug was not re-read here.
+
+If a later script does read staging CI, zero runs is **unknown**, not failed. A cancelled run on an older SHA is not a failure of the latest SHA. Only a completed failure on the SHA you are judging is a failure.
 
 ## Agent queue labels
 
@@ -23,7 +35,7 @@ Do not add the staging push run as a required status check. Branch protection is
 | `allow-global` | The diff touches `.github/**`, a `package-lock.json`, or `vercel.json`. |
 | `auto-merge-ok` | Safe to auto-merge after the required checks pass. Do not put this on a pull request that has `needs-human` unless a human repo admin adds it afterwards. |
 | `blocked` | A person is working this by hand. The cloud queue skips it. |
-| `ui-check` | A dependency update may change what visitors see. It can still auto-merge to `staging`. Patrick spot-checks `staging` before the release. |
+| `ui-check` | A dependency update may change what visitors see. It can still auto-merge to `staging`. The release pull request lists these under Staging spot-check. Patrick looks at `staging` before the release. |
 | `skip-version-bump` | No `package.json` version change. Used for CI, docs, and script-only pull requests. Dependabot pull requests use it too. |
 | `keep-open` | Do not auto-close this issue when a release ships a closing keyword. |
 
@@ -42,7 +54,23 @@ Two CI failures on the same pull request: stop, comment with the failure, and le
 
 ## Release pull request
 
-Open a pull request from `staging` to `main` titled `Release X.Y.Z`. The body states the version bump, the changelog section, and this rule: Patrick says "ship" or "promote to prod" before it merges.
+Open a pull request from `staging` to `main` titled `Release X.Y.Z`. The body states the version bump, the changelog section, and this rule: Patrick says "ship" or "promote to prod" before it merges. It also includes the release-ready note below.
+
+## Release-ready note
+
+The release pull request lists what Patrick spot-checks on `staging` before he says ship or promote to prod. Dependency updates in these lists already merged when their checks passed. Listing them does not block the release.
+
+### Staging spot-check
+
+List every pull request merged to `staging` since the previous release that carries `ui-check`. Each line has the pull request number, the package names, and the version change. These are the updates that can change what visitors see (UI, animation, styling, and component libraries, including React, React DOM, React Router, Tailwind, and the Firebase client SDK).
+
+If none merged in this release, write `None in this release.`
+
+### Security updates
+
+List security updates that auto-merged to `staging` in this release. When one should reach production before the next planned release, say that in this section. That is still a release pull request. Production moves from this pull request, after Patrick says ship or promote to prod.
+
+If none merged in this release, write `None in this release.`
 
 Agents do not merge that pull request on their own. When Patrick says **ship** or **promote to prod**, merge it. Publishing happens from `main` after that merge. Do not tag from `staging` or from a feature branch.
 
@@ -83,7 +111,24 @@ When the secret is unset, the publish step warns and uses the workflow token. Th
 
 The token needs to push tags, create a Release, and open a pull request. Do not print it.
 
-After a published release, `.github/workflows/close-shipped-issues.yml` closes issues referenced with `Closes` / `Fixes` / `Resolves` on the staging pull requests in that promote. `Part of` and `keep-open` stay open.
+## Closing shipped issues
+
+GitHub applies `Closes` / `Fixes` / `Resolves` only when a pull request merges into the default branch (`main`). Feature pull requests merge into `staging`, and a squash promote does not keep those lines. `.github/workflows/close-shipped-issues.yml` runs on `release: published`.
+
+The promote pull request is the one whose merge commit is the tag. For v1.97.5 that was `Release 1.97.5` (#1210). A squash on `main` is not in `staging` history, so an older subject such as `promote: 1.89.0 (#1173)` can sit in the tag's ancestry. The closer does not use that ancestor.
+
+When the release pull request is a one-commit tree replacement (`staging at <sha>`), the closer compares that staging commit with the previous release's staging commit and reads closing keywords on those staging pull requests. A multi-commit promote still uses the commits on the promote pull request.
+
+It comments `Shipped in <tag> (#<promote PR>) via #<source PR>` and closes the issue with `state_reason: completed`. `Part of`, plain mentions, pull request numbers, issues that are already closed, and the `keep-open` label stay as they are. A second run for the same tag does not add another comment and does not reopen anything. Pre-release tags do not close issues.
+
+Dry run from Actions → **Close shipped issues** → Run workflow. Set `tag` (for example `v1.97.5`) and leave `dry_run` checked. The job logs the would-close list and comments it on the current promote pull request. Uncheck `dry_run` to close for real. From a checkout with `GITHUB_TOKEN` and `GITHUB_REPOSITORY`:
+
+```bash
+node scripts/close-shipped-issues.mjs --tag v1.97.5 --dry-run
+node scripts/close-shipped-issues.mjs --tag v1.97.5 --confirm
+```
+
+The workflow file is read from `main`, so a dispatch uses the copy on `main`. This does not change branch protection or required checks. The job token stays `contents: read`, `issues: write`, and `pull-requests: read`.
 
 ## Smoke
 
@@ -96,7 +141,7 @@ There is no staging custom domain. `www.setlistpickem.com` is production.
 
 Both smokes request `/` and `/login`, then sign in with the existing `QA_TEST_EMAIL`, `QA_TEST_PASSWORD`, and `QA_APPCHECK_DEBUG_TOKEN` secrets and expect `/dashboard`. They do not add new login secrets.
 
-Staging previews (`set-picks-git-*.vercel.app`) use Vercel Deployment Protection, so anonymous requests are sent to Vercel SSO. `staging-smoke` maps `VERCEL_AUTOMATION_BYPASS_SECRET` to `SMOKE_PROTECTION_BYPASS`. `smokeHeaders()` sends `x-vercel-protection-bypass` only when that value is set, and sends no bypass header when it is empty. Production does not use the bypass secret. Copy the value from the Vercel project's Protection Bypass for Automation setting. Do not commit it.
+Staging previews (`set-picks-git-*.vercel.app`) use Vercel Deployment Protection, so anonymous requests are sent to Vercel SSO. `staging-smoke` maps `VERCEL_AUTOMATION_BYPASS_SECRET` to `SMOKE_PROTECTION_BYPASS`. The HTTP check sends `x-vercel-protection-bypass` only when that value is set, and sends no bypass header when it is empty. It does not send `x-vercel-set-bypass-cookie`. That header is a redirect that sets a cookie, and Node `fetch` does not keep the cookie, so following it loops. The browser step does send the cookie header. A redirect loop is reported as protection. Production does not use the bypass secret. Copy the value from the Vercel project's Protection Bypass for Automation setting. Do not commit it.
 
 ## Rollback
 
@@ -107,5 +152,5 @@ Roll back with Vercel's instant rollback, or revert the release pull request, th
 These stay human. Agents do not perform them.
 
 1. Add the Actions secret `SYNC_BOT_TOKEN` (contents: push tags and create Releases; pull requests: open the staging sync).
-2. Add `VERCEL_AUTOMATION_BYPASS_SECRET` so `staging-smoke` can pass Deployment Protection. Until then, `staging-smoke` fails closed on the SSO redirect.
+2. Keep `VERCEL_AUTOMATION_BYPASS_SECRET` equal to the Vercel project's Protection Bypass for Automation value. The job already maps that secret when it is set. A mismatch still fails `staging-smoke` as protection. The HTTP check must not follow the bypass-cookie redirect.
 3. After `scope-guard` and `label-integrity` have reported on a pull request, require those check names on `staging` and `main`. Leave `verify` and `Vercel` required. Do not require the staging push run.

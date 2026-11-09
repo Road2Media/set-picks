@@ -14,15 +14,17 @@ import {
   sanitizeOfficialSongList,
   sanitizeSongGaps,
 } from '../../../shared/utils/officialSetlistSanitize.js';
+import { normalizeShowDate } from '../../../shared/utils/scoring.js';
 
 /**
  * Normalizes `official_setlists/{showDate}` document data for scoring UIs.
  * Shared by one-shot reads and realtime snapshots (#311).
  *
  * @param {Record<string, unknown> | undefined} data
+ * @param {unknown} [showDate] Document id (`official_setlists/{showDate}`).
  * @returns {null | { officialSetlist: unknown[] } & Record<string, unknown>}
  */
-export function normalizeOfficialSetlistDocData(data) {
+export function normalizeOfficialSetlistDocData(data, showDate) {
   if (!data || typeof data !== 'object') return null;
 
   const rawEnc = data.encoreSongs;
@@ -32,12 +34,14 @@ export function normalizeOfficialSetlistDocData(data) {
       : [];
   const bustouts = sanitizeBustouts(data.bustouts);
   const songGaps = sanitizeSongGaps(data.songGaps);
+  const date = normalizeShowDate(showDate);
   return {
     ...(data.setlist || {}),
     officialSetlist: Array.isArray(data.officialSetlist) ? data.officialSetlist : [],
     ...(encoreSongs.length > 0 ? { encoreSongs } : {}),
     bustouts,
     ...(Object.keys(songGaps).length > 0 ? { songGaps } : {}),
+    ...(date ? { showDate: date } : {}),
   };
 }
 
@@ -69,7 +73,7 @@ export async function fetchOfficialSetlistForShow(showDate) {
 
   if (!setlistSnap.exists()) return null;
 
-  return normalizeOfficialSetlistDocData(setlistSnap.data());
+  return normalizeOfficialSetlistDocData(setlistSnap.data(), showDate);
 }
 
 /**
@@ -116,7 +120,7 @@ export function subscribeOfficialSetlistForShow(showDate, onNext, onError) {
     setlistRef,
     (snap) => {
       if (!snap.exists()) onNext(null);
-      else onNext(normalizeOfficialSetlistDocData(snap.data()));
+      else onNext(normalizeOfficialSetlistDocData(snap.data(), showDate));
     },
     onError
   );

@@ -12,6 +12,16 @@
       "permanent": true
     },
     {
+      "source": "/tour-stats/msg",
+      "destination": "/phish-at-msg",
+      "permanent": true
+    },
+    {
+      "source": "/tour-stats/msg/",
+      "destination": "/phish-at-msg",
+      "permanent": true
+    },
+    {
       "source": "/ig/how",
       "destination": "/how-it-works?utm_source=instagram&utm_medium=social&utm_campaign=seo_geo&utm_content=how-it-works",
       "permanent": false

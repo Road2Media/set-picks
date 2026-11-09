@@ -12,6 +12,7 @@ const ALLOWED_PATH_PREFIXES = [
   '/setup',
   '/how-it-works',
   '/how-scoring-works',
+  '/how-scoring-changed',
   '/',
 ];
 

@@ -2,13 +2,14 @@
  * Frozen tour and year rank snapshots for milestone badges (#1115).
  *
  * Points rank reuses `aggregateTourStandings` + `assignDisplayRanks`:
- * competition rank on total points, ties share a place, the next place
- * skips. Wins then handle only order names inside a tie. That is the same
- * board as tour standings and the year standings view (#1110 / #1135).
+ * the full tie-break from #1218. A tie shares a place only when that
+ * cascade does not separate the rows. That is the same board as tour
+ * standings and the year standings view.
  *
  * Rate boards (batting average, points per show, bustout boosts, annual
- * slugging) use the same tie rule on their own value. They are not read
- * from `global_stats_leaderboards`, which is top 50 and still moving.
+ * slugging) still share a rank on that metric. They are not the points
+ * cascade, and they are not read from `global_stats_leaderboards`, which
+ * is top 50 and still moving.
  *
  * Award ids must match `PROFILE_BADGES`.
  */
@@ -248,7 +249,7 @@ function buildTourRankSnapshot(input) {
   const tourKey = typeof input.tourKey === "string" ? input.tourKey.trim() : "";
   const picksByDate = Array.isArray(input.picksByDate) ? input.picksByDate : [];
   const setlistsByDate = input.setlistsByDate || {};
-  const base = aggregateTourStandings(picksByDate);
+  const base = aggregateTourStandings(picksByDate, setlistsByDate);
   const points = assignDisplayRanks(base);
   const extras = tourExtrasByUid(picksByDate, setlistsByDate);
 
@@ -314,6 +315,7 @@ function buildTourRankSnapshot(input) {
  *   year: string,
  *   picksByDate: Array<{ date?: string, picks?: Array<Record<string, unknown>> }>,
  *   sourceThroughShow: string,
+ *   setlistsByDate?: Record<string, Record<string, unknown> | null | undefined>,
  * }} input
  */
 function buildYearRankSnapshot(input) {
@@ -321,7 +323,7 @@ function buildYearRankSnapshot(input) {
   const picksByDate = (Array.isArray(input.picksByDate) ? input.picksByDate : []).filter(
     (entry) => calendarYearOfShowDate(entry?.date) === year
   );
-  const base = aggregateTourStandings(picksByDate);
+  const base = aggregateTourStandings(picksByDate, input.setlistsByDate || null);
   const points = assignDisplayRanks(base);
 
   /** @type {Array<Record<string, unknown>>} */

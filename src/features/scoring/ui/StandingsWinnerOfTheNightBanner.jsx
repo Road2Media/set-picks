@@ -3,6 +3,7 @@ import { ChevronRight, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import {
+  TOP_SCORE_SHARED_WIN_NOTE,
   lastShowWinnerHeading,
   tonightsWinnerHeading,
 } from '../../../shared/config/dashboardVocabulary';
@@ -21,9 +22,9 @@ import {
  * Renders nothing when there are no eligible winners, so the page can mount
  * this unconditionally and let the feature decide visibility.
  *
- * Ties: every winner is listed as its own `/user/:uid` link, joined with
- * commas — same link treatment as Pool hub leaderboard / show standings rows
- * (#222).
+ * More than one player at the top score is listed, each as a `/user/:uid`
+ * link. They share the nightly win. The note under the names says the board
+ * ranks that tie and does not share a place (#1219).
  *
  * @param {{
  *   winners: Array<{
@@ -159,6 +160,11 @@ export default function StandingsWinnerOfTheNightBanner({
           </span>
         ) : null}
       </p>
+      {winners.length > 1 ? (
+        <p className="mt-1 text-xs font-medium leading-snug text-content-secondary">
+          {TOP_SCORE_SHARED_WIN_NOTE}
+        </p>
+      ) : null}
     </DashboardJobShell>
   );
 }

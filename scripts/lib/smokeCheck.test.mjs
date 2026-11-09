@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { classifySmokeHttp, smokeBaseUrl, smokeHeaders } from "./smokeCheck.mjs";
+import {
+  classifySmokeHttp,
+  isSmokeRedirectLoop,
+  smokeBaseUrl,
+  smokeHeaders,
+} from "./smokeCheck.mjs";
 
 describe("smokeHeaders", () => {
   it("sends no header when the bypass is unset", () => {
@@ -10,11 +15,26 @@ describe("smokeHeaders", () => {
     assert.deepEqual(smokeHeaders("   "), {});
   });
 
-  it("sends the Vercel protection bypass header when a secret is present", () => {
+  it("sends only the bypass header for HTTP clients", () => {
     assert.deepEqual(smokeHeaders("secret-value"), {
+      "x-vercel-protection-bypass": "secret-value",
+    });
+  });
+
+  it("adds the cookie header only when a browser will store it", () => {
+    assert.deepEqual(smokeHeaders("secret-value", { setBypassCookie: true }), {
       "x-vercel-protection-bypass": "secret-value",
       "x-vercel-set-bypass-cookie": "true",
     });
+  });
+});
+
+describe("isSmokeRedirectLoop", () => {
+  it("recognizes undici's redirect-count error, including a nested cause", () => {
+    assert.equal(isSmokeRedirectLoop(new TypeError("fetch failed")), false);
+    const error = new TypeError("fetch failed");
+    error.cause = new Error("redirect count exceeded");
+    assert.equal(isSmokeRedirectLoop(error), true);
   });
 });
 
@@ -48,6 +68,17 @@ describe("classifySmokeHttp", () => {
         body: "<title>Login</title>",
       }),
       "protection",
+    );
+  });
+
+  it("treats a staging redirect loop as protection and a production loop as an HTTP error", () => {
+    assert.equal(
+      classifySmokeHttp({ target: "staging", status: 0, redirectLoop: true, body: "" }),
+      "protection",
+    );
+    assert.equal(
+      classifySmokeHttp({ target: "production", status: 0, redirectLoop: true, body: "" }),
+      "http-error",
     );
   });
 

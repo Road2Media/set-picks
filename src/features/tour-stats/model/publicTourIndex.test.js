@@ -4,6 +4,7 @@ import {
   publicTourStatsPathForSlug,
   resolveDefaultPublicTourSlug,
   sortPublicTourIndex,
+  toursForPublicSwitcher,
 } from './publicTourIndex';
 
 describe('publicTourStatsPathForSlug', () => {
@@ -53,6 +54,23 @@ describe('resolveDefaultPublicTourSlug', () => {
       '2026-sphere',
     );
     expect(slug).toBe('2026-summer-tour');
+  });
+
+  it('keeps Phish at MSG out of the switcher (#1192)', () => {
+    const rows = [
+      { tourSlug: 'msg', tourLabel: 'Phish at MSG', lastShowDate: '2026-12-31' },
+      { tourSlug: 'MSG', tourLabel: 'MSG again', lastShowDate: '2026-12-30' },
+      { tourSlug: '_year_2026', tourLabel: '2026', lastShowDate: '2026-12-31' },
+      {
+        tourSlug: '2026-fall-tour',
+        tourLabel: '2026 Fall Tour',
+        lastShowDate: '2026-10-12',
+      },
+    ];
+    expect(toursForPublicSwitcher(rows).map((tour) => tour.tourSlug)).toEqual([
+      '2026-fall-tour',
+    ]);
+    expect(resolveDefaultPublicTourSlug(rows, 'msg')).toBe('2026-fall-tour');
   });
 
   it('uses preferredSlug when no lastShowDate values exist', () => {

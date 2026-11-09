@@ -6,6 +6,11 @@ describe('shouldStayOnMarketingDocument', () => {
   it('keeps tour stats and the stats embed on the marketing document', () => {
     expect(shouldStayOnMarketingDocument('/tour-stats')).toBe(true);
     expect(shouldStayOnMarketingDocument('/tour-stats/2026-fall-tour')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/tour-stats/msg')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/phish-at-msg')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/phish-iq')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/rewind')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/rewind/2026-11-23')).toBe(true);
     expect(shouldStayOnMarketingDocument('/embed')).toBe(true);
     expect(shouldStayOnMarketingDocument('/embed/stats')).toBe(true);
     expect(shouldStayOnMarketingDocument('/embed/stats/')).toBe(true);

@@ -11,8 +11,9 @@
  *   Winner banner.
  *
  * Shape, size, and fonts are shared. The Standings / Picks column colors
- * its jobs through `DashboardJobShell` (you / the night / quiet). Other
- * surfaces still set their own color.
+ * its jobs through `DashboardJobShell` (you / the night / quiet). A stat
+ * grid uses `DashboardTileShell`: that same quiet box, plus a header band.
+ * Tiles do not take the you / night washes.
  */
 
 /** Outer radius for every dashboard content card/banner. */

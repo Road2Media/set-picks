@@ -8,10 +8,119 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.106.1] — 2026-11-09
+
+### Changed
+- **Ranking copy on show standings (#1219)** — the show board says a points tie goes to exact slots, then correct picks, then handle, and that a single show skips nightly wins. When more than one player hits the top score, the banner says "Tonight's top score" (or "Last show's top score") and that each of them still gets a nightly win. The board does not call that a shared rank. The same cascade is on the scoring-rules modal, `/how-scoring-works`, and `/how-scoring-changed`, including the FAQ. Point values are unchanged. Stored scores are unchanged.
+
+## [1.106.0] — 2026-11-09
+
+### Added
+- **Summer Tour 2026 non-opener reminder (#512 Slice B)** — admin batch `deliverMarketingSummerTour2026Reminder` (dry-run by default, `--uid` canary, full execute). Audience is the launch cohort who were sent `marketing_summer_tour_2026_launch`, have no `openedAt` on `comms_email_engagement/{resendEmailId}`, and are not suppressed or unsubscribed. Default wait is 48 hours after the parent send. Dedup is `marketing:summer_tour_2026_reminder:{uid}`, separate from the launch key. Email only, lifecycle prefs, daily cap bypassed for the batch. No scheduler. **Deploy (human):** `deliverMarketingSummerTour2026Reminder` before any reminder run. This change does not send mail.
+
+### Changed
+- **Points ties get a rank (#1218)** — show standings, tour standings, the year board, tour wrap, the annual podium, and points awards use one ranking helper. The live rule is a full tie-break: points, then exact slots (Set 1 opener, Set 1 closer, Set 2 opener, Set 2 closer, and the first encore), then correct picks out of 6, then nightly wins on a tour or a year, then handle. A single show skips nightly wins. A tie that is still equal after that cascade shares a rank, and the next rank skips. The order does not shuffle on refresh. Shared ranks and a display-only breaker stay in the helper and are not the live rule. `/how-scoring-changed` now includes this ranking section. A nightly win is still a share of that night's top score. **Deploy (human):** Cloud Functions that write tour rank, tour wrap, annual wrap, public tour winners, and badge snapshots, before the next morning send. No rules or index change.
+
+## [1.105.1] — 2026-11-09
+
+### Changed
+- **Phish at MSG tables** — Most-played songs and Show openers line up with the headings and the intro. Headers are “Song”, “Times played”, and “Times opened”. The count is the number only, such as 33, with no trailing X. The prerender tables and the ItemList descriptions use the same labels and counts. `/tour-stats/msg` still redirects to this page. No other page uses these tables. No declared API change.
+
+## [1.105.0] — 2026-11-09
+
+### Added
+- **New Year's Run page (#1144)** — `/tour-stats/2026-2027-nye-run` is live before the run. It lists December 30, December 31, January 1, and January 2 at Madison Square Garden. January 2, 2027 is the 100th performance at the Garden. The dates and the venue come from the committed MSG snapshot. Each show has Event JSON-LD (name, date, venue, link to phish.com). The page credits Phish.net and does not list a night's setlist. **Create a NYE pool** opens `/dashboard/pools/create` with the name filled in. A signed-out visitor comes back to that form after login. Signing in or creating an account on `/login` stays there until the remembered dashboard path loads, instead of stopping at the home page. GA4: `public_tour_stats_view` and `nye_pool_cta`. Song totals appear after the nights are played.
+- **Public sitemap gate (#1144)** — MSG, the 2026 annual page, Rewind results, Phish IQ, and the New Year's Run page are in `sitemap.xml` and `llms.txt`. The build and `verify:seo-prerender` fail if an indexable public route is missing. A new static route has to be listed or explicitly excluded. `/phish-picks` is still not a page (#975).
+
+## [1.104.0] — 2026-11-09
+
+### Added
+- **Phish IQ (#1143)** — a five-question daily quiz at `/phish-iq`. Same questions for the America/New_York day from the song catalog (debut year, which song came first, gap, play count) and from the public Madison Square Garden snapshot (which song has opened the most shows, how many Garden shows are announced). No setlist and no Phish.net prose. The screen and the share card say “Data courtesy of Phish.net.” The share text is the score and a hit/miss grid, with `utm_campaign=seo_geo`. Play does not need an account. A streak is saved on `users/{uid}.phishIq` after sign-in, from `/dashboard/phish-iq` (Picks tab, date picker hidden). GA4: `phish_iq_start`, `phish_iq_finish`, `phish_iq_share`, `phish_iq_sign_up`. No rules or index change.
+
+## [1.103.0] — 2026-11-09
+
+### Added
+- **Year-end celebration (#1112)** — opening the annual standings view for the year that just closed plays a fireworks burst over the board. Annual Winner, Runner-up, and Third Place stay visible while it plays. Skip ends it. The board stays usable. It can start as soon as the last show of that year is graded, including a Dec 31 show that runs past midnight. It does not wait for the 8:00 AM wrap. It does not play on Show, Tour, Pools, an earlier year, or the bundled fallback calendar. It plays once per person in this browser, and only within two calendar months of that finale date. No rules or index change.
+
+## [1.102.0] — 2026-11-09
+
+### Added
+- **Annual wrap (#1111)** — the morning after the last show of a calendar year, the 8:00 AM Pacific job sends an email and a push. The in-app note can appear as soon as that show is graded. A Dec 31 show stays in that year. A Jan 1 show is the next year. The board matches the year standings view. The shared summary is the same in every copy: songs the room called most, the highest and lowest hit rates among songs called at least 10 times, how many different songs the room named, and how many of those calls were in the setlist. A hit means the song was in the setlist. Then the first true race fact: the rarest song played all year, otherwise how often the annual lead changed hands, otherwise the closing show. The personal section stays about that player. Push stays the rank tease. A missing fact drops its clause. The send still goes. Nothing in the sample page is sent. **Deploy (human):** `rollupScoresForShow` and `scheduledTourRankingsDailyComms` before the next year-end morning. No rules or index change.
+
+## [1.101.0] — 2026-11-09
+
+### Added
+- **How scoring changed (#1086)** — public `/how-scoring-changed` explains the next-tour ladder: wildcard 5 (was 10), first encore song 15, later encore song 10. Exact openers and closers stay 10. A song in the wrong slot stays 5. Bustout Boost stays +20. The page is the scoring section only. Ranking and tie-breaks stay on #1172 / #1218. Not in the main nav. Prerendered, in the sitemap and `llms.txt`. `/how-scoring-works` and the in-app scoring rules link here.
+
+### Changed
+- **Scoring ladder is dated (#1086)** — shows before 2026-12-30 (the night before the New Year's Run 2026-2027) keep the ladder that was live that night: wildcard 10, any encore song 15. Shows on or after 2026-12-30 grade with the new ladder. A missing show date stays on the old ladder, so an undated payload cannot re-score a night that already happened. Client scoring and Cloud Functions grading (`scoringCore.js`) use the same gate. `/how-scoring-works` shows the ladder in effect for today in America/New_York. **Deploy (human, before 2026-12-30):** Cloud Functions that grade picks, including live score recompute, rollup, rewind, and show-recap scorecards. A deploy before that date does not change scores for nights already played.
+
+## [1.100.1] — 2026-11-09
+
+### Changed
+- **Stat grids use the Standings card family (Refs #1089)** — Tour Stats metric tiles and their section headers share `DashboardTileShell`: the quiet sponsor box, plus a short header band in teal, amber, blue, or emerald. That color stays on the band. The outer box does not take a per-stat border or the Phase 1 you / night washes. Personal stats expandable sections use the Phase 1 card with no label color and no job wash. `docs/design.md` says when a new grid metric is a tile. No declared API change.
+
+## [1.100.0] — 2026-11-09
+
+### Added
+- **Global Average vintage and Bustout Boost (#1044)** — `/dashboard/stats/global` adds Vintage and Bustout beside PPS, Picking Avg, and SLG, for All-time and This tour. Average vintage is the rounded mean debut year of the different songs you've picked on graded shows. An older year ranks higher. Songs with no debut year are left out. At least 3 shows to rank. Bustout Boost counts slots whose boost fired. All-time adds the per-tour counters. A count of 0 is not ranked. The Functions rebuild still owns `global_stats_leaderboards` (`schemaVersion` 3). Clients read those docs and their own user doc. They do not scan `users`. The you-row vintage comes from `users.avgVintageYear` and `users.avgVintageByTour`, written by that same rebuild. The boards fill in after the functions deploy and the next rollup, nightly refresh, or admin `refreshGlobalStatsLeaderboards`. In most played and pool-scoped boards stay out.
+
+## [1.99.1] — 2026-11-09
+
+### Changed
+- **Invite cold-open hints (Refs #733)** — `/join/:code` and `/invite/:handle` HTML modulepreloads the route chunk that page paints. Vite reports `PoolInvitePage` at 0.71 kB (0.45 kB gzip) and `InviteLandingPage` at 0.38 kB (0.27 kB gzip). The other files in that static closure are already on `app.html` (the shared `invite` chunk is 252.63 kB / 69.38 kB gzip). The list is `dist/invite-boot-preloads.json`, injected by `api/invite`. It does not add `DashboardRoute`, the lazy auth-modal chunk, or App Check. `react-ga4` moves to `vendor-ga4` (6.21 kB / 2.44 kB gzip) and is not modulepreloaded on the app, marketing, or login documents. Public cold opens (`/`, `/join`, `/invite/*`) fetch it at idle. Dashboard and setup still start it immediately. Pageviews and events that fire before init are queued and flushed, or dropped when the host is not production. No declared API change.
+
+## [1.99.0] — 2026-11-09
+
+### Added
+- **Song catalog observability (#168)** — `scheduledPhishnetSongCatalog` and `refreshPhishnetSongCatalog` write a structured `songCatalogSync` log (`ok`, `trigger`, `reason`, `songCount`, `durationMs`, `archivePath`). `scheduledSongCatalogHealth` runs at half past every sixth hour, America/New_York, and writes `songCatalogHealth` when `song-catalog.json` is missing, under 8 KB, or older than 18 hours. The picks client sends one GA4 `song_catalog_fallback` per production session when autocomplete is served from the bundled song list (`reason` is `load_error` or `unavailable`). No song titles, URLs, or error text. Alert policies are steps in `docs/SONG_CATALOG.md`. This change does not create them. The new schedule is live only after `npm run deploy:functions:phishnet`.
+
+### Fixed
+- **Functions install (#168)** — Dependabot #1220 wrote `functions/package-lock.json` without the peer packages `npm ci` installs for `firebase-functions-test` (`jest`). The functions job then failed with `Missing: jest@30.5.2 from lock file`. The lockfile is regenerated. Declared versions stay `firebase-admin` 13.10.0, `firebase-functions` 7.4.0, `resend` 6.37.0, `svix` 2.9.1, and `firebase-functions-test` 3.5.0. No declared API change.
+
+## [1.98.4] — 2026-11-07
+
+### Changed
+- **Phish at MSG intro (Refs #1192)** — The sentences under the heading are now: “Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026.” “July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics.” “This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027.” The same three paragraphs are in the prerender facts, the page JSON-LD, and `llms.txt`. Most played and Show openers are centered two-column tables. The headers are “song” and “times played”, and “song” and “times opened”. Each count reads nX, such as 5X. No declared API change.
+
+## [1.98.3] — 2026-11-07
+
+### Changed
+- **CI stages (#1184)** — Release docs name the four stages: the pull request gate, the same CI on a push to `staging` (not a required check), the release pull request to `main`, and production smoke after the GitHub Release is published. The nightly favicon check is not that smoke. Release scripts do not read Actions runs. A missing staging run is unknown, not a failed release. No branch-protection change.
+
+### Fixed
+- **Staging smoke redirect loop (#1184)** — The HTTP check was sending `x-vercel-set-bypass-cookie` with the bypass secret. That header is a redirect that sets a cookie. Node `fetch` does not keep the cookie, so staging-smoke followed redirects until the count was exceeded, including when the Actions secret was set. The HTTP check now sends only `x-vercel-protection-bypass`. The browser step still asks Vercel to set the cookie. A leftover redirect loop is reported as protection. No declared API change.
+
+## [1.98.2] — 2026-11-07
+
+### Fixed
+- **Shipped-issue close (#1174)** — Publishing a release names the pull request whose merge commit is that tag. A squash on `main` is not in `staging` history, so v1.97.5 was attributed to the older ancestor `promote: 1.89.0` (#1173) instead of `Release 1.97.5` (#1210). A one-commit tree replacement still reads `Closes` / `Fixes` / `Resolves` on the staging pull requests between the previous release's `staging at <sha>` and this one. Issues that are already closed stay closed, and a second run does not add another comment. No declared API change.
+
+## [1.98.1] — 2026-11-07
+
+### Changed
+- **Finished-tour wrap (#1193)** — A tie for most played names the whole tie. 2026 Fall Tour reads “22 songs played on two nights, including Possum, Mike's Song, Chalk Dust Torture.” A second sentence calls out Tweezer's 5 plays across those two nights. One song is named only when nothing else shares that night count. The same line is on the card, in the prerender HTML, in the share text, and on the share image. The card uses the preview's four headline counts and keeps bustouts and the longest gap in view. Scoring, the winner, and the Phish.net credit sit under More. The tour control stays a filter. Choosing a tour still opens `/tour-stats/{slug}`. Phish at MSG stays off that filter.
+
+### Fixed
+- **Tour wrap height (#1193)** — The filter sits above the wrap, with a Stats jump to the dates bar, so the filter and the start of the stats fit on an iPhone-sized and an Android-sized first screen when a finished tour shows the wrap.
+
+## [1.98.0] — 2026-11-07
+
+### Added
+- **Phish at MSG has its own page (#1192)** — Canonical URL is `/phish-at-msg`. It is a compilation of Garden shows, not a tour, so it is no longer filed under Tour stats. Header and footer nav include “Phish at MSG”. Returning sessions stay on the marketing document. GA4 `route_group` is `marketing`. Prerender, sitemap, `llms.txt`, canonical, and JSON-LD breadcrumbs use the new URL. Breadcrumb is Home → Phish at MSG.
+
+### Changed
+- **Tour stats copy (#1192)** — The hub heading, intro, meta description, and footnote say what a fan gets from the page. The archive line is 2026 Sphere and 2026 tours. Phish at MSG is not on that line. Sphere, Summer, and the 2026 annual page keep their own headings.
+- **Marketing header (#1192)** — With the extra nav item, the desktop links sit slightly left of center below the xl breakpoint and use a tighter gap, so “Phish at MSG” does not cover Sign In at 1024px. At xl the nav is centered again.
+- **Phish at MSG copy (#1192)** — Headings, intro, meta description, opener note, New Year's Eve line, and footnotes are fan language. The Phish.net credit stays.
+
+### Fixed
+- **Old MSG URL (#1192)** — `/tour-stats/msg` and `/tour-stats/msg/` permanently redirect to `/phish-at-msg` (`vercel.json` `permanent: true`, HTTP 308, same as the summer slug). The `msg` slug stays reserved so a tour page cannot publish on that path. Local Vite follows the same path with a client redirect.
+
 ## [1.97.6] — 2026-11-09
 
 ### Changed
-- **Phish at MSG tables** — On `/tour-stats/msg`, Most-played songs and Show openers are tables lined up with the section headings. Headers are "Song", "Times played", and "Times opened". The count is the number only, such as 33, with no trailing X. The prerender tables and the ItemList descriptions use the same labels and counts. The page stays at `/tour-stats/msg`. The intro sentences and the "Frequencies, not a pick tip" note stay. No declared API change.
+- **Phish at MSG tables (production hotfix)** — Production `v1.97.6` on `/tour-stats/msg`. Most-played songs and Show openers are tables lined up with the section headings. Headers are "Song", "Times played", and "Times opened". The count is the number only, such as 33, with no trailing X. The prerender tables and the ItemList descriptions use the same labels and counts. This sync records that release. It does not change staging's Phish at MSG page.
 
 ## [1.97.5] — 2026-11-06
 
