@@ -65,6 +65,11 @@ export function formatCount(n) {
   return Math.trunc(value).toLocaleString('en-US');
 }
 
+/** Sentence-case headers for the Most played and Show openers tables. */
+export const MSG_SONG_COLUMN = 'Song';
+export const MSG_TIMES_PLAYED_COLUMN = 'Times played';
+export const MSG_TIMES_OPENED_COLUMN = 'Times opened';
+
 /**
  * @param {unknown} raw
  * @returns {typeof snapshot | null}
@@ -171,18 +176,8 @@ export function buildMsgGardenFactsHtml(stats) {
   const summary = msgGardenSummarySentences(stats)
     .map((line) => `    <p data-seo-msg-stats="summary">${escapeHtml(line)}</p>`)
     .join('\n');
-  const top = statList(
-    'top-songs',
-    stats.topSongs.map(
-      (row) => `${row.title} (${formatCount(row.timesPlayed)} plays)`,
-    ),
-  );
-  const openers = statList(
-    'openers',
-    stats.openers.map(
-      (row) => `${row.title} opened ${formatCount(row.timesPlayed)} shows`,
-    ),
-  );
+  const top = countTable('top-songs', MSG_TIMES_PLAYED_COLUMN, stats.topSongs);
+  const openers = countTable('openers', MSG_TIMES_OPENED_COLUMN, stats.openers);
   const debuts = statList(
     'debuts',
     stats.debuts.map((row) => `${row.title} (${formatFanDate(row.showDate)})`),
@@ -211,14 +206,10 @@ export function buildMsgGardenFactsHtml(stats) {
 
   return `${summary}
     <h2>Most-played songs at MSG</h2>
-    <ol data-seo-msg-stats="top-songs">
 ${top}
-    </ol>
-    <h2>How MSG shows have opened</h2>
+    <h2>Show openers at MSG</h2>
     <p data-seo-msg-stats="opener-note">These are how often each song has opened a Phish show at MSG, across ${formatCount(stats.openerShowCount || stats.showCount)} shows. Frequencies, not a pick tip.</p>
-    <ol data-seo-msg-stats="openers">
 ${openers}
-    </ol>
     <h2>Songs debuted at MSG</h2>
     <ol data-seo-msg-stats="debuts">
 ${debuts}
@@ -283,7 +274,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most-played songs at Madison Square Garden',
       stats.topSongs.map((row) => ({
         name: row.title,
-        description: `${formatCount(row.timesPlayed)} plays at MSG`,
+        description: formatCount(row.timesPlayed),
       })),
     ),
     itemList(
@@ -291,7 +282,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most frequent MSG show openers',
       stats.openers.map((row) => ({
         name: row.title,
-        description: `Opened ${formatCount(row.timesPlayed)} MSG shows`,
+        description: formatCount(row.timesPlayed),
       })),
     ),
     itemList(
@@ -382,6 +373,25 @@ function faq(name, text) {
     name,
     acceptedAnswer: { '@type': 'Answer', text },
   };
+}
+
+function countTable(name, countHeader, rows) {
+  const body = rows.length
+    ? rows
+        .map(
+          (row) =>
+            `      <tr><td>${escapeHtml(row.title)}</td><td>${escapeHtml(formatCount(row.timesPlayed))}</td></tr>`,
+        )
+        .join('\n')
+    : '      <tr><td colspan="2">None in this count.</td></tr>';
+  return `    <table data-seo-msg-stats="${name}">
+      <thead>
+        <tr><th>${escapeHtml(MSG_SONG_COLUMN)}</th><th>${escapeHtml(countHeader)}</th></tr>
+      </thead>
+      <tbody>
+${body}
+      </tbody>
+    </table>`;
 }
 
 function statList(name, lines) {
