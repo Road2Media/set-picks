@@ -168,6 +168,7 @@ export default function LoginPage() {
           onSwitchToSignIn={openSignIn}
           onSwitchToSignUp={openSignUp}
           onClose={goHome}
+          postAuthHandled
           poolInvitePending={poolInvitePending}
           seedError={redirectAuthError}
         />

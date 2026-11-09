@@ -23,6 +23,16 @@ import {
   buildFinishedTourWrapHtml,
 } from '../src/features/tour-stats/model/finishedTourWrap.js';
 import { buildMsgGardenPrerenderEnrichment } from '../src/features/msg-stats/model/msgGardenFacts.js';
+import {
+  announcedNyeRunShows,
+  buildNyeRunFactsHtml,
+  buildNyeRunJsonLd,
+} from '../src/features/msg-stats/model/nyeRunShows.js';
+import {
+  assertPublicDiscovery,
+  extractRoutePaths,
+  unclassifiedPublicPaths,
+} from '../src/shared/config/publicSitemapRoutes.js';
 import { buildAnnualPrerenderEnrichment } from '../src/features/tour-stats/model/annualTourStatsFacts.js';
 import {
   APP_BOOT_SHELL_REL_PATH,
@@ -316,6 +326,67 @@ assert(
   ),
   'public llms.txt must list /tour-stats/2026',
 );
+
+const nyeRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/2026-2027-nye-run');
+assert(nyeRoute, 'expected /tour-stats/2026-2027-nye-run prerender entry');
+const nyeShows = announcedNyeRunShows();
+assert(nyeShows.length === 4, 'NYE run must list 4 announced shows');
+const nyeEnrichment = {
+  factsHtml: buildNyeRunFactsHtml(nyeShows),
+  jsonLd: buildNyeRunJsonLd(nyeShows, nyeRoute.canonicalUrl),
+};
+const nyeHtml = injectPrerenderHtml(shell, nyeRoute, nyeEnrichment);
+assert(
+  nyeHtml.includes("New Year's Run at MSG"),
+  'NYE prerender HTML must include the heading',
+);
+assert(nyeHtml.includes('Create a NYE pool'), 'NYE prerender HTML must include the pool CTA');
+assert(
+  nyeHtml.includes('https://phish.com/news/phish-100-at-the-garden'),
+  'NYE prerender HTML must link each show to phish.com',
+);
+assert(
+  nyeHtml.includes('Data courtesy of <a href="https://phish.net">Phish.net</a>'),
+  'NYE prerender HTML must credit Phish.net',
+);
+assert(!nyeHtml.includes('officialSetlist'), 'NYE prerender HTML must not include a setlist');
+for (const show of nyeShows) {
+  assert(nyeHtml.includes(show.date), `NYE prerender HTML must include ${show.date}`);
+  assert(nyeHtml.includes(show.fanDate), `NYE prerender HTML must include ${show.fanDate}`);
+}
+const nyeJsonMatch = nyeHtml.match(
+  /<script type="application\/ld\+json" data-seo-prerender="true">([\s\S]*?)<\/script>/,
+);
+assert(nyeJsonMatch, 'NYE prerender HTML must include JSON-LD');
+const nyeJson = JSON.parse(nyeJsonMatch[1]);
+const nyeEvents = nyeJson['@graph'].filter((node) => node['@type'] === 'Event');
+assert(nyeEvents.length === 4, 'NYE JSON-LD must include 4 Event nodes');
+for (const event of nyeEvents) {
+  assert(typeof event.name === 'string' && event.name.startsWith('Phish at '), 'Event name');
+  assert(/^\d{4}-\d{2}-\d{2}$/.test(event.startDate), 'Event startDate');
+  assert(event.location?.['@type'] === 'Place', 'Event location');
+  assert(event.location?.name === 'Madison Square Garden', 'Event venue');
+  assert(event.url.startsWith('https://phish.com/'), 'Event url must be phish.com');
+}
+assert(
+  nyeEvents.some((event) => event.startDate === '2027-01-02' && event.name.includes('100th')),
+  'January 2 Event must name the 100th performance',
+);
+
+const appRoutePaths = extractRoutePaths(readFileSync(join(root, 'src/app/App.jsx'), 'utf8'));
+const marketingRoutePaths = extractRoutePaths(
+  readFileSync(join(root, 'src/app/MarketingApp.jsx'), 'utf8'),
+);
+const unclassified = unclassifiedPublicPaths([...appRoutePaths, ...marketingRoutePaths]);
+assert(
+  unclassified.length === 0,
+  `public routes missing from the sitemap registry: ${unclassified.join(', ')}`,
+);
+try {
+  assertPublicDiscovery(publicSitemap, publicLlms);
+} catch (err) {
+  assert(false, err.message);
+}
 
 // HTML-first legal door fixtures (no marketing/app/login module graph).
 for (const legalPath of ['/privacy', '/terms']) {
@@ -1174,6 +1245,11 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
       llmsTxt.includes('https://www.setlistpickem.com/phish-at-msg'),
       'dist llms.txt must list /phish-at-msg (#1192)',
     );
+    try {
+      assertPublicDiscovery(sitemapXml, llmsTxt);
+    } catch (err) {
+      assert(false, `dist discovery: ${err.message}`);
+    }
     const distMsg = join(root, 'dist', 'phish-at-msg', 'index.html');
     assert(existsSync(distMsg), 'dist missing prerendered /phish-at-msg (#1192)');
     const msgPageHtml = readFileSync(distMsg, 'utf8');

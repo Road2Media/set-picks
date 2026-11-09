@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import { NYE_RUN_PATH } from '../../msg-stats/nye';
 import { AppDocumentAuthLink } from '../../landing';
 import { StatsEmbedShareRow } from '../../stats-embed';
 import TourStatsView from '../ui/TourStatsView';
@@ -79,6 +80,10 @@ export default function PublicTourStatsPanel({
             {' · '}
             <Link to="/tour-stats/2026" className={LINK_ON_DARK}>
               2026 tours
+            </Link>
+            {' · '}
+            <Link to={NYE_RUN_PATH} className={LINK_ON_DARK}>
+              New Year&apos;s Run
             </Link>
           </p>
         ) : null}

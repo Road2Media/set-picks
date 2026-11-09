@@ -207,6 +207,32 @@ const TOUR_STATS_SUMMER_DESCRIPTION =
 const TOUR_STATS_SUMMER_URL = `${SEO_CONFIG.siteUrl}/tour-stats/2026-summer-tour`;
 
 /**
+ * New Year's Run, crawlable before the thin-page gate (#1144).
+ * Slug matches the calendar tour key `2026/2027 NYE Run`.
+ */
+const NYE_RUN_PATH = '/tour-stats/2026-2027-nye-run';
+const NYE_RUN_TITLE = "New Year's Run 2026-2027 at MSG | Setlist Pick'Em";
+const NYE_RUN_DESCRIPTION =
+  "Phish New Year's Run at Madison Square Garden: December 30, December 31, January 1, and January 2. January 2, 2027 is the 100th performance at the Garden. Create a NYE pool.";
+const NYE_RUN_URL = `${SEO_CONFIG.siteUrl}${NYE_RUN_PATH}`;
+
+function buildNyeRunShellJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': NYE_RUN_URL,
+        url: NYE_RUN_URL,
+        name: NYE_RUN_TITLE,
+        description: NYE_RUN_DESCRIPTION,
+        isPartOf: { '@id': `${SEO_CONFIG.siteUrl}/#website` },
+      },
+    ],
+  };
+}
+
+/**
  * Phish at MSG (#1139, moved #1192). A Garden compilation, not a tour slug.
  * Canonical path is outside `/tour-stats`. The old path 308s here.
  */
@@ -741,6 +767,20 @@ export const PRERENDER_ROUTES = [
       'Tour-wide song trends for fans. Play the game and your personal stats build as you compete.',
     ],
     buildJsonLd: buildTourStatsSummerJsonLd,
+  },
+  {
+    path: NYE_RUN_PATH,
+    title: NYE_RUN_TITLE,
+    description: NYE_RUN_DESCRIPTION,
+    canonicalUrl: NYE_RUN_URL,
+    h1: "New Year's Run at MSG",
+    tourStatsSeoSlug: '2026-2027-nye-run',
+    paragraphs: [
+      'Phish returns to Madison Square Garden for four nights: December 30, December 31, January 1, and January 2. January 2, 2027 is the 100th performance at the Garden.',
+      'Song totals for this run go up after the nights are played. This page lists the shows. It is not a night setlist.',
+      'Create a NYE pool and call the slot you want before the lights go down.',
+    ],
+    buildJsonLd: buildNyeRunShellJsonLd,
   },
   {
     path: MSG_GARDEN_PATH,
