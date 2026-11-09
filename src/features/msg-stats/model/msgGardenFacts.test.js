@@ -59,10 +59,11 @@ describe('msg garden snapshot (#1139)', () => {
     expect(html).not.toContain('Phish.net calls');
     expect(html).not.toContain('100th show');
     expect(html).not.toContain('nights before it');
-    expect(html).toContain('<th>song</th><th>times played</th>');
-    expect(html).toContain('<th>song</th><th>times opened</th>');
-    expect(html).toContain('<td>Tweezer</td><td>33X</td>');
-    expect(html).toContain('<td>AC/DC Bag</td><td>5X</td>');
+    expect(html).toContain('<th>Song</th><th>Times played</th>');
+    expect(html).toContain('<th>Song</th><th>Times opened</th>');
+    expect(html).toContain('<td>Tweezer</td><td>33</td>');
+    expect(html).toContain('<td>AC/DC Bag</td><td>5</td>');
+    expect(html).not.toMatch(/\dX</);
     expect(html).not.toContain('33 plays');
     expect(html).not.toContain('opened 5 shows');
     expect(html).toContain('Songs that have opened a show at the Garden');
@@ -93,9 +94,9 @@ describe('msg garden snapshot (#1139)', () => {
     const howMany = faq.mainEntity.find((q) => /how many phish shows/i.test(q.name));
     expect(howMany.acceptedAnswer.text).toBe(INTRO.slice(0, 2).join(' '));
     const mostPlayed = json['@graph'].find((node) => node['@id']?.endsWith('#most-played'));
-    expect(mostPlayed.itemListElement[0].description).toBe('33X');
+    expect(mostPlayed.itemListElement[0].description).toBe('33');
     const openerList = json['@graph'].find((node) => node['@id']?.endsWith('#openers'));
-    expect(openerList.itemListElement[0].description).toBe('5X');
+    expect(openerList.itemListElement[0].description).toBe('5');
     const opener = faq.mainEntity.find((q) => /opened the most/i.test(q.name));
     expect(opener.acceptedAnswer.text).toMatch(/AC\/DC Bag/);
     expect(opener.acceptedAnswer.text).not.toMatch(/pick tip/);
