@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.109.0  
+**Version:** 1.111.0  
 
 
 **SemVer:** https://semver.org  
@@ -27,7 +27,7 @@ All collections live in the default `(default)` Firestore database for project `
 | `termsPrivacyAcceptedAt` | Timestamp? | Legal consent gate |
 | `createdAt` | Timestamp | Account creation |
 | `isAdmin` | boolean? | Admin custom claim mirror |
-| `notificationPrefs` | map | Channel opt-in flags (see §1.2) |
+| `notificationPrefs` | map | Per-channel opt-in flags (see §1.2). **v1.111.0+ (#1045).** |
 | `gamePrefs` | map? | **v1.109.0+ (#694)** Owner-written play preferences. `{ hideCrowdPulse?: boolean }`. Missing, `false`, or any value other than `true` keeps crowd pulse visible. `true` hides the Standings crowd pulse card, `/dashboard/stats/night`, the Make Picks helper, and Scorecard crowd % plus overlap (**v1.110.0 / #1043**). Rank on Scorecard stays. Clients may write their own doc. It does not change the pre-lock blur on surfaces that stay visible. |
 | `totalPoints` | number? | Career graded points (written by `rollupScoresForShow`) |
 | `showsPlayed` | number? | Career graded non-empty shows |
@@ -44,14 +44,31 @@ All collections live in the default `(default)` Firestore database for project `
 
 ### 1.2 `users/{uid}` — `notificationPrefs` shape
 
+**v1.111.0+ (#1045):** each family is stored per channel. Clients write booleans at `notificationPrefs.push.<family>`, `notificationPrefs.inApp.<family>`, and `notificationPrefs.email.<family>`.
+
+Families: `reminders`, `results`, `nearMiss`, `lifecycle`, `commercial`.
+
 ```json
 {
-  "lifecycle":   true,
-  "liveGame":    true,
-  "recap":       true,
-  "commercial":  false
+  "push":   { "reminders": true, "results": true, "nearMiss": true, "lifecycle": true, "commercial": false },
+  "inApp":  { "reminders": true, "results": true, "lifecycle": true },
+  "email":  { "results": true, "lifecycle": true, "commercial": false }
 }
 ```
+
+The example shows the keys the Preferences screen writes. The server also accepts `nearMiss` and `commercial` on every channel, and `reminders` on email. Missing keys are not backfilled.
+
+Resolution (client `notificationPrefsApi.js` and Functions `functions/notificationPrefs.js`):
+
+1. If `notificationPrefs.<channel>.<family>` is a boolean, that value wins for that channel.
+2. Otherwise if the legacy flat `notificationPrefs.<family>` is a boolean, it applies to every channel that has no explicit boolean. An existing opt-out keeps blocking push, in-app, and email until that channel is set on its own.
+3. Otherwise `commercial` is off and every other family is on.
+
+`commercial` is on only when the winning value is `true`. Every other family is on until the winning value is `false`.
+
+Email unsubscribe, one-click unsubscribe, mailto unsubscribe, and a spam complaint set `notificationPrefs.email.lifecycle` and `notificationPrefs.email.commercial` to `false`. They do not write the flat keys, so push and in-app stay as they were. `email_suppression` still blocks every email. Re-enable email sets `notificationPrefs.email.lifecycle` to `true` and clears a self-serve suppression. It does not turn `commercial` back on and does not change push or in-app.
+
+New toggles do not write the flat keys. Those keys remain a read fallback. Production delivery uses this resolution only after the Functions that `require` `notificationPrefs.js` are deployed (`commsDelivery`, email prefs and suppression, post-show rollup push, the Sphere recap replay push, and the Summer Tour reminder audience). Until that deploy, delivery still reads the flat keys only. The Preferences screen writes the nested keys as soon as this web release is live.
 
 ### 1.3 `users/{uid}/private_fcmTokens/{tokenId}`
 
@@ -538,7 +555,7 @@ CLI: `functions/scripts/deliverMarketingSummer2026AlmostEnd.js` (`npm run comms:
 
 ### 2.2a-iii `deliverMarketingSummerTour2026Reminder` (admin-only, #512 Slice B)
 
-Second-wave email for the Summer Tour 2026 launch cohort. Resolves non-openers (parent delivery log `marketing:summer_tour_2026:{uid}` with `resendEmailId`, no `openedAt` on that engagement doc), drops suppressed addresses and `notificationPrefs.lifecycle === false`, then sends `marketing_summer_tour_2026_reminder`. Defaults to dry-run. There is no scheduler.
+Second-wave email for the Summer Tour 2026 launch cohort. Resolves non-openers (parent delivery log `marketing:summer_tour_2026:{uid}` with `resendEmailId`, no `openedAt` on that engagement doc), drops suppressed addresses and anyone `prefAllows` rejects for `lifecycle` on `email` (nested `notificationPrefs.email.lifecycle`, else the legacy flat `notificationPrefs.lifecycle`), then sends `marketing_summer_tour_2026_reminder`. Defaults to dry-run. There is no scheduler.
 
 **Request:**
 ```json
@@ -668,8 +685,8 @@ Authenticated callables backing the Preferences email section (`/dashboard/profi
 | Export | Auth | Description |
 |--------|------|-------------|
 | `getCommsEmailStatus` | Signed-in user | Returns `{ hasEmail, suppressed, reason, canResubscribe, message, lifecycleEnabled }` for the caller's account email |
-| `unsubscribeCommsEmail` | Signed-in user | Writes `email_suppression` with `reason: user_preferences` and opts out `notificationPrefs.lifecycle` |
-| `resubscribeCommsEmail` | Signed-in user | Clears self-serve suppressions (`one_click_unsubscribe`, `mailto_unsubscribe`, `user_preferences`) and re-enables `notificationPrefs.lifecycle`; hard bounces and spam complaints are rejected |
+| `unsubscribeCommsEmail` | Signed-in user | Writes `email_suppression` with `reason: user_preferences` and sets `notificationPrefs.email.lifecycle` and `notificationPrefs.email.commercial` to `false` (**v1.111.0 / #1045**). Does not write the flat keys. |
+| `resubscribeCommsEmail` | Signed-in user | Clears self-serve suppressions (`one_click_unsubscribe`, `mailto_unsubscribe`, `user_preferences`) and sets `notificationPrefs.email.lifecycle` to `true`. Does not re-enable `commercial`, push, or in-app. Hard bounces and spam complaints are rejected. |
 
 ### 2.7 `requestPasswordResetEmail` (unauthenticated, v1.84.0, #1049)
 
@@ -778,7 +795,7 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 
 Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
-**Account primary (**v1.67.0 / #770**):** last player-tab label is **Account** (was Profile). Path prefix stays **`/dashboard/profile/*`** (no new `/dashboard/account` family). Tertiary: **Profile** (`/dashboard/profile`) · **Messages** (`/dashboard/profile/notifications`, inbox only) · **Preferences** (`/dashboard/profile/account` — security, logout, legal, install/PWA, notification prefs). `?openPush=1` and the dashboard install push nudge land on Preferences. Avatar shortcut → Preferences; bell → Messages. **#513 Phase 2:** inbox sections Unopened / Read / Archived; owner `archivedAt` + hard delete. Phase 3 per-channel pref keys are deferred (same `notificationPrefs` keys; cosmetic Push / Email grouping only).
+**Account primary (**v1.67.0 / #770**):** last player-tab label is **Account** (was Profile). Path prefix stays **`/dashboard/profile/*`** (no new `/dashboard/account` family). Tertiary: **Profile** (`/dashboard/profile`) · **Messages** (`/dashboard/profile/notifications`, inbox only) · **Preferences** (`/dashboard/profile/account` — security, logout, legal, install/PWA, notification prefs). `?openPush=1` and the dashboard install push nudge land on Preferences. Avatar shortcut → Preferences; bell → Messages. **#513 Phase 2:** inbox sections Unopened / Read / Archived; owner `archivedAt` + hard delete. **v1.111.0 / #1045 (#513 Phase 3):** Preferences splits push, in-app, and email. See §1.2. `getCommsEmailStatus.lifecycleEnabled` is the email-channel lifecycle flag.
 
 **Stats primary (**v1.66.0 / #769** chrome, **v1.69.0 / #1004** remap, **v1.70.0 / #1004** Global boards, **v1.70.1** trays):** fifth player tab. Nested destinations (not `?view=`): **`/dashboard/stats`** and **`/dashboard/stats/personal`** (Personal — All-time | This tour tray; All-time inner Your stats | Top picks; This tour self overlay), **`/dashboard/stats/global`** (All-time | This tour tray, then PPS | Picking Avg | SLG | Vintage | Bustout; top 50 paginated 10/page + you-row; Functions-owned `global_stats_leaderboards`; **v1.77.0** slugging = total points ÷ (shows × 30), all-time minimum 15 shows; **v1.100.0 / #1044** Average vintage is the mean debut year, older ranks higher, minimum 3 shows; Bustout Boost is the count of slots whose boost fired), **`/dashboard/stats/band`** (private tour song explorer from **v1.30.0 / #555** — frequency / bustouts / high gaps). **`/dashboard/tour-stats`** redirects to `/dashboard/stats/band` and preserves `?tour=`. Stats tab stays active on all `/dashboard/stats/*` and on the redirect hop. Personal, Global, and Band use the chrome tour picker (`showTourScopePicker`); Personal and Global all-time do not restamp with `?tour=`. **v1.107.0 (#694):** **`/dashboard/stats/night`** is the show-scoped crowd deep dive. It is not a fourth tertiary chip. Standings crowd pulse links here (`?showDate=`). This path uses the date picker and hides the tour picker. It does not list a night's setlist. **Public** counterpart: **`/tour-stats`** (**v1.33.0 / #665**) — Band’s marketing twin; aggregates only, no self overlay, not under `/dashboard/`. Unchanged in v1.70.1.
 

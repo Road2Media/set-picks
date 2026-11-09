@@ -17,6 +17,14 @@ All production triggers are one of these two. There are no admin-initiated or ma
 
 ---
 
+## Notification prefs (#1045)
+
+`catalog.json` `notificationPrefs` is the resolution contract. `prefKeys` on each trigger stay family names (`reminders`, `results`, `nearMiss`, `lifecycle`, `commercial`).
+
+For each channel in that trigger's `channels` array, delivery reads `notificationPrefs.<channel>.<prefKey>` when the value is a boolean, then the legacy flat `notificationPrefs.<prefKey>`, then the default (`commercial` off, every other family on). A flat opt-out still blocks a channel that has no explicit boolean. `emailClass: transactional` still bypasses `prefKeys` and still honors `email_suppression`.
+
+---
+
 ## In-app vs push/email CTAs
 
 | Channel | User context | CTA pattern |

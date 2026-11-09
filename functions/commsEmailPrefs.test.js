@@ -120,7 +120,7 @@ test("resubscribeCommsEmailForUser clears a one-click suppression and re-enables
   const result = await resubscribeCommsEmailForUser(db, fakeAdmin, "u1");
   assert.equal(result.ok, true);
   assert.equal(db._suppressionDocs.has(docId), false);
-  assert.equal(db._userDocs.get("u1")["notificationPrefs.lifecycle"], true);
+  assert.equal(db._userDocs.get("u1")["notificationPrefs.email.lifecycle"], true);
 });
 
 test("unsubscribeCommsEmailForUser writes suppression and opts out lifecycle prefs", async () => {
@@ -131,5 +131,7 @@ test("unsubscribeCommsEmailForUser writes suppression and opts out lifecycle pre
   assert.equal(result.ok, true);
   const docId = emailSuppressionDocId("picker@example.com");
   assert.equal(db._suppressionDocs.get(docId).reason, "user_preferences");
-  assert.equal(db._userDocs.get("u1")["notificationPrefs.lifecycle"], false);
+  assert.equal(db._userDocs.get("u1")["notificationPrefs.email.lifecycle"], false);
+  assert.equal(db._userDocs.get("u1")["notificationPrefs.email.commercial"], false);
+  assert.equal(db._userDocs.get("u1")["notificationPrefs.lifecycle"], undefined);
 });

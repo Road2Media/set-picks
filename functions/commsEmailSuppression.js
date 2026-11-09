@@ -96,7 +96,8 @@ async function findUserDocsByEmail(db, email) {
 }
 
 /**
- * Opt a user out of lifecycle/commercial email prefs (complaint or unsubscribe).
+ * Opt a user out of lifecycle and commercial email only (#1045).
+ * Push and in-app keep their own keys. A legacy flat opt-out is left as-is.
  * @param {import("firebase-admin").firestore.Firestore} db
  * @param {string} uid
  */
@@ -104,8 +105,8 @@ async function optOutUserEmailPrefs(db, uid) {
   if (!uid) return;
   await db.collection("users").doc(uid).set(
     {
-      "notificationPrefs.lifecycle": false,
-      "notificationPrefs.commercial": false,
+      "notificationPrefs.email.lifecycle": false,
+      "notificationPrefs.email.commercial": false,
     },
     { merge: true }
   );

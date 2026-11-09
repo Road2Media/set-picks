@@ -59,8 +59,9 @@ Each worker returns `{ ok, skipReason }` and shares one delivery-log contract (k
 
 1. **Clients never create** `commsInbox` docs
 2. **Idempotent** delivery — shared key `<triggerId>/<uid>:<scope>` in the delivery log and/or fixed messageId; reuse as the Resend `idempotencyKey`
-3. **Prefs** — check `notificationPrefs` before send:
-   - `reminders`, `results`, `nearMiss`, `lifecycle` (new), `commercial` (Phase 3)
+3. **Prefs** — check `notificationPrefs` before send, per channel (`functions/notificationPrefs.js`):
+   - Families: `reminders`, `results`, `nearMiss`, `lifecycle`, `commercial` (opt-in)
+   - Key: `notificationPrefs.<channel>.<family>`, then the legacy flat family key (#1045)
 4. **Event-driven by default** — production triggers fire from events; the admin callable is **QA/replay only**, `dryRun: true` default
 5. **Log** `comms_delivered` server-side per MEASUREMENT_PLAN.md
 
@@ -168,7 +169,7 @@ gcloud functions describe <export> --gen2 --region=us-central1 --project=set-pic
 - Server copy: add a builder in `functions/commsTemplates.js` (push title/body + email subject/text).
 - Add the delivery spec to `functions/commsCatalog.js` `TRIGGER_SPECS` (kept in sync with `catalog.json` by `commsCatalog.test.js`).
 - In-app body: add a `templateId` entry to `src/features/notifications/ui/commsTemplates/commsTemplateRegistry.jsx` (structured `build(payload)` or a bespoke component). Preview at `/comms-preview` (dev build).
-- Prefs: ensure the trigger's `prefKeys` exist in `notificationPrefsApi.js` (`reminders`/`results`/`nearMiss`/`lifecycle`/`commercial`).
+- Prefs: ensure the trigger's `prefKeys` exist in `notificationPrefsApi.js` (`reminders`/`results`/`nearMiss`/`lifecycle`/`commercial`). Delivery resolves each key per channel (`push` / `inApp` / `email`).
 
 ## Output: implementation plan
 

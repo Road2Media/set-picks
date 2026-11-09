@@ -86,8 +86,8 @@ export default function AccountPreferencesScreen({ user }) {
           Notifications
         </p>
         <p className="mb-6 text-sm font-bold leading-relaxed text-content-secondary">
-          Messages always appear in your inbox on Messages. Use the controls below for push and
-          email.
+          Push, messages in the app, and email each have their own switches. Turning one off
+          does not change the others.
         </p>
         <NotificationPrefsPanel
           focusSection={focusPush ? 'push' : null}

@@ -3,58 +3,99 @@ import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from '../../../shared/lib/firebase';
 
 /**
- * Defaults when `notificationPrefs` is missing.
- *
- * - `reminders`, `results`, `nearMiss`: existing categories, default on (issue #274).
- * - `lifecycle`: onboarding / countdown / engagement family (welcome, tour countdown,
- *   picks confirmed, tour engagement). Default on — these are P0/P1 retention messages.
- * - `commercial`: Phase 3 sponsor / affiliate slots. Default OFF — commercial sends are
- *   strictly opt-in and gated by `COMMERCIAL_PHASE3.md`; we never default users in.
- *
- * Keys here map 1:1 to `prefKeys` in `docs/comms-triggers/catalog.json`, which is what the
- * server-side delivery orchestrator gates on.
+ * Channels stored under `users/{uid}.notificationPrefs`.
+ * Names match catalog `channels` (`inApp`, not `in-app`).
+ * Server mirror: `functions/notificationPrefs.js`.
+ */
+export const NOTIFICATION_CHANNELS = Object.freeze(['push', 'inApp', 'email']);
+
+/**
+ * Family keys. `commercial` is default-deny. Every other family is default-allow.
+ * Catalog `prefKeys` stay these family names; delivery resolves them per channel.
+ */
+export const NOTIFICATION_PREF_FAMILIES = Object.freeze([
+  'reminders',
+  'results',
+  'nearMiss',
+  'lifecycle',
+  'commercial',
+]);
+
+function defaultFamilyValue(family) {
+  return family === 'commercial' ? false : true;
+}
+
+function defaultChannelMap() {
+  /** @type {Record<string, boolean>} */
+  const map = {};
+  for (const family of NOTIFICATION_PREF_FAMILIES) {
+    map[family] = defaultFamilyValue(family);
+  }
+  return map;
+}
+
+/**
+ * Resolved prefs: one boolean per channel per family.
+ * Missing docs resolve to these defaults (#1045).
  */
 export const DEFAULT_NOTIFICATION_PREFS = Object.freeze({
-  reminders: true,
-  results: true,
-  nearMiss: true,
-  lifecycle: true,
-  commercial: false,
+  push: Object.freeze(defaultChannelMap()),
+  inApp: Object.freeze(defaultChannelMap()),
+  email: Object.freeze(defaultChannelMap()),
 });
 
 /**
- * @typedef {{
- *   reminders: boolean,
- *   results: boolean,
- *   nearMiss: boolean,
- *   lifecycle: boolean,
- *   commercial: boolean,
- * }} NotificationPrefs
+ * @param {Record<string, unknown> | null} prefs
+ * @param {string | undefined} channel
+ * @returns {Record<string, unknown> | null}
  */
+function channelMap(prefs, channel) {
+  if (!channel || !prefs || typeof prefs !== 'object' || Array.isArray(prefs)) return null;
+  const value = prefs[channel];
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return /** @type {Record<string, unknown>} */ (value);
+}
+
+/**
+ * Same rules as `functions/notificationPrefs.js` `prefAllows`.
+ *
+ * @param {Record<string, unknown> | null} prefs
+ * @param {string} channel
+ * @param {string} family
+ * @returns {boolean}
+ */
+export function resolveChannelPref(prefs, channel, family) {
+  const nestedSource = channelMap(prefs, channel);
+  const nested =
+    nestedSource && typeof nestedSource[family] === 'boolean' ? nestedSource[family] : undefined;
+  const flat = prefs && typeof prefs[family] === 'boolean' ? prefs[family] : undefined;
+  const raw = nested !== undefined ? nested : flat;
+  if (family === 'commercial') return raw === true;
+  return raw !== false;
+}
 
 /**
  * @param {import('firebase/firestore').DocumentData | null | undefined} userData
- * @returns {NotificationPrefs}
  */
 export function resolveNotificationPrefs(userData) {
   const raw = userData?.notificationPrefs;
-  if (!raw || typeof raw !== 'object') {
-    return { ...DEFAULT_NOTIFICATION_PREFS };
+  const prefs = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : null;
+  /** @type {Record<string, Record<string, boolean>>} */
+  const resolved = {};
+  for (const channel of NOTIFICATION_CHANNELS) {
+    /** @type {Record<string, boolean>} */
+    const channelPrefs = {};
+    for (const family of NOTIFICATION_PREF_FAMILIES) {
+      channelPrefs[family] = resolveChannelPref(prefs, channel, family);
+    }
+    resolved[channel] = channelPrefs;
   }
-  return {
-    // Default-allow categories: only `false` opts out.
-    reminders: raw.reminders !== false,
-    results: raw.results !== false,
-    nearMiss: raw.nearMiss !== false,
-    lifecycle: raw.lifecycle !== false,
-    // Default-deny category: only an explicit `true` opts in.
-    commercial: raw.commercial === true,
-  };
+  return resolved;
 }
 
 /**
  * @param {string} uid
- * @param {(prefs: NotificationPrefs) => void} onPrefs
+ * @param {(prefs: ReturnType<typeof resolveNotificationPrefs>) => void} onPrefs
  * @param {(err: unknown) => void} onError
  * @returns {() => void} unsubscribe
  */
@@ -73,19 +114,29 @@ export function subscribeNotificationPrefs(uid, onPrefs, onError) {
 }
 
 /**
- * Merge-updates `users/{uid}.notificationPrefs` (partial keys allowed).
+ * Merge-updates one or more `notificationPrefs.<channel>.<family>` booleans.
+ * Does not write the legacy flat keys. A channel left unset keeps inheriting
+ * that flat boolean.
  *
  * @param {string} uid
- * @param {Partial<NotificationPrefs>} patch
+ * @param {Partial<Record<'push' | 'inApp' | 'email', Partial<Record<string, boolean>>>>} patch
  */
 export async function mergeNotificationPrefs(uid, patch) {
   if (!uid) throw new Error('Missing uid');
   const ref = doc(db, 'users', uid);
+  /** @type {Record<string, unknown>} */
   const updates = { updatedAt: serverTimestamp() };
-  for (const [k, v] of Object.entries(patch)) {
-    if (typeof v === 'boolean') {
-      updates[`notificationPrefs.${k}`] = v;
+  let wrote = false;
+  for (const channel of NOTIFICATION_CHANNELS) {
+    const channelPatch = patch?.[channel];
+    if (!channelPatch || typeof channelPatch !== 'object') continue;
+    for (const family of NOTIFICATION_PREF_FAMILIES) {
+      const value = channelPatch[family];
+      if (typeof value !== 'boolean') continue;
+      updates[`notificationPrefs.${channel}.${family}`] = value;
+      wrote = true;
     }
   }
+  if (!wrote) return;
   await updateDoc(ref, updates);
 }
