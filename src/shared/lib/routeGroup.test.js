@@ -17,6 +17,7 @@ describe('resolveRouteGroup', () => {
     expect(resolveRouteGroup('/login/')).toBe('login');
     expect(resolveRouteGroup('/how-it-works')).toBe('marketing');
     expect(resolveRouteGroup('/how-scoring-works')).toBe('marketing');
+    expect(resolveRouteGroup('/how-scoring-changed')).toBe('marketing');
     expect(resolveRouteGroup('/phish-setlist-prediction-game')).toBe('marketing');
     expect(resolveRouteGroup('/about')).toBe('marketing');
     expect(resolveRouteGroup('/phish-at-msg')).toBe('marketing');

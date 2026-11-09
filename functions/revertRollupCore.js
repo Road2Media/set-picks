@@ -8,6 +8,7 @@
  */
 
 const {
+  attachScoringShowDate,
   calculateTotalScore,
   countBustoutBoosts,
   countCorrectSlots,
@@ -71,7 +72,10 @@ async function applyRevertRollupForShow({
     return { ok: false, message: `official_setlists/${showDate} is missing.` };
   }
   const setlistDoc = setlistSnap.data() || {};
-  const actualSetlist = persistableActualSetlistFromOfficialDoc(setlistDoc);
+  const actualSetlist = attachScoringShowDate(
+    persistableActualSetlistFromOfficialDoc(setlistDoc),
+    showDate
+  );
 
   const picksSnap = await db
     .collection("picks")

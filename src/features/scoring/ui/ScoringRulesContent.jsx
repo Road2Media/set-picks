@@ -1,20 +1,20 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+
 import {
   MARKETING_EDITORIAL_H1_INSET,
   MARKETING_EDITORIAL_TYPE_BODY,
   MARKETING_EDITORIAL_TYPE_LEDE,
   MARKETING_EDITORIAL_TYPE_META,
 } from '../../../shared/ui/marketingEditorialChrome.js';
-import { SCORING_RULES } from '../../../shared/utils/scoring.js';
-
-const {
-  EXACT_SLOT,
-  ENCORE_EXACT,
-  IN_SETLIST,
-  WILDCARD_HIT,
-  BUSTOUT_BOOST,
-  BUSTOUT_MIN_GAP,
-} = SCORING_RULES;
+import { LINK_ON_DARK, LINK_ON_LIGHT } from '../../../shared/ui/surfaceLinkStyles.js';
+import {
+  SCORING_LADDER_V2,
+  SCORING_LADDER_V2_TOUR_NAME,
+  formatScoringLadderEffectiveDate,
+  scoringRulesForShowDate,
+  scoringRulesInEffect,
+} from '../../../shared/utils/scoring.js';
 
 const SURFACES = {
   dark: {
@@ -82,14 +82,77 @@ const SURFACES = {
  * Marketing pages should own the editorial H1/lede and pass `includeIntro={false}`
  * so the title matches HIW / About / keyword (not an in-card header).
  *
- * @param {{ surface?: 'dark' | 'light', includeIntro?: boolean }} props
+ * @param {{
+ *   surface?: 'dark' | 'light',
+ *   includeIntro?: boolean,
+ *   asOf?: string | Date,
+ * }} props
+ * `asOf` is a YYYY-MM-DD show-calendar day or a Date. Omitted means today
+ * in America/New_York, so the page shows the new numbers once they take effect.
  */
 export default function ScoringRulesContent({
   surface = 'dark',
   includeIntro = true,
+  asOf,
 }) {
   const isLight = surface === 'light';
   const t = isLight ? SURFACES.light : SURFACES.dark;
+  const rules = typeof asOf === 'string'
+    ? scoringRulesForShowDate(asOf)
+    : scoringRulesInEffect(asOf instanceof Date ? asOf : new Date());
+  const v2 = rules.id === 'v2';
+  const effectiveLabel = formatScoringLadderEffectiveDate();
+  const linkClass = isLight ? LINK_ON_LIGHT : LINK_ON_DARK;
+
+  const rulesList = [
+    {
+      key: 'in_setlist',
+      chip: 'inSetlist',
+      points: rules.IN_SETLIST,
+      title: 'In setlist',
+      body: 'Your pick got played, just not in the slot you called. Partial credit for nailing the song.',
+    },
+    {
+      key: 'exact',
+      chip: 'exact',
+      points: rules.EXACT_SLOT,
+      title: 'Exact slot',
+      body: 'Your pick lands in the exact slot you called: Set 1 opener or closer, or Set 2 opener or closer.',
+    },
+    {
+      key: 'wildcard',
+      chip: 'wildcard',
+      points: rules.WILDCARD_HIT,
+      title: 'Wildcard',
+      body: `If your Wildcard pick is played anywhere in the setlist, you score ${rules.WILDCARD_HIT} points.`,
+    },
+  ];
+  if (v2) {
+    rulesList.push(
+      {
+        key: 'encore_first',
+        chip: 'encore',
+        points: rules.ENCORE_EXACT,
+        title: 'First encore',
+        body: 'Your encore pick is the first song of the encore.',
+      },
+      {
+        key: 'encore_later',
+        chip: 'encore',
+        points: rules.ENCORE_LATER,
+        title: 'Later encore',
+        body: `Your encore pick shows up later in the encore. If that song was played but not in the encore, it is still ${rules.IN_SETLIST}.`,
+      },
+    );
+  } else {
+    rulesList.push({
+      key: 'encore',
+      chip: 'encore',
+      points: rules.ENCORE_EXACT,
+      title: 'Encore',
+      body: 'Your pick is played during the encore. Worth a little more because the encore is the toughest call.',
+    });
+  }
 
   return (
     <div className={t.shell}>
@@ -106,58 +169,24 @@ export default function ScoringRulesContent({
       ) : null}
 
       <ul className="space-y-5">
-        <li className="flex gap-4">
-          <span className={t.chips.inSetlist}>{IN_SETLIST}</span>
-          <div>
-            <h2 className={t.ruleTitle}>In setlist</h2>
-            <p className={t.ruleBody}>
-              Your pick got played, just not in the slot you called. Partial credit for nailing
-              the song.
-            </p>
-          </div>
-        </li>
+        {rulesList.map((rule) => (
+          <li key={rule.key} className="flex gap-4">
+            <span className={t.chips[rule.chip]}>{rule.points}</span>
+            <div>
+              <h2 className={t.ruleTitle}>{rule.title}</h2>
+              <p className={t.ruleBody}>{rule.body}</p>
+            </div>
+          </li>
+        ))}
 
         <li className="flex gap-4">
-          <span className={t.chips.exact}>{EXACT_SLOT}</span>
-          <div>
-            <h2 className={t.ruleTitle}>Exact slot</h2>
-            <p className={t.ruleBody}>
-              Your pick lands in the exact slot you called: Set 1 opener or closer,
-              or Set 2 opener or closer.
-            </p>
-          </div>
-        </li>
-
-        <li className="flex gap-4">
-          <span className={t.chips.wildcard}>{WILDCARD_HIT}</span>
-          <div>
-            <h2 className={t.ruleTitle}>Wildcard</h2>
-            <p className={t.ruleBody}>
-              If your Wildcard pick is played anywhere in the setlist, you score {WILDCARD_HIT}{' '}
-              points.
-            </p>
-          </div>
-        </li>
-
-        <li className="flex gap-4">
-          <span className={t.chips.encore}>{ENCORE_EXACT}</span>
-          <div>
-            <h2 className={t.ruleTitle}>Encore</h2>
-            <p className={t.ruleBody}>
-              Your pick is played during the encore. Worth a little more because the encore is
-              the toughest call.
-            </p>
-          </div>
-        </li>
-
-        <li className="flex gap-4">
-          <span className={t.chips.bustout}>+{BUSTOUT_BOOST}</span>
+          <span className={t.chips.bustout}>+{rules.BUSTOUT_BOOST}</span>
           <div>
             <h2 className={t.ruleTitle}>Bustout Boost™</h2>
             <p className={t.ruleBody}>
               Correct picks on songs with a{' '}
-              <span className={t.ruleBodyEmph}>{BUSTOUT_MIN_GAP}+ show gap</span> earn a bonus{' '}
-              <span className={t.ruleBodyEmph}>{BUSTOUT_BOOST} points</span> on top of base points.
+              <span className={t.ruleBodyEmph}>{rules.BUSTOUT_MIN_GAP}+ show gap</span> earn a bonus{' '}
+              <span className={t.ruleBodyEmph}>{rules.BUSTOUT_BOOST} points</span> on top of base points.
               That&apos;s the reward for digging past the heavy rotation.
               <a
                 href="#scoring-rules-footnote"
@@ -173,9 +202,32 @@ export default function ScoringRulesContent({
 
       <p id="scoring-rules-footnote" className={t.footnote}>
         <span className={t.footnoteStar}>*</span>
-        Max per slot (if pick earns Bustout Boost): {IN_SETLIST + BUSTOUT_BOOST} in setlist &middot;{' '}
-        {EXACT_SLOT + BUSTOUT_BOOST} exact slot &middot; {WILDCARD_HIT + BUSTOUT_BOOST} wildcard
-        &middot; {ENCORE_EXACT + BUSTOUT_BOOST} encore.
+        Max per slot (if pick earns Bustout Boost): {rules.IN_SETLIST + rules.BUSTOUT_BOOST} in setlist &middot;{' '}
+        {rules.EXACT_SLOT + rules.BUSTOUT_BOOST} exact slot &middot;{' '}
+        {rules.WILDCARD_HIT + rules.BUSTOUT_BOOST} wildcard
+        {v2 ? (
+          <>
+            {' '}&middot; {rules.ENCORE_EXACT + rules.BUSTOUT_BOOST} first encore &middot;{' '}
+            {rules.ENCORE_LATER + rules.BUSTOUT_BOOST} later encore.
+          </>
+        ) : (
+          <> &middot; {rules.ENCORE_EXACT + rules.BUSTOUT_BOOST} encore.</>
+        )}
+      </p>
+      <p className={t.footnote}>
+        {v2 ? (
+          <>Nights before {effectiveLabel} keep the ladder that was live that night. </>
+        ) : (
+          <>
+            Starting {effectiveLabel} ({SCORING_LADDER_V2_TOUR_NAME}), a played wildcard scores{' '}
+            {SCORING_LADDER_V2.WILDCARD_HIT}, the first encore song stays {SCORING_LADDER_V2.ENCORE_EXACT},
+            and a later encore song scores {SCORING_LADDER_V2.ENCORE_LATER}.{' '}
+          </>
+        )}
+        <Link to="/how-scoring-changed" className={linkClass}>
+          How scoring changed
+        </Link>
+        .
       </p>
     </div>
   );

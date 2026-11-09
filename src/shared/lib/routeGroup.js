@@ -28,6 +28,8 @@ export function resolveRouteGroup(pathname) {
     pathname.startsWith('/how-it-works/') ||
     pathname === '/how-scoring-works' ||
     pathname.startsWith('/how-scoring-works/') ||
+    pathname === '/how-scoring-changed' ||
+    pathname.startsWith('/how-scoring-changed/') ||
     pathname === '/phish-setlist-prediction-game' ||
     pathname.startsWith('/phish-setlist-prediction-game/') ||
     pathname === '/about' ||

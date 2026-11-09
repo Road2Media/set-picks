@@ -13,6 +13,7 @@
 | Homepage | `https://www.setlistpickem.com/` | Canonical; social scrapers get OG shell via `middleware.js` + `og-home-html.mjs` (**not** Googlebot — see #658) |
 | How it works | `/how-it-works` | In `public/sitemap.xml` |
 | Scoring | `/how-scoring-works` | In `public/sitemap.xml` |
+| Scoring change | `/how-scoring-changed` | In `public/sitemap.xml`. Not in the main nav (#1086). |
 | About | `/about` | **v1.56.0 (#941):** origin story; in `public/sitemap.xml` |
 | Keyword landing | `/phish-setlist-prediction-game` | In `public/sitemap.xml` (#660 / #940) |
 | Sitemap | `/sitemap.xml` | Listed in `robots.txt` |

@@ -40,6 +40,7 @@ const InviteLandingPage = lazy(() => import('../pages/invite/InviteLandingPage')
 const AboutPage = lazy(() => import('../pages/marketing/AboutPage'));
 const HowItWorksPage = lazy(() => import('../pages/marketing/HowItWorksPage'));
 const HowScoringWorksPage = lazy(() => import('../pages/marketing/HowScoringWorksPage'));
+const HowScoringChangedPage = lazy(() => import('../pages/marketing/HowScoringChangedPage'));
 const PublicTourStatsPage = lazy(() => import('../pages/marketing/PublicTourStatsPage'));
 const MsgGardenStatsPage = lazy(() => import('../pages/marketing/MsgGardenStatsPage'));
 const AnnualTourStatsPage = lazy(() => import('../pages/marketing/AnnualTourStatsPage'));
@@ -72,6 +73,7 @@ function App() {
         {/* Marketing / educational pages — public, crawlable, no auth */}
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/how-scoring-works" element={<HowScoringWorksPage />} />
+        <Route path="/how-scoring-changed" element={<HowScoringChangedPage />} />
         <Route path="/tour-stats" element={<PublicTourStatsPage />} />
         <Route path="/phish-at-msg" element={<MsgGardenStatsPage />} />
         <Route

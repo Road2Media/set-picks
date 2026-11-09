@@ -22,10 +22,12 @@ Sites like Phish.net and setlist.fm are outstanding archives of what was already
 
 ## Scoring (per slot)
 
-- In setlist: 5 pts
+Nights already played keep the ladder that was live that night. The new ladder starts December 30, 2026 (New Year's Run 2026-2027).
+
+- In setlist, wrong slot: 5 pts
 - Exact slot: 10 pts
-- Wildcard hit: 10 pts
-- Encore: 15 pts
+- Wildcard hit: 10 pts before December 30, 2026; 5 pts starting that date
+- Encore: 15 pts for any encore song before December 30, 2026. Starting that date, the first encore song is 15 and a later encore song is 10
 - Bustout Boost (song gap 30+ shows): +20 pts on top of base
 
 ## Tour Insights (tour setlist statistics)
@@ -49,6 +51,7 @@ Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.c
 - Home: https://www.setlistpickem.com/
 - How It Works: https://www.setlistpickem.com/how-it-works
 - How Scoring Works: https://www.setlistpickem.com/how-scoring-works
+- How Scoring Changed: https://www.setlistpickem.com/how-scoring-changed
 - Tour Insights / Phish tour setlist statistics: https://www.setlistpickem.com/tour-stats
 - 2026 Sphere tour statistics: https://www.setlistpickem.com/tour-stats/2026-sphere
 - 2026 Summer Tour setlist statistics: https://www.setlistpickem.com/tour-stats/2026-summer-tour

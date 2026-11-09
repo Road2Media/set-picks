@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.101.0] — 2026-11-09
+
+### Added
+- **How scoring changed (#1086)** — public `/how-scoring-changed` explains the next-tour ladder: wildcard 5 (was 10), first encore song 15, later encore song 10. Exact openers and closers stay 10. A song in the wrong slot stays 5. Bustout Boost stays +20. The page is the scoring section only. Ranking and tie-breaks stay on #1172 / #1218. Not in the main nav. Prerendered, in the sitemap and `llms.txt`. `/how-scoring-works` and the in-app scoring rules link here.
+
+### Changed
+- **Scoring ladder is dated (#1086)** — shows before 2026-12-30 (the night before the New Year's Run 2026-2027) keep the ladder that was live that night: wildcard 10, any encore song 15. Shows on or after 2026-12-30 grade with the new ladder. A missing show date stays on the old ladder, so an undated payload cannot re-score a night that already happened. Client scoring and Cloud Functions grading (`scoringCore.js`) use the same gate. `/how-scoring-works` shows the ladder in effect for today in America/New_York. **Deploy (human, before 2026-12-30):** Cloud Functions that grade picks, including live score recompute, rollup, rewind, and show-recap scorecards. A deploy before that date does not change scores for nights already played.
+
 ## [1.100.1] — 2026-11-09
 
 ### Changed
