@@ -13,6 +13,7 @@ const { resolveDedupKey } = require("./commsCatalog");
 const { ENGAGEMENT_COLLECTION } = require("./commsEmailEngagement");
 const { isEmailSuppressed } = require("./commsEmailSuppression");
 const { resolveSummerTour2026LaunchAudience } = require("./marketingAudience");
+const { prefAllows } = require("./notificationPrefs");
 
 const DEDUP_COLLECTION = "fcm_notification_log";
 const PARENT_CAMPAIGN_ID = "summer_tour_2026";
@@ -45,9 +46,7 @@ function toMillis(value) {
  * @returns {boolean}
  */
 function lifecycleOptedOut(userData) {
-  const prefs = userData?.notificationPrefs;
-  if (!prefs || typeof prefs !== "object") return false;
-  return prefs.lifecycle === false;
+  return !prefAllows(userData, "lifecycle", "email");
 }
 
 /**

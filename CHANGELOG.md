@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.111.0] — 2026-11-09
+
+### Added
+- **Per-channel notification prefs (#1045 / #513 Phase 3)** — Preferences keeps separate switches for push, messages in the app, and email. Each switch writes `users/{uid}.notificationPrefs.push`, `.inApp`, or `.email` (family keys `reminders`, `results`, `nearMiss`, `lifecycle`, `commercial`). A boolean on that channel wins. If the channel key was never set, the old flat `notificationPrefs.<family>` value still applies, so an existing opt-out keeps blocking every channel until that channel is changed on its own. `commercial` stays off until an explicit `true`. Close calls stay on push only. Email has scores and tour updates. The show-day pick reminder email is still a service note and is not one of those switches.
+
+### Changed
+- **Email unsubscribe no longer turns off push or in-app messages** — Unsubscribe, the one-click header, a mailto unsubscribe, and a spam complaint set `notificationPrefs.email.lifecycle` and `notificationPrefs.email.commercial` to `false`. They leave the flat keys alone. `email_suppression` still pauses every email to that address. Re-enable email turns `email.lifecycle` back on and does not turn commercial email, push, or in-app back on. Delivery, the legacy post-show push, the Sphere recap replay push, and the Summer Tour reminder audience use the same per-channel read. That server behavior starts when those Functions are deployed. Until then, delivery still reads the flat keys.
+
 ## [1.110.0] — 2026-11-09
 
 ### Added

@@ -4,6 +4,7 @@
  */
 
 const { sendWebPushToToken } = require("./fcmMessagingCore");
+const { prefAllows } = require("./notificationPrefs");
 
 const CLOSE_CALL_MAX_GAP = 2;
 
@@ -26,18 +27,14 @@ function notificationLogDocId(showDate, kind, pickId) {
  * @param {import("firebase-admin").firestore.DocumentData | null | undefined} userData
  */
 function userWantsResults(userData) {
-  const p = userData?.notificationPrefs;
-  if (!p || typeof p !== "object") return true;
-  return p.results !== false;
+  return prefAllows(userData, "results", "push");
 }
 
 /**
  * @param {import("firebase-admin").firestore.DocumentData | null | undefined} userData
  */
 function userWantsNearMiss(userData) {
-  const p = userData?.notificationPrefs;
-  if (!p || typeof p !== "object") return true;
-  return p.nearMiss !== false;
+  return prefAllows(userData, "nearMiss", "push");
 }
 
 /**
