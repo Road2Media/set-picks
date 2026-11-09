@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 
 import {
   LEADING_THIS_SHOW,
+  SHOW_STANDINGS_DESCRIPTION,
   SHOW_STANDINGS_EYEBROW,
   STANDINGS_PICK_PRIVACY_INFO_LABEL,
   STANDINGS_PICK_PRIVACY_INLINE,
@@ -81,6 +82,9 @@ export default function LeaderboardList({
           </h2>
           <p className="mt-0.5 text-sm font-bold leading-snug text-white break-words md:text-base">
             {title}
+          </p>
+          <p className="mt-1 text-[11px] font-medium leading-snug text-content-secondary md:text-xs">
+            {SHOW_STANDINGS_DESCRIPTION}
           </p>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 self-start sm:self-center pt-0.5 sm:pt-0">
