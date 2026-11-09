@@ -49,6 +49,8 @@ const rankBadgeClass = (rank) => {
  *   emptyMessage?: string,
  *   errorMessage?: string,
  *   loadingLabel?: string,
+ *   placeLabelsByRank?: Record<number, string> | null,
+ *   topClassName?: string,
  * }} props
  */
 export default function TourStandingsSection({
@@ -64,6 +66,8 @@ export default function TourStandingsSection({
   emptyMessage = 'No graded picks in this tour yet.',
   errorMessage = "Couldn't load tour standings. Try refreshing.",
   loadingLabel = 'Loading tour standings',
+  placeLabelsByRank = null,
+  topClassName = 'mt-10',
 }) {
   const scopeLabel = scopeName || tourName || scopeFallback;
   // Place is competition rank on points, not the row index (#1135).
@@ -73,7 +77,7 @@ export default function TourStandingsSection({
   return (
     <section
       aria-label={heading}
-      className={`mt-10 ${STANDINGS_BOX_RADIUS} border border-border-subtle/35 bg-surface-panel/40 ${STANDINGS_BOX_PAD} shadow-inset-glass`}
+      className={`relative z-20 ${topClassName} ${STANDINGS_BOX_RADIUS} border border-border-subtle/35 bg-surface-panel/40 ${STANDINGS_BOX_PAD} shadow-inset-glass`}
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
@@ -113,45 +117,53 @@ export default function TourStandingsSection({
             const badge = tourStandingsBadge(row);
             const isSelf = Boolean(selfUserId) && row.uid === selfUserId;
             const identity = identities[row.uid] || null;
+            const placeLabel = placeLabelsByRank?.[row.rank] || '';
             return (
               <li
                 key={row.uid}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border-subtle/30 bg-surface-panel/80 px-3 py-2"
+                className="rounded-xl border border-border-subtle/30 bg-surface-panel/80 px-3 py-2"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  {badge ? (
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black tabular-nums ${rankBadgeClass(row.rank)}`}
-                      aria-label={badge.ariaLabel}
-                    >
-                      {badge.text}
-                    </span>
-                  ) : null}
-                  {badge?.tied ? (
-                    <span
-                      aria-hidden="true"
-                      className="inline-flex shrink-0 items-center rounded-full bg-surface-inset px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-content-secondary ring-1 ring-border-muted"
-                    >
-                      Tie
-                    </span>
-                  ) : null}
-                  <StandingsPlayerAvatar
-                    avatarId={identity?.avatarId}
-                    badges={identity?.badges}
-                    isSelf={isSelf}
-                    handle={row.handle}
-                  />
-                  <PlayerHandleLink
-                    userId={row.uid}
-                    handle={row.handle}
-                    className="truncate text-sm"
-                  />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {badge ? (
+                      <span
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-black tabular-nums ${rankBadgeClass(row.rank)}`}
+                        aria-label={placeLabel ? `${placeLabel}, ${badge.ariaLabel}` : badge.ariaLabel}
+                      >
+                        {badge.text}
+                      </span>
+                    ) : null}
+                    {badge?.tied ? (
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex shrink-0 items-center rounded-full bg-surface-inset px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-content-secondary ring-1 ring-border-muted"
+                      >
+                        Tie
+                      </span>
+                    ) : null}
+                    <StandingsPlayerAvatar
+                      avatarId={identity?.avatarId}
+                      badges={identity?.badges}
+                      isSelf={isSelf}
+                      handle={row.handle}
+                    />
+                    <PlayerHandleLink
+                      userId={row.uid}
+                      handle={row.handle}
+                      className="min-w-0 truncate text-sm"
+                    />
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3 text-right sm:gap-4">
+                    <TourStat label="Pts" value={row.totalPoints} emphasized />
+                    <TourStat label="Wins" value={row.wins} />
+                    <TourStat label="Shows" value={row.shows} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-right">
-                  <TourStat label="Pts" value={row.totalPoints} emphasized />
-                  <TourStat label="Wins" value={row.wins} />
-                  <TourStat label="Shows" value={row.shows} />
-                </div>
+                {placeLabel ? (
+                  <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-amber-200">
+                    {placeLabel}
+                  </p>
+                ) : null}
               </li>
             );
           })}

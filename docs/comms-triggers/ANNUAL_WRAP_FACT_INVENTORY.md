@@ -88,7 +88,7 @@ Published places are official ranks 1 through 5. Each rank is one place. A tie n
 
 ## Out of scope
 
-- The fireworks ([#1112](https://github.com/Road2Media/set-picks/issues/1112))
+- The year-end celebration on the annual board ([#1112](https://github.com/Road2Media/set-picks/issues/1112)). It is not a sentence in this wrap.
 - A model writing what the year felt like
 - The nightly show paragraph
 - The morning email’s standings paragraph
