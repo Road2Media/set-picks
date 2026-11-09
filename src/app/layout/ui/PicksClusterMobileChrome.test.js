@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { PICKS_CLUSTER_PATHS } from '../../../shared/config/dashboardRoutes';
 import {
   NAV_LABEL_MAKE_PICKS,
+  NAV_LABEL_PHISH_IQ,
   NAV_LABEL_PICKS_LAB,
   NAV_LABEL_REWIND,
   NAV_LABEL_SCORECARD,
@@ -16,11 +17,13 @@ describe('buildPicksClusterNavItems', () => {
       NAV_LABEL_MAKE_PICKS,
       NAV_LABEL_PICKS_LAB,
       NAV_LABEL_SCORECARD,
+      NAV_LABEL_PHISH_IQ,
     ]);
     expect(items.every((item) => item.end === true)).toBe(true);
     expect(items[0].to).toBe(PICKS_CLUSTER_PATHS.makePicks);
     expect(items[1].to).toBe(PICKS_CLUSTER_PATHS.lab);
     expect(items[2].to).toBe(PICKS_CLUSTER_PATHS.scorecard);
+    expect(items[3].to).toBe(PICKS_CLUSTER_PATHS.phishIq);
   });
 
   it('adds Rewind only when the flag asks for it', () => {
@@ -31,8 +34,9 @@ describe('buildPicksClusterNavItems', () => {
       NAV_LABEL_MAKE_PICKS,
       NAV_LABEL_PICKS_LAB,
       NAV_LABEL_SCORECARD,
+      NAV_LABEL_PHISH_IQ,
       NAV_LABEL_REWIND,
     ]);
-    expect(items[3].to).toBe(PICKS_CLUSTER_PATHS.rewind);
+    expect(items[4].to).toBe(PICKS_CLUSTER_PATHS.rewind);
   });
 });

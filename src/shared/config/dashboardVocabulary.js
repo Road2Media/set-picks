@@ -32,6 +32,9 @@ export const NAV_LABEL_SCORECARD = 'Scorecard';
 /** Picks-cluster tertiary: Rewind (`/dashboard/rewind`). Hidden unless the build flag is on (#1142). */
 export const NAV_LABEL_REWIND = 'Rewind';
 
+/** Picks-cluster tertiary: Phish IQ (`/dashboard/phish-iq`). Daily quiz (#1143). */
+export const NAV_LABEL_PHISH_IQ = 'Phish IQ';
+
 /** Pools list tab + context + desktop H1 (`/dashboard/pools`) */
 export const NAV_LABEL_POOLS = 'Pools';
 

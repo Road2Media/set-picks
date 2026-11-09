@@ -15,6 +15,7 @@ export const MARKETING_PRIMARY_NAV = [
   { to: '/tour-stats', label: 'Tour stats' },
   { to: '/phish-at-msg', label: 'Phish at MSG' },
   { to: '/phish-setlist-prediction-game', label: 'The game' },
+  { to: '/phish-iq', label: 'Phish IQ' },
   { to: '/about', label: 'About' },
 ];
 

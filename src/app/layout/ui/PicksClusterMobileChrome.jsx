@@ -2,6 +2,7 @@ import React from 'react';
 
 import {
   NAV_LABEL_MAKE_PICKS,
+  NAV_LABEL_PHISH_IQ,
   NAV_LABEL_PICKS_LAB,
   NAV_LABEL_REWIND,
   NAV_LABEL_SCORECARD,
@@ -37,6 +38,7 @@ export function buildPicksClusterNavItems(makePicksTo, options = {}) {
     { to: makePicksTo, label: NAV_LABEL_MAKE_PICKS, end: true },
     { to: PICKS_CLUSTER_PATHS.lab, label: NAV_LABEL_PICKS_LAB, end: true },
     { to: PICKS_CLUSTER_PATHS.scorecard, label: NAV_LABEL_SCORECARD, end: true },
+    { to: PICKS_CLUSTER_PATHS.phishIq, label: NAV_LABEL_PHISH_IQ, end: true },
   ];
   if (options.includeRewind) {
     items.push({

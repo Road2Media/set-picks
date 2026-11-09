@@ -86,6 +86,7 @@ export function getDashboardPageMeta(pathname, search) {
   const isProfileCluster = isProfileClusterPath(normalized);
   const isPicksCluster = isPicksClusterPath(normalized);
   const isRewind = normalized === PICKS_CLUSTER_PATHS.rewind;
+  const isPhishIq = normalized === PICKS_CLUSTER_PATHS.phishIq;
   const isStatsCluster = isStatsClusterPath(normalized);
   const isAdmin = normalized === '/dashboard/admin';
   const isPoolHub = normalized.startsWith('/dashboard/pool/');
@@ -117,7 +118,8 @@ export function getDashboardPageMeta(pathname, search) {
     !showTourScopePicker &&
     !showYearScopePicker &&
     !isStatsCluster &&
-    !isRewind;
+    !isRewind &&
+    !isPhishIq;
 
   // Five player tabs own title + tray in the desktop sticky stack. Layout H2
   // stays only for War Room. Pool details keeps Option C (no cluster title).

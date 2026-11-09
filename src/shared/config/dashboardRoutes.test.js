@@ -29,6 +29,7 @@ describe('isPicksClusterPath', () => {
     expect(isPicksClusterPath(`${PICKS_CLUSTER_PATHS.lab}/`)).toBe(true);
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.scorecard)).toBe(true);
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.rewind)).toBe(true);
+    expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.phishIq)).toBe(true);
   });
 
   it('does not match sibling primary tabs', () => {

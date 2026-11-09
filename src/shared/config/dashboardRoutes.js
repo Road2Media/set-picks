@@ -29,6 +29,7 @@ export const PICKS_CLUSTER_PATHS = Object.freeze({
   lab: '/dashboard/picks/lab',
   scorecard: '/dashboard/picks/scorecard',
   rewind: '/dashboard/rewind',
+  phishIq: '/dashboard/phish-iq',
 });
 
 /**
@@ -104,6 +105,7 @@ export function isPicksClusterPath(pathname) {
   if (path === PICKS_CLUSTER_PATHS.lab) return true;
   if (path === PICKS_CLUSTER_PATHS.scorecard) return true;
   if (path === PICKS_CLUSTER_PATHS.rewind) return true;
+  if (path === PICKS_CLUSTER_PATHS.phishIq) return true;
   return false;
 }
 
