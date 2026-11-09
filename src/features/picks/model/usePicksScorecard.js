@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { PICKS_CLUSTER_PATHS } from '../../../shared/config/dashboardRoutes';
 import { FORM_FIELDS } from '../../../shared/data/gameConfig';
 import { showOptionLabelCompact } from '../../../shared/utils/showOptionLabel';
-import { computeStandingsSelfRecap, useStandings } from '../../scoring';
+import { useHideCrowdPulse } from '../../crowd-picks';
+import { computeStandingsSelfRecap, useDisplayedPicks, useStandings } from '../../scoring';
 import { useShowCalendar } from '../../show-calendar';
 import { computeScorecardOverlap } from './computeScorecardOverlap';
 import { hasNonEmptyPicksObject } from './pickSubmission';
@@ -13,33 +15,45 @@ import {
 } from './picksAnalytics';
 import {
   resolveScorecardState,
+  scorecardShowsCrowdShare,
   scorecardShowsOverlap,
   scorecardShowsRank,
 } from './resolveScorecardState';
 import { mapScorecardSlotGrade } from './mapScorecardSlotGrade';
-import { selectScorecardOdds } from './selectScorecardOdds';
+import {
+  resolveScorecardAudience,
+  scorecardAudienceOptions,
+  scorecardPoolExcludesNight,
+  scorecardStandingsHref,
+} from './scorecardAudience';
+import { selectScorecardCrowdShare } from './selectScorecardCrowdShare';
 import usePicksForm from './usePicksForm';
-import { usePickRecommendations } from './usePickRecommendations';
+
+const EMPTY_POOLS = [];
 
 /**
- * Picks → Scorecard screen hook (#767). Global + show-scoped via the date
- * picker. Overlap is post-lock only. Odds come from Storage
- * `pick-recommendations.json` (`playProbBySong` when present; omit if
- * missing or for another night). Rank/score reuse the show-scoped
- * standings query — no extra collections.
+ * Picks → Scorecard screen hook (#767, follow-ons #1043).
+ * Show comes from the global date picker. Audience is everyone, or one of
+ * the player's pools via `?pool=` (same membership filter as standings).
+ * Overlap stays post-lock. Crowd % replaces model odds and uses the night
+ * aggregate already loaded for standings. It stays off before showtime and
+ * when Hide crowd pulse is on. That preference also hides overlap. Rank
+ * stays. No new collection and no unbounded picks scan.
  *
  * @param {{
  *   user: { uid?: string } | null | undefined,
  *   selectedDate: string | undefined,
  *   picksForm?: ReturnType<typeof usePicksForm>,
- *   artifact?: object | null,
+ *   pools?: Array<{ id?: string, name?: string, members?: string[] }>,
+ *   poolsLoading?: boolean,
  * }} args
  */
 export function usePicksScorecard({
   user,
   selectedDate,
   picksForm: picksFormProp,
-  artifact: artifactProp,
+  pools = EMPTY_POOLS,
+  poolsLoading = false,
 }) {
   const { showDates, showDatesByTour } = useShowCalendar();
   const localForm = usePicksForm({
@@ -52,38 +66,87 @@ export function usePicksScorecard({
     formData,
     isLocked,
     isLoadingPicks,
+    showStatus,
   } = picksFormProp ?? localForm;
+
+  const { hideCrowdPulse } = useHideCrowdPulse();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawPool = (searchParams.get('pool') || '').trim();
+  const audience = useMemo(
+    () => resolveScorecardAudience(rawPool, pools),
+    [rawPool, pools],
+  );
+
+  useEffect(() => {
+    if (!rawPool || poolsLoading || !audience.invalid) return;
+    setSearchParams(
+      (prev) => {
+        if (!prev.get('pool')) return prev;
+        const next = new URLSearchParams(prev);
+        next.delete('pool');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [rawPool, poolsLoading, audience.invalid, setSearchParams]);
+
+  const onAudienceChange = useCallback(
+    (nextId) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (!nextId || nextId === 'global') next.delete('pool');
+          else next.set('pool', nextId);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const { picks, actualSetlist, loading: standingsLoading } = useStandings(
     selectedDate,
     showDates,
   );
-  const { artifact: fetchedArtifact } = usePickRecommendations({
-    enabled: artifactProp === undefined,
-    selectedDate,
+  const displayedPicks = useDisplayedPicks({
+    picks,
+    userPools: pools,
+    activeFilter: audience.id,
   });
-  const artifact = artifactProp !== undefined ? artifactProp : fetchedArtifact;
 
   const hasPicks = hasNonEmptyPicksObject(formData);
   const hasSetlist = Boolean(actualSetlist);
   const state = resolveScorecardState({ hasPicks, isLocked, hasSetlist });
-  const showOverlap = scorecardShowsOverlap(state);
+  const showOverlap = scorecardShowsOverlap(state) && !hideCrowdPulse;
   const showRank = scorecardShowsRank(state);
-  const isLoading = Boolean(isLoadingPicks || (selectedDate && standingsLoading));
+  const showCrowd =
+    scorecardShowsCrowdShare(showStatus) && !hideCrowdPulse;
+  const audiencePending = Boolean(rawPool) && poolsLoading && audience.invalid;
+  const isLoading = Boolean(
+    isLoadingPicks || (selectedDate && standingsLoading) || audiencePending,
+  );
 
   const recap = useMemo(
-    () => computeStandingsSelfRecap(picks, actualSetlist, user?.uid),
-    [picks, actualSetlist, user?.uid],
+    () => computeStandingsSelfRecap(displayedPicks, actualSetlist, user?.uid),
+    [displayedPicks, actualSetlist, user?.uid],
+  );
+
+  const poolExcludesNight = scorecardPoolExcludesNight(
+    picks,
+    displayedPicks,
+    user?.uid,
+    audience.id,
   );
 
   const overlapRows = useMemo(
-    () => (showOverlap ? computeScorecardOverlap(picks, user?.uid, formData) : []),
-    [showOverlap, picks, user?.uid, formData],
+    () => (showOverlap ? computeScorecardOverlap(displayedPicks, user?.uid, formData) : []),
+    [showOverlap, displayedPicks, user?.uid, formData],
   );
 
-  const oddsRows = useMemo(
-    () => selectScorecardOdds(artifact, selectedDate, formData),
-    [artifact, selectedDate, formData],
+  const crowdRows = useMemo(
+    () => (showCrowd ? selectScorecardCrowdShare(displayedPicks, formData) : null),
+    [showCrowd, displayedPicks, formData],
   );
 
   const overlapBySlot = useMemo(() => {
@@ -95,21 +158,20 @@ export function usePicksScorecard({
     return map;
   }, [overlapRows]);
 
-  const oddsBySlot = useMemo(() => {
-    /** @type {Record<string, { playProb: number | null, unknown: boolean }>} */
+  const crowdBySlot = useMemo(() => {
+    /** @type {Record<string, string>} */
     const map = {};
-    if (!oddsRows) return map;
-    for (const row of oddsRows) {
-      map[row.fieldId] = { playProb: row.playProb, unknown: Boolean(row.unknown) };
+    if (!crowdRows) return map;
+    for (const row of crowdRows) {
+      map[row.fieldId] = row.label;
     }
     return map;
-  }, [oddsRows]);
+  }, [crowdRows]);
 
   const slots = useMemo(
     () =>
       FORM_FIELDS.map((field) => {
         const song = String(formData?.[field.id] ?? '').trim();
-        const odds = oddsBySlot[field.id];
         const grade =
           state === 'graded' && actualSetlist
             ? mapScorecardSlotGrade(field.id, song, actualSetlist)
@@ -119,44 +181,40 @@ export function usePicksScorecard({
           label: field.label,
           song,
           alsoPickedCount: showOverlap ? overlapBySlot[field.id] ?? 0 : null,
-          playProb: odds?.playProb ?? null,
-          oddsUnknown: Boolean(odds?.unknown),
+          crowdShareLabel: crowdBySlot[field.id] || null,
           grade,
         };
       }).filter((slot) => slot.song),
-    [formData, showOverlap, overlapBySlot, oddsBySlot, state, actualSetlist],
+    [formData, showOverlap, overlapBySlot, crowdBySlot, state, actualSetlist],
   );
 
   const show = selectedDate ? showDates?.find((s) => s.date === selectedDate) : null;
   const showLabel = show ? showOptionLabelCompact(show) : selectedDate || '';
-
-  const standingsTo = selectedDate
-    ? `/dashboard/standings?showDate=${encodeURIComponent(selectedDate)}`
-    : '/dashboard/standings';
+  const audienceOptions = useMemo(() => scorecardAudienceOptions(pools), [pools]);
 
   const openKeyRef = useRef('');
   useEffect(() => {
     if (!selectedDate || isLoading) return;
-    const key = `${selectedDate}:${state}`;
+    const key = `${selectedDate}:${state}:${audience.id}`;
     if (openKeyRef.current === key) return;
     openKeyRef.current = key;
     trackScorecardOpen({ show_date: selectedDate, lock_state: state });
-  }, [selectedDate, state, isLoading]);
+  }, [selectedDate, state, isLoading, audience.id]);
 
   const impressedRef = useRef(/** @type {Set<string>} */ (new Set()));
   useEffect(() => {
     if (!selectedDate || isLoading) return;
     const mark = (metric, visible) => {
       if (!visible) return;
-      const key = `${selectedDate}:${metric}`;
+      const key = `${selectedDate}:${audience.id}:${metric}`;
       if (impressedRef.current.has(key)) return;
       impressedRef.current.add(key);
       trackScorecardMetricImpression({ show_date: selectedDate, metric });
     };
     mark('overlap', showOverlap);
-    mark('odds', Boolean(oddsRows));
+    mark('crowd', Boolean(crowdRows));
     mark('rank', showRank);
-  }, [selectedDate, isLoading, showOverlap, oddsRows, showRank]);
+  }, [selectedDate, isLoading, showOverlap, crowdRows, showRank, audience.id]);
 
   return {
     isLoading,
@@ -164,10 +222,15 @@ export function usePicksScorecard({
     showLabel,
     slots,
     showOverlap,
-    showOdds: Boolean(oddsRows),
+    showCrowd: Boolean(crowdRows),
     showRank,
     recap,
-    standingsTo,
+    audienceId: audience.id,
+    audienceName: audience.id === 'global' ? '' : audience.name,
+    audienceOptions,
+    onAudienceChange,
+    poolExcludesNight,
+    standingsTo: scorecardStandingsHref(selectedDate, audience.id),
     makePicksTo: PICKS_CLUSTER_PATHS.makePicks,
   };
 }

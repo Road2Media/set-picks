@@ -48,7 +48,7 @@ First-time ops: run `refreshPickRecommendationHistory` (or local Admin SDK sync)
 }
 ```
 
-`playProbBySong` (**v1.68.0+ / #767**) is show-wide `playProb` for every song in the history window (normalized title keys). Scorecard uses it so every pick on the card can show model odds. Lab still reads `slots` top-K only.
+`playProbBySong` (**v1.68.0+ / #767**) is show-wide `playProb` for every song in the history window (normalized title keys). Make Picks and the Make Picks crowd-helper Odds chip use it. Lab still reads `slots` top-K only. Scorecard stopped reading this file in **v1.110.0 / #1043** and shows live crowd % after showtime instead.
 
 Model methodology: `docs/scoring-analysis/08-recommendation-model.md`.
 
