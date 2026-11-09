@@ -11,6 +11,13 @@ const {
   syncPhishnetSongCatalogToStorage,
 } = require("./phishnetSongCatalog");
 const {
+  emitSongCatalogHealth,
+  emitSongCatalogSync,
+  runSongCatalogHealthCheck,
+  scrubSongCatalogLogMessage,
+  songCatalogHealthReadFailure,
+} = require("./songCatalogObservability");
+const {
   syncPickRecommendationsToStorage,
 } = require("./pickRecommendations");
 const {
@@ -2234,11 +2241,18 @@ exports.scheduledPhishnetSongCatalog = onSchedule(
     secrets: [phishnetApiKey],
   },
   async () => {
+    const started = Date.now();
     const key = phishnetApiKey.value();
     if (!key || !String(key).trim()) {
-      logger.error(
-        "scheduledPhishnetSongCatalog: PHISHNET_API_KEY missing; skip sync."
-      );
+      emitSongCatalogSync(logger, {
+        ok: false,
+        trigger: "schedule",
+        reason: "missing_api_key",
+        songCount: 0,
+        durationMs: Date.now() - started,
+        archivePath: null,
+        detail: "PHISHNET_API_KEY missing; skip sync.",
+      });
       return null;
     }
     try {
@@ -2246,10 +2260,55 @@ exports.scheduledPhishnetSongCatalog = onSchedule(
         String(key).trim(),
         { logger }
       );
-      logger.info("scheduledPhishnetSongCatalog public URL", result.publicUrl);
+      emitSongCatalogSync(logger, {
+        ok: true,
+        trigger: "schedule",
+        reason: "uploaded",
+        songCount: result.songCount,
+        durationMs: Date.now() - started,
+        archivePath: result.archivePath ?? null,
+        detail: "uploaded",
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      logger.error("scheduledPhishnetSongCatalog failed", msg, e);
+      emitSongCatalogSync(logger, {
+        ok: false,
+        trigger: "schedule",
+        reason: "exception",
+        songCount: 0,
+        durationMs: Date.now() - started,
+        archivePath: null,
+        detail: msg,
+      });
+    }
+    return null;
+  }
+);
+
+/**
+ * Metadata check for Storage `song-catalog.json` (#168).
+ * Runs 30 minutes after each catalog sync. Logs `songCatalogHealth`.
+ * Does not call Phish.net and does not download the object.
+ * A failure here returns null: Cloud Scheduler still shows success, so the
+ * alert is the ERROR log, not the function execution status.
+ */
+exports.scheduledSongCatalogHealth = onSchedule(
+  {
+    schedule: "30 */6 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 60,
+  },
+  async () => {
+    try {
+      await runSongCatalogHealthCheck({
+        bucket: admin.storage().bucket(),
+        logger,
+        nowMs: Date.now(),
+      });
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e);
+      emitSongCatalogHealth(logger, songCatalogHealthReadFailure(detail));
     }
     return null;
   }
@@ -2266,11 +2325,21 @@ exports.refreshPhishnetSongCatalog = onCall(
     enforceAppCheck: false,
   },
   async (request) => {
+    const started = Date.now();
     try {
       assertAdminClaim(request);
 
       const key = phishnetApiKey.value();
       if (!key || !String(key).trim()) {
+        emitSongCatalogSync(logger, {
+          ok: false,
+          trigger: "admin",
+          reason: "missing_api_key",
+          songCount: 0,
+          durationMs: Date.now() - started,
+          archivePath: null,
+          detail: "PHISHNET_API_KEY missing; skip sync.",
+        });
         throw new HttpsError(
           "failed-precondition",
           "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
@@ -2281,6 +2350,15 @@ exports.refreshPhishnetSongCatalog = onCall(
         String(key).trim(),
         { logger }
       );
+      emitSongCatalogSync(logger, {
+        ok: true,
+        trigger: "admin",
+        reason: "uploaded",
+        songCount: result.songCount,
+        durationMs: Date.now() - started,
+        archivePath: result.archivePath ?? null,
+        detail: "uploaded",
+      });
       return {
         ok: true,
         songCount: result.songCount,
@@ -2290,10 +2368,22 @@ exports.refreshPhishnetSongCatalog = onCall(
     } catch (e) {
       if (e instanceof HttpsError) throw e;
       const msg = e instanceof Error ? e.message : String(e);
-      logger.error("refreshPhishnetSongCatalog unexpected error", msg, e);
+      emitSongCatalogSync(logger, {
+        ok: false,
+        trigger: "admin",
+        reason: "exception",
+        songCount: 0,
+        durationMs: Date.now() - started,
+        archivePath: null,
+        detail: msg,
+      });
+      logger.error(
+        "refreshPhishnetSongCatalog unexpected error",
+        scrubSongCatalogLogMessage(msg)
+      );
       throw new HttpsError(
         "failed-precondition",
-        `refreshPhishnetSongCatalog failed: ${msg}`
+        `refreshPhishnetSongCatalog failed: ${scrubSongCatalogLogMessage(msg)}`
       );
     }
   }

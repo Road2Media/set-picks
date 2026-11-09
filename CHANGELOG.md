@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.99.0] — 2026-11-09
+
+### Added
+- **Song catalog observability (#168)** — `scheduledPhishnetSongCatalog` and `refreshPhishnetSongCatalog` write a structured `songCatalogSync` log (`ok`, `trigger`, `reason`, `songCount`, `durationMs`, `archivePath`). `scheduledSongCatalogHealth` runs at half past every sixth hour, America/New_York, and writes `songCatalogHealth` when `song-catalog.json` is missing, under 8 KB, or older than 18 hours. The picks client sends one GA4 `song_catalog_fallback` per production session when autocomplete is served from the bundled song list (`reason` is `load_error` or `unavailable`). No song titles, URLs, or error text. Alert policies are steps in `docs/SONG_CATALOG.md`. This change does not create them. The new schedule is live only after `npm run deploy:functions:phishnet`.
+
 ## [1.98.4] — 2026-11-07
 
 ### Changed

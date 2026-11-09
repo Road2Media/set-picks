@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { fetchFirstOkJson } from '../../../shared/lib/fetchFirstOkJson.js';
+import { catalogFallbackReason, trackSongCatalogFallback } from './songCatalogAnalytics.js';
 import { selectCatalogSongs } from './selectCatalogSongs.js';
 import {
   SONG_CATALOG_CACHE_KEY,
@@ -61,8 +62,9 @@ function writeCatalogCache(entry) {
 }
 
 /**
- * Loads song catalog from public Storage JSON with 3-day localStorage cache (issue #158).
- * Falls back to bundled `PHISH_SONGS` when unavailable.
+ * Loads song catalog from public Storage JSON with a 6-hour localStorage cache (issue #158).
+ * Falls back to bundled `PHISH_SONGS` when unavailable. A bundled result emits
+ * one GA4 `song_catalog_fallback` per session (#168).
  *
  * @returns {{
  *   songs: { name: string, total?: string, gap?: string, last?: string, debut?: string }[],
@@ -169,6 +171,12 @@ export function useSongCatalog() {
     () => selectCatalogSongs(remoteSongs),
     [remoteSongs],
   );
+
+  useEffect(() => {
+    const reason = catalogFallbackReason({ resolved, source, loadError });
+    if (!reason) return;
+    trackSongCatalogFallback({ reason });
+  }, [resolved, source, loadError]);
 
   return {
     songs,
