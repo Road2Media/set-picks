@@ -244,6 +244,29 @@ const MSG_GARDEN_DESCRIPTION =
   'Phish at the Garden: the songs they play most, what opens the night, debuts, long gaps, and New Year\'s Eve.';
 const MSG_GARDEN_URL = `${SEO_CONFIG.siteUrl}${MSG_GARDEN_PATH}`;
 
+/** Public handles-only board for the 100th Garden show (#1147). */
+const HUNDREDTH_SHOW_PATH = '/phish-at-msg/100th';
+const HUNDREDTH_SHOW_TITLE = "Pick the 100th at MSG | Setlist Pick'Em";
+const HUNDREDTH_SHOW_DESCRIPTION =
+  'Public board for Phish at Madison Square Garden on January 2, 2027. Handles, rank, points, and exact slots. No email addresses.';
+const HUNDREDTH_SHOW_URL = `${SEO_CONFIG.siteUrl}${HUNDREDTH_SHOW_PATH}`;
+
+function buildHundredthShowJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': HUNDREDTH_SHOW_URL,
+        url: HUNDREDTH_SHOW_URL,
+        name: HUNDREDTH_SHOW_TITLE,
+        description: HUNDREDTH_SHOW_DESCRIPTION,
+        isPartOf: { '@id': `${SEO_CONFIG.siteUrl}/#website` },
+      },
+    ],
+  };
+}
+
 /** Annual roll-up (#1141). Not a tour slug. */
 const ANNUAL_2026_TITLE = "2026 Phish Tour Statistics | Setlist Pick'Em";
 const ANNUAL_2026_DESCRIPTION =
@@ -811,6 +834,19 @@ export const PRERENDER_ROUTES = [
       'Phish at Madison Square Garden: the songs they play most, what opens the night, the debuts, the long waits between visits, and New Year\'s Eve.',
     ],
     buildJsonLd: buildMsgGardenJsonLdShell,
+  },
+  {
+    path: HUNDREDTH_SHOW_PATH,
+    title: HUNDREDTH_SHOW_TITLE,
+    description: HUNDREDTH_SHOW_DESCRIPTION,
+    canonicalUrl: HUNDREDTH_SHOW_URL,
+    h1: 'Pick the 100th',
+    paragraphs: [
+      'January 2, 2027 is the 100th Phish performance at Madison Square Garden. Scoring that night is the same as every other show.',
+      'The public board lists handles, rank, points, and exact slots. It does not list email addresses or account fields.',
+      'The board goes up the morning after the show. Call your slots before the lights go down.',
+    ],
+    buildJsonLd: buildHundredthShowJsonLd,
   },
   {
     path: '/tour-stats/2026',

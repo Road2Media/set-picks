@@ -219,6 +219,7 @@ export function usePicksScorecard({
   return {
     isLoading,
     state,
+    showDate: selectedDate || '',
     showLabel,
     slots,
     showOverlap,

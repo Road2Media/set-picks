@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { HundredthShowCardMark } from '../../../features/hundredth-show';
+
 import {
   dashboardTourDateLabelGradientClasses,
   dashboardTourDateSelectChromeDesktopWrap,
@@ -74,10 +76,13 @@ export default function DashboardTourDateScope({
   if (variant === 'desktop') {
     return (
       <div className="flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-border-muted/70 bg-surface-panel-strong p-3 shadow-inset-glass ring-1 ring-border-glass/45 backdrop-blur-md">
-        <span
-          className={`shrink-0 px-2 text-xs font-black uppercase tracking-widest ${dashboardTourDateLabelGradientClasses}`}
-        >
-          Tour Date:
+        <span className="flex min-w-0 shrink flex-col gap-0.5 px-2">
+          <span
+            className={`text-xs font-black uppercase tracking-widest ${dashboardTourDateLabelGradientClasses}`}
+          >
+            Tour Date:
+          </span>
+          <HundredthShowCardMark showDate={selectedDate} />
         </span>
         <ChromeScopeStepper
           size="md"

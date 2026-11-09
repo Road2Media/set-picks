@@ -70,6 +70,12 @@ export const SITEMAP_PUBLIC_ROUTES = Object.freeze([
     llms: 'Phish at MSG',
   },
   {
+    path: '/phish-at-msg/100th',
+    changefreq: 'weekly',
+    priority: '0.7',
+    llms: 'Pick the 100th at MSG',
+  },
+  {
     path: '/phish-setlist-prediction-game',
     changefreq: 'monthly',
     priority: '0.85',

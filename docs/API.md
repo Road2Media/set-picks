@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.111.0  
+**Version:** 1.112.0  
 
 
 **SemVer:** https://semver.org  
@@ -430,6 +430,30 @@ Until rules and the functions are deployed, the page and prerender use the commi
 
 **Deploy (human, not CI):** rules first, then `functions:scheduledPublicMsgGardenStats,functions:refreshPublicMsgGardenStats`, then one admin `refreshPublicMsgGardenStats` so the doc exists before 08:10 ET. The schedule uses secret `PHISHNET_API_KEY` (already provisioned for other Phish.net jobs). These two functions are not part of `npm run deploy:functions:phishnet`.
 
+### 1.22.1 `public_night_boards/{showDate}` (**v1.112.0 / #1147**)
+
+Handles-only snapshot for the public 100th-show board at `/phish-at-msg/100th`. Written by Cloud Functions Admin SDK from `rollupScoresForShow` when `showDate` is `2027-01-02`. A past date is written only by `node functions/scripts/publishHundredthNightBoard.js --date=YYYY-MM-DD --confirm`. `--dry-run` prints the public JSON and does not write. A command with neither flag exits. Clients may read. Clients cannot write.
+
+The document is built by `projectPublicNightBoard`. Email addresses, user ids, pick maps, and any other account field are dropped. A handle that contains `@` is dropped. Production pages request `2027-01-02` only. A `?dryRunDate=` query is ignored when the Vite mode is `production`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `showDate` | string | `YYYY-MM-DD`. Same as the document id. |
+| `venue` | string | `Madison Square Garden` |
+| `city` | string | `New York, NY` |
+| `label` | string | `The 100th`, or `The 100th dry run` for a past date |
+| `dryRun` | boolean | `true` only when the date is not `2027-01-02` |
+| `rows` | `{ rank, handle, points, exactSlots }[]` | Public rows. `exactSlots` counts exact slot hits (opener, closer, first encore). No other keys. |
+
+`show_recap` for `2027-01-02` may include `payload.share_pack` `{ path, url, text, lines }` (no email). After that send, `comms_process_state/show_recap:2027-01-02` is `sent`, so a later rollup does not send the recap again (#1035). Other shows are unchanged.
+
+**Deploy (human, after this release, before January 2, 2027):**
+
+1. `firebase deploy --only firestore:rules --project set-picks`
+2. `firebase deploy --only functions:rollupScoresForShow,functions:scheduledPhishnetLiveSetlistPoll --project set-picks`
+
+No new composite index. No new secret.
+
 ### 1.23 Rewind Mode (`rewind_weeks`, `rewind_state`, `rewind_answers`, `rewind_picks`) (**v1.96.0 / #1142**)
 
 Off-tour week. One admin-chosen historical show. Player surfaces stay dark until `VITE_ENABLE_REWIND_MODE=true`. Live standings keep reading `picks` only.
@@ -769,7 +793,8 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/how-scoring-works` | None | Scoring rules marketing page. **v1.32.0+ (#659):** served as prerendered `dist/how-scoring-works/index.html` when present. **v1.47.0:** marketing document. **v1.58.0 (#944):** light editorial main + `ScoringRulesContent surface="light"` (in-app modal remains dark default). **v1.101.0 (#1086):** the ladder on the page is the one in effect for today (America/New_York). Nights before 2026-12-30 keep wildcard 10 and any encore song 15. Starting 2026-12-30 the page shows wildcard 5, first encore 15, later encore 10. |
 | `/how-scoring-changed` | None | **v1.101.0 (#1086):** public explainer for the scoring change. Not in the main nav. Prerendered marketing document. Scoring section only. Ranking and tie-breaks stay on #1172 / #1218. GA4 `route_group=marketing`. |
 | `/tour-stats` | None | **v1.33.0 (#665):** public aggregate tour song stats (filter + default Sphere). Prerendered shell; live data from `public_tour_stats`. Never full nightly setlists. **v1.47.1 (#827):** skeleton chrome + `PublicTourStatsPage` modulepreload. **v1.49.0 (#853):** boots the **marketing** document (no `AuthProvider`); App Check + Firestore load at fetch time only — restores cold-open feel after #835 login deferral regressed the app-shell path. **v1.60.0 (#929):** hub “current tour” blurb links to the live summer SEO slug; filter selection always uses slug URLs. **v1.62.0 (#869):** first meaningful stats prefer `/tour-stats-data/*.json` + Firestore REST (no App Check kick on marketing). **v1.91.2 (#930):** build-time `dist/sitemap.xml` stamps `<lastmod>` on this hub from the newest prerendered slug `lastShowDate`. **v1.94.0 (#1139):** hub blurb also links to `/tour-stats/msg`. **v1.95.0 (#1141):** hub blurb also links to `/tour-stats/2026`. **v1.98.0 (#1192):** hub archive line no longer links to Phish at MSG. |
-| `/phish-at-msg` | None | **v1.98.0 (#1192):** canonical Phish at MSG page. Moved out of the tour model. Same aggregates as v1.94.0: played-show count, most-played songs, MSG debuts, longest visit gaps, bustouts, New Year's Eve counts, and set-1 opener frequencies. Prerendered. FAQ + ItemList JSON-LD. Sitemap and `llms.txt` list this URL. Breadcrumb is Home → Phish at MSG. On-page credit links to Phish.net. CTA is `/login?mode=signup`. Sitemap `<lastmod>` is the page's `lastShowDate` and is not folded into the `/tour-stats` hub max. Live numbers come from `public_venue_stats/msg`. Returning sessions stay on the marketing document. GA4 `route_group=marketing`. Header and footer nav include “Phish at MSG”. |
+| `/phish-at-msg/100th` | None | **v1.112.0 (#1147):** public board for January 2, 2027 at Madison Square Garden. Prerendered. Sitemap and `llms.txt`. Handles, rank, points, and exact slots. No email addresses or account fields. Live rows come from `public_night_boards/2027-01-02` after the rules and rollup functions are deployed. Until that doc exists, the page states that the board goes up the morning after the show. `?dryRunDate=YYYY-MM-DD` is honored only when the Vite mode is not `production` (staging and local). Production ignores it. Returning sessions stay on the marketing document. GA4 `route_group=marketing`. |
+| `/phish-at-msg` | None | **v1.98.0 (#1192):** canonical Phish at MSG page. Links to `/phish-at-msg/100th`. Moved out of the tour model. Same aggregates as v1.94.0: played-show count, most-played songs, MSG debuts, longest visit gaps, bustouts, New Year's Eve counts, and set-1 opener frequencies. Prerendered. FAQ + ItemList JSON-LD. Sitemap and `llms.txt` list this URL. Breadcrumb is Home → Phish at MSG. On-page credit links to Phish.net. CTA is `/login?mode=signup`. Sitemap `<lastmod>` is the page's `lastShowDate` and is not folded into the `/tour-stats` hub max. Live numbers come from `public_venue_stats/msg`. Returning sessions stay on the marketing document. GA4 `route_group=marketing`. Header and footer nav include “Phish at MSG”. |
 | `/tour-stats/msg` | None | **v1.94.0 (#1139)** served the Garden page here. **v1.98.0 (#1192):** permanent redirect to `/phish-at-msg` (`vercel.json` `permanent: true`, HTTP 308, same pattern as the summer slug). Not prerendered. Not in the sitemap or `llms.txt`. The `msg` slug stays reserved so tour auto-expand cannot publish a tour page on this path. |
 | `/tour-stats/2026` | None | **v1.95.0 (#1141):** annual roll-up (not a tour slug, not `PublicTourStatsPage`). Shows, unique songs, most-played songs, and bustouts for every 2026 tour. A show counts for the calendar year of its date: December 30 and December 31, 2026 count here; January 1 and January 2, 2027 count for 2027. Show counts and song-row totals equal the sum of the included tour pages. Unique songs are the union. Links to `/dashboard/standings?view=year&year=2026` (#1110). Prerender, FAQ + ItemList JSON-LD, sitemap, `llms.txt`. Sitemap `<lastmod>` is this page's `lastShowDate` and is not folded into the `/tour-stats` hub max. Live numbers prefer `public_tour_stats/_year_2026` after the tour-stats refresh is deployed. Until then the page adds published tour docs whose dates all fall in 2026. **Deploy (human, before 2027-01-01, no rules change):** `firebase deploy --only functions:scheduledPublicTourStatsRefresh,functions:refreshPublicTourStats,functions:scheduledPhishnetShowCalendar,functions:refreshPhishnetShowCalendar --project set-picks`. Then an admin call to `refreshPublicTourStats` writes the year doc before the next 07:30 ET run. **Search Console (human, after `main` is READY):** property `sc-domain:setlistpickem.com`, URL Inspection, Request indexing on `https://www.setlistpickem.com/tour-stats/2026`. |
 | `/tour-stats/2026-2027-nye-run` | None | **v1.105.0 (#1144):** New Year's Run at Madison Square Garden (December 30, December 31, January 1, January 2). Prerendered before the thin-page gate, so the page is crawlable while the run still has no setlists. Shows and venue come from the committed MSG snapshot (`upcomingShowDates` from the scoring-ladder start through the 100th Garden performance). Event JSON-LD: name, `startDate`, Place (Madison Square Garden), and `url` on phish.com. CTA is `/dashboard/pools/create` with pool name `NYE Run` and `utm_campaign=seo_geo`. Signed-out visitors return to that form after login. `/login` no longer sends a successful sign-in home before that return. GA4 `public_tour_stats_view` `{ tour_slug }` and `nye_pool_cta` `{ tour_slug }`. Aggregates only when `public_tour_stats/2026-2027-nye-run` has plays. No night setlist. Sitemap and `llms.txt`. Returning sessions stay on the marketing document (`route_group=tour_stats`). |

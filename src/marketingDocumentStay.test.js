@@ -8,6 +8,7 @@ describe('shouldStayOnMarketingDocument', () => {
     expect(shouldStayOnMarketingDocument('/tour-stats/2026-fall-tour')).toBe(true);
     expect(shouldStayOnMarketingDocument('/tour-stats/msg')).toBe(true);
     expect(shouldStayOnMarketingDocument('/phish-at-msg')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/phish-at-msg/100th')).toBe(true);
     expect(shouldStayOnMarketingDocument('/phish-iq')).toBe(true);
     expect(shouldStayOnMarketingDocument('/rewind')).toBe(true);
     expect(shouldStayOnMarketingDocument('/rewind/2026-11-23')).toBe(true);

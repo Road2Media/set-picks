@@ -43,6 +43,7 @@ const HowScoringWorksPage = lazy(() => import('../pages/marketing/HowScoringWork
 const HowScoringChangedPage = lazy(() => import('../pages/marketing/HowScoringChangedPage'));
 const PublicTourStatsPage = lazy(() => import('../pages/marketing/PublicTourStatsPage'));
 const MsgGardenStatsPage = lazy(() => import('../pages/marketing/MsgGardenStatsPage'));
+const HundredthShowPage = lazy(() => import('../pages/marketing/HundredthShowPage'));
 const AnnualTourStatsPage = lazy(() => import('../pages/marketing/AnnualTourStatsPage'));
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
 const PhishIqPage = lazy(() => import('../pages/marketing/PhishIqPage'));
@@ -77,6 +78,7 @@ function App() {
         <Route path="/how-scoring-changed" element={<HowScoringChangedPage />} />
         <Route path="/tour-stats" element={<PublicTourStatsPage />} />
         <Route path="/phish-at-msg" element={<MsgGardenStatsPage />} />
+        <Route path="/phish-at-msg/100th" element={<HundredthShowPage />} />
         <Route
           path="/tour-stats/msg"
           element={<Navigate to="/phish-at-msg" replace />}

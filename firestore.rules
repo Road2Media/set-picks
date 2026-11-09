@@ -258,6 +258,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    /**
+     * Handles-only board for one show (#1147). Written by Cloud Functions
+     * after rollup of 2027-01-02, or by the dry-run script for a past date.
+     * Rows are rank, handle, points, and exact slots. No client writes.
+     */
+    match /public_night_boards/{showDate} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     /** Server-written Phish.net show calendar; clients read only (issue #160). */
     match /show_calendar/{docId} {
       allow read: if signedIn();
