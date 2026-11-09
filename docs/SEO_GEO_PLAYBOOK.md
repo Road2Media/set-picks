@@ -237,6 +237,7 @@ Honest citations beat spam. Prefer communities where the product already has con
 | phish.net / Mockingbird | Open | Attribution already in footer; cite when discussing data |
 | Fan wikis / PT-adjacent forums | Open | Only with useful, non-spammy pages (how-it-works, scoring, public stats) |
 | Personal / tour crew shares | Open | Invite links are product, not SEO — still use UTMs for measurement |
+| 100th-show outreach, December 1-20, 2026 | Tracker drafted (#1146). Nothing sent | [`content/marketing/1146-100th-show-outreach-tracker.md`](../content/marketing/1146-100th-show-outreach-tracker.md) and the one-page kit. Value exchange only. Log earned links there. Check GSC Links in January 2027. |
 
 **Out of scope:** Buying links, PBNs, scraped directories.
 
@@ -262,6 +263,8 @@ Example (**#930** — share the **summer stats URL**, not only home, after a rea
 `https://www.setlistpickem.com/tour-stats/2026-summer-tour?utm_source=discord&utm_medium=social&utm_campaign=seo_926&utm_content=tour-stats-summer-2026`
 
 (`utm_campaign=seo_geo` is also valid; pick one and keep it consistent for the post.)
+
+**#1146 (100th-show outreach, December 1-20, 2026).** Same parameters. `utm_campaign=seo_geo`. `utm_source` is the property name when it is not already in the list above (`phish-net`, `phish-in`, `reddit`, `phantasy-tour`, `helping-friendly`, `undermine`, `after-midnight`, `relix`, `jambase`, `discord`). `utm_medium` stays `social` (Reddit, Discord) or `referral` (a link on a site or in show notes). `utm_content` is `phish-at-msg`, `embed-stats`, or `predict-100th`. The embed credit inside `/embed/stats` is unchanged (`utm_source=embed`, `utm_campaign=seo_geo`, no medium). Paste links and the approval gate are in [`content/marketing/1146-100th-show-outreach-tracker.md`](../content/marketing/1146-100th-show-outreach-tracker.md). Nothing in that doc has been sent.
 
 **Draft caption (not posted).** Re-read the public summer page before sending. Figures below are the public aggregates on 2026-10-22 (`public_tour_stats/2026-summer-tour`: 21 shows, 191 unique songs, 50 songs back after a 30+ show gap). One cited return already on that page: Melt the Guns, gap 2052, show date 2026-07-31. The current calendar tour is Fall (`2026-fall-tour`); #930 still asks for the **summer** URL.
 
