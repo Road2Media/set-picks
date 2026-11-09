@@ -4,6 +4,7 @@ import { ChevronLeft, Share2, Users, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import Button from '../../../shared/ui/Button';
+import { Row } from '../../../shared/ui/Card';
 import FilterPill from '../../../shared/ui/FilterPill';
 
 /**
@@ -104,11 +105,12 @@ export default function InviteChooserSheet({
 
           {isChooseStep ? (
             <div className="mt-6 flex flex-col gap-3">
-              <button
+              <Row
+                as="button"
                 type="button"
                 onClick={onShareSiteInvite}
                 disabled={!hasHandle || sharing}
-                className="flex w-full items-start gap-3 rounded-2xl border border-border-subtle bg-surface-panel/80 p-4 text-left transition-colors hover:border-brand-primary/40 hover:bg-surface-panel disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-start gap-3 text-left transition-colors hover:border-brand-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/15 text-brand-primary">
                   <Share2 className="h-5 w-5" aria-hidden />
@@ -123,13 +125,14 @@ export default function InviteChooserSheet({
                       : 'Set your handle on Profile before sharing a site invite.'}
                   </span>
                 </span>
-              </button>
+              </Row>
 
-              <button
+              <Row
+                as="button"
                 type="button"
                 onClick={onGoToPoolStep}
                 disabled={sharing}
-                className="flex w-full items-start gap-3 rounded-2xl border border-border-subtle bg-surface-panel/80 p-4 text-left transition-colors hover:border-brand-primary/40 hover:bg-surface-panel disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-start gap-3 text-left transition-colors hover:border-brand-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/15 text-brand-primary">
                   <Users className="h-5 w-5" aria-hidden />
@@ -144,7 +147,7 @@ export default function InviteChooserSheet({
                       : 'Select one of your pools and send an invite link from your handle.'}
                   </span>
                 </span>
-              </button>
+              </Row>
             </div>
           ) : null}
 

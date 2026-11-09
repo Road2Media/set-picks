@@ -5,6 +5,7 @@ import {
   TOUR_STANDINGS_DESCRIPTION,
   TOUR_STANDINGS_HEADING,
 } from '../../../shared/config/dashboardVocabulary';
+import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import { StandingsPlayerAvatar, usePlayerIdentityMap } from '../../profile';
 import { assignTourDisplayRanks, tourStandingsBadge } from '../model/tourStandingsRank';
@@ -119,9 +120,10 @@ export default function TourStandingsSection({
             const identity = identities[row.uid] || null;
             const placeLabel = placeLabelsByRank?.[row.rank] || '';
             return (
-              <li
+              <Row
+                as="li"
                 key={row.uid}
-                className="rounded-xl border border-border-subtle/30 bg-surface-panel/80 px-3 py-2"
+                tone={isSelf ? 'self' : 'default'}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -164,7 +166,7 @@ export default function TourStandingsSection({
                     {placeLabel}
                   </p>
                 ) : null}
-              </li>
+              </Row>
             );
           })}
         </ol>
