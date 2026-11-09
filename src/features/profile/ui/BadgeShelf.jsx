@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
+import { Panel } from '../../../shared/ui/Card';
 import { FeatureNewBadge } from '../../feature-discovery';
 import { groupBadgeLadder } from '../model/badgeCatalog';
 import { trackBadgeShelfView } from '../model/profileEngagementAnalytics';
@@ -37,7 +38,7 @@ export default function BadgeShelf({
   }, [surface, earnedCount]);
 
   return (
-    <section className="mt-6 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+    <Panel as="section" className="mt-6">
       <h2 className="mb-3 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-content-secondary">
         Badges
         {showNewBadge ? <FeatureNewBadge title="New: milestone badges" /> : null}
@@ -85,6 +86,6 @@ export default function BadgeShelf({
           </div>
         ))}
       </div>
-    </section>
+    </Panel>
   );
 }

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import Button from '../../../shared/ui/Button';
+import { Panel } from '../../../shared/ui/Card';
 import Input from '../../../shared/ui/Input';
 
 export default function AccountSecurityForm({
@@ -23,7 +24,7 @@ export default function AccountSecurityForm({
   onPasswordResetEmail,
 }) {
   return (
-    <div className="space-y-6 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+    <Panel className="space-y-6">
       <form onSubmit={onSubmit} className="space-y-4">
         {/* Helps password managers associate the current password + updated password with the right user */}
         <input
@@ -160,6 +161,6 @@ export default function AccountSecurityForm({
           </p>
         )}
       </div>
-    </div>
+    </Panel>
   );
 }

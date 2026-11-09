@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { createPoolInviteLink } from '../../../shared/lib/createPoolInviteLink';
 import Button from '../../../shared/ui/Button';
-import Card from '../../../shared/ui/Card';
+import { Panel } from '../../../shared/ui/Card';
 import Input from '../../../shared/ui/Input';
 import PoolInviteCodeRow from './PoolInviteCodeRow';
 import PoolInviteShareButton from './PoolInviteShareButton';
@@ -86,7 +86,7 @@ export default function PoolJoinCreateCard({
       : '';
 
   return (
-    <Card variant="default" padding="none" className="overflow-hidden">
+    <Panel padding="none" className="overflow-hidden">
       <div className="flex border-b border-border-muted">
         <Button
           variant="text"
@@ -208,6 +208,6 @@ export default function PoolJoinCreateCard({
           </form>
         )}
       </div>
-    </Card>
+    </Panel>
   );
 }

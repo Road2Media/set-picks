@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { dashboardPageTitleGradientClasses } from '../../../shared/config/dashboardHeadingTypography';
+import { Panel } from '../../../shared/ui/Card';
 import { accountSecurityMode } from '../model/signInProviders';
 import { useAccountSecurity } from '../model/useAccountSecurity';
 import AccountSecurityForm from './AccountSecurityForm';
@@ -36,14 +37,14 @@ export default function AccountSecurity({ user, showHeading = true }) {
 
   if (mode === 'google-only') {
     return (
-      <div className="rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+      <Panel>
         <h3 className="text-sm font-black uppercase tracking-widest text-content-secondary">
           Sign-in method
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-content-secondary">
           You signed in with Google — manage email and password in your Google account settings.
         </p>
-      </div>
+      </Panel>
     );
   }
 

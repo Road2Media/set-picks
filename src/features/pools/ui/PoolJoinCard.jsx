@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import Button from '../../../shared/ui/Button';
-import Card from '../../../shared/ui/Card';
+import { Panel } from '../../../shared/ui/Card';
 import Input from '../../../shared/ui/Input';
 
 /**
@@ -75,8 +75,7 @@ export default function PoolJoinCard({
   const bannerType = message.text ? message.type : 'error';
 
   return (
-    <Card variant="default" padding="none" className="overflow-hidden">
-      <div className="p-6">
+    <Panel className="overflow-hidden">
         {bannerText ? (
           <div
             className={`mb-4 rounded-xl p-3 text-center text-sm font-bold ${
@@ -116,7 +115,6 @@ export default function PoolJoinCard({
             {joinBusy ? 'Joining...' : 'Join Pool'}
           </Button>
         </form>
-      </div>
-    </Card>
+    </Panel>
   );
 }

@@ -1,7 +1,7 @@
 export { default as AsyncStatus } from './AsyncStatus';
 export { default as BackButton } from './BackButton';
 export { default as Button } from './Button';
-export { default as Card } from './Card';
+export { default as Card, Panel, Row } from './Card';
 export { default as ChromeIconButton } from './ChromeIconButton';
 export { default as ChromeScopeStepper } from './ChromeScopeStepper';
 export { default as ChromeSegmentedControl } from './ChromeSegmentedControl';

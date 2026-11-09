@@ -13,7 +13,9 @@
  * Shape, size, and fonts are shared. The Standings / Picks column colors
  * its jobs through `DashboardJobShell` (you / the night / quiet). A stat
  * grid uses `DashboardTileShell`: that same quiet box, plus a header band.
- * Tiles do not take the you / night washes.
+ * Tiles do not take the you / night washes. A settings or profile block
+ * uses `Panel`. One person or one pool in a list uses `Row`. Neither
+ * takes the you / night washes.
  */
 
 /** Outer radius for every dashboard content card/banner. */

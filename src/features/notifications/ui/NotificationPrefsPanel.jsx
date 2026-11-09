@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Bell, ChevronDown, Mail, Smartphone } from 'lucide-react';
 
+import { Panel } from '../../../shared/ui/Card';
 import { isInstalled } from '../../install';
 import { logCommsPrefChanged } from '../../comms';
 import { useCommsEmailStatus } from '../model/useCommsEmailStatus';
@@ -57,9 +58,11 @@ function NotificationAccordionSection({
   const panelId = `${sectionId}-panel`;
 
   return (
-    <li
+    <Panel
+      as="li"
       ref={sectionRef}
-      className="overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-inset-glass"
+      padding="none"
+      className="overflow-hidden"
     >
       <button
         type="button"
@@ -97,7 +100,7 @@ function NotificationAccordionSection({
           {children}
         </div>
       ) : null}
-    </li>
+    </Panel>
   );
 }
 

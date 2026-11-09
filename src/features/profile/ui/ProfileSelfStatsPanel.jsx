@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { Panel } from '../../../shared/ui/Card';
 import InfoTooltip, {
   InfoTooltipProvider,
 } from '../../../shared/ui/InfoTooltip';
@@ -78,10 +79,7 @@ export default function ProfileSelfStatsPanel({ uid, section = 'all' }) {
 
   return (
     <div className={section === 'all' ? 'mb-8' : undefined}>
-      <section
-        hidden={!showStats}
-        className="rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass"
-      >
+      <Panel as="section" hidden={!showStats}>
         <h2 className="mb-4 text-xs font-black uppercase tracking-widest text-content-secondary">
           Your stats
         </h2>
@@ -104,7 +102,7 @@ export default function ProfileSelfStatsPanel({ uid, section = 'all' }) {
             ))}
           </div>
         </InfoTooltipProvider>
-      </section>
+      </Panel>
 
       <div hidden={!showPicks}>
         <TopPicksFrequencyStrip

@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.111.1] — 2026-11-09
+
+### Changed
+- **Settings panels and list rows use named shells (Refs #1090)** — Profile, account, inbox, install, admin, and pool join/create blocks use `Panel` (`rounded-3xl`, `border-border-subtle`, `bg-surface-panel`, inset glass, `p-6`). Pool rows, show leaderboard rows, global ranking rows, tour ranking rows, pool hub leaderboard rows, and invite chooser options use `Row` (`rounded-xl`, `border-border-subtle/45`, `bg-surface-panel`, inset glass, the same padding as a dashboard card). A self row and a leading show row are border modifiers. A first-place mark stays on the rank chip. Neither shell uses the Standings you / night wash. `docs/design.md` adds the panel and row branches. `verify:dashboard-ui` fails a new hand-built `rounded-*` card border under `src/features` and `src/pages`. No declared API change.
+
 ## [1.111.0] — 2026-11-09
 
 ### Added

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Download, Share2 } from 'lucide-react';
 
+import { Panel } from '../../../shared/ui/Card';
 import { getInstallLeadCopy, resolveInstallCopyBranch } from '../model/installCopy';
 import { useInstallPrompt } from '../model/useInstallPrompt';
 import IosInstallScreenshotGallery from './IosInstallScreenshotGallery.jsx';
@@ -33,7 +34,7 @@ export default function InstallAppCard() {
   if (isInstalled) return null;
 
   return (
-    <section className="mt-8 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+    <Panel as="section" className="mt-8">
       <h3 className="text-sm font-black uppercase tracking-widest text-content-secondary">
         {lead.eyebrow}
       </h3>
@@ -113,6 +114,6 @@ export default function InstallAppCard() {
           {lead.body}
         </p>
       ) : null}
-    </section>
+    </Panel>
   );
 }

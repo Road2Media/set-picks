@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 
 import { formatMonthYear } from '../../../shared';
 import BackButton from '../../../shared/ui/BackButton';
+import { Panel } from '../../../shared/ui/Card';
 import InfoTooltip, {
   InfoTooltipProvider,
 } from '../../../shared/ui/InfoTooltip';
@@ -113,16 +114,16 @@ export default function PublicProfileView({
           </div>
         </header>
 
-        <section className="mt-8 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+        <Panel as="section" className="mt-8">
           <h2 className="mb-2 text-xs font-black uppercase tracking-widest text-content-secondary">
             Favorite song
           </h2>
           <p className="text-lg font-bold text-white">
             {favoriteSong || 'Not chosen yet'}
           </p>
-        </section>
+        </Panel>
 
-        <section className="mt-6 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+        <Panel as="section" className="mt-6">
           <h2 className="mb-3 text-xs font-black uppercase tracking-widest text-content-secondary">
             Active pools
           </h2>
@@ -142,9 +143,9 @@ export default function PublicProfileView({
               ))}
             </div>
           )}
-        </section>
+        </Panel>
 
-        <section className="mt-6 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+        <Panel as="section" className="mt-6">
           <h2 className="mb-4 text-xs font-black uppercase tracking-widest text-content-secondary">
             Stats
           </h2>
@@ -174,7 +175,7 @@ export default function PublicProfileView({
               ))}
             </div>
           </InfoTooltipProvider>
-        </section>
+        </Panel>
 
         <BadgeShelf badges={profile.badges} surface="public_profile" />
       </div>

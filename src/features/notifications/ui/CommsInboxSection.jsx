@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Inbox } from 'lucide-react';
 
+import { Panel } from '../../../shared/ui/Card';
 import { logCommsCtaClick, logCommsDismissed, logCommsOpened } from '../../comms';
 import { useCommsInbox } from '../model/commsInboxContext.jsx';
 import { idsToMarkReadOnInboxToggle } from '../model/commsInboxMarkRead.js';
@@ -132,9 +133,11 @@ function InboxSectionList({
             const confirmingDelete = confirmDeleteId === m.id;
 
             return (
-              <li
+              <Panel
+                as="li"
                 key={m.id}
-                className="overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-inset-glass"
+                padding="none"
+                className="overflow-hidden"
               >
                 <button
                   type="button"
@@ -224,7 +227,7 @@ function InboxSectionList({
                     </div>
                   </div>
                 ) : null}
-              </li>
+              </Panel>
             );
           })}
         </ul>
@@ -344,10 +347,7 @@ export default function CommsInboxSection() {
   const emptyInbox = messages.length === 0;
 
   return (
-    <section
-      className="mb-10 rounded-3xl border border-border-subtle bg-surface-panel/60 p-5 shadow-inset-glass"
-      aria-labelledby="comms-inbox-heading"
-    >
+    <Panel as="section" className="mb-10" aria-labelledby="comms-inbox-heading">
       <button
         type="button"
         onClick={() => {
@@ -395,13 +395,16 @@ export default function CommsInboxSection() {
           ) : error ? (
             <p className="text-sm font-bold text-amber-300">{error}</p>
           ) : emptyInbox ? (
-            <div className="flex flex-col items-center gap-3 rounded-3xl border border-border-subtle bg-surface-panel px-6 py-10 text-center shadow-inset-glass">
+            <Panel
+              padding="none"
+              className="flex flex-col items-center gap-3 px-6 py-10 text-center"
+            >
               <Inbox className="h-10 w-10 text-content-secondary" aria-hidden />
               <p className="max-w-sm text-sm font-bold leading-relaxed text-content-secondary">
                 No messages yet. New scoring updates, nightly recaps, and important announcements
                 will appear here as soon as they are available.
               </p>
-            </div>
+            </Panel>
           ) : (
             <div className="space-y-8">
               <InboxSectionList
@@ -459,6 +462,6 @@ export default function CommsInboxSection() {
           )}
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }
