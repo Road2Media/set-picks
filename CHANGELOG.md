@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.100.1] — 2026-11-09
+
+### Changed
+- **Stat grids use the Standings card family (Refs #1089)** — Tour Stats metric tiles and their section headers share `DashboardTileShell`: the quiet sponsor box, plus a short header band in teal, amber, blue, or emerald. That color stays on the band. The outer box does not take a per-stat border or the Phase 1 you / night washes. Personal stats expandable sections use the Phase 1 card with no label color and no job wash. `docs/design.md` says when a new grid metric is a tile. No declared API change.
+
 ## [1.100.0] — 2026-11-09
 
 ### Added
