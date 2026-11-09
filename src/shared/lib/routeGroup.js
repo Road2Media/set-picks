@@ -11,6 +11,7 @@
  *   | 'tour_stats'
  *   | 'embed'
  *   | 'rewind'
+ *   | 'phish_iq'
  *   | 'invite_join'
  *   | 'invite_site'
  *   | 'dashboard'
@@ -47,6 +48,9 @@ export function resolveRouteGroup(pathname) {
   }
   if (pathname === '/rewind' || pathname.startsWith('/rewind/')) {
     return 'rewind';
+  }
+  if (pathname === '/phish-iq' || pathname.startsWith('/phish-iq/')) {
+    return 'phish_iq';
   }
   if (pathname === '/setup' || pathname.startsWith('/setup/')) return 'setup';
   if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {

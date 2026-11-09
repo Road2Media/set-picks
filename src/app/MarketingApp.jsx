@@ -32,6 +32,7 @@ const AnnualTourStatsPage = lazy(
   () => import('../pages/marketing/AnnualTourStatsPage'),
 );
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
+const PhishIqPage = lazy(() => import('../pages/marketing/PhishIqPage'));
 const StatsEmbedPage = lazy(() => import('../pages/marketing/StatsEmbedPage'));
 
 /**
@@ -204,6 +205,14 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <RewindResultsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/phish-iq"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <PhishIqPage />
             </Suspense>
           }
         />

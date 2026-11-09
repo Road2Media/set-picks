@@ -27,6 +27,7 @@ describe('resolveRouteGroup', () => {
     expect(resolveRouteGroup('/embed')).toBe('embed');
     expect(resolveRouteGroup('/rewind')).toBe('rewind');
     expect(resolveRouteGroup('/rewind/2026-11-23')).toBe('rewind');
+    expect(resolveRouteGroup('/phish-iq')).toBe('phish_iq');
   });
 
   it('maps legal door paths (#916)', () => {

@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.101.0  
+**Version:** 1.104.0  
 
 
 **SemVer:** https://semver.org  
@@ -39,6 +39,7 @@ All collections live in the default `(default)` Firestore database for project `
 | `seasonStats.{tourKey}` | map | Per-tour aggregated scoring (`totalPoints`, `shows`, `wins`, **v1.26.0+** `correctSlots`, and **v1.93.0+** `bustoutBoosts`) |
 | `acceptedInviteCount` | number? | **v1.93.0+ (#1115)** Server-owned count of people who finished signup from this user's invite. Clients cannot write it. Profile invites and pool `?from=` invites both count. A link click does not. There is no backfill of old joins. |
 | `invitedBy` | map? | **v1.93.0+ (#1115)** `{ uid, handle }` set once on the new user when an accepted invite is recorded. Clients cannot write it. |
+| `phishIq` | map? | **v1.104.0+ (#1143)** Owner-written daily quiz memory: `{ currentStreak, bestStreak, lastPlayedDate, lastScore, lastMarks, updatedAt }`. `lastPlayedDate` is the America/New_York quiz day (`YYYY-MM-DD`). `lastMarks` is five booleans (hit or miss) and does not include song titles. A same-day write does not raise the streak. Clients may write their own doc. It is not a graded game score. |
 
 ### 1.2 `users/{uid}` — `notificationPrefs` shape
 
@@ -748,6 +749,8 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/rewind` | None | **v1.96.0 (#1142):** public Rewind results for the featured week. Player count, average score, slot hit counts, Phish.net link. No setlist. `noindex` while `VITE_ENABLE_REWIND_MODE` is not `true`. Not prerendered and not in the sitemap. |
 | `/rewind/:weekId` | None | **v1.96.0 (#1142):** same page for one week id (`YYYY-MM-DD` open date). |
 | `/dashboard/rewind` | Auth | **v1.96.0 (#1142):** play the featured week. Picks tab stays active. Date picker hides. The Rewind segment is hidden unless `VITE_ENABLE_REWIND_MODE=true`. Coming-soon shell otherwise. |
+| `/phish-iq` | None | **v1.104.0 (#1143):** public daily Phish IQ quiz. Five questions from the song catalog cache and the public MSG snapshot (opener counts and announced-show count). No setlist and no Phish.net prose. Same inputs produce the same questions. Play does not require an account. Not prerendered and not in the sitemap. Returning sessions stay on the marketing document. GA4 `route_group=phish_iq`. Header nav includes “Phish IQ”. |
+| `/dashboard/phish-iq` | Auth | **v1.104.0 (#1143):** same quiz. Picks tab stays active. Date picker hides. Finishing writes `users/{uid}.phishIq` (streak). A guest result from `/phish-iq` is saved here after sign-in. |
 
 Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
@@ -769,7 +772,7 @@ Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
 **Picks — Prediction Lab (**v1.38.0 / #651**, moved **v1.64.0 / #766**, add confirmation **v1.72.0**):** lives at **`/dashboard/picks/lab`**. Opt-in slot recommendations consuming Storage `pick-recommendations.json` (see §2.3). **Use** fills the shared cluster draft (same card as Make Picks) and does **not** persist — Lock In Picks / Update Picks still writes `picks/{showDate}_{uid}`. Lab shows a live Your card plus that save CTA when the draft is dirty. Manual autocomplete on Make Picks is unchanged. When `VITE_ENABLE_PREDICTION_LAB` is not `true`, the Lab route still renders (coming-soon shell) — the tertiary tab is not hidden. **GA4 (client):** `prediction_lab_open` `{ show_id, model_version }`, `prediction_lab_impression` `{ show_id, slot, model_version, risk_band, rank }`, `prediction_lab_select` `{ show_id, slot, model_version, risk_band, rank, song_normalized }`.
 
-**Field RUM — web-vitals (**v1.44.0 / #801**, route groups **v1.49.1 / #857**):** production hostnames only. Client emits GA4 `web_vital` for LCP, INP, CLS, TTFB, FCP after idle. Params: `{ metric_name, value, metric_id, metric_rating, route_group, navigation_type }` where `route_group` is `splash` \| `login` \| `marketing` \| `tour_stats` \| `embed` \| `rewind` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` and `navigation_type` is `navigate` \| `reload` \| `back_forward` \| `prerender`. **v1.98.0 (#1192):** `/phish-at-msg` reports `marketing` (it is not a tour). Ops: [`docs/WEB_VITALS_RUM.md`](WEB_VITALS_RUM.md).
+**Field RUM — web-vitals (**v1.44.0 / #801**, route groups **v1.49.1 / #857**):** production hostnames only. Client emits GA4 `web_vital` for LCP, INP, CLS, TTFB, FCP after idle. Params: `{ metric_name, value, metric_id, metric_rating, route_group, navigation_type }` where `route_group` is `splash` \| `login` \| `marketing` \| `tour_stats` \| `embed` \| `rewind` \| `phish_iq` \| `invite_join` \| `invite_site` \| `dashboard` \| `setup` \| `other` and `navigation_type` is `navigate` \| `reload` \| `back_forward` \| `prerender`. **v1.98.0 (#1192):** `/phish-at-msg` reports `marketing` (it is not a tour). **v1.104.0 (#1143):** `/phish-iq` reports `phish_iq`. `/dashboard/phish-iq` stays `dashboard`. **GA4 (client):** `phish_iq_start` `{ quiz_date }`, `phish_iq_finish` `{ quiz_date, score }`, `phish_iq_share` `{ quiz_date, score }`, `phish_iq_sign_up` `{ quiz_date }`. No song titles. Ops: [`docs/WEB_VITALS_RUM.md`](WEB_VITALS_RUM.md).
 
 **Auth interaction timings (**v1.49.1 / #857**, hop **v1.52.0 / #880**):** production hostnames only (same `ga4Event` gate). `auth_surface_timing` `{ phase: paint_to_ready, value, route_group: login, warm_path, navigation_type }` once per `/login` warm (`warm_path`: `immediate` \| `idle` \| `intent` \| `speculative`). `auth_google_timing` `{ phase: click_to_popup \| credential_to_nav, value, method: google, auth_flow, outcome, error_code? }`. `auth_hop_timing` `{ phase: cta_to_form, value, intent: signin \| signup, warm_path, route_group: login }` when a marketing CTA stamped the hop. Ops: [`docs/AUTH_TELEMETRY_RUNBOOK.md`](AUTH_TELEMETRY_RUNBOOK.md) · plan [`docs/AUTH_SEAMLESS_PATH.md`](AUTH_SEAMLESS_PATH.md) §7.
 

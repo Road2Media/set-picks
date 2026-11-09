@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.104.0] — 2026-11-09
+
+### Added
+- **Phish IQ (#1143)** — a five-question daily quiz at `/phish-iq`. Same questions for the America/New_York day from the song catalog (debut year, which song came first, gap, play count) and from the public Madison Square Garden snapshot (which song has opened the most shows, how many Garden shows are announced). No setlist and no Phish.net prose. The screen and the share card say “Data courtesy of Phish.net.” The share text is the score and a hit/miss grid, with `utm_campaign=seo_geo`. Play does not need an account. A streak is saved on `users/{uid}.phishIq` after sign-in, from `/dashboard/phish-iq` (Picks tab, date picker hidden). GA4: `phish_iq_start`, `phish_iq_finish`, `phish_iq_share`, `phish_iq_sign_up`. No rules or index change.
+
 ## [1.103.0] — 2026-11-09
 
 ### Added

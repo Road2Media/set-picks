@@ -45,6 +45,7 @@ const PublicTourStatsPage = lazy(() => import('../pages/marketing/PublicTourStat
 const MsgGardenStatsPage = lazy(() => import('../pages/marketing/MsgGardenStatsPage'));
 const AnnualTourStatsPage = lazy(() => import('../pages/marketing/AnnualTourStatsPage'));
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
+const PhishIqPage = lazy(() => import('../pages/marketing/PhishIqPage'));
 const StatsEmbedPage = lazy(() => import('../pages/marketing/StatsEmbedPage'));
 const PhishSetlistPredictionGamePage = lazy(
   () => import('../pages/marketing/PhishSetlistPredictionGamePage'),
@@ -84,6 +85,7 @@ function App() {
         <Route path="/tour-stats/:tourSlug" element={<PublicTourStatsPage />} />
         <Route path="/rewind" element={<RewindResultsPage />} />
         <Route path="/rewind/:weekId" element={<RewindResultsPage />} />
+        <Route path="/phish-iq" element={<PhishIqPage />} />
         <Route path="/embed" element={<Navigate to="/embed/stats" replace />} />
         <Route path="/embed/stats" element={<StatsEmbedPage />} />
         <Route
