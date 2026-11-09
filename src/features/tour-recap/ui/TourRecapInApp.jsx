@@ -164,11 +164,15 @@ function LegacyPodium({ champion, showCount, podium }) {
  *   closingLines?: string[],
  *   personalLine?: string,
  *   edition?: object,
+ *   eyebrow?: string,
+ *   cta?: { label: string, href: string },
  *   onCtaClick?: (cta: { label: string, href?: string }) => void,
  * }} props
  */
 export default function TourRecapInApp(props) {
   const edition = resolveTourRecapEdition(props.edition, props);
+  const eyebrow = props.eyebrow || 'Tour recap';
+  const cta = props.cta || TOUR_RECAP_INAPP_CTA;
   const {
     rank,
     points,
@@ -202,7 +206,7 @@ export default function TourRecapInApp(props) {
       <header className="space-y-2 border-b border-border-muted/40 pb-6">
         <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-teal-400/90">
           <Globe2 className="h-4 w-4 shrink-0" aria-hidden />
-          Tour recap
+          {eyebrow}
         </p>
         <h1 className="font-display text-display-sm font-bold uppercase tracking-tight text-white">
           {edition.headline}
@@ -237,11 +241,11 @@ export default function TourRecapInApp(props) {
         ))}
         <div className="pt-2">
           <Link
-            to={TOUR_RECAP_INAPP_CTA.href}
-            onClick={() => onCtaClick?.(TOUR_RECAP_INAPP_CTA)}
+            to={cta.href}
+            onClick={() => onCtaClick?.(cta)}
             className="inline-flex items-center justify-center rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-brand-primary transition-colors hover:border-brand-primary hover:bg-brand-primary/20"
           >
-            {TOUR_RECAP_INAPP_CTA.label}
+            {cta.label}
           </Link>
         </div>
       </footer>

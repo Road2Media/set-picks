@@ -6,7 +6,7 @@
 
 Living shelf of facts the app already knows. A message may speak a fact only when it is true for that night, that player, or that tour. Missing facts drop out. No model writes the sentence.
 
-This file answers “what can we say?” A message map answers “what does this communication say?” The night paragraph map is [SHOW_RECAP_FACT_INVENTORY.md](./SHOW_RECAP_FACT_INVENTORY.md) ([#1083](https://github.com/pat792/set-picks/issues/1083)). The tour wrap map is [TOUR_RECAP_FACT_INVENTORY.md](./TOUR_RECAP_FACT_INVENTORY.md) ([#1084](https://github.com/pat792/set-picks/issues/1084)). Add a fact here before a message starts saying it. The morning standings paragraph has its own map: [STANDINGS_FACT_INVENTORY.md](./STANDINGS_FACT_INVENTORY.md) ([#1102](https://github.com/pat792/set-picks/issues/1102)).
+This file answers “what can we say?” A message map answers “what does this communication say?” The night paragraph map is [SHOW_RECAP_FACT_INVENTORY.md](./SHOW_RECAP_FACT_INVENTORY.md) ([#1083](https://github.com/pat792/set-picks/issues/1083)). The tour wrap map is [TOUR_RECAP_FACT_INVENTORY.md](./TOUR_RECAP_FACT_INVENTORY.md) ([#1084](https://github.com/pat792/set-picks/issues/1084)). The annual wrap map is [ANNUAL_WRAP_FACT_INVENTORY.md](./ANNUAL_WRAP_FACT_INVENTORY.md) ([#1111](https://github.com/pat792/set-picks/issues/1111)). Add a fact here before a message starts saying it. The morning standings paragraph has its own map: [STANDINGS_FACT_INVENTORY.md](./STANDINGS_FACT_INVENTORY.md) ([#1102](https://github.com/pat792/set-picks/issues/1102)).
 
 ## Categories
 
@@ -83,19 +83,19 @@ Phish’s own numbers. A night sentence uses these when it names a song. They ar
 | Points between this player and the night’s winner | This score vs `top_score` | Not said. This is not the “song was in the wrong slot” fact. |
 | Lead margin while a show is in progress | `score_leader` payload `lead_margin` | The “you’re in first” note, during the show |
 | Crowd pulse: share of cards that named a song, top songs the room picked, how many different songs the room picked | Computed from that night’s picks (`crowdNightCardSummary`). Shown on Standings. | Not said in any message. Speak only after picks lock. A lock reminder goes out before lock and does not get these. |
+| Year rank, year points, nightly wins, shows played | The year board. Same rules as tour standings, scoped to that calendar year’s shows on or after game launch (`assembleAnnualWrapRecipients`). | Annual wrap rank paragraph. |
+| Year crowd pulse: most picked | Counted at annual-wrap send (`buildYearCrowdPulse` in `functions/annualWrapCore.js`). Graded cards plus that night’s official setlist. A card names a song once. A night with no official setlist is left out. | Shared summary. Songs named on at least 2 cards, up to 3. The same paragraph is on every copy. |
+| Year crowd pulse: highest and lowest hit rate | Same count. A hit means that exact title is in the official setlist. The rate is hits divided by cards. | Shared summary, only for songs named on at least 10 cards. One qualifying song is not both the highest and the lowest. |
+| Year crowd pulse: other room rates | Same count. How many different songs the room named, and how many calls were in the setlist. | Shared summary. The share is spoken only when the year has at least 10 calls. |
+| Rarest song played that year | Played bustouts across the year’s official setlists, longest gap. Last played and debut year from `public_tour_stats/_year_YYYY` when that row exists. | Annual wrap shared opening, when it exists. |
+| How often the annual lead changed hands | Nightly year standings, counted at send time. | Annual wrap shared opening, only when the rarest song is missing. |
+| Closing show of the year | Last calendar show of that year on the calendar. | Annual wrap shared opening, only when the rarest song and the lead count are both missing. |
 
 ## Under consideration
 
 These are not facts yet. A message must not say them until a row in the tables above names where the number lives.
 
-The annual wrap’s shared summary ([#1111](https://github.com/pat792/set-picks/issues/1111)) may include crowd pulse for the whole field. The same block would go in every copy. The personal section stays about that player.
-
-| Idea | What it would say | What we know today |
-|------|-------------------|--------------------|
-| Most picked | Songs the room named most often across the year | One night already has this: the top songs and the share of cards. A year total is not stored. |
-| Highest hit rate | Songs the room picked that landed most often | A hit means the song was in the setlist. That is not the same as “most picked.” Not stored as one year number. |
-| Lowest hit rate | Songs the room picked that landed least often | Same. A small number of picks should not be called a rate. |
-| Other room rates | Further crowd pulse in that family | Only after the number is real and the same for everyone. |
+Year crowd pulse for [#1111](https://github.com/pat792/set-picks/issues/1111) is no longer in this list. The rows above name where those year numbers live. The personal section of the annual wrap stays about that player.
 
 ## How to add a fact
 

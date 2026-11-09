@@ -592,6 +592,47 @@ Congrats line (every tied first-place handle when `podium.places` rank 1 is a ti
 
 ---
 
+## 13 — `annual_wrap`
+
+| Field | Value |
+|-------|-------|
+| **Status** | `shipped` |
+| **Automation** | `automated`. In-app when the last show of the calendar year is graded (`deliverPostRollupComms`). Email and push on the next 8am PT `scheduledTourRankingsDailyComms` tick, inside a 14-day lookback, once that finale is graded. |
+| **Process scope** | `annual_wrap:{year}` |
+| **Lookback** | 14 days after the last show date of the year. |
+| **Archive policy** | A tour `editionStatus` does not gate the year. Terminal `comms_process_state/annual_wrap:{year}` hard-skips later morning ticks. |
+| **Event** | A year is the calendar year of the show date. A Dec 31 show stays in that year. A Jan 1 show is the next year. The board is everyone with at least one graded show that year, on or after game launch. |
+| **Channels** | `inApp` on the grade. `push` and `email` the next morning. The morning call also fills in-app when the grade hook missed it. |
+| **Audience** | Users with at least one graded pick on a show in that year |
+| **Prefs key** | `results` |
+| **Dedup** | `annual_wrap:{year}:{uid}`. A doc that lists `channels` can still take a later channel. A doc with no `channels` array is a completed send. |
+| **Priority** | P1 (`results_recap`) |
+| **Implementation** | `functions/annualWrapDelivery.js` → `deliverCommsTrigger`. Sentences in `functions/annualWrapCore.js`. |
+| **Note** | Same family as `tour_recap`, scoped to the year. The crowd-pulse block is the same in every in-app note and every email. The personal section stays about that player. Push stays the rank tease. This does not replace `show_recap` or `tour_rankings_daily`. Samples are not sent. GitHub #1111. |
+
+#### Variables used
+
+`{{handle}}`, `{{year}}`, `{{rank}}`, `{{tiedCount}}`, `{{tiedHandles}}`, `{{points}}`, `{{wins}}`, `{{showsPlayed}}`, `{{participantCount}}`, `{{show_count}}`, `{{crowd_summary}}`, `{{podium}}`
+
+#### Template — Push
+
+**Title:** `Annual wrap is in`
+**Body:** sole #1 says they took #1. A tie says “tied for #N.” Otherwise the rank tease.
+**Deep link:** `/dashboard/profile/notifications`
+
+#### Template — In-App
+
+**Heading:** `{{year}}: Setlist Pick'em Wrap-Up`
+
+Shared opening, places 1 through 5 (Annual Winner through 5th), then the personal section. CTA: **View year standings** → `/dashboard/standings?view=year&year={{year}}`.
+
+#### Template — Email
+
+**Subject:** `{{year}} recap is in`
+Congrats to the annual winner, the shared opening, the rank 1–5 grid, the personal section. CTA **View Recap** → Messages.
+
+---
+
 ## System triggers
 
 ### `push_canary`

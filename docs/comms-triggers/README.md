@@ -20,6 +20,8 @@ This directory is the **canonical home** for triggered, templated communications
 | [SHOW_RECAP_HIGHLIGHT_ADDENDUM.md](./SHOW_RECAP_HIGHLIGHT_ADDENDUM.md) | Gap wording for the night highlight: rarity, return, or heavy rotation (#1105) |
 | [TOUR_RECAP_FACT_INVENTORY.md](./TOUR_RECAP_FACT_INVENTORY.md) | End-of-tour wrap message map: shared opening and one personal sentence (#1084) |
 | [TOUR_RECAP_SAMPLE.md](./TOUR_RECAP_SAMPLE.md) | Fixture preview of the wrap. Nothing sent. |
+| [ANNUAL_WRAP_FACT_INVENTORY.md](./ANNUAL_WRAP_FACT_INVENTORY.md) | End-of-year wrap message map: shared crowd pulse, one race fact, personal section (#1111) |
+| [ANNUAL_WRAP_SAMPLE.md](./ANNUAL_WRAP_SAMPLE.md) | Fixture preview of the annual wrap. Nothing sent. |
 | [STANDINGS_FACT_INVENTORY.md](./STANDINGS_FACT_INVENTORY.md) | Morning standings map: entered, stayed in, or left the top 5, and took or lost the lead (#1102) |
 | [SHOW_RECAP_SAMPLE_2026-10-07.md](./SHOW_RECAP_SAMPLE_2026-10-07.md) | Read-only Richmond preview: live morning email next to the inventory paragraph. Nothing sent. |
 | [optimize_for.md](./optimize_for.md) | Scheduled goal rotation + override for Optimize kickoffs (#778) |

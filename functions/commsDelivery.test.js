@@ -293,6 +293,46 @@ test("existing dedup doc skips delivery (idempotent)", async () => {
   assert.equal(inApp.calls.length, 0);
 });
 
+test("a dedup doc that lists channels still accepts a later channel", async () => {
+  const db = makeFakeDb({
+    "annual_wrap:2026:u1": { delivered: true, channels: ["inApp"] },
+  });
+  const inApp = recordingWorker("inApp", { ok: true });
+  const push = recordingWorker("push", { ok: true });
+  const email = recordingWorker("email", { ok: true });
+  const summary = await deliverCommsTrigger({
+    db,
+    admin: fakeAdmin,
+    triggerId: "annual_wrap",
+    recipients: [{ uid: "u1", userData: {}, payload: { year: "2026", rank: 2 }, vars: { year: "2026" } }],
+    workers: { inApp, push, email },
+    channels: ["push", "email"],
+    dryRun: false,
+    sendGa4Delivered: async () => ({ sent: true }),
+  });
+  assert.equal(summary.delivered, 1);
+  assert.equal(inApp.calls.length, 0);
+  assert.equal(push.calls.length, 1);
+  assert.equal(email.calls.length, 1);
+  assert.deepEqual(db._dedup.get("annual_wrap:2026:u1").channels.sort(), ["email", "inApp", "push"]);
+});
+
+test("a legacy dedup doc with no channels array stays a hard skip", async () => {
+  const db = makeFakeDb({ "show_recap:u1:d": { delivered: true } });
+  const push = recordingWorker("push", { ok: true });
+  const summary = await deliverCommsTrigger({
+    db,
+    admin: fakeAdmin,
+    triggerId: "show_recap",
+    recipients: [{ uid: "u1", userData: {}, vars: { showDate: "d" } }],
+    workers: { push },
+    channels: ["push"],
+    dryRun: false,
+  });
+  assert.equal(summary.skips.deduped, 1);
+  assert.equal(push.calls.length, 0);
+});
+
 test("forceResend bypasses the dedup check", async () => {
   const db = makeFakeDb({ "show_recap:u1:d": { delivered: true } });
   const inApp = recordingWorker("inApp", { ok: true });

@@ -26,11 +26,14 @@ import {
 } from 'lucide-react';
 
 import {
+  ANNUAL_WRAP_INAPP_CTA_LABEL,
+  ANNUAL_WRAP_TEMPLATE_ID,
   PREVIEW_TOUR_EDITION,
   SPHERE_2026_RECAP_ID,
   Sphere2026TourRecapInApp,
   TOUR_RECAP_TEMPLATE_ID,
   TourRecapInApp,
+  annualWrapStandingsHref,
 } from '../../../tour-recap';
 import { buildTourRankingsDailyParagraphs } from '../../model/tourRankingsDailyCopy';
 import { formatFanShowDate } from '../../../../shared/utils/dateUtils';
@@ -840,6 +843,74 @@ export const COMMS_TEMPLATE_REGISTRY = {
           showInvite: false,
           personalTape:
             "You've been in the mix — just not on the board yet this tour. Three nights at Dick's is a clean slate.",
+        },
+      },
+    ],
+  },
+
+  [ANNUAL_WRAP_TEMPLATE_ID]: {
+    triggerId: 'annual_wrap',
+    displayName: 'Annual wrap',
+    Component: TourRecapInApp,
+    toComponentProps: (p) => {
+      const num = (v, f = 0) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : f;
+      };
+      const year = p.year != null ? String(p.year) : '';
+      return {
+        rank: num(p.rank),
+        points: num(p.points),
+        wins: num(p.wins),
+        showsPlayed: num(p.showsPlayed),
+        participantCount: num(p.participantCount),
+        showCount: num(p.show_count ?? p.showCount),
+        tourName: year,
+        headline: typeof p.headline === 'string' ? p.headline : `${year}: Setlist Pick'em Wrap-Up`,
+        podium: p.podium && typeof p.podium === 'object' ? p.podium : undefined,
+        openingParas: Array.isArray(p.opening_paras) ? p.opening_paras : undefined,
+        closingLines: Array.isArray(p.closing_lines) ? p.closing_lines : undefined,
+        personalLine: typeof p.personal_line === 'string' ? p.personal_line : undefined,
+        eyebrow: 'Annual wrap',
+        cta: {
+          label: ANNUAL_WRAP_INAPP_CTA_LABEL,
+          href: annualWrapStandingsHref(year),
+        },
+      };
+    },
+    samples: [
+      {
+        name: 'Year in the books',
+        payload: {
+          handle: 'Ada',
+          year: '2026',
+          rank: 2,
+          points: 50,
+          wins: 1,
+          showsPlayed: 3,
+          participantCount: 15,
+          show_count: 3,
+          headline: "2026: Setlist Pick'em Wrap-Up",
+          opening_paras: [
+            '2026 is officially in the books.',
+            'The room called Tweezer the most, on 11 cards.',
+            'The rarest song played all year was Tweezer, a 200 show gap, on opening night, 07/01/26.',
+            'Before the next year, here is the final tape.',
+          ],
+          personal_line:
+            'You finished #2 of 15 with 50 points and 1 nightly win, playing 3 of 3 shows. Your best night was 07/01/26 with 30 points.',
+          closing_lines: ['See you next year.'],
+          podium: {
+            places: [
+              {
+                rank: 1,
+                label: 'Annual Winner',
+                tied: false,
+                points: 100,
+                members: [{ handle: 'Bea', points: 100, wins: 2, shows: 3 }],
+              },
+            ],
+          },
         },
       },
     ],

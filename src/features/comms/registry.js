@@ -7,7 +7,7 @@
  * modules until a loader is introduced.
  */
 
-import { SPHERE_2026_RECAP_ID, TOUR_RECAP_TEMPLATE_ID } from '../tour-recap';
+import { ANNUAL_WRAP_TEMPLATE_ID, SPHERE_2026_RECAP_ID, TOUR_RECAP_TEMPLATE_ID } from '../tour-recap';
 import {
   SUMMER_TOUR_2026_LAUNCH_TEMPLATE_ID,
 } from '../marketing-comms/model/summerTour2026Launch.js';
@@ -35,6 +35,13 @@ export const COMMS_CHANNELS = /** @type {const} */ ([
 
 /** @type {Record<string, RecapTemplateDefinition>} */
 export const RECAP_TEMPLATE_REGISTRY = {
+  [ANNUAL_WRAP_TEMPLATE_ID]: {
+    kind: 'tour',
+    displayName: "Annual wrap — personalized end-of-year note",
+    sourceDraftPath: 'content/comms/tours/annual-wrap.md',
+    implementationModule: 'src/features/tour-recap/model/annualWrap.js',
+    supportedChannels: ['inApp', 'emailAbbreviated', 'emailFull', 'push'],
+  },
   [TOUR_RECAP_TEMPLATE_ID]: {
     kind: 'tour',
     displayName: "Tour recap — personalized end-of-tour wrap-up",
