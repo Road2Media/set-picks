@@ -11,6 +11,9 @@ import { ANNUAL_WRAP_TEMPLATE_ID, SPHERE_2026_RECAP_ID, TOUR_RECAP_TEMPLATE_ID }
 import {
   SUMMER_TOUR_2026_LAUNCH_TEMPLATE_ID,
 } from '../marketing-comms/model/summerTour2026Launch.js';
+import {
+  SUMMER_TOUR_2026_REMINDER_TEMPLATE_ID,
+} from '../marketing-comms/model/summerTour2026Reminder.js';
 
 /**
  * @typedef {'inApp' | 'emailAbbreviated' | 'emailFull' | 'push'} CommsChannel
@@ -62,6 +65,13 @@ export const RECAP_TEMPLATE_REGISTRY = {
     displayName: 'Summer Tour 2026 — pre-opener marketing launch',
     sourceDraftPath: 'content/comms/lifecycle/summer-tour-2026-launch.md',
     implementationModule: 'src/features/marketing-comms/model/summerTour2026Launch.js',
+    supportedChannels: ['emailFull'],
+  },
+  [SUMMER_TOUR_2026_REMINDER_TEMPLATE_ID]: {
+    kind: 'broadcast',
+    displayName: 'Summer Tour 2026 — non-opener reminder',
+    sourceDraftPath: 'content/comms/lifecycle/summer-tour-2026-reminder.md',
+    implementationModule: 'src/features/marketing-comms/model/summerTour2026Reminder.js',
     supportedChannels: ['emailFull'],
   },
 };

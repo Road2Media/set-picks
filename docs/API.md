@@ -298,7 +298,7 @@ Server-only Resend open/click plane. Document ID is the Resend `email_id`. Writt
 | `openedEventId` / `clickedEventId` | string? | First Svix delivery id per event type |
 | `updatedAt` | Timestamp | Last applied write |
 
-Idempotent: duplicate webhook deliveries do not overwrite first-write timestamps. The `fcm_notification_log` dedup doc may also carry `resendEmailId` + `campaignId` after a successful email send.
+Idempotent: duplicate webhook deliveries do not overwrite first-write timestamps. The `fcm_notification_log` dedup doc may also carry `resendEmailId` + `campaignId` after a successful email send. **v1.106.0 / #512 Slice B** reads that `resendEmailId` (point read, no collection scan) to drop openers from `deliverMarketingSummerTour2026Reminder`.
 
 ### 1.16 `password_reset_rate/{docId}` (**v1.84.0 / #1049**)
 
@@ -534,6 +534,28 @@ Mid-tour almost-end recap (pre–Dick’s). **Email** → Summer Tour players (`
 **Scheduler:** `scheduledMarketingSummer2026AlmostEnd` — cron `0 8 3 8 *` `America/Denver` (2026-08-03 08:00 MT / 10:00 ET). Firestore run-lock `comms_marketing_runs/summer_2026_almost_end` (`pending` → `running` → `completed` / `cancelled` / `failed`). Abort before send: set status `cancelled`.
 
 CLI: `functions/scripts/deliverMarketingSummer2026AlmostEnd.js` (`npm run comms:deliver-summer-2026-almost-end` in `functions/`). Email channel uses `deliverCommsTrigger` with `channels: ["email"]`; inbox is a Sphere-style Admin SDK fanout.
+
+### 2.2a-iii `deliverMarketingSummerTour2026Reminder` (admin-only, #512 Slice B)
+
+Second-wave email for the Summer Tour 2026 launch cohort. Resolves non-openers (parent delivery log `marketing:summer_tour_2026:{uid}` with `resendEmailId`, no `openedAt` on that engagement doc), drops suppressed addresses and `notificationPrefs.lifecycle === false`, then sends `marketing_summer_tour_2026_reminder`. Defaults to dry-run. There is no scheduler.
+
+**Request:**
+```json
+{
+  "dryRun": true,
+  "forceResend": false,
+  "onlyUids": ["optional-canary-uid"],
+  "waitHours": 48
+}
+```
+
+`waitHours` defaults to 48. `0` skips the clock and still requires a delivered parent send. `forceResend` retries this reminder's dedup (`marketing:summer_tour_2026_reminder:{uid}`) only. It does not resend the launch email. Daily email cap is bypassed (`bypassDailyCap: true`).
+
+**Response (dry-run):** `ok`, `dryRun`, `triggerId`, `campaignId` (`summer_tour_2026_reminder`), `parentCampaignId`, `waitHours`, `cohortSize`, `sendable`, `excluded` (`opened`, `suppressed`, `unsubscribed`, `noEmail`, `waitWindow`, `parentNotDelivered`), `preview`.
+
+**Response (execute):** same fields plus `delivery` from the orchestrator.
+
+CLI: `functions/scripts/deliverMarketingSummerTour2026Reminder.js` (`--execute`, `--uid <uid>`, `--wait-hours 72`, `--force-resend`). Same secrets as the launch callable. No new secret.
 
 ### 2.2b `lockPicksForShowNow` (admin-only, #522)
 
@@ -881,7 +903,7 @@ Set in Firebase Functions config or Cloud Secret Manager. Adding one is a MINOR 
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `RESEND_API_KEY` | For email channel | Resend API key (Secret Manager); bound to `runCommsTrigger`, `deliverMarketingSummerTour2026Launch`, `deliverMarketingSummer2026AlmostEnd`, `scheduledMarketingSummer2026AlmostEnd`, comms adapters, and `requestPasswordResetEmail` (#1049). No new secret. |
+| `RESEND_API_KEY` | For email channel | Resend API key (Secret Manager); bound to `runCommsTrigger`, `deliverMarketingSummerTour2026Launch`, `deliverMarketingSummerTour2026Reminder`, `deliverMarketingSummer2026AlmostEnd`, `scheduledMarketingSummer2026AlmostEnd`, comms adapters, and `requestPasswordResetEmail` (#1049). No new secret. |
 | `RESEND_WEBHOOK_SECRET` | For email deliverability | Resend/Svix webhook signing secret (`whsec_…`); also signs one-click unsubscribe URLs |
 | `RESEND_INBOUND_WEBHOOK_SECRET` | For inbound receiving | **v1.75.0:** Svix secret for `commsResendInboundWebhook` only (`whsec_…` from the `email.received` Resend webhook) |
 | `GA4_MEASUREMENT_ID` | For server `comms_delivered` MP | Same `G-…` id as `VITE_GA_MEASUREMENT_ID`; Functions `defineString` / `.env.set-picks` |

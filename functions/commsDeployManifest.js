@@ -53,6 +53,12 @@ const COMMS_DEPLOY_GROUPS = {
       secretExpectation: "resend",
     },
     {
+      export: "deliverMarketingSummerTour2026Reminder",
+      triggerId: "marketing_summer_tour_2026_reminder",
+      note: "admin batch non-opener reminder #512 Slice B",
+      secretExpectation: "resend",
+    },
+    {
       export: "deliverMarketingSummer2026AlmostEnd",
       triggerId: "marketing_summer_2026_almost_end",
       note: "admin batch almost-end email + forced inbox",

@@ -144,6 +144,17 @@ const TRIGGER_SPECS = {
     family: "lifecycle",
     priority: "P1",
   },
+  // Second wave for the launch cohort. Own campaignId so dedup does not
+  // collide with marketing:summer_tour_2026:{uid} (#512 Slice B).
+  marketing_summer_tour_2026_reminder: {
+    triggerId: "marketing_summer_tour_2026_reminder",
+    templateId: "summer-tour-2026-reminder",
+    channels: ["email"],
+    prefKeys: ["lifecycle"],
+    dedupKey: "marketing:{campaignId}:{uid}",
+    family: "lifecycle",
+    priority: "P1",
+  },
   // inApp is forced for all users via Sphere-style fanout (no prefs gate).
   // Email uses deliverCommsTrigger with channelFilter=["email"] + lifecycle prefs.
   marketing_summer_2026_almost_end: {

@@ -514,6 +514,33 @@ Founder letter (Pat) with feature blocks + primary CTA (share with friends via `
 
 ---
 
+## 10a — `marketing_summer_tour_2026_reminder`
+
+| Field | Value |
+|-------|-------|
+| **Status** | `shipped` |
+| **Automation** | `batch` (admin callable / CLI — **not** scheduled) |
+| **Event** | Manual execute via `deliverMarketingSummerTour2026Reminder` after the launch wait window (default 48h) |
+| **Channels** | `email` only |
+| **Audience** | Launch cohort (`summer_tour_2026`) who have a delivered parent log, no `openedAt` on `comms_email_engagement/{resendEmailId}`, and are not suppressed or unsubscribed (`lifecycle: false`) |
+| **Prefs key** | `lifecycle` |
+| **Dedup** | `marketing:{campaignId}:{uid}` (`campaignId` = `summer_tour_2026_reminder`). Separate from the launch key `marketing:summer_tour_2026:{uid}`. |
+| **Implementation** | `functions/marketingReminderDelivery.js` · GitHub #512 |
+| **Editorial** | `content/comms/lifecycle/summer-tour-2026-reminder.md` |
+
+#### Variables used
+
+`{{greeting_name}}`, `{{opener_label}}`
+
+#### Template — Email
+
+**Subject:** `Your six slots for Summer Tour are still open`  
+**Preview:** `The first note might still be sitting unopened.`
+
+Shorter reminder. CTA `Make Your Picks` → `/dashboard/picks`. Daily email cap is bypassed for the batch. `forceResend` retries this reminder only.
+
+---
+
 ## 11 — `marketing_summer_2026_almost_end`
 
 | Field | Value |

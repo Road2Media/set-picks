@@ -65,6 +65,7 @@ const { recordAcceptedInviteForCaller } = require("./acceptedInvites");
 const { freezeClosedRankSnapshots } = require("./badgeSnapshotJobs");
 const { deliverSphere2026TourRecapInbox } = require("./sphereTourRecapDelivery");
 const { deliverMarketingSummerTour2026Launch } = require("./marketingBatchDelivery");
+const { deliverMarketingSummerTour2026Reminder } = require("./marketingReminderDelivery");
 const { deliverMarketingSummer2026AlmostEnd } = require("./marketingAlmostEndDelivery");
 const { claimMarketingRun, finishMarketingRun } = require("./marketingRunLock");
 const {
@@ -616,6 +617,42 @@ exports.deliverMarketingSummerTour2026Launch = onCall(
       dryRun,
       forceResend,
       onlyUids,
+      resendApiKey: process.env.RESEND_API_KEY,
+      resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET,
+      logger,
+    });
+  }
+);
+
+/**
+ * Admin-only batch — Summer Tour 2026 reminder for launch non-openers (#512 Slice B).
+ * Defaults to dryRun. Does not schedule a send. `forceResend` retries this
+ * reminder's dedup key only, not the launch send.
+ */
+exports.deliverMarketingSummerTour2026Reminder = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    secrets: commsDeliverySecrets,
+  },
+  async (request) => {
+    assertAdminClaim(request);
+    const dryRun = request.data?.dryRun !== false;
+    const forceResend = request.data?.forceResend === true;
+    const onlyUids = Array.isArray(request.data?.onlyUids)
+      ? request.data.onlyUids.map((u) => String(u).trim()).filter(Boolean)
+      : undefined;
+    const waitHoursRaw = request.data?.waitHours;
+    const waitHours =
+      typeof waitHoursRaw === "number" && Number.isFinite(waitHoursRaw) ? waitHoursRaw : undefined;
+    return deliverMarketingSummerTour2026Reminder({
+      db,
+      admin,
+      dryRun,
+      forceResend,
+      onlyUids,
+      ...(waitHours !== undefined ? { waitHours } : {}),
       resendApiKey: process.env.RESEND_API_KEY,
       resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET,
       logger,
