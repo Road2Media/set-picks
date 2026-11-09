@@ -189,8 +189,8 @@ export function tailShowReadiness(dates, picksByDate) {
 }
 
 /**
- * Official ranks 1–3. A tie keeps the place label and names everyone.
- * The next rank still skips, the same way the board does.
+ * Official ranks 1–3. A tie that survives the cascade keeps the place label
+ * and names everyone.
  *
  * @param {Array<{ uid?: string, handle?: string, totalPoints?: number }> | null | undefined} leaders
  * @returns {Array<{ rank: number, label: string, tied: boolean, members: Array<{ uid: string, handle: string }> }>}

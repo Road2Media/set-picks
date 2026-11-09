@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { fetchPicksForShowDate } from '../api/standingsApi';
+import { fetchOfficialSetlistForShow, fetchPicksForShowDate } from '../api/standingsApi';
 import { aggregateTourStandings } from './aggregateTourStandings';
 import { tailShowReadiness } from './yearEndCelebration';
 
@@ -14,17 +14,26 @@ const FETCH_CHUNK_SIZE = 8;
 async function fetchAndAggregateTour(dates) {
   /** @type {Array<{ date: string, picks: Array<Record<string, unknown>> }>} */
   const byDate = [];
+  /** @type {Record<string, Record<string, unknown>>} */
+  const setlistsByDate = {};
   for (let i = 0; i < dates.length; i += FETCH_CHUNK_SIZE) {
     const slice = dates.slice(i, i + FETCH_CHUNK_SIZE);
     const results = await Promise.all(
-      slice.map((date) =>
-        fetchPicksForShowDate(date).then((picks) => ({ date, picks }))
-      )
+      slice.map(async (date) => {
+        const [picks, setlist] = await Promise.all([
+          fetchPicksForShowDate(date),
+          fetchOfficialSetlistForShow(date),
+        ]);
+        return { date, picks, setlist };
+      })
     );
-    for (const r of results) byDate.push(r);
+    for (const r of results) {
+      byDate.push({ date: r.date, picks: r.picks });
+      if (r.setlist) setlistsByDate[r.date] = r.setlist;
+    }
   }
   return {
-    leaders: aggregateTourStandings(byDate),
+    leaders: aggregateTourStandings(byDate, setlistsByDate),
     ...tailShowReadiness(dates, byDate),
   };
 }

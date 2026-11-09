@@ -337,10 +337,12 @@ async function freezeYearRankSnapshot({
   let snapshot = existingData;
   if (!snapshot) {
     const picksByDate = await loadPicksByDate(db, dates);
+    const setlistsByDate = await loadSetlistsByDate(db, dates);
     snapshot = {
       ...buildYearRankSnapshot({
         year,
         picksByDate,
+        setlistsByDate,
         sourceThroughShow: finale,
       }),
       frozenAt: admin.firestore.FieldValue.serverTimestamp(),

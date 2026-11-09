@@ -46,7 +46,8 @@ export default function HowScoringChangedPage() {
             <h1 className={MARKETING_EDITORIAL_H1}>How scoring changed</h1>
             <p className={MARKETING_EDITORIAL_LEDE}>
               The point values for a played wildcard and a later encore song change with the
-              next tour. Nights already played keep the scores they have.
+              next tour. When two players finish on the same points, the board breaks the tie.
+              Nights already played keep the scores they have.
             </p>
             <HowScoringChangedContent />
             <p className={`mt-10 text-center ${MARKETING_EDITORIAL_META}`}>

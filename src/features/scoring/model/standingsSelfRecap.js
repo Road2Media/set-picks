@@ -29,7 +29,8 @@ export function computeStandingsSelfRecap(displayedPicks, actualSetlist, selfUse
 
   const entry = sorted[idx];
   const picksPayload = getPickPayloadFromEntry(entry);
-  const rankNumber = idx + 1;
+  const ranked = Number(entry.rank);
+  const rankNumber = Number.isFinite(ranked) && ranked >= 1 ? ranked : idx + 1;
   const isSelf = (entry.userId || entry.uid) === selfUserId;
   const displayRank = isSelf && !actualSetlist ? null : rankNumber;
   const totalScore = actualSetlist ? calculateTotalScore(picksPayload, actualSetlist) : null;

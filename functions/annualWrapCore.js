@@ -726,7 +726,7 @@ function assembleAnnualWrapRecipients(input) {
   const year = String(input.year);
   const shows = Array.isArray(input.shows) ? input.shows : [];
   const picksByDate = Array.isArray(input.picksByDate) ? input.picksByDate : [];
-  const leaders = aggregateTourStandings(picksByDate);
+  const leaders = aggregateTourStandings(picksByDate, input.setlists);
   if (leaders.length === 0) {
     return { recipients: [], crowdSummary: "", skipped: "no_eligible_players" };
   }

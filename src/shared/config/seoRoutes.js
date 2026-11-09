@@ -723,6 +723,7 @@ export const PRERENDER_ROUTES = [
       'How some picks are scored is changing. Nights already played keep the rules that were live that night.',
       `Starting ${LADDER_V2_START} (${SCORING_LADDER_V2_TOUR_NAME}): a played wildcard scores ${WILDCARD_NEXT} (was ${WILDCARD_HIT}). The first encore song stays ${ENCORE_EXACT}. A later encore song scores ${ENCORE_LATER_NEXT} (was ${ENCORE_EXACT} for any encore song).`,
       `Exact openers and closers stay ${EXACT_SLOT}. A song in the setlist but in the wrong slot stays ${IN_SETLIST}. Bustout Boost stays +${BUSTOUT_BOOST} for a ${BUSTOUT_MIN_GAP}+ show gap. A bustout wildcard goes from ${WILDCARD_HIT + BUSTOUT_BOOST} to ${WILDCARD_NEXT + BUSTOUT_BOOST}. A bustout later encore goes from ${ENCORE_EXACT + BUSTOUT_BOOST} to ${ENCORE_LATER_NEXT + BUSTOUT_BOOST}.`,
+      'When two players have the same points, the board no longer shares a rank. More exact slots rank higher, then more correct picks, then more nightly wins on a tour or the year. A handle is only the last resort.',
     ],
     buildJsonLd: buildHowScoringChangedJsonLd,
   },

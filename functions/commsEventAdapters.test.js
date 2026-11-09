@@ -259,7 +259,7 @@ test("buildTourRecapPodium takes top 3 plus two honorable mentions", () => {
   assert.match(podium.honorableMentions[1].note, /4 shows/);
 });
 
-test("buildTourRecapPodium names a points tie in the last honorable mention", () => {
+test("buildTourRecapPodium gives the last published place to the earlier handle", () => {
   const leaders = [
     { handle: "A", totalPoints: 100, wins: 3, shows: 8, correctSlots: 24 },
     { handle: "B", totalPoints: 90, wins: 2, shows: 8 },
@@ -272,17 +272,14 @@ test("buildTourRecapPodium names a points tie in the last honorable mention", ()
   const podium = buildTourRecapPodium(leaders);
   assert.equal(podium.honorableMentions.length, 2);
   assert.equal(podium.honorableMentions[0].handle, "D");
-  assert.equal(podium.honorableMentions[1].handle, "E and F");
-  assert.match(podium.honorableMentions[1].note, /tied for 5th at 60 pts/);
-  assert.equal(podium.places.find((place) => place.rank === 5).tied, true);
+  assert.equal(podium.honorableMentions[1].handle, "E");
+  assert.equal(podium.places.find((place) => place.rank === 5).tied, false);
   const board = buildTourRecapEmailBoard(leaders);
-  assert.equal(board.length, 6);
+  assert.equal(board.length, 5);
   assert.equal(board[0].rank, 1);
   assert.equal(board[0].avg, ".500");
   assert.equal(board[4].handle, "E");
   assert.equal(board[4].rank, 5);
-  assert.equal(board[5].handle, "F");
-  assert.equal(board[5].rank, 5);
   assert.equal(board[4].avg, "");
 });
 

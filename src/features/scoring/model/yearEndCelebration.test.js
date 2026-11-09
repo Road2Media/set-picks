@@ -182,7 +182,7 @@ describe('resolveYearEndCelebration', () => {
     );
   });
 
-  it('names a tie at the place, and skips a missing rank', () => {
+  it('gives the higher place to the player with more nightly wins', () => {
     const places = yearEndPodium([
       { uid: 'a', handle: 'Ada', totalPoints: 10, wins: 1, shows: 1 },
       { uid: 'b', handle: 'Bea', totalPoints: 10, wins: 0, shows: 1 },
@@ -190,12 +190,12 @@ describe('resolveYearEndCelebration', () => {
     ]);
     expect(places.map((place) => place.label)).toEqual([
       YEAR_END_ANNUAL_WINNER_LABEL,
+      YEAR_END_RUNNER_UP_LABEL,
       YEAR_END_THIRD_PLACE_LABEL,
     ]);
-    expect(places[0].tied).toBe(true);
-    expect(places[0].members.map((member) => member.handle)).toEqual(['Ada', 'Bea']);
-    expect(places[1].label).toBe(YEAR_END_THIRD_PLACE_LABEL);
-    expect(YEAR_END_RUNNER_UP_LABEL).toBe('Runner-up');
+    expect(places[0].tied).toBe(false);
+    expect(places[0].members.map((member) => member.handle)).toEqual(['Ada']);
+    expect(places[1].members.map((member) => member.handle)).toEqual(['Bea']);
   });
 });
 

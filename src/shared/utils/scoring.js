@@ -367,3 +367,47 @@ export const calculateTotalScore = (userPicks, actualSetlist, showDate) => {
 
   return total;
 };
+
+const EXACT_POSITION_FIELDS = ['s1o', 's1c', 's2o', 's2c'];
+
+/**
+ * Exact slots for the tie-break (#1172). Set 1 and Set 2 openers and closers,
+ * plus the first encore song. A later encore is not an exact slot. Wildcard
+ * and a song in the wrong slot are not exact slots.
+ *
+ * @param {Record<string, unknown> | null | undefined} userPicks
+ * @param {Record<string, unknown> | null | undefined} actualSetlist
+ * @returns {number}
+ */
+export function countExactHits(userPicks, actualSetlist) {
+  if (!actualSetlist || !userPicks) return 0;
+  let n = 0;
+  for (const fieldId of EXACT_POSITION_FIELDS) {
+    const guessed = userPicks[fieldId];
+    if (guessed == null || String(guessed).trim() === '') continue;
+    const guess = normalize(guessed);
+    if (guess && guess === normalize(actualSetlist[fieldId])) n += 1;
+  }
+  const encoreGuess = userPicks.enc;
+  if (encoreGuess != null && String(encoreGuess).trim() !== '') {
+    if (encorePlacement(actualSetlist, normalize(encoreGuess)) === 'first') n += 1;
+  }
+  return n;
+}
+
+/**
+ * Slots that scored, out of 6. Presence, wildcard, and a later encore count.
+ *
+ * @param {Record<string, unknown> | null | undefined} userPicks
+ * @param {Record<string, unknown> | null | undefined} actualSetlist
+ * @param {unknown} [showDate]
+ * @returns {number}
+ */
+export function countCorrectPicks(userPicks, actualSetlist, showDate) {
+  if (!actualSetlist || !userPicks) return 0;
+  let n = 0;
+  for (const field of FORM_FIELDS) {
+    if (calculateSlotScore(field.id, userPicks[field.id], actualSetlist, showDate) > 0) n += 1;
+  }
+  return n;
+}

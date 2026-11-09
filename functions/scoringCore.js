@@ -285,6 +285,32 @@ function countCorrectSlots(userPicks, actualSetlist) {
   return n;
 }
 
+const EXACT_POSITION_FIELDS = ["s1o", "s1c", "s2o", "s2c"];
+
+/**
+ * Exact slots for the tie-break (#1172). Mirrors `countExactHits` in
+ * `src/shared/utils/scoring.js`. A later encore is not an exact slot.
+ *
+ * @param {Record<string, unknown> | null | undefined} userPicks
+ * @param {Record<string, unknown> | null | undefined} actualSetlist
+ * @returns {number}
+ */
+function countExactHits(userPicks, actualSetlist) {
+  if (!actualSetlist || !userPicks) return 0;
+  let n = 0;
+  for (const fieldId of EXACT_POSITION_FIELDS) {
+    const guessed = userPicks[fieldId];
+    if (guessed == null || String(guessed).trim() === "") continue;
+    const guess = normalizeSong(guessed);
+    if (guess && guess === normalizeSong(actualSetlist[fieldId])) n += 1;
+  }
+  const encoreGuess = userPicks.enc;
+  if (encoreGuess != null && String(encoreGuess).trim() !== "") {
+    if (encorePlacement(actualSetlist, normalizeSong(encoreGuess)) === "first") n += 1;
+  }
+  return n;
+}
+
 /** Mirrors `src/shared/utils/officialSetlistSanitize.js` (trim / drop empties). */
 function sanitizeOfficialSongList(arr) {
   if (!Array.isArray(arr)) return [];
@@ -402,6 +428,7 @@ module.exports = {
   calculateTotalScore,
   countBustoutBoosts,
   countCorrectSlots,
+  countExactHits,
   actualSetlistFromOfficialDoc,
   persistableActualSetlistFromOfficialDoc,
   playableSetlistFingerprint,
