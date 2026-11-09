@@ -126,6 +126,15 @@ const TRIGGER_SPECS = {
     family: "results_recap",
     priority: "P1",
   },
+  annual_wrap: {
+    triggerId: "annual_wrap",
+    templateId: "annual-wrap",
+    channels: ["inApp", "push", "email"],
+    prefKeys: ["results"],
+    dedupKey: "annual_wrap:{year}:{uid}",
+    family: "results_recap",
+    priority: "P1",
+  },
   marketing_summer_tour_2026_launch: {
     triggerId: "marketing_summer_tour_2026_launch",
     templateId: "summer-tour-2026-launch",

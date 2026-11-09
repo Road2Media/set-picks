@@ -72,6 +72,15 @@ function resolveCommsEmailHeader(templateId, p = {}) {
         accentColor: ACCENT_TEAL,
       };
     }
+    case 'annual-wrap': {
+      const year = p.year != null && String(p.year).trim() ? String(p.year).trim() : 'the year';
+      return {
+        icon: '🏆',
+        eyebrow: `${year} · Annual wrap`,
+        title: `${year} is in the books`,
+        accentColor: ACCENT_TEAL,
+      };
+    }
     case 'tour-recap': {
       const tourName =
         typeof p.tour_name === 'string' && p.tour_name.trim()

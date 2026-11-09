@@ -100,7 +100,7 @@ Eligible → comms_delivered → comms_opened → dashboard visit within 24h
 
 | Cadence | Report |
 |---------|--------|
-| Weekly (show weeks) | Picks-lock funnel, push tap rate, pref opt-out rate; **recap slice** (`show_recap` + `tour_rankings_daily` + `tour_recap`) deliver/open/CTA + top `comms_destination` |
+| Weekly (show weeks) | Picks-lock funnel, push tap rate, pref opt-out rate; **recap slice** (`show_recap` + `tour_rankings_daily` + `tour_recap` + `annual_wrap`) deliver/open/CTA + top `comms_destination` |
 | Monthly | Full catalog review: deliver/open/CTA by `trigger_id` |
 | Per experiment | Variant comparison per EXPERIMENT_PLAYBOOK.md |
 

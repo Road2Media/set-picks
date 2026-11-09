@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.102.0] — 2026-11-09
+
+### Added
+- **Annual wrap (#1111)** — the morning after the last show of a calendar year, the 8:00 AM Pacific job sends an email and a push. The in-app note can appear as soon as that show is graded. A Dec 31 show stays in that year. A Jan 1 show is the next year. The board matches the year standings view. The shared summary is the same in every copy: songs the room called most, the highest and lowest hit rates among songs called at least 10 times, how many different songs the room named, and how many of those calls were in the setlist. A hit means the song was in the setlist. Then the first true race fact: the rarest song played all year, otherwise how often the annual lead changed hands, otherwise the closing show. The personal section stays about that player. Push stays the rank tease. A missing fact drops its clause. The send still goes. Nothing in the sample page is sent. **Deploy (human):** `rollupScoresForShow` and `scheduledTourRankingsDailyComms` before the next year-end morning. No rules or index change.
+
 ## [1.101.0] — 2026-11-09
 
 ### Added

@@ -51,6 +51,10 @@ const {
 } = require("./tourRecapCore");
 const { tourRecapFanoutCompleted } = require("./tourRecapState");
 const {
+  deliverAnnualWrapInAppOnGrade,
+  deliverPendingAnnualWraps,
+} = require("./annualWrapDelivery");
+const {
   readProcessState,
   writeProcessState,
   automatedFanoutBlock,
@@ -454,9 +458,17 @@ async function deliverPostRollupComms({
       editionStatus,
       tourStatus,
     });
+    const annualWrapSummary = await deliverAnnualWrapInAppOnGrade({
+      db,
+      runtime: createCommsAdapterRuntime({ db, admin, resendApiKey, logger }),
+      showDate,
+      showDatesByTour,
+      logger,
+    });
     return {
       recapSummary: { skipped: blockReason, showDate, tourKey: tourKey || null },
       engagementSummary: null,
+      annualWrapSummary,
     };
   }
 
@@ -601,8 +613,18 @@ async function deliverPostRollupComms({
       : null;
   // `tour_recap` waits for the next morning (8am PT cron). Last night of
   // tour stays a night `show_recap` only — same split as the Summer '26 one-off.
+  // The annual wrap's in-app note can appear on this grade when the show is
+  // the last night of its calendar year. Email and push wait for 8am PT.
 
-  return { recapSummary, engagementSummary };
+  const annualWrapSummary = await deliverAnnualWrapInAppOnGrade({
+    db,
+    runtime,
+    showDate,
+    showDatesByTour,
+    logger,
+  });
+
+  return { recapSummary, engagementSummary, annualWrapSummary };
 }
 
 /**
@@ -1226,6 +1248,7 @@ async function runScheduledTourRankingsDaily({
 
   const runtime = createCommsAdapterRuntime({ db, admin, resendApiKey, logger });
   let tourRecapSummaries = [];
+  let annualWrapSummaries = [];
   if (!collectOnly) {
     try {
       tourRecapSummaries = await deliverPendingTourRecaps({
@@ -1240,10 +1263,23 @@ async function runScheduledTourRankingsDaily({
       const msg = error instanceof Error ? error.message : String(error);
       logger?.error?.("runScheduledTourRankingsDaily.tourRecap failed", { msg });
     }
+    try {
+      annualWrapSummaries = await deliverPendingAnnualWraps({
+        db,
+        admin,
+        runtime,
+        showDatesByTour,
+        now,
+        logger,
+      });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger?.error?.("runScheduledTourRankingsDaily.annualWrap failed", { msg });
+    }
   }
 
   if (yesterdayCandidates.length === 0) {
-    return { processed: 0, delivered: 0, tourRecapSummaries };
+    return { processed: 0, delivered: 0, tourRecapSummaries, annualWrapSummaries };
   }
   /** @type {Array<{ uid: string, userData?: object, payload: object, vars: object }>} */
   const recipients = [];
@@ -1386,7 +1422,7 @@ async function runScheduledTourRankingsDaily({
   }
 
   if (collectOnly) {
-    return { processed: recipients.length, delivered: 0, recipients, tourRecapSummaries };
+    return { processed: recipients.length, delivered: 0, recipients, tourRecapSummaries, annualWrapSummaries };
   }
 
   let rankingsSummary = { processed: 0, delivered: 0, skipped: 0, results: [] };
@@ -1396,7 +1432,7 @@ async function runScheduledTourRankingsDaily({
     const msg = error instanceof Error ? error.message : String(error);
     logger?.error?.("runScheduledTourRankingsDaily.rankings failed", { msg });
   }
-  return { ...rankingsSummary, tourRecapSummaries };
+  return { ...rankingsSummary, tourRecapSummaries, annualWrapSummaries };
 }
 
 module.exports = {
