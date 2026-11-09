@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -166,6 +166,46 @@ function loginFormShellHtmlPlugin() {
   };
 }
 
+/**
+ * Vite 8 does not treat in-repo `.cjs` as a JS module (`knownJsSrcRE` skips
+ * `.cjs`). The dev server then serves `functions/pointsTieRanking.cjs?import`
+ * as a raw script, and the browser rejects
+ * `export { COMPARATORS } from '…cjs'` — the dashboard white-screens.
+ * The production build still converts that file. This serve-only load hook
+ * wraps the same source as ESM named exports so dev matches the build.
+ */
+function pointsTieRankingDevEsmPlugin() {
+  const suffix = '/functions/pointsTieRanking.cjs';
+  return {
+    name: 'points-tie-ranking-dev-esm',
+    apply: 'serve',
+    enforce: 'pre',
+    load(id) {
+      const clean = id.split('?')[0].replace(/\\/g, '/');
+      if (!clean.endsWith(suffix)) return null;
+      const source = readFileSync(clean, 'utf8');
+      return {
+        code: `const module = { exports: {} };
+const exports = module.exports;
+${source}
+export {
+  RANK_POLICIES,
+  LIVE_RANK_POLICY,
+  SURFACES,
+  COMPARATORS,
+  comparatorsForSurface,
+  rankScoredRows,
+  readPoints,
+  readHandle,
+};
+export default module.exports;
+`,
+        map: null,
+      };
+    },
+  };
+}
+
 function appDocumentDevMiddleware() {
   return {
     name: 'app-document-dev-middleware',
@@ -236,7 +276,12 @@ function manualChunks(id) {
 
 export default defineConfig({
   base: '/',
-  plugins: [react(), loginFormShellHtmlPlugin(), appDocumentDevMiddleware()],
+  plugins: [
+    pointsTieRankingDevEsmPlugin(),
+    react(),
+    loginFormShellHtmlPlugin(),
+    appDocumentDevMiddleware(),
+  ],
   test: {
     environment: 'node',
     include: ['src/**/*.test.js', 'api/**/*.test.js', 'comms/**/*.test.js'],

@@ -25,13 +25,57 @@ export function trackCrowdPulseView({
 }
 
 /**
- * User expands “Full crowd stats” disclosure.
+ * @param {string | undefined} deep_stats
+ * @returns {'locked' | 'open'}
+ */
+function deepStatsParam(deep_stats) {
+  return deep_stats === 'locked' ? 'locked' : 'open';
+}
+
+/**
+ * Standings teaser opened, or a pre-lock click through to full stats.
+ * Compare `crowd_pulse_teaser_expand` with post-lock `crowd_pulse_full_expand`.
+ *
+ * @param {{
+ *   show_date?: string,
+ *   deep_stats?: 'locked' | 'open',
+ *   via?: 'summary' | 'full_link',
+ * }} [payload]
+ */
+export function trackCrowdPulseTeaserExpand({
+  show_date,
+  deep_stats,
+  via,
+} = {}) {
+  ga4Event('crowd_pulse_teaser_expand', {
+    show_date: show_date ?? '',
+    deep_stats: deepStatsParam(deep_stats),
+    via: via === 'full_link' ? 'full_link' : 'summary',
+  });
+}
+
+/**
+ * Post-lock open of full crowd stats. `deep_stats` defaults to `open`.
+ *
+ * @param {{ show_date?: string, deep_stats?: 'locked' | 'open' }} [payload]
+ */
+export function trackCrowdPulseFullExpand({ show_date, deep_stats } = {}) {
+  ga4Event('crowd_pulse_full_expand', {
+    show_date: show_date ?? '',
+    deep_stats: deepStatsParam(deep_stats),
+  });
+}
+
+/**
+ * Make Picks helper placed a tour-chalk song in the first open slot.
+ * The card is not saved until Lock In Picks.
  *
  * @param {{ show_date?: string }} [payload]
  */
-export function trackCrowdPulseFullExpand({ show_date } = {}) {
-  ga4Event('crowd_pulse_full_expand', {
+export function trackCrowdPulseHelperUse({ show_date } = {}) {
+  ga4Event('crowd_pulse_helper_use', {
     show_date: show_date ?? '',
+    action: 'use',
   });
 }
 

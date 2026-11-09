@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.109.0] — 2026-11-09
+
+### Added
+- **Hide crowd pulse (#694 P3)** — Preferences has a Play control, Hide crowd pulse. It is off until a player turns it on. The choice is stored on `users/{uid}.gamePrefs.hideCrowdPulse`. When it is on, Standings drops the crowd pulse card, Make Picks drops tour chalk and crowd lean, and `/dashboard/stats/night` says crowd pulse is hidden with a link back to Preferences. That page does not load the night's picks while the preference is on. Pre-lock blur is unchanged when the surfaces stay visible. GA4: `crowd_pulse_teaser_expand` (opening the Standings teaser, and a pre-lock click on Full crowd stats), `crowd_pulse_full_expand` with `deep_stats: open` after lock, and `crowd_pulse_helper_use` when Use fills a slot. `picks_night_stats/{showDate}` stays deferred: the night aggregates already read `picks` by show date, and there is no lock step that already holds that aggregate to write safely. Rare-only, diversity, slot fill %, and pool % stay off the product UI.
+
+### Fixed
+- **Dev dashboard load** — `npm run dev` on Vite 8 serves `functions/pointsTieRanking.cjs` as ESM so the dashboard can import `COMPARATORS`. The production build already did. No scoring change.
+
 ## [1.108.0] — 2026-11-09
 
 ### Added

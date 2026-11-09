@@ -5,7 +5,9 @@ import { History, Loader2, Radio } from 'lucide-react';
 import {
   formatCrowdShare,
   selectLiveConsensusChips,
+  trackCrowdPulseHelperUse,
   useCrowdNightStats,
+  useHideCrowdPulse,
 } from '../../crowd-picks';
 import { useShowCalendar } from '../../show-calendar';
 import { useSongCatalog } from '../../song-catalog';
@@ -62,7 +64,8 @@ export default function PicksCrowdHelper({
   onChange,
   pickRecommendationsArtifact = null,
 }) {
-  if (!selectedDate || !showStatus) return null;
+  const { hideCrowdPulse } = useHideCrowdPulse();
+  if (hideCrowdPulse || !selectedDate || !showStatus) return null;
   if (resolvePicksHelperMode(showStatus) === 'consensus') {
     return (
       <PicksCrowdLean selectedDate={selectedDate} />
@@ -97,6 +100,7 @@ function PicksCrowdChalk({
     const open = findOpenSlotForTitle(formData, title);
     if (open.state !== 'open' || !open.slotId) return;
     onChange(open.slotId, title);
+    trackCrowdPulseHelperUse({ show_date: selectedDate });
   };
 
   let status = '';

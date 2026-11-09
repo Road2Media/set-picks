@@ -35,14 +35,23 @@ export { formatCatalogLastShort } from './model/formatCatalogLastShort';
 export { shouldBlurDeepCrowdStats } from './model/shouldBlurDeepCrowdStats';
 export {
   trackCrowdPulseView,
+  trackCrowdPulseTeaserExpand,
   trackCrowdPulseFullExpand,
   trackCrowdPulseSectionOpen,
+  trackCrowdPulseHelperUse,
 } from './model/crowdPulseAnalytics';
+export {
+  CROWD_PULSE_SURFACES,
+  isCrowdPulseSurfaceEnabled,
+  resolveHideCrowdPulse,
+} from './model/crowdPulsePreference';
+export { useHideCrowdPulse } from './model/useHideCrowdPulse';
 export {
   buildOfficialPlayedTitleSet,
   isCrowdSongPlayed,
 } from './model/buildOfficialPlayedTitleSet';
 export { default as CrowdNightPulsePanel } from './ui/CrowdNightPulsePanel';
 export { default as CrowdNightStatsPanel } from './ui/CrowdNightStatsPanel';
+export { default as CrowdPulseHiddenNotice } from './ui/CrowdPulseHiddenNotice';
 export { default as CrowdPulseTopTable } from './ui/CrowdPulseTopTable';
 export { default as FrequencyMeterRow } from './ui/FrequencyMeterRow';

@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.107.0  
+**Version:** 1.109.0  
 
 
 **SemVer:** https://semver.org  
@@ -28,6 +28,7 @@ All collections live in the default `(default)` Firestore database for project `
 | `createdAt` | Timestamp | Account creation |
 | `isAdmin` | boolean? | Admin custom claim mirror |
 | `notificationPrefs` | map | Channel opt-in flags (see §1.2) |
+| `gamePrefs` | map? | **v1.109.0+ (#694)** Owner-written play preferences. `{ hideCrowdPulse?: boolean }`. Missing, `false`, or any value other than `true` keeps crowd pulse visible. `true` hides the Standings crowd pulse card, `/dashboard/stats/night`, and the Make Picks helper. Clients may write their own doc. It does not change the pre-lock blur on surfaces that stay visible. |
 | `totalPoints` | number? | Career graded points (written by `rollupScoresForShow`) |
 | `showsPlayed` | number? | Career graded non-empty shows |
 | `wins` | number? | Career global night wins (ties share) |
