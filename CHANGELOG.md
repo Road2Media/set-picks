@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.100.0] — 2026-11-09
+
+### Added
+- **Global Average vintage and Bustout Boost (#1044)** — `/dashboard/stats/global` adds Vintage and Bustout beside PPS, Picking Avg, and SLG, for All-time and This tour. Average vintage is the rounded mean debut year of the different songs you've picked on graded shows. An older year ranks higher. Songs with no debut year are left out. At least 3 shows to rank. Bustout Boost counts slots whose boost fired. All-time adds the per-tour counters. A count of 0 is not ranked. The Functions rebuild still owns `global_stats_leaderboards` (`schemaVersion` 3). Clients read those docs and their own user doc. They do not scan `users`. The you-row vintage comes from `users.avgVintageYear` and `users.avgVintageByTour`, written by that same rebuild. The boards fill in after the functions deploy and the next rollup, nightly refresh, or admin `refreshGlobalStatsLeaderboards`. In most played and pool-scoped boards stay out.
+
 ## [1.99.1] — 2026-11-09
 
 ### Changed

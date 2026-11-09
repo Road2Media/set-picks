@@ -42,6 +42,23 @@ export const GLOBAL_LEADERBOARD_BOARDS = [
     minShows: GLOBAL_LEADERBOARD_MIN_SHOWS,
     allTimeMinShows: GLOBAL_LEADERBOARD_SLUGGING_MIN_SHOWS_ALL_TIME,
   },
+  {
+    key: 'averageVintage',
+    title: 'Average vintage',
+    shortLabel: 'Vintage',
+    hint: "Mean debut year of the different songs you've picked. Songs with no debut year are left out. An older year ranks higher. At least 3 shows to rank.",
+    minShows: GLOBAL_LEADERBOARD_MIN_SHOWS,
+    order: 'asc',
+    unrankedWhenMissing: true,
+  },
+  {
+    key: 'bustoutBoosts',
+    title: 'Bustout Boost',
+    shortLabel: 'Bustout',
+    hint: 'Slots whose Bustout Boost fired. More ranks higher. A count of 0 is not ranked.',
+    minShows: 0,
+    minValue: 1,
+  },
 ];
 
 /**
@@ -133,7 +150,50 @@ export function formatSluggingPercentage(value) {
 }
 
 /**
- * @param {'pointsPerShow' | 'pickingAverage' | 'sluggingPercentage' | 'shows'} boardKey
+ * Rounded debut year. Matches the integer stored on the leaderboard.
+ *
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function formatAverageVintage(value) {
+  const year = finiteNumber(value);
+  if (year == null) return '—';
+  return String(Math.round(year));
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+export function formatBustoutBoosts(value) {
+  const n = finiteNumber(value);
+  if (n == null) return '—';
+  return String(Math.trunc(n));
+}
+
+/**
+ * Career total of `seasonStats.{tourKey}.bustoutBoosts`.
+ * Null when no tour has stored a count.
+ *
+ * @param {unknown} seasonStats
+ * @returns {number | null}
+ */
+export function sumBustoutBoosts(seasonStats) {
+  if (!seasonStats || typeof seasonStats !== 'object') return null;
+  let sum = 0;
+  let seen = false;
+  for (const stats of Object.values(seasonStats)) {
+    if (!stats || typeof stats !== 'object') continue;
+    const n = finiteNumber(stats.bustoutBoosts);
+    if (n == null) continue;
+    seen = true;
+    sum += n;
+  }
+  return seen ? sum : null;
+}
+
+/**
+ * @param {'pointsPerShow' | 'pickingAverage' | 'sluggingPercentage' | 'averageVintage' | 'bustoutBoosts' | 'shows'} boardKey
  * @param {unknown} value
  * @returns {string}
  */
@@ -141,6 +201,8 @@ export function formatBoardValue(boardKey, value) {
   if (boardKey === 'pickingAverage' || boardKey === 'sluggingPercentage') {
     return formatPickingAverage(value);
   }
+  if (boardKey === 'averageVintage') return formatAverageVintage(value);
+  if (boardKey === 'bustoutBoosts') return formatBustoutBoosts(value);
   if (boardKey === 'shows') return formatShowsCount(value);
   return formatPointsPerShow(value);
 }
@@ -195,7 +257,7 @@ export function leaderboardPageWindow(
  * then handle A→Z.
  *
  * @param {Array<{ uid?: string, handle?: string, value?: unknown, shows?: unknown }>} candidates
- * @param {{ minShows?: number, topN?: number }} [opts]
+ * @param {{ minShows?: number, topN?: number, order?: 'asc' | 'desc', minValue?: number }} [opts]
  * @returns {Array<{ uid: string, handle: string, value: number, shows: number, rank: number }>}
  */
 export function rankBoard(candidates, opts = {}) {
@@ -203,12 +265,15 @@ export function rankBoard(candidates, opts = {}) {
     ? opts.minShows
     : GLOBAL_LEADERBOARD_MIN_SHOWS;
   const topN = Number.isFinite(opts.topN) ? opts.topN : GLOBAL_LEADERBOARD_TOP_N;
+  const order = opts.order === 'asc' ? 'asc' : 'desc';
+  const minValue = Number.isFinite(opts.minValue) ? opts.minValue : null;
 
   const eligible = [];
   for (const row of candidates || []) {
     if (!row || typeof row.uid !== 'string' || !row.uid) continue;
     const value = finiteNumber(row.value);
     if (value == null) continue;
+    if (minValue != null && value < minValue) continue;
     const shows = finiteNumber(row.shows) ?? 0;
     if (minShows > 0 && shows < minShows) continue;
     const handle =
@@ -219,7 +284,9 @@ export function rankBoard(candidates, opts = {}) {
   }
 
   eligible.sort((a, b) => {
-    if (b.value !== a.value) return b.value - a.value;
+    if (a.value !== b.value) {
+      return order === 'asc' ? a.value - b.value : b.value - a.value;
+    }
     if (b.shows !== a.shows) return b.shows - a.shows;
     return a.handle.localeCompare(b.handle, 'en');
   });
@@ -250,6 +317,8 @@ export function rankBoard(candidates, opts = {}) {
  *     pointsPerShow: number | null,
  *     pickingAverage: number | null,
  *     sluggingPercentage: number | null,
+ *     averageVintage: number | null,
+ *     bustoutBoosts: number | null,
  *   },
  * } | null}
  */
@@ -269,6 +338,10 @@ export function viewerMetricsFromUserDoc(userDoc, { uid, tourKey, scope }) {
         ? userDoc.seasonStats[tourKey]
         : null;
     const shows = finiteNumber(season?.shows) ?? 0;
+    const byTour =
+      userDoc.avgVintageByTour && typeof userDoc.avgVintageByTour === 'object'
+        ? userDoc.avgVintageByTour
+        : null;
     return {
       uid: viewerUid,
       handle,
@@ -277,11 +350,17 @@ export function viewerMetricsFromUserDoc(userDoc, { uid, tourKey, scope }) {
         pointsPerShow: computePointsPerShow(season?.totalPoints, shows),
         pickingAverage: computePickingAverage(season?.correctSlots, shows),
         sluggingPercentage: computeSluggingPercentage(season?.totalPoints, shows),
+        averageVintage: finiteNumber(byTour?.[tourKey]),
+        bustoutBoosts: finiteNumber(season?.bustoutBoosts),
       },
     };
   }
 
   const shows = finiteNumber(userDoc.showsPlayed) ?? 0;
+  const seasonStats =
+    userDoc.seasonStats && typeof userDoc.seasonStats === 'object'
+      ? userDoc.seasonStats
+      : null;
   return {
     uid: viewerUid,
     handle,
@@ -290,6 +369,8 @@ export function viewerMetricsFromUserDoc(userDoc, { uid, tourKey, scope }) {
       pointsPerShow: computePointsPerShow(userDoc.totalPoints, shows),
       pickingAverage: computePickingAverage(userDoc.careerCorrectSlots, shows),
       sluggingPercentage: computeSluggingPercentage(userDoc.totalPoints, shows),
+      averageVintage: finiteNumber(userDoc.avgVintageYear),
+      bustoutBoosts: sumBustoutBoosts(seasonStats),
     },
   };
 }
@@ -377,11 +458,7 @@ export function mergeAllBoards(aggregateDoc, viewer, scope = 'tour') {
           value: viewer.values[board.key] ?? null,
         }
       : null;
-    const minShows =
-      scope === 'allTime' && Number.isFinite(board.allTimeMinShows)
-        ? board.allTimeMinShows
-        : board.minShows;
-    merged[board.key] = markBelowMinimum(mergeYouRow(rows, you), minShows);
+    merged[board.key] = markBelowMinimum(mergeYouRow(rows, you), board, scope);
   }
   return merged;
 }
@@ -393,10 +470,25 @@ export function mergeAllBoards(aggregateDoc, viewer, scope = 'tour') {
  * @param {number} minShows
  * @returns {ReturnType<typeof mergeYouRow>}
  */
-function markBelowMinimum(rows, minShows) {
-  if (!(minShows > 0)) return rows;
+function markBelowMinimum(rows, board, scope) {
+  const minShows =
+    scope === 'allTime' && Number.isFinite(board.allTimeMinShows)
+      ? board.allTimeMinShows
+      : Number.isFinite(board.minShows)
+        ? board.minShows
+        : GLOBAL_LEADERBOARD_MIN_SHOWS;
+  const minValue = Number.isFinite(board.minValue) ? board.minValue : null;
   return rows.map((row) => {
-    if (!row.isSelf || !row.outsideTop || row.shows >= minShows) return row;
-    return { ...row, belowMinimum: true };
+    if (!row.isSelf || !row.outsideTop) return row;
+    const underShows = minShows > 0 && row.shows < minShows;
+    const missing = row.value == null || !Number.isFinite(row.value);
+    const underValue = minValue != null && (missing || row.value < minValue);
+    const missingValue = Boolean(board.unrankedWhenMissing) && missing;
+    if (!underShows && !underValue && !missingValue) return row;
+    return {
+      ...row,
+      belowMinimum: true,
+      belowMinimumReason: underShows ? 'shows' : 'value',
+    };
   });
 }

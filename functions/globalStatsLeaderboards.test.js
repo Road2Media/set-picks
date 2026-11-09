@@ -8,12 +8,17 @@ const {
   GLOBAL_LEADERBOARD_SLUGGING_BASE_POINTS,
   GLOBAL_LEADERBOARD_SLUGGING_MIN_SHOWS_ALL_TIME,
   GLOBAL_LEADERBOARD_TOP_N,
+  buildDebutYearBySongName,
   buildLeaderboardPayloads,
   computePickingAverage,
   computePointsPerShow,
   computeSluggingPercentage,
+  dateToTourKeyMap,
+  meanDebutYear,
   rankBoard,
   tourLeaderboardDocId,
+  vintageByUidFromPicks,
+  vintagePersistPatch,
 } = require("./globalStatsLeaderboards");
 
 describe("global stats ratios (#1004)", () => {
@@ -272,6 +277,7 @@ describe("rebuildGlobalStatsLeaderboards writer", () => {
       admin,
       tourKey: "2026 Summer Tour",
       trigger: "rollup",
+      vintageByUid: new Map(),
     });
 
     assert.equal(result.usersScanned, 1);
@@ -279,12 +285,282 @@ describe("rebuildGlobalStatsLeaderboards writer", () => {
     assert.equal(written[0].id, ALL_TIME_DOC_ID);
     assert.equal(written[1].id, tourLeaderboardDocId("2026 Summer Tour"));
     assert.equal(written[0].data.trigger, "rollup");
-    assert.equal(written[0].data.schemaVersion, 2);
+    assert.equal(written[0].data.schemaVersion, 3);
+    assert.equal(result.vintageStatus, "ok");
+    assert.deepEqual(written[0].data.boards.averageVintage, []);
+    assert.deepEqual(written[0].data.boards.bustoutBoosts, []);
     assert.equal(written[0].data.minShows, 3);
     assert.equal(written[0].data.sluggingMinShows, 15);
     assert.equal(written[0].data.sluggingMinShowsAllTime, 15);
     assert.equal(written[1].data.sluggingMinShows, 3);
     assert.equal(written[0].data.slotsPerShow, 6);
     assert.equal(written[0].data.boards.pointsPerShow[0].uid, "alice");
+  });
+});
+
+describe("average vintage and bustout boost (#1044)", () => {
+  it("rounds the mean debut year of unique titles and drops unknown debuts", () => {
+    const debuts = buildDebutYearBySongName([
+      { name: "Tweezer", debut: "1990-08-01" },
+      { name: "Ghost", debut: "1997-07-23" },
+      { name: "No Debut", debut: "" },
+    ]);
+    assert.equal(
+      meanDebutYear(new Set(["tweezer", "ghost", "no debut"]), debuts),
+      Math.round((1990 + 1997) / 2)
+    );
+    assert.equal(meanDebutYear(new Set(["no debut"]), debuts), null);
+  });
+
+  it("keeps career and tour sets separate and skips ungraded picks", () => {
+    const debuts = buildDebutYearBySongName([
+      { name: "Tweezer", debut: "1990-01-01" },
+      { name: "Ghost", debut: "1998-01-01" },
+      { name: "Fee", debut: "1985-01-01" },
+    ]);
+    const dateToTour = dateToTourKeyMap([
+      {
+        tour: "2026 Summer Tour",
+        shows: [{ date: "2026-07-01" }, { date: "2026-07-02" }],
+      },
+      { tour: "2026 Sphere", shows: [{ date: "2026-04-01" }] },
+    ]);
+    const vintage = vintageByUidFromPicks(
+      [
+        {
+          userId: "alice",
+          showDate: "2026-07-01",
+          isGraded: true,
+          picks: { s1o: "Tweezer", s1c: "Tweezer", wild: "Ghost" },
+        },
+        {
+          userId: "alice",
+          showDate: "2026-04-01",
+          isGraded: true,
+          picks: { s1o: "Fee" },
+        },
+        {
+          userId: "alice",
+          showDate: "2026-07-02",
+          isGraded: false,
+          picks: { s1o: "Fee" },
+        },
+      ],
+      dateToTour,
+      debuts
+    );
+    const alice = vintage.get("alice");
+    assert.equal(alice.careerYear, Math.round((1990 + 1998 + 1985) / 3));
+    assert.equal(alice.byTour["2026 Summer Tour"], Math.round((1990 + 1998) / 2));
+    assert.equal(alice.byTour["2026 Sphere"], 1985);
+  });
+
+  it("ranks an older year first and counts bustout slots, including a one-show positive count", () => {
+    const users = [
+      {
+        uid: "old",
+        handle: "Old",
+        totalPoints: 40,
+        showsPlayed: 4,
+        careerCorrectSlots: 8,
+        seasonStats: {
+          "2026 Summer Tour": {
+            totalPoints: 40,
+            shows: 4,
+            correctSlots: 8,
+            bustoutBoosts: 1,
+          },
+          "2026 Sphere": {
+            totalPoints: 10,
+            shows: 2,
+            correctSlots: 2,
+            bustoutBoosts: 2,
+          },
+        },
+      },
+      {
+        uid: "newSong",
+        handle: "New",
+        totalPoints: 90,
+        showsPlayed: 6,
+        careerCorrectSlots: 12,
+        seasonStats: {
+          "2026 Summer Tour": {
+            totalPoints: 90,
+            shows: 6,
+            correctSlots: 12,
+            bustoutBoosts: 0,
+          },
+        },
+      },
+      {
+        uid: "spike",
+        handle: "Spike",
+        totalPoints: 20,
+        showsPlayed: 1,
+        careerCorrectSlots: 2,
+        seasonStats: {
+          "2026 Summer Tour": {
+            totalPoints: 20,
+            shows: 1,
+            correctSlots: 2,
+            bustoutBoosts: 6,
+          },
+        },
+      },
+    ];
+    const vintage = new Map([
+      ["old", { careerYear: 1988, byTour: { "2026 Summer Tour": 1990 } }],
+      ["newSong", { careerYear: 2004, byTour: { "2026 Summer Tour": 2001 } }],
+      ["spike", { careerYear: 1970, byTour: { "2026 Summer Tour": 1970 } }],
+    ]);
+    const payloads = buildLeaderboardPayloads({
+      users,
+      tourKey: "2026 Summer Tour",
+      vintageByUid: vintage,
+    });
+    assert.deepEqual(
+      payloads[0].boards.averageVintage.map((row) => row.uid),
+      ["old", "newSong"]
+    );
+    assert.equal(payloads[0].boards.averageVintage[0].value, 1988);
+    assert.equal(payloads[0].boards.averageVintage[0].rank, 1);
+    assert.deepEqual(
+      payloads[0].boards.bustoutBoosts.map((row) => [row.uid, row.value]),
+      [
+        ["spike", 6],
+        ["old", 3],
+      ]
+    );
+    assert.equal(
+      payloads[1].boards.bustoutBoosts.some((row) => row.uid === "newSong"),
+      false
+    );
+    assert.equal(payloads[1].boards.bustoutBoosts[0].uid, "spike");
+    assert.equal(payloads[1].boards.averageVintage[0].uid, "old");
+    assert.equal(
+      payloads[1].boards.averageVintage.some((row) => row.uid === "spike"),
+      false
+    );
+  });
+
+  it("leaves a matching vintage write alone and clears a stale year", () => {
+    assert.equal(
+      vintagePersistPatch(
+        {
+          uid: "alice",
+          avgVintageYear: 1994,
+          avgVintageByTour: { "2026 Summer Tour": 1991 },
+        },
+        { careerYear: 1994, byTour: { "2026 Summer Tour": 1991 } }
+      ),
+      null
+    );
+    assert.deepEqual(
+      vintagePersistPatch(
+        {
+          uid: "alice",
+          avgVintageYear: 1994,
+          avgVintageByTour: { Sphere: 1980 },
+        },
+        { careerYear: null, byTour: {} }
+      ),
+      {
+        uid: "alice",
+        avgVintageYear: null,
+        avgVintageByTour: null,
+      }
+    );
+  });
+
+  it("keeps the previous average vintage board when the catalog load fails", async () => {
+    const { rebuildGlobalStatsLeaderboards } = require("./globalStatsLeaderboards");
+    const prior = [
+      { uid: "kept", handle: "Kept", value: 1991, shows: 4, rank: 1 },
+    ];
+    const written = [];
+    const userPage = {
+      empty: false,
+      size: 1,
+      docs: [
+        {
+          id: "alice",
+          data: () => ({
+            handle: "Alice",
+            totalPoints: 30,
+            showsPlayed: 3,
+            careerCorrectSlots: 9,
+            seasonStats: {
+              "2026 Summer Tour": {
+                totalPoints: 30,
+                shows: 3,
+                correctSlots: 9,
+                bustoutBoosts: 2,
+              },
+            },
+          }),
+        },
+      ],
+    };
+    let userGets = 0;
+    const db = {
+      collection(name) {
+        if (name === "users") {
+          return {
+            orderBy() {
+              return this;
+            },
+            limit() {
+              return this;
+            },
+            startAfter() {
+              return this;
+            },
+            async get() {
+              userGets += 1;
+              return userGets === 1
+                ? userPage
+                : { empty: true, size: 0, docs: [] };
+            },
+          };
+        }
+        if (name === "global_stats_leaderboards") {
+          return {
+            doc(id) {
+              return {
+                async get() {
+                  if (id !== ALL_TIME_DOC_ID) return { exists: false, data: () => ({}) };
+                  return {
+                    exists: true,
+                    data: () => ({ boards: { averageVintage: prior } }),
+                  };
+                },
+                async set(data) {
+                  written.push({ id, data });
+                },
+              };
+            },
+          };
+        }
+        throw new Error(`unexpected collection ${name}`);
+      },
+    };
+    const admin = {
+      firestore: { FieldValue: { serverTimestamp: () => "TS" } },
+    };
+    const result = await rebuildGlobalStatsLeaderboards({
+      db,
+      admin,
+      tourKey: "2026 Summer Tour",
+      trigger: "scheduled",
+      loadVintage: async () => {
+        throw new Error("catalog down");
+      },
+    });
+    assert.equal(result.vintageStatus, "skipped");
+    assert.equal(written[0].data.boards.averageVintage, prior);
+    assert.equal(written[0].data.boards.bustoutBoosts[0].uid, "alice");
+    assert.equal(written[0].data.boards.bustoutBoosts[0].value, 2);
+    assert.equal(written[1].data.boards.averageVintage.length, 0);
   });
 });

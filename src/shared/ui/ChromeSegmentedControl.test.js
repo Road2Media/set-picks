@@ -60,6 +60,32 @@ describe('ChromeSegmentedControl (#765 tertiary chrome)', () => {
     expect(html).toContain('shadow-inset-glass');
   });
 
+  it('wrap layout sizes each label instead of forcing one equal row', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ChromeSegmentedControl, {
+        ariaLabel: 'Global ranking board',
+        value: 'averageVintage',
+        scrollToTop: false,
+        tone: 'inset',
+        layout: 'wrap',
+        items: [
+          { id: 'pointsPerShow', label: 'PPS' },
+          { id: 'pickingAverage', label: 'Picking Avg' },
+          { id: 'sluggingPercentage', label: 'SLG' },
+          { id: 'averageVintage', label: 'Vintage' },
+          { id: 'bustoutBoosts', label: 'Bustout' },
+        ],
+      }),
+    );
+
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('flex-wrap');
+    expect(count(html, 'flex-1')).toBe(0);
+    expect(html).toContain('whitespace-nowrap');
+    expect(html).toContain('Vintage');
+    expect(html).toContain('Bustout');
+  });
+
   it('inset tone keeps the equal-width tray without chrome glass + brand ring', () => {
     const html = renderToStaticMarkup(
       React.createElement(ChromeSegmentedControl, {
