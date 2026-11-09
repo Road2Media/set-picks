@@ -2,7 +2,7 @@
 
 **Status:** shipped (Slice A / #512)  
 **Date:** 2026-09-04  
-**Related:** #512 Slice A — persist `email.opened` / `email.clicked`. Slice B (non-opener reminder batch) is **not** in this change.
+**Related:** #512 Slice A — persist `email.opened` / `email.clicked`. Slice B (non-opener reminder) is `deliverMarketingSummerTour2026Reminder`. It reads this plane and does not change the webhook.
 
 This is the ops checklist for the Resend dashboard plus the Firestore join plane that Optimize `email_open` reads. No new Cloud Functions secret: signing still uses existing `RESEND_WEBHOOK_SECRET`.
 
@@ -71,12 +71,12 @@ Re-deliveries of the same event are no-ops (first `openedAt` / `clickedAt` wins)
 
 Tag names/values are ASCII letters, numbers, underscores, or dashes only (Resend constraint). The webhook copies those tags onto `comms_email_engagement`. Marketing batches already pass `campaignId` in `vars` (`summer_tour_2026`, `summer_2026_almost_end`).
 
-On a successful email send the orchestrator also merges `resendEmailId` + `campaignId` onto the `fcm_notification_log` dedup doc so Slice B can join delivered → opened without a collection scan.
+On a successful email send the orchestrator also merges `resendEmailId` + `campaignId` onto the `fcm_notification_log` dedup doc so the reminder batch can join delivered → opened without a collection scan.
 
 ## Collection
 
 `comms_email_engagement/{resendEmailId}` is Admin-SDK write only. Clients cannot read or write (`firestore.rules`). See [`docs/API.md`](../API.md) §1.14.
 
-## Out of scope (Slice B)
+## Reminder batch (Slice B)
 
-No reminder trigger, reminder template, non-opener audience resolver, or second-wave send. Those stay on #512 until a follow-up PR.
+`deliverMarketingSummerTour2026Reminder` is the human-triggered second wave. It point-reads `comms_email_engagement/{resendEmailId}` from the parent delivery log and skips anyone with `openedAt`. It does not add a scheduler and it does not send on deploy.
