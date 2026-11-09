@@ -3,7 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 
 import { fetchPicksForShowDate } from '../api/standingsApi';
 import { aggregateTourStandings } from './aggregateTourStandings';
+import { tailShowReadiness } from './yearEndCelebration';
 
+const EMPTY_LEADERS = [];
 const FETCH_CHUNK_SIZE = 8;
 
 /**
@@ -21,7 +23,10 @@ async function fetchAndAggregateTour(dates) {
     );
     for (const r of results) byDate.push(r);
   }
-  return aggregateTourStandings(byDate);
+  return {
+    leaders: aggregateTourStandings(byDate),
+    ...tailShowReadiness(dates, byDate),
+  };
 }
 
 /**
@@ -43,6 +48,8 @@ async function fetchAndAggregateTour(dates) {
  *   leaders: TourStandingsRow[],
  *   loading: boolean,
  *   error: Error | null,
+ *   tailDate: string | null,
+ *   tailReady: boolean,
  * }}
  */
 export function useTourStandings(tourShows) {
@@ -64,16 +71,27 @@ export function useTourStandings(tourShows) {
   }, [query.isError, query.error]);
 
   if (dates.length === 0) {
-    return { leaders: [], loading: false, error: null };
+    return {
+      leaders: [],
+      loading: false,
+      error: null,
+      tailDate: null,
+      tailReady: false,
+    };
   }
 
+  const payload = query.data;
+  const shaped = payload && !Array.isArray(payload) ? payload : null;
+
   return {
-    leaders: query.data ?? [],
+    leaders: shaped?.leaders ?? (Array.isArray(payload) ? payload : EMPTY_LEADERS),
     loading: query.isPending || query.isFetching,
     error: query.isError
       ? query.error instanceof Error
         ? query.error
         : new Error('Failed to load tour standings.')
       : null,
+    tailDate: shaped?.tailDate ?? null,
+    tailReady: shaped?.tailReady === true,
   };
 }

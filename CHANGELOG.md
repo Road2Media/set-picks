@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.103.0] — 2026-11-09
+
+### Added
+- **Year-end celebration (#1112)** — opening the annual standings view for the year that just closed plays a fireworks burst over the board. Annual Winner, Runner-up, and Third Place stay visible while it plays. Skip ends it. The board stays usable. It can start as soon as the last show of that year is graded, including a Dec 31 show that runs past midnight. It does not wait for the 8:00 AM wrap. It does not play on Show, Tour, Pools, an earlier year, or the bundled fallback calendar. It plays once per person in this browser, and only within two calendar months of that finale date. No rules or index change.
+
 ## [1.102.0] — 2026-11-09
 
 ### Added

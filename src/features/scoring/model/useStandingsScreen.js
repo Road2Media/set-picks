@@ -31,6 +31,7 @@ import { computeStandingsSelfRecap } from './standingsSelfRecap';
 import { useStandingsLeaderboardView } from './useStandingsLeaderboardView';
 import { useStandingsTourSelection } from './useStandingsTourSelection';
 import { useStandingsYearSelection } from './useStandingsYearSelection';
+import { useYearEndCelebration } from './useYearEndCelebration';
 import { useStandingsView } from './useStandingsView';
 import { useStandingsViewChange } from './useStandingsViewChange';
 import { useLiveSetlistServiceStatus } from './useLiveSetlistServiceStatus';
@@ -65,7 +66,8 @@ export function useStandingsScreen(selectedDate, options = {}) {
       : '';
 
   const { user } = useAuth();
-  const { showDates, showDatesByTour, loading: calendarLoading } = useShowCalendar();
+  const { showDates, showDatesByTour, loading: calendarLoading, source: calendarSource } =
+    useShowCalendar();
   const { pools: userPools } = useUserPools(user?.uid);
   const inviteChooser = useInviteChooser({ pools: userPools });
 
@@ -197,7 +199,23 @@ export function useStandingsScreen(selectedDate, options = {}) {
     leaders: yearLeaders,
     loading: yearLoading,
     error: yearError,
+    tailDate: yearTailDate,
+    tailReady: yearTailReady,
   } = useTourStandings(view === 'year' ? (selectedYear?.shows ?? null) : null);
+
+  const yearBoardLoading = yearLoading || (!selectedYear && calendarLoading);
+  const yearCelebration = useYearEndCelebration({
+    view,
+    year: selectedYear?.year ?? null,
+    showDates,
+    userId: user?.uid || null,
+    calendarSettled: calendarSource === 'firestore' && !calendarLoading,
+    leaders: yearLeaders,
+    leadersLoading: yearBoardLoading,
+    leadersError: yearError,
+    tailDate: yearTailDate,
+    tailReady: yearTailReady,
+  });
 
   // Crowd pulse leaders: tour points from shows *before* the selected night (#692).
   const crowdTourShows = useMemo(() => {
@@ -296,8 +314,9 @@ export function useStandingsScreen(selectedDate, options = {}) {
     setYearKey,
     selectableYears,
     yearLeaders,
-    yearLoading: yearLoading || (!selectedYear && calendarLoading),
+    yearLoading: yearBoardLoading,
     yearError,
+    yearCelebration,
     crowdTourLeaders,
     crowdTourLoading,
 
