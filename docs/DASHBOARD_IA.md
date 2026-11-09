@@ -46,7 +46,7 @@ Nested routes (not `?view=`). Primary **Picks** tab stays active. Lab segment is
 
 | Sub-nav | Path | Responsibility |
 |---------|------|----------------|
-| **Make Picks** | `/dashboard` and `/dashboard/picks` | Existing picks form (lock/edit). `utm_campaign` landed logging stays here. |
+| **Make Picks** | `/dashboard` and `/dashboard/picks` | Existing picks form (lock/edit). `utm_campaign` landed logging stays here. **Crowd helper (#694 P2):** tour chalk before showtime (earlier locked nights only; Use fills an open slot and does not save). Live consensus, slot favorites, and highest gaps after lock. Full crowd stats links to `/dashboard/stats/night`. Not a new tertiary chip. |
 | **Picks Lab** | `/dashboard/picks/lab` | Prediction Lab (`PickPredictionPanel`) when the env flag is `true`; otherwise coming-soon. Live **Your card** mirrors the shared draft. **Use** does not persist — Lock In / Update Picks still saves. |
 | **Scorecard** | `/dashboard/picks/scorecard` | Global, show-scoped self card + comparison metrics (#767). |
 | **Rewind** | `/dashboard/rewind` | Weekly historical show (#1142). Segment is **hidden** unless `VITE_ENABLE_REWIND_MODE=true`. Direct URL shows a closed shell when the flag is off. Date picker hides. Scores are not live standings. |
@@ -54,7 +54,7 @@ Nested routes (not `?view=`). Primary **Picks** tab stays active. Lab segment is
 
 **Scorecard v1 (#767):** Global only (not pool-scoped). Show comes from the existing global date picker. Overlap (“N players also picked this song”) is **post-lock only** (LIVE / PAST or admin-locked NEXT). Pre-lock shows the player’s own card plus locked copy — no overlap. Odds are optional show-wide `playProb` from Storage `pick-recommendations.json` (same artifact as Lab; **`playProbBySong`** when present so every pick on the card has a percent, `<1%` if the title is not in history). Omit all odds if the artifact is missing or for another night. Score / rank reuse the show-scoped standings query already used by `useStandings` / `computeStandingsSelfRecap` — no new collections or unbounded picks scans.
 
-**Deferred (not v1):** pool-scoped Scorecard, live crowd %, pre-lock overlap.
+**Deferred (not v1):** pool-scoped Scorecard, live crowd % on the scorecard, pre-lock overlap. Make Picks crowd helper (#694 P2) is a separate card: tour chalk before showtime, live consensus chips after lock.
 
 Mobile: tertiary tray portals under the context bar via `ChromeSegmentedControl` (same primitive as Profile). Desktop: in-page tray at the cluster layout call site. Make Picks keeps scoring / lock-status tools (`PicksMobileFixedChrome`) on that destination only.
 

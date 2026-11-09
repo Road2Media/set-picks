@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.108.0] — 2026-11-09
+
+### Added
+- **Picks crowd helper (#694 P2)** — Make Picks shows tour chalk before showtime and live crowd chips after picks lock. Chalk is songs the room locked on earlier nights of this tour, using the same night aggregate. It does not include the open night. Use fills the first open slot and does not save until Lock In Picks. When the prediction file matches this night, a chip can show Odds. That number is the play guess, not how many people picked the song tonight. After lock (live or past), the helper shows consensus (at least 25% of cards, or at least 3 cards), the favorite in each slot that clears that bar, and the highest gaps. Full crowd stats still opens `/dashboard/stats/night`. No new nav item. Hide-crowd preference and expand telemetry stay on #694 P3.
+
 ## [1.107.0] — 2026-11-09
 
 ### Added

@@ -2,7 +2,7 @@
 
 **Decision (2026-07-27):** Pre-lock, **preview Song + Last blur**; Pickers / Gap stay visible. Full deep tables (multi list / gaps / vintage / leaders) **blur until showtime**. (Earlier 2026-07-20 decision kept named top songs visible; tightened after product feedback.)
 
-**Ship status:** Standings crowd pulse productized in #694 (no “prototype” label). **v1.107.0:** the Stats night deep dive is `/dashboard/stats/night` (P1). Picks helper remains P2. Pre-lock, that page blurs names the same way this card does.
+**Ship status:** Standings crowd pulse productized in #694 (no “prototype” label). **v1.107.0:** the Stats night deep dive is `/dashboard/stats/night` (P1). **v1.108.0:** the Make Picks helper (P2) shows historical tour chalk before showtime and live consensus chips after lock. Pre-lock, the stats page blurs names the same way this card does. Hide-crowd preference and expand telemetry remain P3.
 
 ## Product split
 
@@ -30,6 +30,6 @@ Rationale: aggregate lean (how many cards / gap) stays as social proof; named ch
 ## Out of scope (later)
 
 - Opt-out pref for competitive players (“hide crowd pulse”)
-- Picks helper: live consensus chips only post-lock; historical tour chalk pre-lock
+- Picks helper shipped on Make Picks (v1.108.0): live consensus chips only post-lock; historical tour chalk pre-lock
 - Telemetry: teaser expand attempts vs post-lock full expand
-- Link to dedicated Stats surface — shipped as `/dashboard/stats/night` (P1). Picks helper and the hide-crowd pref stay later.
+- Link to dedicated Stats surface — shipped as `/dashboard/stats/night` (P1). Picks helper shipped on Make Picks (P2). The hide-crowd pref and expand telemetry stay later.
