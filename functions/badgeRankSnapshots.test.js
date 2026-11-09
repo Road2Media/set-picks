@@ -39,7 +39,7 @@ function setlist(bustouts = []) {
   };
 }
 
-test("buildTourRankSnapshot: full field, ties share a rank, outside the top 50", () => {
+test("buildTourRankSnapshot: full field, a points tie breaks by handle, outside the top 50", () => {
   const picks = [];
   for (let i = 0; i < 51; i += 1) {
     picks.push(gradedPick(`u${i}`, `P${String(i).padStart(2, "0")}`, 100 - i));
@@ -56,8 +56,8 @@ test("buildTourRankSnapshot: full field, ties share a rank, outside the top 50",
   const tied = snapshot.players.find((row) => row.uid === "tie");
   const last = snapshot.players.find((row) => row.uid === "u50");
   assert.equal(leader.rank, 1);
-  assert.equal(tied.rank, 1);
-  assert.equal(leader.tiedCount, 2);
+  assert.equal(tied.rank, 2);
+  assert.equal(leader.tiedCount, 1);
   assert.equal(last.rank, 52);
   assert.ok(last.rank > 50);
 });

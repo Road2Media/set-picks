@@ -13,6 +13,9 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 ### Added
 - **Summer Tour 2026 non-opener reminder (#512 Slice B)** — admin batch `deliverMarketingSummerTour2026Reminder` (dry-run by default, `--uid` canary, full execute). Audience is the launch cohort who were sent `marketing_summer_tour_2026_launch`, have no `openedAt` on `comms_email_engagement/{resendEmailId}`, and are not suppressed or unsubscribed. Default wait is 48 hours after the parent send. Dedup is `marketing:summer_tour_2026_reminder:{uid}`, separate from the launch key. Email only, lifecycle prefs, daily cap bypassed for the batch. No scheduler. **Deploy (human):** `deliverMarketingSummerTour2026Reminder` before any reminder run. This change does not send mail.
 
+### Changed
+- **Points ties get a rank (#1218)** — show standings, tour standings, the year board, tour wrap, the annual podium, and points awards use one ranking helper. The live rule is a full tie-break: points, then exact slots (Set 1 opener, Set 1 closer, Set 2 opener, Set 2 closer, and the first encore), then correct picks out of 6, then nightly wins on a tour or a year, then handle. A single show skips nightly wins. A tie that is still equal after that cascade shares a rank, and the next rank skips. The order does not shuffle on refresh. Shared ranks and a display-only breaker stay in the helper and are not the live rule. `/how-scoring-changed` now includes this ranking section. A nightly win is still a share of that night's top score. **Deploy (human):** Cloud Functions that write tour rank, tour wrap, annual wrap, public tour winners, and badge snapshots, before the next morning send. No rules or index change.
+
 ## [1.105.1] — 2026-11-09
 
 ### Changed

@@ -1,5 +1,7 @@
 # Tour rankings and the end-of-tour recap
 
+> **Current rule (2026-11-08, #1172 / #1218).** Official place is no longer a shared rank on points. The live order is points, then exact slots (Set 1 opener, Set 1 closer, Set 2 opener, Set 2 closer, and the first encore), then correct picks, then nightly wins on a tour or a year, then handle. A single show skips nightly wins. The case study below records the shared-rank rule that shipped in October 2026. Do not treat that rule as current.
+
 | Field | Value |
 |--------|--------|
 | **Status** | Rule accepted (#1135). The next wrap reads that rank (#1136). The 2026-10-13 Fall Tour message is unchanged. Player-facing page still unpublished. |

@@ -6,6 +6,8 @@ import {
   SCORING_RULES,
   calculateSlotScore,
   calculateTotalScore,
+  countCorrectPicks,
+  countExactHits,
   getSlotScoreBreakdown,
   scoringLadderComparisonRows,
   scoringRulesForShowDate,
@@ -206,6 +208,26 @@ describe('scoring ladder gate (#1086)', () => {
       after: 10,
     });
     expect(rows.find((row) => row.id === 'bustout')).toMatchObject({ before: 20, after: 20 });
+  });
+
+  it('counts exact slots without treating a later encore as exact', () => {
+    const setlist = {
+      s1o: 'Tweezer',
+      s1c: 'Reba',
+      s2o: 'Mike',
+      s2c: 'Weekapaug',
+      enc: 'Harry Hood',
+      encoreSongs: ['Harry Hood', 'Tweezer Reprise'],
+      officialSetlist: ['Tweezer', 'Reba', 'Mike', 'Weekapaug', 'Harry Hood', 'Tweezer Reprise', 'Ghost'],
+    };
+    expect(
+      countExactHits(
+        { s1o: 'Tweezer', s1c: 'Ghost', enc: 'Harry Hood', wild: 'Reba' },
+        setlist,
+      ),
+    ).toBe(2);
+    expect(countExactHits({ enc: 'Tweezer Reprise' }, setlist)).toBe(0);
+    expect(countCorrectPicks({ s1o: 'Tweezer', s1c: 'Ghost', enc: 'Tweezer Reprise', wild: 'Reba' }, setlist)).toBe(4);
   });
 
   it('public rules follow the New York calendar, not the show being viewed', () => {

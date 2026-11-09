@@ -370,7 +370,7 @@ test("recap payload says tied for the official rank and names the other handles"
   );
 });
 
-test("a three-way points tie is one podium place, and ranks past 5 stay off the board", () => {
+test("a three-way points tie becomes three places, and rank 6 stays off the board", () => {
   const leaders = [
     { handle: "I have the book", totalPoints: 115, wins: 3, shows: 8 },
     { handle: "YarmouthMeg", totalPoints: 90, wins: 0, shows: 8 },
@@ -382,22 +382,29 @@ test("a three-way points tie is one podium place, and ranks past 5 stay off the 
   const podium = buildTourRecapPodium(leaders);
   assert.deepEqual(
     podium.places.map((place) => place.label),
-    ["Tour Winner", "Runner-up", "Tied for third"],
+    ["Tour Winner", "Runner-up", "Third Place", "4th", "5th"],
   );
   assert.equal(podium.places[2].rank, 3);
-  assert.equal(podium.places[2].tied, true);
+  assert.equal(podium.places[2].tied, false);
   assert.deepEqual(
     podium.places[2].members.map((member) => member.handle),
-    ["HotDog Billy", "ArmenianMan", "TheManMulcahy"],
+    ["HotDog Billy"],
   );
   assert.equal(podium.places.some((place) => place.members.some((member) => member.handle === "Jeff")), false);
-  assert.equal(podium.honorableMentions.length, 0);
+  assert.equal(podium.honorableMentions.length, 2);
   const board = buildTourRecapEmailBoard(leaders);
-  assert.deepEqual(board.map((row) => row.rank), [1, 2, 3, 3, 3]);
+  assert.deepEqual(board.map((row) => row.rank), [1, 2, 3, 4, 5]);
+  assert.deepEqual(board.map((row) => row.handle), [
+    "I have the book",
+    "YarmouthMeg",
+    "HotDog Billy",
+    "ArmenianMan",
+    "TheManMulcahy",
+  ]);
   assert.equal(board.some((row) => row.handle === "Jeff"), false);
 });
 
-test("a tie at 5th names everyone, including players past the fifth row", () => {
+test("equal points at the bottom of the published board break by handle", () => {
   const leaders = [
     { handle: "A", totalPoints: 100, wins: 3, shows: 8 },
     { handle: "B", totalPoints: 90, wins: 2, shows: 8 },
@@ -409,13 +416,13 @@ test("a tie at 5th names everyone, including players past the fifth row", () => 
   ];
   const podium = buildTourRecapPodium(leaders);
   const fifth = podium.places.find((place) => place.rank === 5);
-  assert.equal(fifth.label, "Tied for 5th");
-  assert.deepEqual(fifth.members.map((member) => member.handle), ["E", "F"]);
+  assert.equal(fifth.label, "5th");
+  assert.deepEqual(fifth.members.map((member) => member.handle), ["E"]);
   assert.equal(podium.places.some((place) => place.rank > 5), false);
   const board = buildTourRecapEmailBoard(leaders);
-  assert.deepEqual(board.map((row) => row.handle), ["A", "B", "C", "D", "E", "F"]);
+  assert.deepEqual(board.map((row) => row.handle), ["A", "B", "C", "D", "E"]);
   assert.equal(board[4].rank, 5);
-  assert.equal(board[5].rank, 5);
+  assert.equal(board.some((row) => row.handle === "F"), false);
 });
 
 test("the gap clause keeps last played and debut year, and drops them when the row has neither", () => {

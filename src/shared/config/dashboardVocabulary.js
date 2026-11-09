@@ -145,7 +145,7 @@ export const POOL_ALL_TIME_STANDINGS_DESCRIPTION =
  */
 export const TOUR_STANDINGS_HEADING = 'Tour standings';
 export const TOUR_STANDINGS_DESCRIPTION =
-  'Running totals for this tour across every graded show. Players with the same points share a rank, and the next rank skips. Inside a tie, nightly wins then name set the order.';
+  'Running totals for this tour across every graded show. When points match, more exact slots rank higher, then more correct picks, then more nightly wins. A handle only keeps the order when those are still tied.';
 
 /**
  * Calendar-year leaderboard on Standings (#1110). Scope is the calendar year
@@ -154,7 +154,7 @@ export const TOUR_STANDINGS_DESCRIPTION =
  */
 export const YEAR_STANDINGS_HEADING = 'Year standings';
 export const YEAR_STANDINGS_DESCRIPTION =
-  'Running totals for this calendar year across every graded show. Players with the same points share a rank, and the next rank skips. Inside a tie, nightly wins then name set the order.';
+  'Running totals for this calendar year across every graded show. When points match, more exact slots rank higher, then more correct picks, then more nightly wins. A handle only keeps the order when those are still tied.';
 
 /**
  * Year-end celebration on the annual board (#1112). The opening line matches

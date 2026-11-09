@@ -123,7 +123,8 @@ export default function LeaderboardList({
         const uniqueId = p.uid || p.id;
         const userPicks = getPickPayload(p);
         const isExpanded = expandedUser === uniqueId;
-        const rank = index + 1;
+        const ranked = Number(p.rank);
+        const rank = Number.isFinite(ranked) && ranked >= 1 ? ranked : index + 1;
         const isSelf = Boolean(selfUserId) && (p.userId || p.uid) === selfUserId;
         const maskPickTitles =
           Boolean(redactOpponentPicksPreLock) && !isSelf;

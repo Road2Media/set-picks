@@ -43,8 +43,9 @@ function wasLabel(row) {
 }
 
 /**
- * Scoring section of `/how-scoring-changed` (#1086).
- * Ranking and tie-breaks stay on #1172 / #1218 and are not on this page.
+ * Scoring section of `/how-scoring-changed` (#1086) plus the ranking
+ * cascade that ships with #1218. The logged-in returning-player notice
+ * stays with #1219.
  */
 export default function HowScoringChangedContent() {
   const effectiveLabel = formatScoringLadderEffectiveDate();
@@ -53,7 +54,8 @@ export default function HowScoringChangedContent() {
   return (
     <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm ring-1 ring-slate-900/5 md:p-8">
       <p className={BODY}>
-        If you&apos;ve been playing Setlist Pick&apos;em, how some picks are scored is changing.
+        If you&apos;ve been playing Setlist Pick&apos;em, two things are changing: how some picks
+        are scored, and how we rank players who finish with the same points.
       </p>
       <p className={`mt-4 ${BODY}`}>
         Nights you&apos;ve already played keep the rules that were live that night. We are not
@@ -159,6 +161,36 @@ export default function HowScoringChangedContent() {
           ))}
         </ul>
       </div>
+
+      <h2 className={H2}>When two players have the same points</h2>
+      <p className={BODY}>
+        We no longer share a rank. No more two people both in 1st, with 3rd next. The player who
+        wins the next check gets the higher place.
+      </p>
+      <ol className={`mt-4 list-decimal space-y-3 pl-5 ${BODY}`}>
+        <li>
+          Who called more exact slots? That means Set 1 opener, Set 1 closer, Set 2 opener, Set 2
+          closer, and the first encore song. A later encore song does not count as an exact here.
+        </li>
+        <li>
+          If that&apos;s still tied, who had more correct picks — any of the 6 slots that scored,
+          including a song that was played in the wrong slot, a wildcard hit, or a later encore.
+        </li>
+        <li>On a tour or the year, if that&apos;s still tied, who won more nights.</li>
+        <li>
+          If every one of those is still tied, we use your handle so the order stays put when you
+          refresh. Your handle is only a last resort. It does not decide ranks on its own.
+        </li>
+      </ol>
+      <p className={`mt-4 ${BODY}`}>
+        On a single show, we skip nightly wins and go to your handle if exacts and correct picks
+        are still tied.
+      </p>
+      <p className={`mt-4 ${BODY}`}>
+        If two people have the same points and the same number of exacts, the player who got more
+        of their 6 picks on the board ranks higher — even if the other person got there with one
+        bigger hit.
+      </p>
 
       <h2 className={H2}>What does not change</h2>
       <p className={BODY}>

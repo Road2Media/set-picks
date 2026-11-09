@@ -1,6 +1,11 @@
 import { useMemo, useState } from 'react';
 import { FORM_FIELDS } from '../../../shared/data/gameConfig';
-import { calculateTotalScore } from '../../../shared/utils/scoring';
+import {
+  calculateTotalScore,
+  countCorrectPicks,
+  countExactHits,
+} from '../../../shared/utils/scoring';
+import { LIVE_RANK_POLICY, rankScoredRows } from './pointsTieRanking';
 
 /**
  * @param {Record<string, unknown> | null | undefined} pickEntry
@@ -46,16 +51,35 @@ export function pinSelfToTop(rows, selfUserId) {
  * @param {string | null | undefined} selfUserId
  * @returns {T[]}
  */
+function handleOf(entry) {
+  return typeof entry?.handle === 'string' && entry.handle.trim()
+    ? entry.handle.trim()
+    : 'Anonymous';
+}
+
 export function sortPicksForLeaderboard(poolPicks, actualSetlist, selfUserId) {
-  const byScore = [...poolPicks].sort((a, b) => {
-    const scoreA = calculateTotalScore(getPickPayloadFromEntry(a), actualSetlist);
-    const scoreB = calculateTotalScore(getPickPayloadFromEntry(b), actualSetlist);
-    return scoreB - scoreA;
-  });
-  if (!actualSetlist && selfUserId) {
-    return pinSelfToTop(byScore, selfUserId);
+  const list = Array.isArray(poolPicks) ? poolPicks : [];
+  if (!actualSetlist) {
+    const byHandle = [...list].sort((a, b) =>
+      handleOf(a).localeCompare(handleOf(b), 'en', { sensitivity: 'base' })
+    );
+    return selfUserId ? pinSelfToTop(byHandle, selfUserId) : byHandle;
   }
-  return byScore;
+  const prepared = list.map((entry) => {
+    const payload = getPickPayloadFromEntry(entry);
+    return {
+      ...entry,
+      points: calculateTotalScore(payload, actualSetlist),
+      exactHits: countExactHits(payload, actualSetlist),
+      correctPicks: countCorrectPicks(payload, actualSetlist),
+      handle: handleOf(entry),
+      uid: entry?.userId || entry?.uid || entry?.id || '',
+    };
+  });
+  return rankScoredRows(prepared, {
+    policy: LIVE_RANK_POLICY,
+    surface: 'show',
+  }).rows;
 }
 
 /**

@@ -60,14 +60,14 @@ test("battingAvg and formatBatting", () => {
   assert.equal(formatBatting(1), "1.000");
 });
 
-test("assignCompetitionRanks ties share rank on equal points", () => {
+test("assignCompetitionRanks breaks equal points by nightly wins, then handle", () => {
   const ranks = assignCompetitionRanks([
     { uid: "a", handle: "A", totalPoints: 100, wins: 1, shows: 10, correctSlots: 10 },
     { uid: "b", handle: "B", totalPoints: 100, wins: 0, shows: 10, correctSlots: 10 },
     { uid: "c", handle: "C", totalPoints: 50, wins: 0, shows: 10, correctSlots: 5 },
   ]);
   assert.equal(ranks.get("a").rank, 1);
-  assert.equal(ranks.get("b").rank, 1); // competition rank ties on points
+  assert.equal(ranks.get("b").rank, 2);
   assert.equal(ranks.get("c").rank, 3);
 });
 
