@@ -7,17 +7,20 @@ import { ga4Event } from '../../../shared/lib/ga4';
  *   show_date?: string,
  *   deep_stats?: 'locked' | 'open',
  *   pickers?: number,
+ *   surface?: 'standings' | 'stats_night',
  * }} [payload]
  */
 export function trackCrowdPulseView({
   show_date,
   deep_stats,
   pickers,
+  surface,
 } = {}) {
   ga4Event('crowd_pulse_view', {
     show_date: show_date ?? '',
     deep_stats: deep_stats === 'locked' ? 'locked' : 'open',
     pickers: typeof pickers === 'number' && Number.isFinite(pickers) ? pickers : 0,
+    surface: surface === 'stats_night' ? 'stats_night' : 'standings',
   });
 }
 

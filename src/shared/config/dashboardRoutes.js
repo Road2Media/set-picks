@@ -52,6 +52,12 @@ export const STATS_CLUSTER_PATHS = Object.freeze({
   personal: '/dashboard/stats/personal',
   global: '/dashboard/stats/global',
   band: '/dashboard/stats/band',
+  /**
+   * Show-scoped crowd deep dive (#694 P1). Not a tertiary chip — Personal /
+   * Global / Band stay the tray. Linked from Standings crowd pulse.
+   * Uses the date picker, not the tour picker.
+   */
+  night: '/dashboard/stats/night',
 });
 
 /** Pre-#769 Standings Stats peer; SPA redirect preserves `?tour=`. */
@@ -204,6 +210,30 @@ export function isStatsClusterPath(pathname) {
  * @param {string} pathname
  * @returns {boolean}
  */
+/**
+ * True for the crowd-night deep dive (`/dashboard/stats/night`).
+ * Stats primary stays active. The date picker shows; the tour picker does not.
+ *
+ * @param {string} pathname
+ * @returns {boolean}
+ */
+export function isCrowdNightStatsPath(pathname) {
+  return normalizeDashboardPathname(pathname) === STATS_CLUSTER_PATHS.night;
+}
+
+/**
+ * Standings → crowd night deep dive. Invalid dates omit the query so the
+ * layout date picker keeps its current show.
+ *
+ * @param {string} [showDate]
+ * @returns {string}
+ */
+export function crowdNightStatsHref(showDate) {
+  const date = typeof showDate === 'string' ? showDate.trim() : '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return STATS_CLUSTER_PATHS.night;
+  return `${STATS_CLUSTER_PATHS.night}?showDate=${encodeURIComponent(date)}`;
+}
+
 export function isStatsTourScopedPath(pathname) {
   const path = normalizeDashboardPathname(pathname);
   if (path === STATS_CLUSTER_PATHS.root) return true;

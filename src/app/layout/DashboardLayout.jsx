@@ -28,6 +28,7 @@ import ProfilePage from '../../pages/profile/ProfilePage';
 import PersonalStatsPage from '../../pages/stats/PersonalStatsPage';
 import GlobalStatsPage from '../../pages/stats/GlobalStatsPage';
 import BandStatsPage from '../../pages/stats/BandStatsPage';
+import CrowdNightStatsPage from '../../pages/stats/CrowdNightStatsPage';
 import {
   ScoringRulesModalProvider,
   StandingsTourScopeSelect,
@@ -163,13 +164,16 @@ export default function DashboardLayout() {
     setSelectedDate((prev) => resolveSelectedShowDate(prev, showDates));
   }, [showDates, scheduleDay]);
 
-  const showDateFromStandingsUrl = searchParams.get('showDate');
+  const showDateFromUrl = searchParams.get('showDate');
   useEffect(() => {
-    if (location.pathname !== '/dashboard/standings') return;
-    if (!showDateFromStandingsUrl) return;
-    const valid = showDates.some((s) => s.date === showDateFromStandingsUrl);
-    if (valid) setSelectedDate(showDateFromStandingsUrl);
-  }, [location.pathname, showDateFromStandingsUrl, showDates]);
+    const path = location.pathname.replace(/\/+$/, '') || location.pathname;
+    const acceptsShowDate =
+      path === '/dashboard/standings' || path === STATS_CLUSTER_PATHS.night;
+    if (!acceptsShowDate) return;
+    if (!showDateFromUrl) return;
+    const valid = showDates.some((s) => s.date === showDateFromUrl);
+    if (valid) setSelectedDate(showDateFromUrl);
+  }, [location.pathname, showDateFromUrl, showDates]);
 
   useEffect(() => {
     persistDashboardPath(location.pathname, location.search, {
@@ -461,6 +465,10 @@ export default function DashboardLayout() {
               <Route path="personal" element={<PersonalStatsPage />} />
               <Route path="global" element={<GlobalStatsPage />} />
               <Route path="band" element={<BandStatsPage />} />
+              <Route
+                path="night"
+                element={<CrowdNightStatsPage selectedDate={selectedDate} />}
+              />
             </Route>
             <Route
               path="admin"

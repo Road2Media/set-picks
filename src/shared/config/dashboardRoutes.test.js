@@ -11,6 +11,8 @@ import {
   isPoolsClusterPath,
   isPoolsTertiaryPath,
   isProfileClusterPath,
+  crowdNightStatsHref,
+  isCrowdNightStatsPath,
   isStatsClusterPath,
   isStatsQuaternaryPath,
   isStatsTourScopedPath,
@@ -92,6 +94,7 @@ describe('isStatsClusterPath (#769)', () => {
     expect(isStatsClusterPath(STATS_CLUSTER_PATHS.personal)).toBe(true);
     expect(isStatsClusterPath(STATS_CLUSTER_PATHS.global)).toBe(true);
     expect(isStatsClusterPath(STATS_CLUSTER_PATHS.band)).toBe(true);
+    expect(isStatsClusterPath(STATS_CLUSTER_PATHS.night)).toBe(true);
   });
 
   it('keeps the tour-stats redirect hop in the cluster (Stats primary active)', () => {
@@ -130,5 +133,18 @@ describe('isStatsClusterPath (#769)', () => {
     expect(isStatsTourScopedPath(STATS_CLUSTER_PATHS.band)).toBe(true);
     expect(isStatsTourScopedPath('/dashboard/tour-stats')).toBe(true);
     expect(isStatsTourScopedPath('/dashboard/standings')).toBe(false);
+    expect(isStatsTourScopedPath(STATS_CLUSTER_PATHS.night)).toBe(false);
+  });
+
+  it('keeps crowd night on the date picker, not the tour picker or the tray', () => {
+    expect(isCrowdNightStatsPath('/dashboard/stats/night')).toBe(true);
+    expect(isCrowdNightStatsPath('/dashboard/stats/night/')).toBe(true);
+    expect(isCrowdNightStatsPath(STATS_CLUSTER_PATHS.band)).toBe(false);
+    expect(isPersonalStatsPath(STATS_CLUSTER_PATHS.night)).toBe(false);
+    expect(isStatsQuaternaryPath(STATS_CLUSTER_PATHS.night)).toBe(false);
+    expect(crowdNightStatsHref('2026-07-17')).toBe(
+      '/dashboard/stats/night?showDate=2026-07-17'
+    );
+    expect(crowdNightStatsHref('not-a-date')).toBe('/dashboard/stats/night');
   });
 });
