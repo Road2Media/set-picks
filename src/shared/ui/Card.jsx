@@ -12,6 +12,8 @@ const variantStyles = {
   /**
    * Middle tier — teal border + glass (blur). List/detail cards (e.g. pool rows).
    * No gradient / glow; use `venue` for hero surfaces.
+   * Not a Standings card (`DashboardJobShell`) and not a stat tile
+   * (`DashboardTileShell`). A tile keeps this teal edge off the outer box.
    */
   frosted:
     'rounded-2xl border border-brand-primary/30 bg-surface-panel shadow-inset-glass ring-1 ring-border-glass/25 backdrop-blur-md supports-[backdrop-filter]:backdrop-blur-xl',
