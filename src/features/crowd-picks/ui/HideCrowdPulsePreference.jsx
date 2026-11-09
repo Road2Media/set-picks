@@ -19,7 +19,7 @@ export default function HideCrowdPulsePreference() {
           </span>
           <span className="mt-1 block text-xs font-bold leading-relaxed text-content-secondary">
             Hides what the room locked in on Standings, the crowd night page,
-            and Make Picks.
+            Make Picks, and Scorecard.
           </span>
         </span>
         <input

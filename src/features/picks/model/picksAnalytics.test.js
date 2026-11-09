@@ -28,9 +28,9 @@ describe('scorecard analytics (#767)', () => {
     });
   });
 
-  it('trackScorecardMetricImpression allows overlap | odds | rank', () => {
+  it('trackScorecardMetricImpression allows overlap | crowd | rank', () => {
     trackScorecardMetricImpression({ show_date: '2026-07-19', metric: 'overlap' });
-    trackScorecardMetricImpression({ show_date: '2026-07-19', metric: 'odds' });
+    trackScorecardMetricImpression({ show_date: '2026-07-19', metric: 'crowd' });
     trackScorecardMetricImpression({ show_date: '2026-07-19', metric: 'rank' });
     expect(ga4Event).toHaveBeenNthCalledWith(1, 'scorecard_metric_impression', {
       show_date: '2026-07-19',
@@ -38,7 +38,7 @@ describe('scorecard analytics (#767)', () => {
     });
     expect(ga4Event).toHaveBeenNthCalledWith(2, 'scorecard_metric_impression', {
       show_date: '2026-07-19',
-      metric: 'odds',
+      metric: 'crowd',
     });
     expect(ga4Event).toHaveBeenNthCalledWith(3, 'scorecard_metric_impression', {
       show_date: '2026-07-19',
@@ -47,7 +47,7 @@ describe('scorecard analytics (#767)', () => {
   });
 
   it('trackScorecardMetricImpression drops unknown metric', () => {
-    trackScorecardMetricImpression({ show_date: '2026-07-19', metric: 'crowd' });
+    trackScorecardMetricImpression({ show_date: '2026-07-19', metric: 'odds' });
     expect(ga4Event).toHaveBeenCalledWith('scorecard_metric_impression', {
       show_date: '2026-07-19',
       metric: '',

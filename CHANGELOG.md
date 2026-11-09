@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.110.0] — 2026-11-09
+
+### Added
+- **Scorecard pool audience and live crowd % (#1043)** — `/dashboard/picks/scorecard` still uses the date picker. A Compare control appears when you are in a pool: Everyone, or one pool (`?pool=`). Rank, “N players also picked this,” and crowd % use that pool’s membership filter, including the join-day rule. A night that does not count for the pool says so. After showtime, each slot shows Crowd and the share of locked cards that include that song. That number is the same night aggregate as Standings and Make Picks. It is not the play guess. It stays off before showtime. Hide crowd pulse hides Crowd and the overlap line. Rank and graded hits stay. Make Picks Odds and Picks Lab are unchanged. No new tab or collection. Pre-lock overlap stays off: those counts would show how the room is leaning while picks are still open.
+
+### Changed
+- **Scorecard no longer shows model odds** — `playProb` from `pick-recommendations.json` left this card. `scorecard_metric_impression` `metric` is `overlap`, `crowd`, or `rank`.
+
 ## [1.109.0] — 2026-11-09
 
 ### Added

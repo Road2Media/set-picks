@@ -54,6 +54,7 @@ describe('isCrowdPulseSurfaceEnabled', () => {
     expect(isCrowdPulseSurfaceEnabled(hidden, 'standings')).toBe(false);
     expect(isCrowdPulseSurfaceEnabled(hidden, 'stats_night')).toBe(false);
     expect(isCrowdPulseSurfaceEnabled(hidden, 'picks_helper')).toBe(false);
+    expect(isCrowdPulseSurfaceEnabled(hidden, 'scorecard')).toBe(false);
   });
 
   it('does not enable an unknown surface', () => {
@@ -68,6 +69,7 @@ describe('crowd pulse surface wiring', () => {
       'src/features/scoring/ui/StandingsCrowdPulse.jsx',
       'src/pages/stats/CrowdNightStatsPage.jsx',
       'src/features/picks/ui/PicksCrowdHelper.jsx',
+      'src/features/picks/model/usePicksScorecard.js',
     ];
     for (const file of files) {
       const source = readFileSync(path.join(repoRoot, file), 'utf8');

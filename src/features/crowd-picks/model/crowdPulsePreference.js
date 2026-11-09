@@ -5,12 +5,13 @@
  * when the surfaces stay visible.
  */
 
-/** @typedef {'standings' | 'stats_night' | 'picks_helper'} CrowdPulseSurface */
+/** @typedef {'standings' | 'stats_night' | 'picks_helper' | 'scorecard'} CrowdPulseSurface */
 
 export const CROWD_PULSE_SURFACES = Object.freeze([
   'standings',
   'stats_night',
   'picks_helper',
+  'scorecard',
 ]);
 
 /**

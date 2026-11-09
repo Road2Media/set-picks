@@ -48,13 +48,15 @@ Nested routes (not `?view=`). Primary **Picks** tab stays active. Lab segment is
 |---------|------|----------------|
 | **Make Picks** | `/dashboard` and `/dashboard/picks` | Existing picks form (lock/edit). `utm_campaign` landed logging stays here. **Crowd helper (#694 P2):** tour chalk before showtime (earlier locked nights only; Use fills an open slot and does not save). Live consensus, slot favorites, and highest gaps after lock. Full crowd stats links to `/dashboard/stats/night`. Not a new tertiary chip. |
 | **Picks Lab** | `/dashboard/picks/lab` | Prediction Lab (`PickPredictionPanel`) when the env flag is `true`; otherwise coming-soon. Live **Your card** mirrors the shared draft. **Use** does not persist — Lock In / Update Picks still saves. |
-| **Scorecard** | `/dashboard/picks/scorecard` | Global, show-scoped self card + comparison metrics (#767). |
+| **Scorecard** | `/dashboard/picks/scorecard` | Show-scoped self card (#767). Everyone by default. `?pool=` compares with one of your pools (#1043). Not a new tab. |
 | **Rewind** | `/dashboard/rewind` | Weekly historical show (#1142). Segment is **hidden** unless `VITE_ENABLE_REWIND_MODE=true`. Direct URL shows a closed shell when the flag is off. Date picker hides. Scores are not live standings. |
 | **Phish IQ** | `/dashboard/phish-iq` | Daily five-question quiz (#1143). Segment stays visible. Date picker hides. Streak saves on the signed-in user. The public play URL is `/phish-iq`. |
 
-**Scorecard v1 (#767):** Global only (not pool-scoped). Show comes from the existing global date picker. Overlap (“N players also picked this song”) is **post-lock only** (LIVE / PAST or admin-locked NEXT). Pre-lock shows the player’s own card plus locked copy — no overlap. Odds are optional show-wide `playProb` from Storage `pick-recommendations.json` (same artifact as Lab; **`playProbBySong`** when present so every pick on the card has a percent, `<1%` if the title is not in history). Omit all odds if the artifact is missing or for another night. Score / rank reuse the show-scoped standings query already used by `useStandings` / `computeStandingsSelfRecap` — no new collections or unbounded picks scans.
+**Scorecard (#767, audience and crowd % #1043):** Show comes from the existing global date picker. Default audience is everyone. When you are in at least one pool, the card has a **Compare** control (Everyone, then each pool). `?pool=<id>` on this route remembers that pool. An unknown id falls back to everyone. Rank, overlap, and crowd % use the same membership filter as Standings (`filterPicksToAudience`, including join-day rules). No new tab, route, or collection. If that night does not count for the pool, the card says so and does not invent a pool rank.
 
-**Deferred (not v1):** pool-scoped Scorecard, live crowd % on the scorecard, pre-lock overlap. Make Picks crowd helper (#694 P2) is a separate card: tour chalk before showtime, live consensus chips after lock.
+Overlap (“N players also picked this”) is **post-lock only** (LIVE / PAST or admin-locked NEXT). Pre-lock shows the player’s own card — no overlap. **Pre-lock overlap stays deferred:** counts beside the player’s songs while picks are still open would show how the room is leaning before showtime. That stays behind the crowd-pulse disclosure gate.
+
+Crowd % replaces model odds on this card. After showtime (`LIVE` / `PAST`), each filled slot shows **Crowd** and the share of locked cards in the selected audience that include that song. The number comes from the same night aggregate as Standings and Make Picks (`aggregateCrowdNightSongs`). It is not Storage `playProb`. It stays off before showtime, including an admin lock that is still `NEXT`. **Hide crowd pulse** hides Crowd and the overlap line. Rank and graded hits stay. Make Picks and Picks Lab still use `playProb` (#1013). Score / rank reuse the show-scoped standings query — no unbounded picks scan.
 
 Mobile: tertiary tray portals under the context bar via `ChromeSegmentedControl` (same primitive as Profile). Desktop: in-page tray at the cluster layout call site. Make Picks keeps scoring / lock-status tools (`PicksMobileFixedChrome`) on that destination only.
 
@@ -66,7 +68,7 @@ Primary nav **label** is **Account**. Path prefix stays `/dashboard/profile/*` (
 |---------|------|----------------|
 | **Profile** | `/dashboard/profile` | Handle, favorite song, avatar, badges. Appearance helper is an **InfoTooltip**. Prominent **View public profile** CTA. Quiet **View personal stats** link. |
 | **Messages** | `/dashboard/profile/notifications` | Inbox only — Unopened / Read / Archived; archive + delete. No prefs accordion. |
-| **Preferences** | `/dashboard/profile/account` | Sign-in, logout, legal, install/PWA, notification prefs (same `notificationPrefs` keys), and Hide crowd pulse (`users.gamePrefs.hideCrowdPulse`, #694). Delete account is a text-link disclosure. Contact us is `mailto:support@setlistpickem.com` (inbound allowlist). |
+| **Preferences** | `/dashboard/profile/account` | Sign-in, logout, legal, install/PWA, notification prefs (same `notificationPrefs` keys), and Hide crowd pulse (`users.gamePrefs.hideCrowdPulse`, #694). That switch also hides Scorecard crowd % and overlap (#1043). Delete account is a text-link disclosure. Contact us is `mailto:support@setlistpickem.com` (inbound allowlist). |
 
 Legacy redirects (preserve bookmarks + email deep links; query string preserved):
 
@@ -176,7 +178,7 @@ Rationale: **Entity-first** detail view without a second full-width display titl
 | **Picks** | Tab + context + desktop H1 for the Picks cluster (`NAV_LABEL_PICKS`) — `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`. |
 | **Make Picks** | Picks-cluster tertiary for the form (`NAV_LABEL_MAKE_PICKS`). |
 | **Picks Lab** | Picks-cluster tertiary for Prediction Lab (`NAV_LABEL_PICKS_LAB`); path `/dashboard/picks/lab`. |
-| **Scorecard** | Picks-cluster tertiary (`NAV_LABEL_SCORECARD`); path `/dashboard/picks/scorecard`. Global self card + post-lock metrics (#767). |
+| **Scorecard** | Picks-cluster tertiary (`NAV_LABEL_SCORECARD`); path `/dashboard/picks/scorecard`. Show-scoped self card. Everyone, or one pool via `?pool=` (#767 / #1043). |
 | **Pools** | Tab + context + desktop H1 for `/dashboard/pools`, `/dashboard/pools/create`, and `/dashboard/pools/join` (`NAV_LABEL_POOLS`) — same word in nav and shell. Tertiary labels: **My Pools** / **Create Pool** / **Join Pool**. |
 | **Account** | Primary tab + identity context for the `/dashboard/profile/*` cluster (`NAV_LABEL_ACCOUNT`). Path prefix unchanged. |
 | **Profile** | Identity tertiary only (`NAV_LABEL_PROFILE`); handle / favorite song / avatar / badges. |

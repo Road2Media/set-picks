@@ -2,7 +2,7 @@
 
 **Decision (2026-07-27):** Pre-lock, **preview Song + Last blur**; Pickers / Gap stay visible. Full deep tables (multi list / gaps / vintage / leaders) **blur until showtime**. (Earlier 2026-07-20 decision kept named top songs visible; tightened after product feedback.)
 
-**Ship status:** Standings crowd pulse productized in #694 (no “prototype” label). **v1.107.0:** the Stats night deep dive is `/dashboard/stats/night` (P1). **v1.108.0:** the Make Picks helper (P2) shows historical tour chalk before showtime and live consensus chips after lock. Pre-lock, the stats page blurs names the same way this card does. **v1.109.0:** Preferences can hide those three surfaces (`users.gamePrefs.hideCrowdPulse`). Hiding them does not change this blur. When they stay visible, pre-lock names stay blurred until showtime.
+**Ship status:** Standings crowd pulse productized in #694 (no “prototype” label). **v1.107.0:** the Stats night deep dive is `/dashboard/stats/night` (P1). **v1.108.0:** the Make Picks helper (P2) shows historical tour chalk before showtime and live consensus chips after lock. Pre-lock, the stats page blurs names the same way this card does. **v1.109.0:** Preferences can hide those three surfaces (`users.gamePrefs.hideCrowdPulse`). Hiding them does not change this blur. When they stay visible, pre-lock names stay blurred until showtime. **v1.110.0 (#1043):** Scorecard crowd % uses this same night aggregate and the same showtime gate (`LIVE` / `PAST` only). Hide crowd pulse also hides that line and Scorecard overlap. Counts while picks are still open stay off.
 
 ## Product split
 
@@ -26,7 +26,7 @@ Rationale: aggregate lean (how many cards / gap) stays as social proof; named ch
 - Top songs use **frequency meters** via `crowd-picks/ui/FrequencyMeterRow` (Standings brand gradient).
 - Blur is presentation-only; aggregators still compute (needed for unlock + CLI).
 - Gate: `blurDeepStats={showStatus === 'NEXT'}` on the Standings card and on `/dashboard/stats/night`.
-- Hide crowd pulse (`gamePrefs.hideCrowdPulse === true`) removes the Standings card and the Make Picks helper, and replaces the stats night page with a Preferences link. It does not unlock or rename the blur.
+- Hide crowd pulse (`gamePrefs.hideCrowdPulse === true`) removes the Standings card and the Make Picks helper, replaces the stats night page with a Preferences link, and hides Scorecard crowd % and overlap. It does not unlock or rename the blur. Rank on Scorecard stays.
 
 ## Telemetry (v1.109.0)
 
