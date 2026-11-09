@@ -4,6 +4,7 @@ import {
   CrowdNightPulsePanel,
   shouldBlurDeepCrowdStats,
   useCrowdNightStats,
+  useHideCrowdPulse,
 } from '../../crowd-picks';
 
 /**
@@ -32,6 +33,7 @@ export default function StandingsCrowdPulse({
   showStatus = '',
   className = '',
 }) {
+  const { hideCrowdPulse } = useHideCrowdPulse();
   const { card, night, catalogLoading, ready, playedTitles } = useCrowdNightStats(
     showDate,
     picks,
@@ -39,7 +41,7 @@ export default function StandingsCrowdPulse({
     actualSetlist
   );
 
-  if (!ready) return null;
+  if (hideCrowdPulse || !ready) return null;
 
   return (
     <CrowdNightPulsePanel

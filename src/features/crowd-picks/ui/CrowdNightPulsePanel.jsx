@@ -12,7 +12,7 @@ import {
 import DashboardJobShell, { DASHBOARD_JOB_ICON } from '../../../shared/ui/DashboardJobShell';
 import {
   trackCrowdPulseFullExpand,
-  trackCrowdPulseSectionOpen,
+  trackCrowdPulseTeaserExpand,
   trackCrowdPulseView,
 } from '../model/crowdPulseAnalytics';
 import CrowdPulseTopTable from './CrowdPulseTopTable';
@@ -74,11 +74,27 @@ export default function CrowdNightPulsePanel({
 
   const onPanelToggle = (event) => {
     if (event.currentTarget.open) {
-      trackCrowdPulseSectionOpen({
+      trackCrowdPulseTeaserExpand({
         show_date: showDate || '',
-        section: 'top_songs',
+        deep_stats: blurDeepStats ? 'locked' : 'open',
+        via: 'summary',
       });
     }
+  };
+
+  const onFullStatsClick = () => {
+    if (blurDeepStats) {
+      trackCrowdPulseTeaserExpand({
+        show_date: showDate || '',
+        deep_stats: 'locked',
+        via: 'full_link',
+      });
+      return;
+    }
+    trackCrowdPulseFullExpand({
+      show_date: showDate || '',
+      deep_stats: 'open',
+    });
   };
 
   return (
@@ -147,7 +163,7 @@ export default function CrowdNightPulsePanel({
 
         <Link
           to={statsHref}
-          onClick={() => trackCrowdPulseFullExpand({ show_date: showDate || '' })}
+          onClick={onFullStatsClick}
           className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle pt-2 text-[10px] font-black uppercase tracking-widest text-brand-primary"
         >
           <span className="inline-flex items-center gap-1.5">
