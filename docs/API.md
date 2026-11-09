@@ -805,6 +805,8 @@ Copy mirrors `src/shared/lib/inviteKit.js` (`buildSiteInviteShareTitle`, `buildP
 
 **v1.44.2 / #732:** `firebase-admin` is dynamic-imported only on the crawler/Firestore branch so browser requests do not pay Admin module cold-start. Client FCM service-worker registration is idle-deferred on `/`, `/join/*`, and `/invite/*` (still on-demand via messaging helpers).
 
+**v1.99.1 / #733:** Browser invite HTML modulepreloads the route that URL paints (`PoolInvitePage` for `/join/:code`, `InviteLandingPage` for `/invite/:handle`) plus that chunk's static closure. The list is `dist/invite-boot-preloads.json` from the production build. It does not modulepreload `DashboardRoute`, the lazy auth-modal chunk, or App Check. `react-ga4` is a separate `vendor-ga4` chunk. Public cold opens (`/`, `/join`, `/invite/*`) load it at idle; the first pageview is queued until init. Dashboard and setup still start it immediately.
+
 **Vercel env:** `FIREBASE_SERVICE_ACCOUNT` (JSON) enables Firestore Admin lookups for crawlers.
 
 **Tests:** `api/inviteOgHelpers.test.js` (pure helpers; no Vercel runtime).

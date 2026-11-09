@@ -32,12 +32,46 @@ export const LEGAL_TERMS_BOOT_MODULEPRELOAD_PREFIXES = ['TermsOfServicePage-'];
 /** Chunk filename prefixes for `/login` boot shell (#835 / #892) — form UI hydrate. */
 export const LOGIN_BOOT_MODULEPRELOAD_PREFIXES = ['LoginPage-'];
 
+/** Invite HTML (`api/invite`) preloads the page that URL actually paints (#733). */
+export const INVITE_POOL_BOOT_MODULEPRELOAD_PREFIXES = ['PoolInvitePage-'];
+export const INVITE_SITE_BOOT_MODULEPRELOAD_PREFIXES = ['InviteLandingPage-'];
+
+/** Written beside `dist/app.html` and read by `api/invite` (no per-request graph walk). */
+export const INVITE_BOOT_PRELOAD_MANIFEST = 'invite-boot-preloads.json';
+
 /** Attribute markers asserted by `verify:seo-prerender`. */
 export const DASHBOARD_BOOT_PRELOAD_MARKER = 'data-dashboard-boot-preload';
 export const SPLASH_BOOT_PRELOAD_MARKER = 'data-splash-boot-preload';
 export const TOUR_STATS_BOOT_PRELOAD_MARKER = 'data-tour-stats-boot-preload';
 export const LEGAL_BOOT_PRELOAD_MARKER = 'data-legal-boot-preload';
 export const LOGIN_BOOT_PRELOAD_MARKER = 'data-login-boot-preload';
+export const INVITE_BOOT_PRELOAD_MARKER = 'data-invite-boot-preload';
+
+/** Hashed Vite asset hrefs only — blocks manifest injection of arbitrary URLs. */
+const INVITE_BOOT_HREF_RE = /^\/assets\/[A-Za-z0-9._-]+\.js$/;
+
+/**
+ * Chunks that must not ride the invite cold-open hint list (#733 / #803 / #819).
+ * Dashboard and splash have their own shells. App Check stays deferred until
+ * auth. The auth-modal chunk stays behind its lazy boundary.
+ */
+const INVITE_BOOT_HREF_BLOCK = [
+  /\/assets\/DashboardRoute-/,
+  /\/assets\/HomeRoute-/,
+  /\/assets\/firebase-appcheck-/i,
+  /\/assets\/firebase-storage-/i,
+  /\/assets\/modals-/,
+  /\/assets\/vendor-ga4-/,
+];
+
+/**
+ * @param {string} href
+ * @returns {boolean}
+ */
+export function isInviteBootPreloadHref(href) {
+  if (typeof href !== 'string' || !INVITE_BOOT_HREF_RE.test(href)) return false;
+  return !INVITE_BOOT_HREF_BLOCK.some((re) => re.test(href));
+}
 
 /**
  * Login shell may modulepreload `firebase-core` only (#860 / Tier 2).
@@ -121,6 +155,34 @@ export function resolveModulepreloadClosure(assetsDir, entryHrefs) {
 
 /**
  * Append `<link rel="modulepreload">` tags into `<head>`.
+ * Idempotent; skips hrefs already present as a preload or entry script.
+ *
+ * @param {string} html
+ * @param {string[]} hrefs
+ * @param {string} marker attribute name (`data-…-boot-preload`)
+ * @returns {string}
+ */
+export function injectModulepreloadHrefs(html, hrefs, marker) {
+  if (typeof html !== 'string' || !html) return html;
+  if (!Array.isArray(hrefs) || hrefs.length === 0) return html;
+  const tags = [];
+  for (const href of hrefs) {
+    if (typeof href !== 'string' || !href) continue;
+    if (html.includes(`href="${href}"`) || html.includes(`src="${href}"`)) continue;
+    if (tags.some((tag) => tag.includes(`href="${href}"`))) continue;
+    tags.push(
+      `  <link rel="modulepreload" crossorigin href="${href}" ${marker}="true" />`,
+    );
+  }
+  if (!tags.length) return html;
+  if (!/<\/head>/i.test(html)) return html;
+  // Consume any indent already on the </head> line so a second pass
+  // (strip + reinsert, or a shell whose </head> is indented) stays stable.
+  return html.replace(/[ \t]*<\/head>/i, `${tags.join('\n')}\n</head>`);
+}
+
+/**
+ * Append `<link rel="modulepreload">` tags into `<head>`.
  * Idempotent; skips hrefs already present.
  *
  * @param {string} html
@@ -141,23 +203,65 @@ export function injectBootModulepreloads(
   const hrefs = resolveModulepreloadClosure(assetsDir, entryHrefs).filter(
     (href) => (typeof hrefFilter === 'function' ? hrefFilter(href) : true),
   );
-  if (!hrefs.length) return html;
+  return injectModulepreloadHrefs(html, hrefs, marker);
+}
 
-  const tags = hrefs
-    // Skip assets already present as modulepreload *or* as the entry
-    // `<script type="module" src>` (DashboardRoute can circularly import the
-    // entry chunk; re-preloading it is noise).
-    .filter(
-      (href) =>
-        !html.includes(`href="${href}"`) && !html.includes(`src="${href}"`),
-    )
-    .map(
-      (href) =>
-        `  <link rel="modulepreload" crossorigin href="${href}" ${marker}="true" />`,
-    );
-  if (!tags.length) return html;
-  if (!/<\/head>/i.test(html)) return html;
-  return html.replace(/<\/head>/i, `${tags.join('\n')}\n</head>`);
+/**
+ * Static closure for one invite route, with cold-open blocks applied (#733).
+ *
+ * @param {string} distDir
+ * @param {string[]} prefixes
+ * @returns {string[]}
+ */
+function resolveInviteKindHrefs(distDir, prefixes) {
+  const assetsDir = join(distDir, 'assets');
+  const entryHrefs = resolveBootModulepreloadHrefs(assetsDir, prefixes);
+  if (!entryHrefs.length) return [];
+  return resolveModulepreloadClosure(assetsDir, entryHrefs).filter(
+    isInviteBootPreloadHref,
+  );
+}
+
+/**
+ * Build-time manifest consumed by `api/invite`. Keys match the URL kind:
+ * pool = `/join/:code`, site = `/invite/:handle`.
+ *
+ * @param {string} distDir
+ * @returns {{ pool: string[], site: string[] }}
+ */
+export function buildInviteBootPreloadManifest(distDir) {
+  return {
+    pool: resolveInviteKindHrefs(distDir, INVITE_POOL_BOOT_MODULEPRELOAD_PREFIXES),
+    site: resolveInviteKindHrefs(distDir, INVITE_SITE_BOOT_MODULEPRELOAD_PREFIXES),
+  };
+}
+
+/**
+ * Fixture / direct injection from a dist tree (#733).
+ *
+ * @param {string} html
+ * @param {string} distDir
+ * @param {'pool' | 'site' | null} kind
+ * @returns {string}
+ */
+export function injectInviteBootModulepreloads(html, distDir, kind) {
+  const manifest = buildInviteBootPreloadManifest(distDir);
+  const hrefs = kind === 'site' ? manifest.site : kind === 'pool' ? manifest.pool : [];
+  return injectModulepreloadHrefs(html, hrefs, INVITE_BOOT_PRELOAD_MARKER);
+}
+
+/**
+ * Request-path injection from an already-built href list.
+ * Re-applies the cold-open blocklist so a stale manifest cannot pull
+ * DashboardRoute, App Check, or the lazy auth-modal chunk.
+ *
+ * @param {string} html
+ * @param {string[]} hrefs
+ * @returns {string}
+ */
+export function injectInvitePreloadTags(html, hrefs) {
+  const safe = (Array.isArray(hrefs) ? hrefs : []).filter(isInviteBootPreloadHref);
+  return injectModulepreloadHrefs(html, safe, INVITE_BOOT_PRELOAD_MARKER);
 }
 
 /**
@@ -291,5 +395,5 @@ export function injectLoginBootModulepreloads(html, distDir) {
     );
   if (!tags.length) return next;
   if (!/<\/head>/i.test(next)) return next;
-  return next.replace(/<\/head>/i, `${tags.join('\n')}\n</head>`);
+  return next.replace(/[ \t]*<\/head>/i, `${tags.join('\n')}\n</head>`);
 }
