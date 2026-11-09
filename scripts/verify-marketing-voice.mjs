@@ -55,6 +55,7 @@ const SCAN_DIRS = [
 ];
 const SCAN_FILES = [
   join(root, 'src/features/scoring/ui/ScoringRulesContent.jsx'),
+  join(root, 'src/features/scoring/ui/HowScoringChangedContent.jsx'),
   join(root, 'src/features/tour-stats/ui/PublicTourStatsPanel.jsx'),
   join(root, 'src/features/msg-stats/ui/MsgGardenStatsView.jsx'),
   join(root, 'src/features/tour-stats/ui/TourWrapBlock.jsx'),

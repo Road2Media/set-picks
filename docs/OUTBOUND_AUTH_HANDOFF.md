@@ -27,7 +27,7 @@ After marketing cold opens stop booting `AuthProvider`, every outbound link must
 | `/dashboard`, `/dashboard/picks`, `/dashboard/standings(#…)`, `/dashboard/profile`, `/dashboard/profile/notifications` | Comms email CTAs, inbox, push `fcmOptions.link` | `app-ok` | `vercel.json` → dashboard / spa boot shells |
 | `/setup` | New-user profile gate | `app-ok` | Dashboard boot shell |
 | Push → `/dashboard/profile/notifications` | `fcmMessagingCore`, messaging SW | `app-ok` | |
-| `/`, `/how-it-works`, `/how-scoring-works`, `/phish-setlist-prediction-game` | Marketing entry; some email allowlist paths | `public-static` | No Firebase until CTA → `/login` |
+| `/`, `/how-it-works`, `/how-scoring-works`, `/how-scoring-changed`, `/phish-setlist-prediction-game` | Marketing entry; some email allowlist paths | `public-static` | No Firebase until CTA → `/login` |
 | `/tour-stats*` | Public aggregate UI | `public-static` | **#853:** marketing document (not AuthProvider). **#869:** CDN JSON `/tour-stats-data/*.json` + Firestore REST; App Check/SDK last resort only |
 | `/privacy`, `/terms` | Login signup legal links, marketing footer, Profile/account | `legal-static` | **#916:** HTML-first legal door (full body in first HTML; no marketing CSR / Auth). Soft routes remain on app SPA for in-app Profile links. From signup, stash `splashResumeAuthModal=signup` — legal in-page back → `/login?mode=signup`; browser Back also resumes via consume on LoginPage |
 | `/join/:code`, `/invite/:handle` | Invite kits, OG `api/invite` | `invite-shell` | Prefers `dist/app.html` |
@@ -48,7 +48,7 @@ Service + marketing email CTAs, in-app inbox CTAs, and push links already target
 
 `comms/emailLinks.cjs` / `functions/comms/emailLinks.cjs` allow:
 
-- `/dashboard`, `/join`, `/how-it-works`, `/how-scoring-works`, `/`
+- `/dashboard`, `/join`, `/how-it-works`, `/how-scoring-works`, `/how-scoring-changed`, `/`
 - **Plus** `/login`, `/invite`, `/setup` for future tracked CTAs
 
 ---

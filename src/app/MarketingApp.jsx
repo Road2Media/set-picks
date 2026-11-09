@@ -16,6 +16,9 @@ const HowItWorksPage = lazy(() => import('../pages/marketing/HowItWorksPage'));
 const HowScoringWorksPage = lazy(
   () => import('../pages/marketing/HowScoringWorksPage'),
 );
+const HowScoringChangedPage = lazy(
+  () => import('../pages/marketing/HowScoringChangedPage'),
+);
 const PhishSetlistPredictionGamePage = lazy(
   () => import('../pages/marketing/PhishSetlistPredictionGamePage'),
 );
@@ -124,6 +127,14 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <HowScoringWorksPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/how-scoring-changed"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <HowScoringChangedPage />
             </Suspense>
           }
         />

@@ -25,6 +25,7 @@ const {
   scoringBustoutFingerprint,
 } = require("./phishnetLiveSetlistAutomation");
 const {
+  attachScoringShowDate,
   calculateTotalScore,
   persistableActualSetlistFromOfficialDoc,
 } = require("./scoringCore");
@@ -199,7 +200,10 @@ async function applySnapshotReconcile({ db, admin, showDate, plan }) {
   }
 
   const freshSnap = await setlistRef.get();
-  const actualSetlist = persistableActualSetlistFromOfficialDoc(freshSnap.data() || {});
+  const actualSetlist = attachScoringShowDate(
+    persistableActualSetlistFromOfficialDoc(freshSnap.data() || {}),
+    showDate
+  );
   const picksSnap = await db.collection("picks").where("showDate", "==", showDate).get();
 
   let batch = db.batch();

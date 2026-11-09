@@ -9,17 +9,25 @@
  *
  * Do not list `/dashboard/*`, `/invite/*`, or `/join/*`.
  *
- * Scoring point values mirror `SCORING_RULES` in `shared/utils/scoring.js` (kept as
- * literals here so Node verify/prerender scripts do not need Vite path resolution).
+ * Scoring point values come from `shared/utils/scoring.js` (plain ESM, no Vite alias).
  */
 import { SEO_CONFIG } from './seo.js';
+import {
+  SCORING_LADDER_V1,
+  SCORING_LADDER_V2,
+  SCORING_LADDER_V2_TOUR_NAME,
+  formatScoringLadderEffectiveDate,
+} from '../utils/scoring.js';
 
-const EXACT_SLOT = 10;
-const ENCORE_EXACT = 15;
-const IN_SETLIST = 5;
-const WILDCARD_HIT = 10;
-const BUSTOUT_BOOST = 20;
-const BUSTOUT_MIN_GAP = 30;
+const EXACT_SLOT = SCORING_LADDER_V1.EXACT_SLOT;
+const ENCORE_EXACT = SCORING_LADDER_V1.ENCORE_EXACT;
+const IN_SETLIST = SCORING_LADDER_V1.IN_SETLIST;
+const WILDCARD_HIT = SCORING_LADDER_V1.WILDCARD_HIT;
+const BUSTOUT_BOOST = SCORING_LADDER_V1.BUSTOUT_BOOST;
+const BUSTOUT_MIN_GAP = SCORING_LADDER_V1.BUSTOUT_MIN_GAP;
+const LADDER_V2_START = formatScoringLadderEffectiveDate();
+const WILDCARD_NEXT = SCORING_LADDER_V2.WILDCARD_HIT;
+const ENCORE_LATER_NEXT = SCORING_LADDER_V2.ENCORE_LATER;
 
 const organizationId = `${SEO_CONFIG.siteUrl}/#organization`;
 
@@ -39,7 +47,7 @@ export const LANDING_FAQ_MAIN_ENTITY = [
     name: 'How does scoring work?',
     acceptedAnswer: {
       '@type': 'Answer',
-      text: `Picks earn points by how they match the official setlist. In setlist (song played, wrong slot): ${IN_SETLIST} points. Exact slot (set opener or closer you called): ${EXACT_SLOT} points. Wildcard (song played anywhere in the show): ${WILDCARD_HIT} points. Encore: ${ENCORE_EXACT} points. Bustout Boost adds ${BUSTOUT_BOOST} bonus points on top of the base score when the song had a gap of ${BUSTOUT_MIN_GAP} or more shows since it was last played.`,
+      text: `Picks earn points by how they match the official setlist. In setlist (song played, wrong slot): ${IN_SETLIST} points. Exact slot (set opener or closer you called): ${EXACT_SLOT} points. Wildcard (song played anywhere in the show): ${WILDCARD_HIT} points before ${LADDER_V2_START}, and ${WILDCARD_NEXT} points starting that date (${SCORING_LADDER_V2_TOUR_NAME}). Encore: ${ENCORE_EXACT} points for any encore song before ${LADDER_V2_START}. Starting that date, the first encore song is ${ENCORE_EXACT} and a later encore song is ${ENCORE_LATER_NEXT}. Bustout Boost adds ${BUSTOUT_BOOST} bonus points on top of the base score when the song had a gap of ${BUSTOUT_MIN_GAP} or more shows since it was last played. Nights already played keep the ladder that was live that night.`,
     },
   },
   {
@@ -178,7 +186,7 @@ function buildHowItWorksJsonLd() {
 }
 
 const HOW_SCORING_TITLE = "How Scoring Works | Setlist Pick'Em";
-const HOW_SCORING_DESCRIPTION = `Setlist Pick'Em scoring guide: In setlist (${IN_SETLIST} pts), exact slot (${EXACT_SLOT} pts), wildcard (${WILDCARD_HIT} pts), encore (${ENCORE_EXACT} pts), plus a Bustout Boost of ${BUSTOUT_BOOST} points for songs with a ${BUSTOUT_MIN_GAP}+ show gap.`;
+const HOW_SCORING_DESCRIPTION = `Setlist Pick'Em scoring: in setlist ${IN_SETLIST}, exact slot ${EXACT_SLOT}, wildcard ${WILDCARD_HIT} before ${LADDER_V2_START} and ${WILDCARD_NEXT} after, encore ${ENCORE_EXACT} (later encore ${ENCORE_LATER_NEXT} after that date), Bustout Boost +${BUSTOUT_BOOST}.`;
 const HOW_SCORING_URL = `${SEO_CONFIG.siteUrl}/how-scoring-works`;
 
 const TOUR_STATS_HUB_TITLE = "Phish Tour Stats | Setlist Pick'Em";
@@ -560,7 +568,7 @@ function buildHowScoringJsonLd() {
             name: 'How many points for the wildcard?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: `If your wildcard pick is played anywhere in the show, you earn ${WILDCARD_HIT} points.`,
+              text: `If your wildcard pick is played anywhere in the show, you earn ${WILDCARD_HIT} points on nights before ${LADDER_V2_START}, and ${WILDCARD_NEXT} points starting that date.`,
             },
           },
           {
@@ -568,7 +576,7 @@ function buildHowScoringJsonLd() {
             name: 'How many points for an encore pick?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: `If your pick is played during the encore, you earn ${ENCORE_EXACT} points, the highest base score because the encore is the toughest call.`,
+              text: `Before ${LADDER_V2_START}, a pick played during the encore earns ${ENCORE_EXACT} points. Starting that date, the first encore song is ${ENCORE_EXACT} and a later encore song is ${ENCORE_LATER_NEXT}. A song played somewhere else in the show is ${IN_SETLIST}.`,
             },
           },
           {
@@ -577,6 +585,47 @@ function buildHowScoringJsonLd() {
             acceptedAnswer: {
               '@type': 'Answer',
               text: `Correct picks on songs with a ${BUSTOUT_MIN_GAP}+ show gap earn a bonus ${BUSTOUT_BOOST} points on top of base points. That's the reward for digging past the heavy rotation.`,
+            },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+const HOW_SCORING_CHANGED_TITLE = "How Scoring Changed | Setlist Pick'Em";
+const HOW_SCORING_CHANGED_DESCRIPTION = `Starting ${LADDER_V2_START}, a played wildcard scores ${WILDCARD_NEXT} (was ${WILDCARD_HIT}) and a later encore song scores ${ENCORE_LATER_NEXT} (was ${ENCORE_EXACT}). The first encore song stays ${ENCORE_EXACT}. Nights already played are not re-scored.`;
+const HOW_SCORING_CHANGED_URL = `${SEO_CONFIG.siteUrl}/how-scoring-changed`;
+
+function buildHowScoringChangedJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': HOW_SCORING_CHANGED_URL,
+        url: HOW_SCORING_CHANGED_URL,
+        name: HOW_SCORING_CHANGED_TITLE,
+        description: HOW_SCORING_CHANGED_DESCRIPTION,
+        isPartOf: { '@id': `${SEO_CONFIG.siteUrl}/#website` },
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: 'Did my old show scores change?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `No. Nights already played keep the ladder that was live that night. The new ladder starts ${LADDER_V2_START}, the first night of ${SCORING_LADDER_V2_TOUR_NAME}.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'What are the new scoring numbers?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `In the setlist, wrong slot: ${IN_SETLIST}. Wildcard, played anywhere: ${WILDCARD_NEXT} (was ${WILDCARD_HIT}). Exact opener or closer: ${EXACT_SLOT}. First encore song: ${ENCORE_EXACT}. A later encore song: ${ENCORE_LATER_NEXT} (was ${ENCORE_EXACT} for any encore song). That song played somewhere else: ${IN_SETLIST}. Bustout, ${BUSTOUT_MIN_GAP}+ show gap: +${BUSTOUT_BOOST}.`,
             },
           },
         ],
@@ -632,11 +681,24 @@ export const PRERENDER_ROUTES = [
     canonicalUrl: HOW_SCORING_URL,
     h1: 'How Scoring Works',
     paragraphs: [
-      'Picks earn points based on where they land in the setlist.',
-      `In setlist: ${IN_SETLIST} points. Exact slot: ${EXACT_SLOT} points. Wildcard: ${WILDCARD_HIT} points. Encore: ${ENCORE_EXACT} points.`,
-      `Bustout Boost: +${BUSTOUT_BOOST} points on top of base when the song had a ${BUSTOUT_MIN_GAP}+ show gap.`,
+      'Picks earn points based on where they land in the setlist. Nights already played keep the ladder that was live that night.',
+      `In setlist: ${IN_SETLIST} points. Exact slot: ${EXACT_SLOT} points. Before ${LADDER_V2_START}: wildcard ${WILDCARD_HIT} points, and any encore song ${ENCORE_EXACT} points.`,
+      `Starting ${LADDER_V2_START} (${SCORING_LADDER_V2_TOUR_NAME}): wildcard ${WILDCARD_NEXT} points, first encore song ${ENCORE_EXACT} points, later encore song ${ENCORE_LATER_NEXT} points. Bustout Boost stays +${BUSTOUT_BOOST} on a ${BUSTOUT_MIN_GAP}+ show gap.`,
     ],
     buildJsonLd: buildHowScoringJsonLd,
+  },
+  {
+    path: '/how-scoring-changed',
+    title: HOW_SCORING_CHANGED_TITLE,
+    description: HOW_SCORING_CHANGED_DESCRIPTION,
+    canonicalUrl: HOW_SCORING_CHANGED_URL,
+    h1: 'How scoring changed',
+    paragraphs: [
+      'How some picks are scored is changing. Nights already played keep the rules that were live that night.',
+      `Starting ${LADDER_V2_START} (${SCORING_LADDER_V2_TOUR_NAME}): a played wildcard scores ${WILDCARD_NEXT} (was ${WILDCARD_HIT}). The first encore song stays ${ENCORE_EXACT}. A later encore song scores ${ENCORE_LATER_NEXT} (was ${ENCORE_EXACT} for any encore song).`,
+      `Exact openers and closers stay ${EXACT_SLOT}. A song in the setlist but in the wrong slot stays ${IN_SETLIST}. Bustout Boost stays +${BUSTOUT_BOOST} for a ${BUSTOUT_MIN_GAP}+ show gap. A bustout wildcard goes from ${WILDCARD_HIT + BUSTOUT_BOOST} to ${WILDCARD_NEXT + BUSTOUT_BOOST}. A bustout later encore goes from ${ENCORE_EXACT + BUSTOUT_BOOST} to ${ENCORE_LATER_NEXT + BUSTOUT_BOOST}.`,
+    ],
+    buildJsonLd: buildHowScoringChangedJsonLd,
   },
   {
     path: '/tour-stats',

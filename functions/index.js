@@ -47,6 +47,7 @@ const {
   parseShowCalendarDates,
 } = require("./poolDelete");
 const {
+  attachScoringShowDate,
   calculateTotalScore,
   persistableActualSetlistFromOfficialDoc,
   shouldSkipLiveScoreRecompute,
@@ -223,7 +224,10 @@ async function recomputeLiveScoresForShow(showDate, actualSetlistFromWrite = nul
     const userPicks = pickData.picks || {};
     const prevScore = typeof pickData.score === "number" ? pickData.score : 0;
     beforeScores.set(pickDoc.id, prevScore);
-    const score = calculateTotalScore(userPicks, actualSetlist);
+    const score = calculateTotalScore(
+      userPicks,
+      attachScoringShowDate(actualSetlist, showDate)
+    );
     afterScores.set(pickDoc.id, score);
 
     // Live scoring only: do not set gradedAt here (pool season uses isGraded from rollup).

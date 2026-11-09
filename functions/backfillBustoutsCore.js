@@ -20,6 +20,7 @@ const {
   BUSTOUT_MIN_GAP: AUTOMATION_BUSTOUT_MIN_GAP,
 } = require("./phishnetLiveSetlistAutomation");
 const {
+  attachScoringShowDate,
   calculateTotalScore,
   persistableActualSetlistFromOfficialDoc,
 } = require("./scoringCore");
@@ -153,7 +154,10 @@ async function runBackfill({
     // rollup pathway so we don't leave stale totals behind.
     const freshSnap = await setlistRef.get();
     const freshDoc = freshSnap.data() || {};
-    const actualSetlist = persistableActualSetlistFromOfficialDoc(freshDoc);
+    const actualSetlist = attachScoringShowDate(
+      persistableActualSetlistFromOfficialDoc(freshDoc),
+      showDate
+    );
 
     const picksSnap = await db
       .collection("picks")

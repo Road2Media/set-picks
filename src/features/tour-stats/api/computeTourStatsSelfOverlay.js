@@ -3,7 +3,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { FORM_FIELDS } from '../../../shared/data/gameConfig';
 import { db } from '../../../shared/lib/firebase';
 import { whenFirebaseReady } from '../../../shared/lib/firebaseAppCheck';
-import { calculateSlotScore } from '../../../shared/utils/scoring';
+import { attachScoringShowDate, calculateSlotScore } from '../../../shared/utils/scoring';
 
 import { TOUR_SETLIST_READ_CHUNK } from './fetchTourOfficialSetlists';
 
@@ -114,7 +114,11 @@ export async function computeTourStatsSelfOverlay(uid, setlistDocs, options = {}
       if (topKeys.has(key)) pickedTop.add(key);
 
       if (setlist) {
-        const score = calculateSlotScore(field.id, title, setlist);
+        const score = calculateSlotScore(
+          field.id,
+          title,
+          attachScoringShowDate(setlist, entry.showDate),
+        );
         if (score > 0) slotsCorrect += 1;
         if (bustoutSet.has(key) && score > 0) bustoutHits += 1;
       }

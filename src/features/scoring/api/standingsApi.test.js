@@ -29,6 +29,18 @@ describe('normalizeOfficialSetlistDocData', () => {
     expect(out?.songGaps).toEqual({ 'ac/dc bag': 47 });
   });
 
+  it('stamps the document id as showDate and does not keep a junk slot date', () => {
+    const out = normalizeOfficialSetlistDocData(
+      {
+        officialSetlist: ['A'],
+        setlist: { showDate: 'played-song', s1o: 'A' },
+      },
+      '2026-12-30',
+    );
+    expect(out?.showDate).toBe('2026-12-30');
+    expect(out?.s1o).toBe('A');
+  });
+
   it('omits songGaps entirely when absent or empty', () => {
     const out = normalizeOfficialSetlistDocData({ officialSetlist: ['A'] });
     expect(out).not.toHaveProperty('songGaps');

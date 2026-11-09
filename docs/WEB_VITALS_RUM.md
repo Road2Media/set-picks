@@ -34,7 +34,7 @@ Declared in [`docs/API.md`](API.md) §3.
 |------|---------------|
 | `/` | `splash` |
 | `/login` | `login` |
-| `/how-it-works`, `/how-scoring-works`, `/phish-setlist-prediction-game` | `marketing` |
+| `/how-it-works`, `/how-scoring-works`, `/how-scoring-changed`, `/phish-setlist-prediction-game` | `marketing` |
 | `/tour-stats*` | `tour_stats` |
 | `/embed`, `/embed/*` | `embed` |
 | `/join*`, `/invite/*`, `/dashboard*`, `/setup*` | unchanged |
