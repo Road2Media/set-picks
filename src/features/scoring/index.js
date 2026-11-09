@@ -68,4 +68,5 @@ export { useShowWinnerOfTheNight } from './model/useShowWinnerOfTheNight';
 export { usePreviousShowNightWinner } from './model/usePreviousShowNightWinner';
 export { useTourStandings } from './model/useTourStandings';
 export { useCrowdNightStatsScreen } from './model/useCrowdNightStatsScreen';
+export { useTourCrowdChalk } from './model/useTourCrowdChalk';
 export { default as TourPicker } from './ui/TourPicker';

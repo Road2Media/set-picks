@@ -20,6 +20,16 @@ export {
   CROWD_PULSE_TOP_N,
   useCrowdNightStats,
 } from './model/useCrowdNightStats';
+export {
+  TOUR_CHALK_TOP_N,
+  aggregateTourCrowdChalk,
+} from './model/aggregateTourCrowdChalk';
+export {
+  LIVE_CONSENSUS_GAP_LIMIT,
+  LIVE_CONSENSUS_SONG_LIMIT,
+  formatCrowdShare,
+  selectLiveConsensusChips,
+} from './model/selectLiveConsensusChips';
 export { meterIntensity } from './model/meterIntensity';
 export { formatCatalogLastShort } from './model/formatCatalogLastShort';
 export { shouldBlurDeepCrowdStats } from './model/shouldBlurDeepCrowdStats';
