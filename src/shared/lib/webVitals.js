@@ -59,7 +59,7 @@ export function reportWebVital(metric) {
 
 /**
  * Lazy-load web-vitals and subscribe on production hosts only (via ga4IsReady).
- * Safe to call after initGa4(); no-ops when GA is silent.
+ * Safe to call after initGa4() resolves; no-ops when GA is silent.
  */
 export function initWebVitals() {
   if (typeof window === 'undefined') return;

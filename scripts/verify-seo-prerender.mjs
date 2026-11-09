@@ -39,11 +39,16 @@ import {
   PRERENDER_ROUTES,
   SPLASH_BOOT_PRELOAD_MARKER,
   TOUR_STATS_BOOT_PRELOAD_MARKER,
+  INVITE_BOOT_PRELOAD_MARKER,
+  INVITE_BOOT_PRELOAD_MANIFEST,
   buildDashboardBootShellHtml,
   buildFixtureShellHtml,
+  buildInviteBootPreloadManifest,
   buildLegalBootDocumentHtml,
   buildLoginBootShellHtml,
   injectDashboardBootModulepreloads,
+  injectInviteBootModulepreloads,
+  injectInvitePreloadTags,
   injectLoginBootModulepreloads,
   injectPrerenderHtml,
   injectSplashBootModulepreloads,
@@ -803,6 +808,97 @@ assert(
   'closure walker must follow static from "./chunk.js" edges',
 );
 
+// Invite HTML hints the page that URL paints, not the dashboard or modal stack (#733).
+writeFileSync(
+  join(fakeDist, 'assets', 'PoolInvitePage-a1b2c3d4.js'),
+  'import { v } from "./vip-shared-deadbeef.js";\nimport { d } from "./DashboardRoute-e5f6a7b8.js";\nimport { a } from "./firebase-appcheck-aabbccdd.js";\nimport { m } from "./modals-11223344.js";\nexport default v;\n',
+  'utf8',
+);
+writeFileSync(
+  join(fakeDist, 'assets', 'InviteLandingPage-b2c3d4e5.js'),
+  'import { v } from "./vip-shared-deadbeef.js";\nexport default v;\n',
+  'utf8',
+);
+writeFileSync(
+  join(fakeDist, 'assets', 'vip-shared-deadbeef.js'),
+  'export const v = 1;\n',
+  'utf8',
+);
+writeFileSync(
+  join(fakeDist, 'assets', 'firebase-appcheck-aabbccdd.js'),
+  'export const a = 1;\n',
+  'utf8',
+);
+writeFileSync(join(fakeDist, 'assets', 'modals-11223344.js'), 'export const m = 1;\n', 'utf8');
+
+const fixtureInvitePool = injectInviteBootModulepreloads(
+  buildFixtureShellHtml(),
+  fakeDist,
+  'pool',
+);
+assert(
+  fixtureInvitePool.includes(`${INVITE_BOOT_PRELOAD_MARKER}="true"`) &&
+    fixtureInvitePool.includes('/assets/PoolInvitePage-a1b2c3d4.js'),
+  'pool invite shell must modulepreload PoolInvitePage',
+);
+assert(
+  fixtureInvitePool.includes('/assets/vip-shared-deadbeef.js'),
+  'pool invite shell must modulepreload the VIP static closure',
+);
+assert(
+  !fixtureInvitePool.includes('InviteLandingPage-'),
+  'pool invite shell must not modulepreload the site-invite page',
+);
+assert(
+  !fixtureInvitePool.includes('DashboardRoute-') &&
+    !fixtureInvitePool.includes('firebase-appcheck-') &&
+    !fixtureInvitePool.includes('modals-') &&
+    !fixtureInvitePool.includes('HomeRoute-'),
+  'pool invite shell must not modulepreload dashboard, App Check, auth modals, or splash',
+);
+assert(
+  injectInviteBootModulepreloads(fixtureInvitePool, fakeDist, 'pool') === fixtureInvitePool,
+  'invite modulepreload injection must be idempotent',
+);
+
+const fixtureInviteSite = injectInviteBootModulepreloads(
+  buildFixtureShellHtml(),
+  fakeDist,
+  'site',
+);
+assert(
+  fixtureInviteSite.includes('/assets/InviteLandingPage-b2c3d4e5.js') &&
+    fixtureInviteSite.includes('/assets/vip-shared-deadbeef.js'),
+  'site invite shell must modulepreload InviteLandingPage and its closure',
+);
+assert(
+  !fixtureInviteSite.includes('PoolInvitePage-'),
+  'site invite shell must not modulepreload the pool page',
+);
+
+const inviteManifest = buildInviteBootPreloadManifest(fakeDist);
+assert(
+  inviteManifest.pool.includes('/assets/PoolInvitePage-a1b2c3d4.js') &&
+    inviteManifest.site.includes('/assets/InviteLandingPage-b2c3d4e5.js') &&
+    !inviteManifest.pool.some((href) => href.includes('DashboardRoute-')),
+  'invite preload manifest splits pool and site and drops DashboardRoute',
+);
+const poisonedInvite = injectInvitePreloadTags(buildFixtureShellHtml(), [
+  '/assets/PoolInvitePage-a1b2c3d4.js',
+  '/assets/DashboardRoute-e5f6a7b8.js',
+  'https://evil.example/x.js',
+  '/assets/vendor-ga4-deadbeef.js',
+  '/assets/modals-11223344.js',
+]);
+assert(
+  poisonedInvite.includes('/assets/PoolInvitePage-a1b2c3d4.js') &&
+    !poisonedInvite.includes('DashboardRoute-') &&
+    !poisonedInvite.includes('evil.example') &&
+    !poisonedInvite.includes('vendor-ga4-') &&
+    !poisonedInvite.includes('modals-'),
+  'invite tag injection rejects dashboard, GA4, modal, and off-origin hrefs',
+);
+
 const fixtureDashboardPreload = injectDashboardBootModulepreloads(
   buildDashboardBootShellHtml(buildFixtureShellHtml()),
   fakeDist,
@@ -910,6 +1006,10 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
     'home marketing document must not load firebase-core on cold open',
   );
   assert(
+    !homeHtml.includes('vendor-ga4-'),
+    'home marketing document must not modulepreload vendor-ga4 (#733)',
+  );
+  assert(
     homeHtml.includes(`${MARKETING_BOOT_SHELL_MARKER}="true"`),
     'home dist/index.html must include marketing boot overlay',
   );
@@ -925,6 +1025,61 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
     /\/assets\/app-[^"]+\.js/.test(appHtml),
     'dist/app.html must boot the authenticated SPA entry chunk',
   );
+  assert(
+    !appHtml.includes('vendor-ga4-'),
+    'dist/app.html must not modulepreload vendor-ga4 (public cold opens load it at idle, #733)',
+  );
+  assert(
+    !appHtml.includes(INVITE_BOOT_PRELOAD_MARKER),
+    'dist/app.html must not bake invite route modulepreloads (api/invite injects per URL)',
+  );
+
+  const inviteManifestPath = join(root, 'dist', INVITE_BOOT_PRELOAD_MANIFEST);
+  assert(
+    existsSync(inviteManifestPath),
+    `dist missing ${INVITE_BOOT_PRELOAD_MANIFEST} — run npm run build`,
+  );
+  const builtInviteManifest = JSON.parse(readFileSync(inviteManifestPath, 'utf8'));
+  assert(
+    Array.isArray(builtInviteManifest.pool) &&
+      builtInviteManifest.pool.some((href) => String(href).includes('PoolInvitePage-')),
+    'invite preload manifest must list PoolInvitePage for /join/:code',
+  );
+  assert(
+    Array.isArray(builtInviteManifest.site) &&
+      builtInviteManifest.site.some((href) => String(href).includes('InviteLandingPage-')),
+    'invite preload manifest must list InviteLandingPage for /invite/:handle',
+  );
+  for (const href of [...builtInviteManifest.pool, ...builtInviteManifest.site]) {
+    assert(
+      !String(href).includes('DashboardRoute-') &&
+        !String(href).includes('HomeRoute-') &&
+        !/firebase-appcheck/i.test(String(href)) &&
+        !String(href).includes('/assets/modals-') &&
+        !String(href).includes('vendor-ga4-'),
+      `invite preload manifest must not include ${href}`,
+    );
+  }
+  const hintedPool = injectInvitePreloadTags(appHtml, builtInviteManifest.pool);
+  assert(
+    hintedPool.includes('PoolInvitePage-') &&
+      hintedPool.includes(`${INVITE_BOOT_PRELOAD_MARKER}="true"`),
+    'injecting the pool manifest into app.html must hint PoolInvitePage',
+  );
+  assert(
+    !hintedPool.includes('InviteLandingPage-'),
+    'pool invite HTML must not hint the site-invite page',
+  );
+  if (!appHtml.includes('DashboardRoute-')) {
+    assert(
+      !hintedPool.includes('DashboardRoute-'),
+      'invite HTML must not add a DashboardRoute modulepreload',
+    );
+  }
+  assert(
+    injectInvitePreloadTags(hintedPool, builtInviteManifest.pool) === hintedPool,
+    'invite preload injection into app.html must be idempotent',
+  );
 
   const distLoginEntry = join(root, 'dist', 'login.html');
   assert(
@@ -939,6 +1094,10 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
   assert(
     !/\/assets\/app-[^"]+\.js/.test(loginEntryHtml),
     'dist/login.html must not boot the dashboard SPA entry',
+  );
+  assert(
+    !loginEntryHtml.includes('vendor-ga4-'),
+    'dist/login.html must not modulepreload vendor-ga4 (#733)',
   );
   assert(
     /id="si-email"/.test(loginEntryHtml) && /<input\b/i.test(loginEntryHtml),
@@ -1162,6 +1321,10 @@ if (existsSync(distIndex) && existsSync(distHowItWorks)) {
   assert(
     !/\/assets\/firebase-storage-[^"]+\.js/.test(loginBootHtml),
     'login boot shell must not modulepreload firebase-storage',
+  );
+  assert(
+    !loginBootHtml.includes('vendor-ga4-'),
+    'login boot shell must not modulepreload vendor-ga4 (#733)',
   );
   assert(
     !loginBootHtml.includes(DASHBOARD_BOOT_PRELOAD_MARKER) &&

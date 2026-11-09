@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.99.1] — 2026-11-09
+
+### Changed
+- **Invite cold-open hints (Refs #733)** — `/join/:code` and `/invite/:handle` HTML modulepreloads the route chunk that page paints. Vite reports `PoolInvitePage` at 0.71 kB (0.45 kB gzip) and `InviteLandingPage` at 0.38 kB (0.27 kB gzip). The other files in that static closure are already on `app.html` (the shared `invite` chunk is 252.63 kB / 69.38 kB gzip). The list is `dist/invite-boot-preloads.json`, injected by `api/invite`. It does not add `DashboardRoute`, the lazy auth-modal chunk, or App Check. `react-ga4` moves to `vendor-ga4` (6.21 kB / 2.44 kB gzip) and is not modulepreloaded on the app, marketing, or login documents. Public cold opens (`/`, `/join`, `/invite/*`) fetch it at idle. Dashboard and setup still start it immediately. Pageviews and events that fire before init are queued and flushed, or dropped when the host is not production. No declared API change.
+
 ## [1.99.0] — 2026-11-09
 
 ### Added

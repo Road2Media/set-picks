@@ -30,6 +30,8 @@ import {
   buildDashboardBootShellHtml,
   buildLegalBootDocumentHtml,
   buildLoginBootShellHtml,
+  INVITE_BOOT_PRELOAD_MANIFEST,
+  buildInviteBootPreloadManifest,
   injectDashboardBootModulepreloads,
   injectLoginBootModulepreloads,
   injectPrerenderHtml,
@@ -547,6 +549,16 @@ console.log(
   `prerender-seo: wrote dist/${LOGIN_BOOT_SHELL_REL_PATH} (HTML-first form + login hydrate + firebase-core preload)`,
 );
 
+const invitePreloads = buildInviteBootPreloadManifest(distDir);
+writeFileSync(
+  join(distDir, INVITE_BOOT_PRELOAD_MANIFEST),
+  `${JSON.stringify(invitePreloads)}\n`,
+  'utf8',
+);
 console.log(
-  `prerender-seo: OK (${prerenderRoutes.length} routes + legal door + app boot + light spa + login boot)`,
+  `prerender-seo: wrote dist/${INVITE_BOOT_PRELOAD_MANIFEST} (pool=${invitePreloads.pool.length}, site=${invitePreloads.site.length})`,
+);
+
+console.log(
+  `prerender-seo: OK (${prerenderRoutes.length} routes + legal door + app boot + light spa + login boot + invite preloads)`,
 );

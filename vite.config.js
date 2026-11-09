@@ -214,6 +214,10 @@ function manualChunks(id) {
 
   if (pkg === '@tanstack/react-query') return 'vendor-react-query';
   if (pkg === 'lucide-react') return 'vendor-icons';
+  // Own async chunk so public cold opens can skip it until idle (#733).
+  // Keeping it inside vendor-react would put the library on every entry
+  // modulepreload even when the import() is dynamic.
+  if (pkg === 'react-ga4') return 'vendor-ga4';
 
   // Exact-name set avoids the `react` naively matching `react-query` /
   // `react-helmet-async` / `react-ga4` classes of bug.
@@ -223,7 +227,6 @@ function manualChunks(id) {
     'react-router',
     'react-router-dom',
     'react-helmet-async',
-    'react-ga4',
     'scheduler',
   ]);
   if (reactPkgs.has(pkg)) return 'vendor-react';
