@@ -25,6 +25,7 @@ import {
   isPicksClusterPath,
   isPoolsTertiaryPath,
   isProfileClusterPath,
+  isCrowdNightStatsPath,
   isStatsClusterPath,
   isStatsTourScopedPath,
   normalizeDashboardPathname,
@@ -56,6 +57,7 @@ function readViewQuery(search) {
  *   `?view=tour` (#255) or `?view=year` (#1110) is active, and by Stats
  *   Personal / Global / Band (#769 / #1004) — tour-scoped surfaces share
  *   the chrome tour picker. Year view shows the year picker instead.
+ *   `/dashboard/stats/night` is the exception: show date picker, no tour picker.
  */
 export function getDashboardPageMeta(pathname, search) {
   const normalized = normalizeDashboardPathname(pathname);
@@ -88,6 +90,7 @@ export function getDashboardPageMeta(pathname, search) {
   const isRewind = normalized === PICKS_CLUSTER_PATHS.rewind;
   const isPhishIq = normalized === PICKS_CLUSTER_PATHS.phishIq;
   const isStatsCluster = isStatsClusterPath(normalized);
+  const isCrowdNightStats = isCrowdNightStatsPath(normalized);
   const isAdmin = normalized === '/dashboard/admin';
   const isPoolHub = normalized.startsWith('/dashboard/pool/');
   const isStandings = normalized === '/dashboard/standings';
@@ -117,7 +120,7 @@ export function getDashboardPageMeta(pathname, search) {
     !isPoolHub &&
     !showTourScopePicker &&
     !showYearScopePicker &&
-    !isStatsCluster &&
+    (!isStatsCluster || isCrowdNightStats) &&
     !isRewind &&
     !isPhishIq;
 

@@ -228,6 +228,18 @@ const CASES = [
     },
   },
   {
+    path: '/dashboard/stats/night',
+    expect: {
+      contextTitle: NAV_LABEL_STATS,
+      showDatePicker: true,
+      layoutDesktopHeading: null,
+      ownsDesktopStickyChrome: true,
+      layoutDetailEyebrow: null,
+      isStandingsTourView: false,
+      showTourScopePicker: false,
+    },
+  },
+  {
     path: '/dashboard/stats/band',
     expect: {
       contextTitle: NAV_LABEL_STATS,

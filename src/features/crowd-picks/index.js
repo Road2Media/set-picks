@@ -33,5 +33,6 @@ export {
   isCrowdSongPlayed,
 } from './model/buildOfficialPlayedTitleSet';
 export { default as CrowdNightPulsePanel } from './ui/CrowdNightPulsePanel';
+export { default as CrowdNightStatsPanel } from './ui/CrowdNightStatsPanel';
 export { default as CrowdPulseTopTable } from './ui/CrowdPulseTopTable';
 export { default as FrequencyMeterRow } from './ui/FrequencyMeterRow';

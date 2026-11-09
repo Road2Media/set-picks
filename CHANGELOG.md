@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.107.0] — 2026-11-09
+
+### Added
+- **Crowd night on Stats (#694 P1)** — `/dashboard/stats/night` is the show-scoped deep dive behind Standings **Full crowd stats**. Same crowd aggregates as the standings card. Consensus is a song on at least 25% of cards or on at least 3 cards. Each slot shows its favorite title. After lock, the page says how often those favorites matched the official slot (Set 1 opener, Set 1 closer, Set 2 opener, Set 2 closer, and encore). A miss does not name what played. Wildcard stays a pick slot and is left out of that comparison. Gap, last played, and slot results cite Phish.net. The page does not list the night's setlist. Pre-lock, names stay blurred until showtime. The Stats tab stays active. Personal, Global, and Band stay the only tertiary chips. This path uses the date picker. No new top-level nav item.
+
 ## [1.106.1] — 2026-11-09
 
 ### Changed

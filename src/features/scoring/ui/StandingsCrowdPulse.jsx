@@ -32,8 +32,12 @@ export default function StandingsCrowdPulse({
   showStatus = '',
   className = '',
 }) {
-  const { card, night, catalog, leaders, catalogLoading, ready, playedTitles } =
-    useCrowdNightStats(showDate, picks, tourLeaders, actualSetlist);
+  const { card, night, catalogLoading, ready, playedTitles } = useCrowdNightStats(
+    showDate,
+    picks,
+    tourLeaders,
+    actualSetlist
+  );
 
   if (!ready) return null;
 
@@ -43,8 +47,6 @@ export default function StandingsCrowdPulse({
       showDate={showDate}
       card={card}
       night={night}
-      catalog={catalog}
-      leaders={leaders}
       playedTitles={playedTitles}
       catalogLoading={catalogLoading}
       blurDeepStats={shouldBlurDeepCrowdStats(showStatus)}

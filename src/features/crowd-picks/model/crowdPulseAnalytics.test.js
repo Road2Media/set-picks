@@ -26,6 +26,7 @@ describe('crowdPulseAnalytics', () => {
       show_date: '2026-07-19',
       deep_stats: 'locked',
       pickers: 12,
+      surface: 'standings',
     });
   });
 
@@ -35,6 +36,17 @@ describe('crowdPulseAnalytics', () => {
       show_date: '',
       deep_stats: 'open',
       pickers: 0,
+      surface: 'standings',
+    });
+  });
+
+  it('trackCrowdPulseView records the stats night surface', () => {
+    trackCrowdPulseView({ surface: 'stats_night', deep_stats: 'open', pickers: 4 });
+    expect(ga4Event).toHaveBeenCalledWith('crowd_pulse_view', {
+      show_date: '',
+      deep_stats: 'open',
+      pickers: 4,
+      surface: 'stats_night',
     });
   });
 
