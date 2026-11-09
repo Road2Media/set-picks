@@ -11,6 +11,7 @@
  *
  * Scoring point values come from `shared/utils/scoring.js` (plain ESM, no Vite alias).
  */
+import { RANK_TIE_EXPLANATION } from './dashboardVocabulary.js';
 import { SEO_CONFIG } from './seo.js';
 import {
   SCORING_LADDER_V1,
@@ -613,6 +614,14 @@ function buildHowScoringJsonLd() {
               text: `Correct picks on songs with a ${BUSTOUT_MIN_GAP}+ show gap earn a bonus ${BUSTOUT_BOOST} points on top of base points. That's the reward for digging past the heavy rotation.`,
             },
           },
+          {
+            '@type': 'Question',
+            name: 'How are ties ranked?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: RANK_TIE_EXPLANATION,
+            },
+          },
         ],
       },
     ],
@@ -652,6 +661,14 @@ function buildHowScoringChangedJsonLd() {
             acceptedAnswer: {
               '@type': 'Answer',
               text: `In the setlist, wrong slot: ${IN_SETLIST}. Wildcard, played anywhere: ${WILDCARD_NEXT} (was ${WILDCARD_HIT}). Exact opener or closer: ${EXACT_SLOT}. First encore song: ${ENCORE_EXACT}. A later encore song: ${ENCORE_LATER_NEXT} (was ${ENCORE_EXACT} for any encore song). That song played somewhere else: ${IN_SETLIST}. Bustout, ${BUSTOUT_MIN_GAP}+ show gap: +${BUSTOUT_BOOST}.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: 'How are ties ranked?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: RANK_TIE_EXPLANATION,
             },
           },
         ],
@@ -710,6 +727,7 @@ export const PRERENDER_ROUTES = [
       'Picks earn points based on where they land in the setlist. Nights already played keep the ladder that was live that night.',
       `In setlist: ${IN_SETLIST} points. Exact slot: ${EXACT_SLOT} points. Before ${LADDER_V2_START}: wildcard ${WILDCARD_HIT} points, and any encore song ${ENCORE_EXACT} points.`,
       `Starting ${LADDER_V2_START} (${SCORING_LADDER_V2_TOUR_NAME}): wildcard ${WILDCARD_NEXT} points, first encore song ${ENCORE_EXACT} points, later encore song ${ENCORE_LATER_NEXT} points. Bustout Boost stays +${BUSTOUT_BOOST} on a ${BUSTOUT_MIN_GAP}+ show gap.`,
+      RANK_TIE_EXPLANATION,
     ],
     buildJsonLd: buildHowScoringJsonLd,
   },
@@ -723,7 +741,7 @@ export const PRERENDER_ROUTES = [
       'How some picks are scored is changing. Nights already played keep the rules that were live that night.',
       `Starting ${LADDER_V2_START} (${SCORING_LADDER_V2_TOUR_NAME}): a played wildcard scores ${WILDCARD_NEXT} (was ${WILDCARD_HIT}). The first encore song stays ${ENCORE_EXACT}. A later encore song scores ${ENCORE_LATER_NEXT} (was ${ENCORE_EXACT} for any encore song).`,
       `Exact openers and closers stay ${EXACT_SLOT}. A song in the setlist but in the wrong slot stays ${IN_SETLIST}. Bustout Boost stays +${BUSTOUT_BOOST} for a ${BUSTOUT_MIN_GAP}+ show gap. A bustout wildcard goes from ${WILDCARD_HIT + BUSTOUT_BOOST} to ${WILDCARD_NEXT + BUSTOUT_BOOST}. A bustout later encore goes from ${ENCORE_EXACT + BUSTOUT_BOOST} to ${ENCORE_LATER_NEXT + BUSTOUT_BOOST}.`,
-      'When two players have the same points, the board no longer shares a rank. More exact slots rank higher, then more correct picks, then more nightly wins on a tour or the year. A handle is only the last resort.',
+      RANK_TIE_EXPLANATION,
     ],
     buildJsonLd: buildHowScoringChangedJsonLd,
   },

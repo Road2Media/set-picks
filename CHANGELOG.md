@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.106.1] — 2026-11-09
+
+### Changed
+- **Ranking copy on show standings (#1219)** — the show board says a points tie goes to exact slots, then correct picks, then handle, and that a single show skips nightly wins. When more than one player hits the top score, the banner says "Tonight's top score" (or "Last show's top score") and that each of them still gets a nightly win. The board does not call that a shared rank. The same cascade is on the scoring-rules modal, `/how-scoring-works`, and `/how-scoring-changed`, including the FAQ. Point values are unchanged. Stored scores are unchanged.
+
 ## [1.106.0] — 2026-11-09
 
 ### Added

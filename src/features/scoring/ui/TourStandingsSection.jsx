@@ -70,7 +70,7 @@ export default function TourStandingsSection({
   topClassName = 'mt-10',
 }) {
   const scopeLabel = scopeName || tourName || scopeFallback;
-  // Place is competition rank on points, not the row index (#1135).
+  // Place is the full tie-break, not the row index (#1218).
   const rankedLeaders = assignTourDisplayRanks(leaders);
   const { identities } = usePlayerIdentityMap(rankedLeaders.map((r) => r.uid));
 

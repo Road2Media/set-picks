@@ -8,6 +8,7 @@ import {
   MARKETING_EDITORIAL_TYPE_META,
 } from '../../../shared/ui/marketingEditorialChrome.js';
 import { LINK_ON_DARK, LINK_ON_LIGHT } from '../../../shared/ui/surfaceLinkStyles.js';
+import { RANK_TIE_EXPLANATION } from '../../../shared/config/dashboardVocabulary.js';
 import {
   SCORING_LADDER_V2,
   SCORING_LADDER_V2_TOUR_NAME,
@@ -229,6 +230,7 @@ export default function ScoringRulesContent({
         </Link>
         .
       </p>
+      <p className={t.footnote}>{RANK_TIE_EXPLANATION}</p>
     </div>
   );
 }

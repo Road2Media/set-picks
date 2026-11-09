@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
+import { RANK_TIE_EXPLANATION } from '../../../shared/config/dashboardVocabulary.js';
 import ScoringRulesContent from './ScoringRulesContent.jsx';
 
 function html(props) {
@@ -52,6 +53,7 @@ describe('ScoringRulesContent', () => {
     expect(markup).toContain('>5<');
     expect(markup).toContain('>15<');
     expect(markup).toContain('>10<');
+    expect(markup).toContain(RANK_TIE_EXPLANATION);
     expect(markup).not.toContain('chair');
   });
 });
