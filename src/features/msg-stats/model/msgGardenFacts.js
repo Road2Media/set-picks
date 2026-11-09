@@ -45,14 +45,10 @@ export function formatCount(n) {
   return Math.trunc(value).toLocaleString('en-US');
 }
 
-/**
- * Row count for the Most played and Show openers tables. `5` → `5X`.
- * @param {number} n
- * @returns {string}
- */
-export function formatTimesMark(n) {
-  return `${formatCount(n)}X`;
-}
+/** Sentence-case headers for the Most played and Show openers tables. */
+export const MSG_SONG_COLUMN = 'Song';
+export const MSG_TIMES_PLAYED_COLUMN = 'Times played';
+export const MSG_TIMES_OPENED_COLUMN = 'Times opened';
 
 /**
  * @param {unknown} raw
@@ -145,8 +141,8 @@ export function buildMsgGardenFactsHtml(stats) {
   const summary = msgGardenSummarySentences(stats)
     .map((line) => `    <p data-seo-msg-stats="summary">${escapeHtml(line)}</p>`)
     .join('\n');
-  const top = countTable('top-songs', 'times played', stats.topSongs);
-  const openers = countTable('openers', 'times opened', stats.openers);
+  const top = countTable('top-songs', MSG_TIMES_PLAYED_COLUMN, stats.topSongs);
+  const openers = countTable('openers', MSG_TIMES_OPENED_COLUMN, stats.openers);
   const debuts = statList(
     'debuts',
     stats.debuts.map((row) => `${row.title} (${formatFanDate(row.showDate)})`),
@@ -238,7 +234,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most-played songs at Madison Square Garden',
       stats.topSongs.map((row) => ({
         name: row.title,
-        description: formatTimesMark(row.timesPlayed),
+        description: formatCount(row.timesPlayed),
       })),
     ),
     itemList(
@@ -246,7 +242,7 @@ export function buildMsgGardenJsonLd(stats, pageUrl) {
       'Most frequent MSG show openers',
       stats.openers.map((row) => ({
         name: row.title,
-        description: formatTimesMark(row.timesPlayed),
+        description: formatCount(row.timesPlayed),
       })),
     ),
     itemList(
@@ -349,13 +345,13 @@ function countTable(name, countHeader, rows) {
     ? rows
         .map(
           (row) =>
-            `      <tr><td>${escapeHtml(row.title)}</td><td>${escapeHtml(formatTimesMark(row.timesPlayed))}</td></tr>`,
+            `      <tr><td>${escapeHtml(row.title)}</td><td>${escapeHtml(formatCount(row.timesPlayed))}</td></tr>`,
         )
         .join('\n')
     : '      <tr><td colspan="2">None in this count.</td></tr>';
   return `    <table data-seo-msg-stats="${name}">
       <thead>
-        <tr><th>song</th><th>${escapeHtml(countHeader)}</th></tr>
+        <tr><th>${escapeHtml(MSG_SONG_COLUMN)}</th><th>${escapeHtml(countHeader)}</th></tr>
       </thead>
       <tbody>
 ${body}
