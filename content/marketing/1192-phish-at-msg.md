@@ -53,7 +53,7 @@ July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run tha
 
 This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027.
 
-Most played and Show openers are centered two-column tables. Headers are “song” / “times played” and “song” / “times opened”. The count is nX, such as 33X and 5X.
+Most played and Show openers are left-aligned two-column tables, in line with the headings and the intro. Headers are “Song” / “Times played” and “Song” / “Times opened”. The count is the number only, such as 33 and 5.
 
 | Surface | Before | After |
 | --- | --- | --- |

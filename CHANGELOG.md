@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.105.1] — 2026-11-09
+
+### Changed
+- **Phish at MSG tables** — Most-played songs and Show openers line up with the headings and the intro. Headers are “Song”, “Times played”, and “Times opened”. The count is the number only, such as 33, with no trailing X. The prerender tables and the ItemList descriptions use the same labels and counts. `/tour-stats/msg` still redirects to this page. No other page uses these tables. No declared API change.
+
 ## [1.105.0] — 2026-11-09
 
 ### Added

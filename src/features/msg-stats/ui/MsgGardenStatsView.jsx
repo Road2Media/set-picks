@@ -8,7 +8,9 @@ import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
 import {
   formatCount,
   formatFanDate,
-  formatTimesMark,
+  MSG_SONG_COLUMN,
+  MSG_TIMES_OPENED_COLUMN,
+  MSG_TIMES_PLAYED_COLUMN,
   msgGardenSummarySentences,
 } from '../model/msgGardenFacts';
 
@@ -47,7 +49,7 @@ export default function MsgGardenStatsView({ stats, heading }) {
         </h2>
         <CountTable
           labelledBy="msg-most-played"
-          countHeader="times played"
+          countHeader={MSG_TIMES_PLAYED_COLUMN}
           rows={stats.topSongs}
         />
       </section>
@@ -62,7 +64,7 @@ export default function MsgGardenStatsView({ stats, heading }) {
         </p>
         <CountTable
           labelledBy="msg-show-openers"
-          countHeader="times opened"
+          countHeader={MSG_TIMES_OPENED_COLUMN}
           rows={stats.openers}
         />
       </section>
@@ -174,12 +176,12 @@ function CountTable({ labelledBy, countHeader, rows }) {
   return (
     <table
       aria-labelledby={labelledBy}
-      className="mx-auto w-max max-w-full text-sm"
+      className="w-max max-w-full text-sm"
     >
       <thead>
         <tr className="text-xs text-slate-500">
           <th scope="col" className="pb-2 pr-8 text-left font-semibold">
-            song
+            {MSG_SONG_COLUMN}
           </th>
           <th scope="col" className="whitespace-nowrap pb-2 text-right font-semibold">
             {countHeader}
@@ -191,7 +193,7 @@ function CountTable({ labelledBy, countHeader, rows }) {
           <tr key={row.title}>
             <td className="py-1 pr-8 font-semibold text-white">{row.title}</td>
             <td className="whitespace-nowrap py-1 text-right tabular-nums text-slate-300">
-              {formatTimesMark(row.timesPlayed)}
+              {formatCount(row.timesPlayed)}
             </td>
           </tr>
         ))}
