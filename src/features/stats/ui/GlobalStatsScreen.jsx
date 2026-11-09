@@ -58,8 +58,8 @@ export default function GlobalStatsScreen({ user }) {
               items={SCOPE_ITEMS}
               hint={
                 scope === 'tour'
-                  ? `Leaderboards for ${screen.tourName}. Restamps with the tour picker. Ratio boards need at least 3 shows.`
-                  : `Career rankings across every graded show. The tour picker does not change All-time. PPS and Picking Avg need at least 3 shows. Slugging needs at least ${GLOBAL_LEADERBOARD_SLUGGING_MIN_SHOWS_ALL_TIME}.`
+                  ? `Leaderboards for ${screen.tourName}. Restamps with the tour picker. Points per show, picking average, slugging, and average vintage need at least 3 shows. Bustout Boost counts slots whose boost fired.`
+                  : `Career rankings across every graded show. The tour picker does not change All-time. Points per show, picking average, and average vintage need at least 3 shows. Slugging needs at least ${GLOBAL_LEADERBOARD_SLUGGING_MIN_SHOWS_ALL_TIME}. Bustout Boost counts slots whose boost fired.`
               }
               hintLabel="Global stats scope"
             />
@@ -70,6 +70,7 @@ export default function GlobalStatsScreen({ user }) {
               items={BOARD_ITEMS}
               hint={activeHint}
               hintLabel={activeBoard.title}
+              layout="wrap"
             />
           </>
         )}

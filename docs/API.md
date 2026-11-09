@@ -1,6 +1,6 @@
 # Setlist Pick'em — Public API Declaration
 
-**Version:** 1.96.0  
+**Version:** 1.100.0  
 
 
 **SemVer:** https://semver.org  
@@ -32,6 +32,8 @@ All collections live in the default `(default)` Firestore database for project `
 | `showsPlayed` | number? | Career graded non-empty shows |
 | `wins` | number? | Career global night wins (ties share) |
 | `careerCorrectSlots` | number? | **v1.26.0+ (#554)** Sum of pick slots that scored > 0 across graded shows. Used for avg correct / show. Absent until rollup/backfill. |
+| `avgVintageYear` | number? | **v1.100.0+ (#1044)** Rounded mean debut year of the different songs this player picked on graded shows. Written by the Global Stats leaderboard rebuild from graded `picks` plus the song catalog. An older year ranks higher. Absent until that rebuild sees debut years. Clients may read it for the you-row. The same write posture as `totalPoints` applies: the published top 50 is computed on the server from picks, not from a client-written copy of this field. |
+| `avgVintageByTour` | map? | **v1.100.0+ (#1044)** `{ [tourKey]: number }` — the same mean for shows on that calendar tour (`show_calendar` tour label). The rebuild replaces the whole map. A show date missing from the calendar still counts in `avgVintageYear` and is left off every tour entry. |
 | `seasonStatsThroughShow` | string? | YYYY-MM-DD freshness watermark for materialized career/tour stats |
 | `seasonStatsSnapshotAt` | Timestamp? | Last rollup write time |
 | `seasonStats.{tourKey}` | map | Per-tour aggregated scoring (`totalPoints`, `shows`, `wins`, **v1.26.0+** `correctSlots`, and **v1.93.0+** `bustoutBoosts`) |
@@ -247,16 +249,16 @@ Tour labels are ingested via **`scheduledPhishnetShowCalendar`** (daily 06:00 ET
 
 **Calendar-year roll-up (`_year_YYYY`, v1.95.0 / #1141):** the same refresh also writes `public_tour_stats/_year_YYYY` for each calendar year that has at least one show with a setlist. A December 31 show stays in that year. A January 1 show is the next year. The doc uses the same aggregate fields as a tour page (`showsWithSetlist`, `uniqueSongs`, `totalSongPlays`, `topSongs`, `bustouts`) plus `year`, `yearRule: "calendar-show-date"`, and `tours[]` (`tourSlug`, `tourLabel`, `showsWithSetlist`, `uniqueSongs`, `totalSongPlays`, `showDates`, `firstShowDate`, `lastShowDate`). Show counts, song-row totals, and bustout counts equal the sum of those year-scoped tour slices. `uniqueSongs` is the union, not the sum. `schemaVersion` is **3** so the tour-picker fallback query (`schemaVersion in [1, 2]`) does not list it. It is not an entry in `_index.tours`. No new collection and no rules change. Clients may read. Until this refresh is deployed, `/tour-stats/2026` adds the published tour pages whose show dates all fall in 2026 and leaves a cross-year tour out of the song totals.
 
-### 1.14 `global_stats_leaderboards/{docId}` (**v1.70.0 / #1004**, slugging **v1.77.0**)
+### 1.14 `global_stats_leaderboards/{docId}` (**v1.70.0 / #1004**, slugging **v1.77.0**, vintage + Bustout Boost **v1.100.0 / #1044**)
 
-Functions-owned Global Stats leaderboards for **`/dashboard/stats/global`**. Written by Cloud Functions Admin SDK from materialized `users` fields (`totalPoints`, `showsPlayed`, `careerCorrectSlots`, `seasonStats.{tourKey}`). **Clients `getDoc` these docs + the signed-in `users/{uid}` only — no `users` collection query/scan.** Slugging percentage is not a stored user field. It is derived at rebuild as total points ÷ (shows × 30).
+Functions-owned Global Stats leaderboards for **`/dashboard/stats/global`**. Written by Cloud Functions Admin SDK from materialized `users` fields (`totalPoints`, `showsPlayed`, `careerCorrectSlots`, `seasonStats.{tourKey}.bustoutBoosts`). **Clients `getDoc` these docs + the signed-in `users/{uid}` only — no `users` collection query/scan.** Slugging percentage is not a stored user field. It is derived at rebuild as total points ÷ (shows × 30). Average vintage is not a running rollup counter. The same rebuild reads graded `picks` and the song catalog on the server, then stores the rounded year on the board and on `users.avgVintageYear` / `users.avgVintageByTour` so the you-row does not scan picks.
 
 Doc IDs: **`allTime`** (career) and **`tour:{tourKey}`** (same tour key as `seasonStats` / chrome `?tour=`).
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `schemaVersion` | number | `2` (**v1.77.0**). `1` was PPS / Picking average / Shows only. |
-| `minShows` | number | Ratio-board gate for Points per show, Picking average, and **tour** slugging. Default **3** (`showsPlayed` / tour `shows`). |
+| `schemaVersion` | number | `3` (**v1.100.0**). `2` was PPS / Picking average / Slugging / Shows. `1` was PPS / Picking average / Shows only. |
+| `minShows` | number | Ratio-board gate for Points per show, Picking average, Average vintage, and **tour** slugging. Default **3** (`showsPlayed` / tour `shows`). |
 | `sluggingMinShows` | number | Gate applied to `boards.sluggingPercentage` on this doc. **15** when `scope === 'allTime'`, **3** when `scope === 'tour'`. |
 | `sluggingMinShowsAllTime` | number | Constant **15**. Present on every doc so operators can see the all-time floor without reading a tour doc. |
 | `slotsPerShow` | number | `6` — same as `PROFILE_SLOTS_PER_SHOW` / `FORM_FIELDS.length` |
@@ -267,13 +269,15 @@ Doc IDs: **`allTime`** (career) and **`tour:{tourKey}`** (same tour key as `seas
 | `boards.pointsPerShow` | `{ uid, handle, value, shows, rank }[]` | `totalPoints / shows`. Competition rank. Minimum 3 shows. |
 | `boards.pickingAverage` | `{ uid, handle, value, shows, rank }[]` | `correctSlots / (shows * 6)`. Minimum 3 shows. |
 | `boards.sluggingPercentage` | `{ uid, handle, value, shows, rank }[]` | **v1.77.0.** `totalPoints / (shows × 30)`. 30 is one show of 5-point in-setlist hits (SLG 1.000). All-time minimum **15** shows. Tour minimum **3**. |
+| `boards.averageVintage` | `{ uid, handle, value, shows, rank }[]` | **v1.100.0 / #1044.** Rounded mean debut year of the different songs picked on graded shows in that scope. A repeated title counts once. A title with no catalog debut year is left out of the mean. An older year ranks higher (rank 1 is the oldest mean). Minimum 3 shows. This is every graded show in the scope, not the profile heatmap window. If the catalog has no debut years, the rebuild keeps the previous array. |
+| `boards.bustoutBoosts` | `{ uid, handle, value, shows, rank }[]` | **v1.100.0 / #1044.** Count of slots whose Bustout Boost fired. All-time is the sum of `seasonStats.{tourKey}.bustoutBoosts`. This tour is that tour’s counter. Higher count ranks higher. A count of 0 is not ranked. No minimum show count. The counter is written at finalize (**v1.93.0**). A show graded before that counter existed is included after a regrade. |
 | `boards.shows` | `{ uid, handle, value, shows, rank }[]` | Show count; no min-shows gate. **Deprecated in v1.77.0** — still written, no longer rendered. Show count remains the `shows` field on every row. |
 | `trigger` | `'rollup' \| 'scheduled' \| 'admin' \| 'revert'` | Last rebuild source |
 | `rebuiltAt` | Timestamp | Server write time |
 
-Rebuild: after `rollupScoresForShow` / revert (all-time + that show’s tour, soft-fail), nightly **`scheduledGlobalStatsLeaderboardsRefresh`** (08:00 ET), and admin callable **`refreshGlobalStatsLeaderboards`**.
+Rebuild: after `rollupScoresForShow` / revert (all-time + that show’s tour, soft-fail), nightly **`scheduledGlobalStatsLeaderboardsRefresh`** (08:00 ET), and admin callable **`refreshGlobalStatsLeaderboards`**. The new board keys are empty until that functions deploy and the next rebuild.
 
-**Out of v1:** avg vintage, Bustout Boost, In most played, pool-scoped boards.
+**Out of v1:** In most played, pool-scoped boards.
 
 Signed-in read; client writes denied. Admin SDK / Functions write only.
 
@@ -566,7 +570,7 @@ Phish.net integration, live scoring, and public tour-stats refresh. Deployed via
 
 **`public_venue_stats/msg` (#1139 / v1.94.0):** `scheduledPublicMsgGardenStats` (daily 08:10 ET) and admin callable `refreshPublicMsgGardenStats` rebuild the MSG aggregate. Request: none. Response: `{ ok, written, showCount?, lastShowDate?, reason? }`. Admin claim required. A `showCount` under 90 returns `{ ok: true, written: false, reason: "short-count" }` and does not write. Missing `PHISHNET_API_KEY` returns `reason: "missing-api-key"`. Not included in `npm run deploy:functions:phishnet`. See §1.22 for the deploy order.
 
-**`global_stats_leaderboards` (#1004 / v1.70.0):** `scheduledGlobalStatsLeaderboardsRefresh` (daily 08:00 ET) and admin callable `refreshGlobalStatsLeaderboards` rebuild all-time + every tour. `rollupScoresForShow` also rebuilds all-time + the finalized show’s tour (soft-fail). Request: none. Response: `{ ok, docsWritten, usersScanned, tourKeys }`. Admin claim required on the callable.
+**`global_stats_leaderboards` (#1004 / v1.70.0, #1044 / v1.100.0):** `scheduledGlobalStatsLeaderboardsRefresh` (daily 08:00 ET) and admin callable `refreshGlobalStatsLeaderboards` rebuild all-time + every tour. `rollupScoresForShow` also rebuilds all-time + the finalized show’s tour (soft-fail). Request: none. Response: `{ ok, docsWritten, usersScanned, tourKeys, vintageStatus, vintagePlayers }`. `vintageStatus` is `ok` or `skipped` (catalog had no debut years, or the picks/catalog read failed; the previous Average vintage rows are kept). `vintagePlayers` is how many players had a dated mean on that successful pass, otherwise `0`. Admin claim required on the callable. The schedule and callable are unchanged until the functions deploy.
 
 **Storage object `song-catalog.json` (v1.25.0+, #554):** published by `scheduledPhishnetSongCatalog` / `refreshPhishnetSongCatalog`. Each song object includes `{ name, total, gap, last, debut }` where `debut` is a string (typically `YYYY-MM-DD`) or `""` when unknown. See `docs/SONG_CATALOG.md`. Adding `debut` is a **MINOR** catalog-field addition (clients may ignore unknown fields).
 
@@ -748,7 +752,7 @@ Dashboard sub-routes are documented in `docs/DASHBOARD_IA.md`.
 
 **Account primary (**v1.67.0 / #770**):** last player-tab label is **Account** (was Profile). Path prefix stays **`/dashboard/profile/*`** (no new `/dashboard/account` family). Tertiary: **Profile** (`/dashboard/profile`) · **Messages** (`/dashboard/profile/notifications`, inbox only) · **Preferences** (`/dashboard/profile/account` — security, logout, legal, install/PWA, notification prefs). `?openPush=1` and the dashboard install push nudge land on Preferences. Avatar shortcut → Preferences; bell → Messages. **#513 Phase 2:** inbox sections Unopened / Read / Archived; owner `archivedAt` + hard delete. Phase 3 per-channel pref keys are deferred (same `notificationPrefs` keys; cosmetic Push / Email grouping only).
 
-**Stats primary (**v1.66.0 / #769** chrome, **v1.69.0 / #1004** remap, **v1.70.0 / #1004** Global boards, **v1.70.1** trays):** fifth player tab. Nested destinations (not `?view=`): **`/dashboard/stats`** and **`/dashboard/stats/personal`** (Personal — All-time | This tour tray; All-time inner Your stats | Top picks; This tour self overlay), **`/dashboard/stats/global`** (All-time | This tour tray, then PPS | Picking Avg | SLG; top 50 paginated 10/page + you-row; Functions-owned `global_stats_leaderboards`; **v1.77.0** slugging = total points ÷ (shows × 30), all-time minimum 15 shows), **`/dashboard/stats/band`** (private tour song explorer from **v1.30.0 / #555** — frequency / bustouts / high gaps). **`/dashboard/tour-stats`** redirects to `/dashboard/stats/band` and preserves `?tour=`. Stats tab stays active on all `/dashboard/stats/*` and on the redirect hop. Every Stats destination uses the chrome tour picker (`showTourScopePicker`); Personal and Global all-time do not restamp with `?tour=`. **Public** counterpart: **`/tour-stats`** (**v1.33.0 / #665**) — Band’s marketing twin; aggregates only, no self overlay, not under `/dashboard/`. Unchanged in v1.70.1.
+**Stats primary (**v1.66.0 / #769** chrome, **v1.69.0 / #1004** remap, **v1.70.0 / #1004** Global boards, **v1.70.1** trays):** fifth player tab. Nested destinations (not `?view=`): **`/dashboard/stats`** and **`/dashboard/stats/personal`** (Personal — All-time | This tour tray; All-time inner Your stats | Top picks; This tour self overlay), **`/dashboard/stats/global`** (All-time | This tour tray, then PPS | Picking Avg | SLG | Vintage | Bustout; top 50 paginated 10/page + you-row; Functions-owned `global_stats_leaderboards`; **v1.77.0** slugging = total points ÷ (shows × 30), all-time minimum 15 shows; **v1.100.0 / #1044** Average vintage is the mean debut year, older ranks higher, minimum 3 shows; Bustout Boost is the count of slots whose boost fired), **`/dashboard/stats/band`** (private tour song explorer from **v1.30.0 / #555** — frequency / bustouts / high gaps). **`/dashboard/tour-stats`** redirects to `/dashboard/stats/band` and preserves `?tour=`. Stats tab stays active on all `/dashboard/stats/*` and on the redirect hop. Every Stats destination uses the chrome tour picker (`showTourScopePicker`); Personal and Global all-time do not restamp with `?tour=`. **Public** counterpart: **`/tour-stats`** (**v1.33.0 / #665**) — Band’s marketing twin; aggregates only, no self overlay, not under `/dashboard/`. Unchanged in v1.70.1.
 
 **Picks cluster (**v1.64.0 / #766**):** nested destinations under the primary **Picks** tab (not `?view=`). **`/dashboard`** and **`/dashboard/picks`** are Make Picks (existing form). **`/dashboard/picks/lab`** is Picks Lab. **`/dashboard/picks/scorecard`** is Scorecard. The Picks tab stays active on all three. Global date picker stays on. The Lab segment is always visible.
 

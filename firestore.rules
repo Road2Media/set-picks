@@ -227,9 +227,11 @@ service cloud.firestore {
     }
 
     /**
-     * Global Stats leaderboards (#1004). Written by Cloud Functions Admin SDK
-     * from `users` career / seasonStats fields. Authenticated clients may read
-     * the top-50 boards; no client writes.
+     * Global Stats leaderboards (#1004, #1044). Written by Cloud Functions
+     * Admin SDK from `users` career / seasonStats fields. Average vintage also
+     * reads graded `picks` and the song catalog on the server. Authenticated
+     * clients may read the top-50 boards; no client writes. Clients must not
+     * scan `users`.
      */
     match /global_stats_leaderboards/{docId} {
       allow read: if signedIn();

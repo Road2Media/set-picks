@@ -2058,8 +2058,9 @@ exports.refreshPhishnetShowCalendar = onCall(
 );
 
 /**
- * Nightly rebuild of Global Stats leaderboard aggregates (#1004).
- * Catch-up for rollup-hook misses; Admin SDK scan of `users` only.
+ * Nightly rebuild of Global Stats leaderboard aggregates (#1004, #1044).
+ * Catch-up for rollup-hook misses. Admin SDK scan of `users`, plus graded
+ * `picks` and the song catalog for Average vintage. Clients do not scan `users`.
  */
 exports.scheduledGlobalStatsLeaderboardsRefresh = onSchedule(
   {
