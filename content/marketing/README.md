@@ -25,6 +25,8 @@ Editable reference copy for public marketing / SEO surfaces (not lifecycle comms
 | [`968-editorial-viewport-tokens.md`](./968-editorial-viewport-tokens.md) | #968 | Viewport tokens (`--page-gutter`, `--header-height`, light type roles). Extends #944; do not reopen splash 100svh or dashboard type |
 | [`tour-stats-above-fold-copy.md`](./tour-stats-above-fold-copy.md) | Tour Insights above-fold tighten | Shipped **v1.61.2** — short lede + filter up; SEO body stays in prerender |
 | [`tour-stats-finished-wrap.md`](./tour-stats-finished-wrap.md) | #1140 · parent #1137 · #974 | **Shipped in code 1.88.0** (2026-10-22) — finished-tour wrap on `/tour-stats/{slug}`; winner line waits on a functions refresh |
+| [`1146-100th-show-outreach-tracker.md`](./1146-100th-show-outreach-tracker.md) | #1146 · parent #1137 · #974 · #930 | **Draft** (2026-11-09) — Dec 1-20 outreach tracker. Nothing sent. Each template needs owner approval. |
+| [`1146-100th-show-media-kit.md`](./1146-100th-show-media-kit.md) | #1146 · parent #1137 | **Draft** (2026-11-09) — one-page kit. Screenshot placeholders for MSG, embed, and the NYE run. |
 
 ## Chrome rule (short)
 
