@@ -139,6 +139,18 @@ These are one family. The box is the sponsor card (`DashboardJobShell`): `rounde
 
 Scores stay teal on every card. The Invite button stays teal; the invite box does not. The dev gallery at `/card-shell-preview` is the visual spec (production redirects home). The picks form and the one-line lock note inside it stay the heavier hero and do not use this shell. Tonight's show on Standings uses the night shell.
 
+### Stat tiles (#1089)
+
+A new metric that sits in a grid is a **tile**. Tour Stats counts (unique songs, songs played, unique ratio, bustouts) and the "Your picks this tour" cells are tiles. A tile is not a Standings card and not a settings panel.
+
+Tiles and their section headers share one shell (`DashboardTileShell`): the quiet sponsor box (`rounded-xl`, `border-border-subtle/60`, `bg-surface-panel/40`, no ring, no glass, no glow) and a short header band. The band is the stat's color: teal, amber, blue, or emerald. That color stays on the band. The outer box does not grow a border per stat.
+
+The Phase 1 washes stay on cards. `bg-amber-200/[0.06]` (you) and `bg-brand-primary/[0.06]` (the night) do not move onto tiles.
+
+Personal stats expandable sections use the Phase 1 card (`DashboardJobShell` tone `none`): the same box, no label color, and no job wash.
+
+Use a card when the module is free-standing on Standings or Picks. Use a tile when the metric is one cell in a stat grid. Use a panel for a settings or profile block.
+
 ## 5. Depth & Elevation (Glows over Shadows)
 
 Because the app uses a dark theme, traditional black drop-shadows do not work. Depth is achieved through inset borders and neon glows.
@@ -193,7 +205,8 @@ Do **not** hardcode `/branding/…` paths in components; import from **`shared/c
 - **Background:** `bg-brand-bg`
 - **Tertiary slice (conceptual):** differentiate stacked cards with border/ring + `text-content-secondary` eyebrows first; add a dedicated token only after the pattern repeats (see **§2 Tertiary+ accents**).
 - **Standard Card:** `bg-surface-panel border border-border-subtle rounded-xl`
-- **Frosted list card:** `Card` `variant="frosted"` — teal border + blur + inset glass
+- **Frosted list card:** `Card` `variant="frosted"` — teal border + blur + inset glass. Not a stat tile.
+- **Stat tile:** `DashboardTileShell` — quiet sponsor box plus a header band (teal, amber, blue, or emerald). No Phase 1 wash. No per-stat border on the outer box. A grid metric is a tile; a free-standing Standings or Picks module is a card.
 - **Primary Text:** `text-white font-sans`
 - **Page Heading:** `text-display-page font-display font-bold text-white`
 - **Primary Button (CTA):** `bg-brand-primary text-brand-bg-deep rounded-xl font-bold px-6 py-3 hover:bg-brand-primary-strong shadow-glow-brand`

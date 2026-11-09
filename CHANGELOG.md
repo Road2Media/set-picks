@@ -16,6 +16,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 ### Changed
 - **Scoring ladder is dated (#1086)** — shows before 2026-12-30 (the night before the New Year's Run 2026-2027) keep the ladder that was live that night: wildcard 10, any encore song 15. Shows on or after 2026-12-30 grade with the new ladder. A missing show date stays on the old ladder, so an undated payload cannot re-score a night that already happened. Client scoring and Cloud Functions grading (`scoringCore.js`) use the same gate. `/how-scoring-works` shows the ladder in effect for today in America/New_York. **Deploy (human, before 2026-12-30):** Cloud Functions that grade picks, including live score recompute, rollup, rewind, and show-recap scorecards. A deploy before that date does not change scores for nights already played.
 
+## [1.100.1] — 2026-11-09
+
+### Changed
+- **Stat grids use the Standings card family (Refs #1089)** — Tour Stats metric tiles and their section headers share `DashboardTileShell`: the quiet sponsor box, plus a short header band in teal, amber, blue, or emerald. That color stays on the band. The outer box does not take a per-stat border or the Phase 1 you / night washes. Personal stats expandable sections use the Phase 1 card with no label color and no job wash. `docs/design.md` says when a new grid metric is a tile. No declared API change.
+
 ## [1.100.0] — 2026-11-09
 
 ### Added

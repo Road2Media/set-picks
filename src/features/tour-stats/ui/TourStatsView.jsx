@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 
 import Card from '../../../shared/ui/Card';
+import DashboardTileShell, {
+  DASHBOARD_TILE_SHELL,
+} from '../../../shared/ui/DashboardTileShell';
 import InfoTooltip, {
   InfoTooltipProvider,
 } from '../../../shared/ui/InfoTooltip';
@@ -185,7 +188,7 @@ export default function TourStatsView({
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-[4.5rem] animate-pulse rounded-xl border border-border-subtle/40 bg-surface-panel-strong/50"
+              className={`h-[4.5rem] animate-pulse ${DASHBOARD_TILE_SHELL}`}
             />
           ))}
         </div>
@@ -624,15 +627,15 @@ function formatUniqueRatio(uniqueSongs, songsPlayed) {
 
 const HEADER_TONE = {
   default: {
-    bar: 'border-brand-primary/35 bg-brand-primary/10',
+    tone: 'teal',
     text: 'text-brand-primary',
   },
   bustout: {
-    bar: 'border-amber-500/35 bg-amber-500/10',
+    tone: 'amber',
     text: 'text-amber-200',
   },
   muted: {
-    bar: 'border-brand-accent-blue/30 bg-brand-accent-blue/10',
+    tone: 'blue',
     text: 'text-blue-200',
   },
 };
@@ -656,8 +659,10 @@ function TourStatsSectionCard({
   const TitleTag = titleAs === 'h2' ? 'h2' : 'p';
 
   return (
-    <Card variant="frosted" padding="none" className={STANDINGS_CARD_SHELL}>
-      <div className={`-mx-3.5 -mt-3.5 mb-3 rounded-t-xl border-b px-3.5 py-2.5 md:-mx-4 md:-mt-4 md:px-4 ${tone.bar}`}>
+    <DashboardTileShell
+      tone={tone.tone}
+      pad="section"
+      header={(
         <div className="flex items-center gap-1">
           <TitleTag className={`${STANDINGS_BOX_EYEBROW} ${tone.text}`}>
             {title}
@@ -666,43 +671,44 @@ function TourStatsSectionCard({
             <InfoTooltip label={title} definition={definition} />
           ) : null}
         </div>
-      </div>
+      )}
+    >
       {children}
-    </Card>
+    </DashboardTileShell>
   );
 }
 
 const TILE_ACCENT = {
-  /** Tour-wide row — brand teal. */
+  /** Tour-wide row — teal band. */
   default: {
-    band: 'border-brand-primary/30 bg-brand-primary/10',
+    tone: 'teal',
     label: 'text-brand-primary',
     value: 'text-brand-primary',
     tooltip: 'text-brand-primary/85 hover:text-brand-primary',
   },
-  /** Bustout gold (tour-wide Bustouts tile). */
+  /** Bustout gold. Band, label, and number stay amber. The outer box stays quiet. */
   bustout: {
-    band: 'border-amber-500/30 bg-amber-500/10',
+    tone: 'amber',
     label: 'text-amber-200',
     value: 'text-amber-200',
     tooltip: 'text-amber-200/85 hover:text-amber-200',
   },
   /**
-   * "Your picks this tour" tiles — band matches the muted section header
-   * blue; numbers stay brand teal so values read consistently across rows.
+   * "Your picks this tour" tiles — blue band, same as the section header.
+   * Numbers stay brand teal so values read consistently across rows.
    */
   personal: {
-    band: 'border-brand-accent-blue/30 bg-brand-accent-blue/10',
+    tone: 'blue',
     label: 'text-blue-200',
     value: 'text-brand-primary',
     tooltip: 'text-blue-200/85 hover:text-blue-200',
   },
   /**
-   * Personal Bustout Boost — gold+blue hybrid (light green) band; label,
-   * number, and tooltip keep bustout gold so "amber = bustout" still reads.
+   * Personal Bustout Boost — emerald band. Label, number, and tooltip keep
+   * bustout gold so "amber = bustout" still reads. The outer box stays quiet.
    */
   personalBustout: {
-    band: 'border-emerald-400/30 bg-emerald-400/10',
+    tone: 'emerald',
     label: 'text-amber-200',
     value: 'text-amber-200',
     tooltip: 'text-amber-200/85 hover:text-amber-200',
@@ -722,16 +728,13 @@ function StatTile({ label, value, definition, accent = 'default', sub = null }) 
   const tone = TILE_ACCENT[accent] ?? TILE_ACCENT.default;
 
   return (
-    <Card
-      variant="frosted"
-      padding="none"
-      className={`${STANDINGS_CARD_SHELL} relative flex flex-col gap-1 text-center`}
-    >
-      <div
-        className={`-mx-3.5 -mt-3.5 mb-1 rounded-t-xl border-b px-2 py-2 md:-mx-4 md:-mt-4 ${tone.band}`}
-      >
-        {/* min-h fits a two-line label so one-line tiles (Bustouts) keep the
-            same header band height as wrapping ones at desktop width */}
+    <DashboardTileShell
+      tone={tone.tone}
+      pad="tile"
+      className="h-full text-center"
+      header={(
+        /* min-h fits a two-line label so one-line tiles (Bustouts) keep the
+           same header band height as wrapping ones at desktop width */
         <div className="flex min-h-[1.875rem] items-center justify-center gap-1">
           <p className={`min-w-0 ${STANDINGS_BOX_EYEBROW} ${tone.label}`}>
             {label}
@@ -742,7 +745,8 @@ function StatTile({ label, value, definition, accent = 'default', sub = null }) 
             triggerClassName={tone.tooltip}
           />
         </div>
-      </div>
+      )}
+    >
       <p
         className={`flex flex-1 items-center justify-center px-2 pb-1 pt-0.5 text-2xl font-black tabular-nums ${tone.value}`}
       >
@@ -755,7 +759,7 @@ function StatTile({ label, value, definition, accent = 'default', sub = null }) 
           {sub}
         </p>
       ) : null}
-    </Card>
+    </DashboardTileShell>
   );
 }
 
