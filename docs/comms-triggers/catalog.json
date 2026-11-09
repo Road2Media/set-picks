@@ -413,6 +413,28 @@
       ]
     },
     {
+      "triggerId": "marketing_summer_tour_2026_reminder",
+      "displayName": "Marketing — Summer Tour 2026 non-opener reminder",
+      "status": "shipped",
+      "phase": "v1",
+      "family": "lifecycle",
+      "priority": "P1",
+      "automation": "batch",
+      "event": "admin batch send (callable / CLI) to launch non-openers; not scheduled",
+      "audience": "summer_tour_2026 launch cohort who were delivered the first email, have no openedAt, and are not suppressed or unsubscribed",
+      "channels": ["email"],
+      "prefKeys": ["lifecycle"],
+      "dedupKey": "marketing:{campaignId}:{uid}",
+      "templateId": "summer-tour-2026-reminder",
+      "implementationModule": "functions/marketingReminderDelivery.js",
+      "githubIssue": 512,
+      "variables": [
+        { "name": "greeting_name", "source": "users/{uid}.handle", "fallback": "friend" },
+        { "name": "opener_label", "source": "tour calendar", "fallback": "Tuesday, July 7" },
+        { "name": "campaignId", "source": "vars.campaignId", "fallback": "summer_tour_2026_reminder" }
+      ]
+    },
+    {
       "triggerId": "marketing_summer_2026_almost_end",
       "displayName": "Marketing — Summer 2026 almost-end (pre–Dick’s)",
       "status": "shipped",

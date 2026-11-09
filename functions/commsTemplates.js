@@ -817,6 +817,44 @@ const BUILDERS = {
       },
     };
   },
+
+  // #512 Slice B. Email-only trigger; push exists so the catalog render test
+  // still sees a title and body. Keep paragraphs aligned with
+  // src/features/marketing-comms/model/summerTour2026Reminder.js.
+  "summer-tour-2026-reminder": (p) => {
+    const name =
+      (typeof p.greetingName === "string" && p.greetingName.trim()) ||
+      (typeof p.handle === "string" && p.handle.trim()) ||
+      "friend";
+    const opener =
+      typeof p.openerLabel === "string" && p.openerLabel.trim()
+        ? p.openerLabel.trim()
+        : "Tuesday, July 7";
+    const ctaUrl =
+      typeof p.picksUrl === "string" && p.picksUrl.trim() ? p.picksUrl.trim() : PICKS_CTA_URL;
+    const assembled = assembleServiceEmail(
+      [
+        `${name}, the first note about Summer Tour might still be sitting unopened.`,
+        "",
+        `The opener is ${opener}. Six slots a night: openers, closers, encore, and a wildcard. Lock them before the lights go down.`,
+      ],
+      { ctaUrl }
+    );
+    return {
+      push: {
+        title: "Summer Tour slots are open",
+        body: "Six slots a night. Lock them before the opener.",
+      },
+      email: {
+        subject: "Your six slots for Summer Tour are still open",
+        preheader: "The first note might still be sitting unopened.",
+        text: assembled.text,
+        signOff: assembled.signOff,
+        ctaUrl: assembled.ctaUrl,
+        ctaLabel: "Make Your Picks",
+      },
+    };
+  },
 };
 
 /**

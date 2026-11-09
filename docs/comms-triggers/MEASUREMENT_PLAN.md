@@ -74,6 +74,8 @@ comms_delivered (email) → comms_email_landed → picks_page_interactive → su
 
 **Bot-filtered click KPI:** ignore `/api/email-click` hits with scanner referrers (e.g. `bing.com`) or sub-second engagement; prefer GA4 funnel above + Firestore first-time lock ground truth over raw click-host pageviews.
 
+Marketing reminder (#512 Slice B): parent `comms_delivered` (`marketing:summer_tour_2026:{uid}`) → no `openedAt` → reminder `comms_delivered` (`marketing:summer_tour_2026_reminder:{uid}`) → reminder `openedAt` → click host → `comms_email_landed`.
+
 Primary metric: **pick submission rate before lock** among reminded users vs holdout (when experiments run).
 
 ### Channel planes (do not collapse)
