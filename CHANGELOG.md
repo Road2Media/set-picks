@@ -13,6 +13,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 ### Added
 - **Summer Tour 2026 non-opener reminder (#512 Slice B)** — admin batch `deliverMarketingSummerTour2026Reminder` (dry-run by default, `--uid` canary, full execute). Audience is the launch cohort who were sent `marketing_summer_tour_2026_launch`, have no `openedAt` on `comms_email_engagement/{resendEmailId}`, and are not suppressed or unsubscribed. Default wait is 48 hours after the parent send. Dedup is `marketing:summer_tour_2026_reminder:{uid}`, separate from the launch key. Email only, lifecycle prefs, daily cap bypassed for the batch. No scheduler. **Deploy (human):** `deliverMarketingSummerTour2026Reminder` before any reminder run. This change does not send mail.
 
+## [1.105.1] — 2026-11-09
+
+### Changed
+- **Phish at MSG tables** — Most-played songs and Show openers line up with the headings and the intro. Headers are “Song”, “Times played”, and “Times opened”. The count is the number only, such as 33, with no trailing X. The prerender tables and the ItemList descriptions use the same labels and counts. `/tour-stats/msg` still redirects to this page. No other page uses these tables. No declared API change.
+
 ## [1.105.0] — 2026-11-09
 
 ### Added
