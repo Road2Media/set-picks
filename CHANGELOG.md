@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.116.0] — 2026-11-10
+
+### Added
+- **Public show notes (#684)** — `public_show_notes/{showDate}` is a server projection of `comms_show_context`. A night is published when it has a bustout or a trusted tour-debut list of 1 to 8 titles. The public doc keeps the opener, the encore, that fact, and set lengths. It does not copy the song list, gap map, or any player result. `comms_show_context` stays closed to clients. `/tour-notes` is a prerendered marketing page with `noindex, follow`, linked out to tour stats, how it works, and the keyword page. `/tour-notes/:showDate` reads the public doc over Firestore REST and stays `noindex`. Neither URL is in the sitemap or `llms.txt`. Admin callable `refreshPublicShowNotes` and `scheduledPublicShowNotesRefresh` (08:15 ET) rebuild the collection. `ensureCommsShowContext` also syncs that one night and ignores projection errors. **Human:** `firebase deploy --only firestore:rules,functions:refreshPublicShowNotes,functions:scheduledPublicShowNotesRefresh --project set-picks`, then an admin call to `refreshPublicShowNotes`. Same-night sync starts when the comms functions that call `ensureCommsShowContext` are deployed. Do not turn on indexing in this release.
+
 ## [1.115.0] — 2026-11-10
 
 ### Added

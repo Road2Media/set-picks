@@ -12,6 +12,10 @@
  * Scoring point values come from `shared/utils/scoring.js` (plain ESM, no Vite alias).
  */
 import { RANK_TIE_EXPLANATION } from './dashboardVocabulary.js';
+import {
+  PUBLIC_SHOW_NOTES_HUB,
+  publicShowNotesRobots,
+} from './publicShowNotes.js';
 import { SEO_CONFIG } from './seo.js';
 import {
   SCORING_LADDER_V1,
@@ -711,6 +715,16 @@ function buildHowScoringChangedJsonLd() {
  * @property {() => object} buildJsonLd
  */
 
+function buildTourNotesJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: PUBLIC_SHOW_NOTES_HUB.title,
+    description: PUBLIC_SHOW_NOTES_HUB.description,
+    url: `${SEO_CONFIG.siteUrl}${PUBLIC_SHOW_NOTES_HUB.path}`,
+  };
+}
+
 /** @type {SeoPrerenderRoute[]} */
 export const PRERENDER_ROUTES = [
   {
@@ -892,6 +906,16 @@ export const PRERENDER_ROUTES = [
         title: ABOUT_TITLE,
         description: ABOUT_DESCRIPTION,
       }),
+  },
+  {
+    path: PUBLIC_SHOW_NOTES_HUB.path,
+    title: PUBLIC_SHOW_NOTES_HUB.title,
+    description: PUBLIC_SHOW_NOTES_HUB.description,
+    canonicalUrl: `${SEO_CONFIG.siteUrl}${PUBLIC_SHOW_NOTES_HUB.path}`,
+    h1: PUBLIC_SHOW_NOTES_HUB.h1,
+    robots: publicShowNotesRobots(),
+    paragraphs: PUBLIC_SHOW_NOTES_HUB.paragraphs,
+    buildJsonLd: buildTourNotesJsonLd,
   },
   {
     path: '/privacy',

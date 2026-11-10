@@ -113,6 +113,8 @@ export const SITEMAP_EXCLUDED_PUBLIC_PATHS = Object.freeze({
   '/embed': 'redirect to /embed/stats; robots.txt disallows /embed',
   '/embed/stats': 'noindex frame; robots.txt disallows /embed',
   '/tour-stats/msg': 'permanent redirect to /phish-at-msg',
+  '/tour-notes':
+    'noindex until public_show_notes clears the richness gate (#684)',
   '/dashboard/*': 'auth-only app',
   '*': 'marketing-document catch-all, not a page',
 });
@@ -123,6 +125,8 @@ export const SITEMAP_EXCLUDED_PUBLIC_PATHS = Object.freeze({
  */
 export const SITEMAP_DYNAMIC_PUBLIC_PATHS = Object.freeze({
   '/tour-stats/:tourSlug': 'prerendered slugs plus the auto-expand gate',
+  '/tour-notes/:showDate':
+    'noindex night pages; not listed until the richness gate is indexable (#684)',
   '/rewind/:weekId': 'same results page as /rewind',
   '/user/:userId': 'noindex public profiles',
   '/join/:code': 'personalized invite',

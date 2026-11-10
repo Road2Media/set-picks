@@ -1092,6 +1092,33 @@ test("pools: owner cannot change bandId away from phish", async () => {
   );
 });
 
+test("public_show_notes: anonymous read, no client write, context stays closed", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "public_show_notes", "2026-08-01"), {
+      showDate: "2026-08-01",
+      headline: "08/01/26: Harry Hood bustout",
+      paragraphs: ["08/01/26.", "Bustout: Harry Hood (a 412 show gap)."],
+    });
+    await setDoc(doc(adminDb, "comms_show_context", "2026-08-01"), {
+      showDate: "2026-08-01",
+      set_songs: { set1: ["Secret Song"] },
+    });
+  });
+  await assertSucceeds(getDoc(doc(anon(), "public_show_notes", "2026-08-01")));
+  await assertFails(
+    setDoc(doc(anon(), "public_show_notes", "2026-08-02"), { showDate: "2026-08-02" })
+  );
+  await assertFails(
+    setDoc(doc(signedInAs("alice"), "public_show_notes", "2026-08-02"), {
+      showDate: "2026-08-02",
+    })
+  );
+  await assertFails(getDoc(doc(anon(), "comms_show_context", "2026-08-01")));
+  await assertFails(
+    getDoc(doc(signedInAs("alice"), "comms_show_context", "2026-08-01"))
+  );
+});
+
 test("official_setlists: admin may write bandId phish and a legacy doc stays readable", async () => {
   await seed(async (adminDb) => {
     await setDoc(doc(adminDb, "official_setlists", "2026-08-01"), {

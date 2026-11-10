@@ -180,6 +180,21 @@ for (const route of PRERENDER_ROUTES) {
   assertRouteHtml(html, route, `fixture ${route.path}`);
 }
 
+const tourNotesRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-notes');
+assert(tourNotesRoute, 'expected /tour-notes prerender entry (#684)');
+assert(
+  tourNotesRoute.robots === 'noindex, follow',
+  '/tour-notes stays noindex until live notes clear the richness gate (#684)',
+);
+const tourNotesHtml = injectPrerenderHtml(shell, tourNotesRoute);
+assert(tourNotesHtml.includes('noindex, follow'), '/tour-notes prerender must include noindex');
+assert(!tourNotesHtml.includes('officialSetlist'), '/tour-notes prerender must not include a setlist');
+assert(!tourNotesHtml.includes('set_songs'), '/tour-notes prerender must not include set songs');
+assert(
+  tourNotesHtml.includes('Lock six slots'),
+  '/tour-notes prerender must say slot',
+);
+
 const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/phish-at-msg');
 const msgEnrichment = buildMsgGardenPrerenderEnrichment(null, msgRoute.canonicalUrl);
 const msgHtml = injectPrerenderHtml(shell, msgRoute, msgEnrichment);

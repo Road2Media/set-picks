@@ -134,6 +134,14 @@ Public surface: `/tour-stats` + `/tour-stats/:tourSlug` (kebab-case labels from 
 
 **GEO / LLM brief (#930):** `/llms.txt` restates those three definitions and deep-links the summer slug so agents can cite the live tour page, not only home.
 
+### Show notes (#684) — not indexed yet
+
+| ID | Query | Target path |
+|----|--------|-------------|
+| N1 | `phish show notes` / `phish bustout [show date]` | `/tour-notes`, `/tour-notes/YYYY-MM-DD` |
+
+`noindex, follow` until `PUBLIC_SHOW_NOTES_INDEXABLE` is turned on. Not in the sitemap or `llms.txt`. Do not request indexing. A note names the opener, the encore, and a bustout or a few songs new to that tour. It does not list the set. N1 is not a weekly measurement row until that flag changes.
+
 ### SERP snapshot (2026-08, owner notes)
 
 | Query | Position / note | Top competitors |
