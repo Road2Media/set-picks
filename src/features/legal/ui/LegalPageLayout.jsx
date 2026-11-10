@@ -7,6 +7,7 @@ import {
   PUBLIC_SUPPORT_LABEL,
   PUBLIC_SUPPORT_MAILTO,
 } from '../../../shared/config/supportContact';
+import { AD_PREFERENCES_HREF } from '../../ads/adPreferencesPath';
 import { resolveLegalBackNav } from '../model/legalBackNav';
 
 /**
@@ -78,6 +79,12 @@ export default function LegalPageLayout({
                 className="text-slate-400 underline decoration-slate-600 underline-offset-2 transition-colors hover:text-slate-200"
               >
                 Terms of Service
+              </Link>
+              <Link
+                to={AD_PREFERENCES_HREF}
+                className="text-slate-400 underline decoration-slate-600 underline-offset-2 transition-colors hover:text-slate-200"
+              >
+                Ad preferences
               </Link>
               <a
                 href={PUBLIC_SUPPORT_MAILTO}

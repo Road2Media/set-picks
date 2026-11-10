@@ -95,7 +95,15 @@ or production condition does not fill the unit on localhost. The in-app
 default stays off. Do not change Remote Config from a pull request.
 Operator steps: `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`.
 
-(2026-11-10: house-promo channel signal and the 60 second fetch floor.)
+Advertising consent is also off unless both `VITE_CMP_PROVIDER` and
+`VITE_CMP_SITE_ID` are set. The only provider value is
+`google-funding-choices`. Leave them unset. No consent script loads, and
+`useAdConsent()` keeps third-party ad scripts blocked. GA4, Auth, and
+Firestore are not gated by that choice. Operator steps:
+`docs/ADS_CONSENT_RUNBOOK.md`.
+
+(2026-11-10: house-promo channel signal and the 60 second fetch floor.
+2026-11-10: CMP env stays unset; Funding Choices does not load.)
 
 ## 3 — CI verify matrix (run before every push)
 

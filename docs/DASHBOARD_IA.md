@@ -68,7 +68,7 @@ Primary nav **label** is **Account**. Path prefix stays `/dashboard/profile/*` (
 |---------|------|----------------|
 | **Profile** | `/dashboard/profile` | Handle, favorite song, avatar, badges. Appearance helper is an **InfoTooltip**. Prominent **View public profile** CTA. Quiet **View personal stats** link. |
 | **Messages** | `/dashboard/profile/notifications` | Inbox only — Unopened / Read / Archived; archive + delete. No prefs accordion. |
-| **Preferences** | `/dashboard/profile/account` | Sign-in, logout, legal, install/PWA, notification prefs (per-channel `notificationPrefs.push`, `.inApp`, and `.email`, #1045), and Hide crowd pulse (`users.gamePrefs.hideCrowdPulse`, #694). That switch also hides Scorecard crowd % and overlap (#1043). Delete account is a text-link disclosure. Contact us is `mailto:support@setlistpickem.com` (inbound allowlist). |
+| **Preferences** | `/dashboard/profile/account` | Sign-in, logout, legal, install/PWA, notification prefs (per-channel `notificationPrefs.push`, `.inApp`, and `.email`, #1045), Hide crowd pulse (`users.gamePrefs.hideCrowdPulse`, #694), and Ad preferences (`#ad-preferences`, #421, stored in this browser only). That crowd switch also hides Scorecard crowd % and overlap (#1043). Delete account is a text-link disclosure. Contact us is `mailto:support@setlistpickem.com` (inbound allowlist). |
 
 Legacy redirects (preserve bookmarks + email deep links; query string preserved):
 

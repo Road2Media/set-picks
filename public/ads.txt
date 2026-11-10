@@ -1,0 +1,12 @@
+# ads.txt for setlistpickem.com
+# Owner: Road2 Media, LLC
+# Contact: support@setlistpickem.com
+# Updated: 2026-11-10
+#
+# This file lists authorized sellers of this site's advertising inventory.
+# There are no data records below. No seller is authorized.
+# The site does not run programmatic ads.
+#
+# A seller line waits until a real publisher id exists (Phase 4, #422).
+# Maintainer: Patrick, in the same change that turns on that network.
+# See docs/ADS_CONSENT_RUNBOOK.md

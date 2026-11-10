@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated:** September 22, 2026
+**Last updated:** November 10, 2026
 
 These Terms of Service ("Terms") govern your use of Setlist Pick 'Em ("the App"), operated by Road2 Media, LLC ("we," "us," or "our"). By creating an account or using the App you agree to these Terms.
 
@@ -8,7 +8,15 @@ These Terms of Service ("Terms") govern your use of Setlist Pick 'Em ("the App")
 Setlist Pick 'Em is an entertainment platform where players predict setlists for live Phish concerts. This is strictly an entertainment product. There are no entry fees, no cash prizes, and no wagering or gambling of any kind. No real-world value is exchanged through gameplay; the only reward is bragging rights.
 
 ## Advertisements and Monetization
-While the core gameplay is free, we reserve the right to monetize the App. This means we may display third-party advertisements, sponsorships, or promotional materials within the App. In the future, we may also introduce premium features, subscriptions, or in-app purchases. By using the App, you agree to the display of such advertisements and promotional content. 
+The core game stays free. There are no entry fees, no cash prizes, and no wagering.
+
+We may show first-party promotional messages that we write and operate, such as a house promo on Standings. Those messages are not a third-party ad network.
+
+We may later show third-party advertisements or sponsorships. None are on the site today. A third-party advertising script stays unloaded until the advertising choice in the Privacy Policy allows it.
+
+We do not sell subscriptions, premium features, or in-app purchases. We may offer those later. An ad-free paid tier is not available.
+
+By using the App, you agree to first-party promotional messages, and to third-party advertisements if we add them under the Privacy Policy. 
 
 ## Accounts
 You must create an account to play. You are responsible for keeping your sign-in credentials secure. Each person may maintain one account. If you believe your account has been compromised, contact us immediately.

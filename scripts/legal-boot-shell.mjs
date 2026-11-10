@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { AD_PREFERENCES_HREF } from '../src/features/ads/adPreferencesPath.js';
 import { SEO_CONFIG } from '../src/shared/config/seo.js';
 import {
   PUBLIC_SUPPORT_LABEL,
@@ -274,6 +275,7 @@ export function buildLegalBootShellMarkup(opts) {
     `<p class="lbs-legal-footer-links">`,
     `<a href="/privacy">Privacy Policy</a>`,
     `<a href="/terms">Terms of Service</a>`,
+    `<a href="${AD_PREFERENCES_HREF}">Ad preferences</a>`,
     `<a href="${PUBLIC_SUPPORT_MAILTO}">${PUBLIC_SUPPORT_LABEL}</a>`,
     `</p>`,
     `</footer>`,

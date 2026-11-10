@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.126.0] — 2026-11-10
+
+### Added
+- **Advertising consent gate (#421)** — Account → Preferences has Ad preferences. The default keeps a future third-party advertising script off, and that choice stays in this browser. `useAdConsent()` and `canLoadThirdPartyAdScript()` are the gate a later ad provider has to call. The Funding Choices script stays unmounted unless `VITE_CMP_PROVIDER` is `google-funding-choices` and `VITE_CMP_SITE_ID` is a real site id. Both are unset. No ad network script is in the bundle. House promos, sign-in, Firestore, and GA4 are unchanged. `public/ads.txt` authorizes no sellers. `app-ads.txt` is not published. The CSP host list is in `docs/ADS_CSP_SPIKE.md` and is not applied to `vercel.json`. Privacy and terms copy matches a site that shows first-party promos only.
+
 ## [1.125.0] — 2026-11-10
 
 ### Added
