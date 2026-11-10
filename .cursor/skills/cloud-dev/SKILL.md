@@ -1,12 +1,25 @@
 ---
 name: cloud-dev
-description: Starter skill for Cloud agents working on this codebase. Covers environment setup, dev server, auth, feature-flag-style config, the full CI verify matrix, Firestore rules tests, Cloud Functions tests, QA runners, and common testing workflows organized by codebase area. Use when starting any implementation task, debugging session, or when you need to know how to run, build, or test this project.
+description: Starter skill for Cloud agents working on this codebase. Covers environment setup, dev server, auth, feature-flag-style config, the full CI verify matrix, Firestore rules tests, Cloud Functions tests, QA runners, and common testing workflows organized by codebase area. Use when starting any implementation task, debugging session, or when you need to know how to run, build, or test this project. On an agent-queue ticket, open the intent router in leadership-crew before editing, including a player-facing UI copy sweep or a new marketing page.
 ---
 
 # Cloud Agent Dev & Test Skill
 
 Quick-reference for Cloud agents. Assumes a fresh VM with Node 20+ and
 npm available.
+
+## 0 — Skill from the ticket
+
+The factory matches a ticket to a skill `description`, then you open that
+file. `.cursor/skills/leadership-crew/SKILL.md` is the intent table. Two
+rows that otherwise get skipped:
+
+| Ticket | Open before editing |
+|--------|---------------------|
+| Player-facing UI copy sweep | `editor-in-chief` and `content/marketing/voice-guide.md`. Add `comms-drafter` when an inbox, push, or email sentence changes. Admin screens stay technical. Player copy says slot, never chair. |
+| New marketing or SEO page | `marketing-specialist`, then `editor-in-chief`. Draft in `content/marketing/`. Ship strings in landing UI and `seoRoutes.js`. Read the editorial viewport rule and `docs/SEO_GEO_PLAYBOOK.md`. |
+
+`npm run verify:marketing-voice` when the diff touches marketing prose.
 
 ## 1 — Bootstrap
 

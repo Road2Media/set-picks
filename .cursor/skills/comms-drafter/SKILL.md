@@ -4,7 +4,9 @@ description: >-
   Comms squad copy drafter for set-picks. Use when writing or revising
   communication templates in content/comms/, syncing copy to implementation
   modules, updating registry.js, or preparing channel-specific variants for
-  in-app, push, and email. Follows content/comms/README.md workflow.
+  in-app, push, and email. Also use when a player-facing UI copy sweep
+  changes an inbox, push, or email sentence. Follows content/comms/README.md
+  workflow.
 ---
 
 # Comms Drafter (set-picks)
