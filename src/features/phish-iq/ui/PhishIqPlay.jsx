@@ -3,12 +3,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import Button from '../../../shared/ui/Button';
 import Card from '../../../shared/ui/Card';
 import { trackPhishIqFinish, trackPhishIqShare, trackPhishIqStart } from '../model/phishIqAnalytics';
-import { PHISH_IQ_QUESTION_COUNT } from '../model/phishIqQuiz';
+import { formatPhishIqReveal, PHISH_IQ_QUESTION_COUNT } from '../model/phishIqQuiz';
 import { PHISH_IQ_SOURCE_URL, buildPhishIqShareText } from '../model/phishIqShare';
 
 /**
  * @param {{
- *   quiz: { date: string, questions: Array<{ id: string, prompt: string, choices: { id: string, label: string }[], answerId: string }> } | null,
+ *   quiz: { date: string, questions: Array<{ id: string, prompt: string, fact?: string, choices: { id: string, label: string }[], answerId: string }> } | null,
  *   isLoading: boolean,
  *   played: { date: string, score: number, marks: boolean[] } | null,
  *   streak?: number | null,
@@ -205,8 +205,12 @@ export default function PhishIqPlay({
         })}
       </div>
       {revealed ? (
-        <p className="mt-4 text-sm text-content-secondary" role="status">
-          {correct ? "That's the one." : `The answer is ${answer?.label || 'the other one'}.`}
+        <p className="mt-4 text-sm text-content-secondary" role="status" data-phish-iq-reveal>
+          {formatPhishIqReveal({
+            correct,
+            answerLabel: answer?.label,
+            fact: question.fact,
+          })}
         </p>
       ) : null}
       <div className="mt-5">
