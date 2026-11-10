@@ -193,7 +193,7 @@ flowchart LR
 
 | Phase | Status | Issue / PR |
 |-------|--------|-----------|
-| Phase 0 - Foundation | Not started | - |
+| Phase 0 - Foundation | Done | [#301](https://github.com/Road2Media/set-picks/issues/301) |
 | Phase 1 - bandId field | Not started | - |
 | Phase 2 - Provider wrap | Not started | - |
 | Phase 3 - Composite IDs | Not started | - |

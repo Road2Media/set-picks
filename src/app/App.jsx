@@ -4,6 +4,7 @@ import { Navigate, Routes, Route } from 'react-router-dom';
 import { registerRouteChunkLoaders } from '../shared/lib/routeChunkPrefetch';
 
 import RootAppShell from './layout/RootAppShell';
+import { BandProvider } from './providers/BandContext';
 
 // Every top-level route is lazy-loaded so direct hits on e.g.
 // `/dashboard/profile` don't pay the full dashboard+admin+pools download on
@@ -61,7 +62,13 @@ const CardShellPreviewPage = lazy(() => import('../pages/dev/CardShellPreviewPag
 function App() {
   return (
     <Routes>
-      <Route element={<RootAppShell />}>
+      <Route
+        element={
+          <BandProvider>
+            <RootAppShell />
+          </BandProvider>
+        }
+      >
         {/* Soft-nav compat inside app SPA. Marketing hard-nav uses login.html (#892). */}
         <Route path="/login" element={<LoginPage />} />
 

@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.112.0] — 2026-11-10
+
+### Added
+- **Multi-band foundation contracts (#301)** — `BandConfig` registers Phish only. Slot ids come from `FORM_FIELDS`. The footer credit is the same Mockingbird Foundation / Phish.Net link the splash and marketing shells already render. `BandProvider` wraps the main app shell, defaults to `phish`, and ignores an unknown `?band=`. Nothing reads the context yet. No Firestore writes, rules, nav, or copy changes. No declared API change. Server provider behavior is a spec in `functions/providers/_contract.md` only.
+
 ## [1.111.1] — 2026-11-09
 
 ### Changed
