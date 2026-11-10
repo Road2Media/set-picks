@@ -4,6 +4,7 @@ import {
   BRAND_SPLASH_HEADER_VINYL_MARK_SRC,
   brandSplashHeaderVinylMarkImgClassNames,
 } from '../../../shared/config/branding';
+import { PHISH_NET_FOOTER_ATTRIBUTION } from '../../../shared/config/phishLiveSource';
 import {
   MARKETING_HEADER_HEIGHT,
   MARKETING_PAGE_GUTTER_X,
@@ -72,12 +73,12 @@ export default function MarketingPageShell({ children }) {
         <p className="mt-1">
           Song and setlist data provided by{' '}
           <a
-            href="https://phish.net"
+            href={PHISH_NET_FOOTER_ATTRIBUTION.href}
             target="_blank"
             rel="noopener noreferrer"
             className="text-slate-400 underline decoration-slate-600 underline-offset-2 transition-colors hover:text-slate-200 hover:decoration-slate-400"
           >
-            The Mockingbird Foundation / Phish.Net
+            {PHISH_NET_FOOTER_ATTRIBUTION.text}
           </a>
           .
         </p>
