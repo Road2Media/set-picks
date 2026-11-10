@@ -24,6 +24,7 @@ const {
   calculateTotalScore,
   persistableActualSetlistFromOfficialDoc,
 } = require("./scoringCore");
+const { stampBandId } = require("./bandScope");
 
 /** Firestore batch write limit (same invariant as `adminRollupApi.js` / `profileApi.js`). */
 const MAX_FIRESTORE_BATCH_WRITES = 500;
@@ -140,11 +141,12 @@ async function runBackfill({
     const prior = setlistSnap.data() || {};
     const priorBustouts = Array.isArray(prior.bustouts) ? prior.bustouts : null;
     await setlistRef.set(
-      {
+      stampBandId({
         bustouts,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedBy,
-      },
+        bandId: prior.bandId,
+      }),
       { merge: true }
     );
 

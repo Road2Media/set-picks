@@ -921,3 +921,200 @@ test("rewind: picks are readable when signed in and never client-writable (#1142
     })
   );
 });
+
+// ─── bandId (#605) — tolerant until the backfill is verified ────────────────
+
+test("picks: create without bandId still succeeds (pre-backfill clients)", async () => {
+  const db = signedInAs("alice");
+  await assertSucceeds(
+    setDoc(doc(db, "picks", "2026-08-01_alice"), {
+      userId: "alice",
+      showDate: "2026-08-01",
+      picks: { s1o: "Tweezer" },
+    })
+  );
+});
+
+test("picks: create with bandId phish succeeds", async () => {
+  const db = signedInAs("alice");
+  await assertSucceeds(
+    setDoc(doc(db, "picks", "2026-08-01_alice"), {
+      userId: "alice",
+      showDate: "2026-08-01",
+      bandId: "phish",
+      picks: { s1o: "Tweezer" },
+    })
+  );
+});
+
+test("picks: create with a non-phish bandId fails", async () => {
+  const db = signedInAs("alice");
+  await assertFails(
+    setDoc(doc(db, "picks", "2026-08-01_alice"), {
+      userId: "alice",
+      showDate: "2026-08-01",
+      bandId: "goose",
+      picks: {},
+    })
+  );
+});
+
+test("picks: update may introduce bandId phish on a legacy doc", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "picks", "2026-08-01_alice"), {
+      userId: "alice",
+      showDate: "2026-08-01",
+      picks: { s1o: "Tweezer" },
+    });
+  });
+  const db = signedInAs("alice");
+  await assertSucceeds(
+    updateDoc(doc(db, "picks", "2026-08-01_alice"), { bandId: "phish" })
+  );
+});
+
+test("picks: update cannot change bandId phish to another band", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "picks", "2026-08-01_alice"), {
+      userId: "alice",
+      showDate: "2026-08-01",
+      bandId: "phish",
+      picks: {},
+    });
+  });
+  const db = signedInAs("alice");
+  await assertFails(
+    updateDoc(doc(db, "picks", "2026-08-01_alice"), { bandId: "goose" })
+  );
+});
+
+test("picks: a doc with no bandId is still readable", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "picks", "2026-08-01_bob"), {
+      userId: "bob",
+      showDate: "2026-08-01",
+      picks: { s1o: "Reba" },
+    });
+  });
+  const snap = await assertSucceeds(
+    getDoc(doc(signedInAs("alice"), "picks", "2026-08-01_bob"))
+  );
+  assert.equal(snap.data().bandId, undefined);
+  assert.equal(snap.data().picks.s1o, "Reba");
+});
+
+test("pools: create without bandId still succeeds", async () => {
+  const db = signedInAs("alice");
+  await assertSucceeds(
+    setDoc(doc(db, "pools", "pool-legacy"), {
+      name: "Legacy",
+      ownerId: "alice",
+      members: ["alice"],
+      status: "active",
+    })
+  );
+});
+
+test("pools: create with bandId phish succeeds", async () => {
+  const db = signedInAs("alice");
+  await assertSucceeds(
+    setDoc(doc(db, "pools", "pool-phish"), {
+      name: "Phish",
+      ownerId: "alice",
+      members: ["alice"],
+      status: "active",
+      bandId: "phish",
+    })
+  );
+});
+
+test("pools: create with a non-phish bandId fails", async () => {
+  const db = signedInAs("alice");
+  await assertFails(
+    setDoc(doc(db, "pools", "pool-goose"), {
+      name: "Goose",
+      ownerId: "alice",
+      members: ["alice"],
+      bandId: "goose",
+    })
+  );
+});
+
+test("pools: self-join may also set bandId phish", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "pools", "pool1"), {
+      name: "Legacy Crew",
+      inviteCode: "ABCDE",
+      ownerId: "alice",
+      members: ["alice"],
+      status: "active",
+    });
+  });
+  const db = signedInAs("bob");
+  await assertSucceeds(
+    updateDoc(doc(db, "pools", "pool1"), {
+      members: ["alice", "bob"],
+      bandId: "phish",
+    })
+  );
+});
+
+test("pools: self-join cannot set a non-phish bandId", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "pools", "pool1"), {
+      name: "Legacy Crew",
+      ownerId: "alice",
+      members: ["alice"],
+      status: "active",
+    });
+  });
+  const db = signedInAs("bob");
+  await assertFails(
+    updateDoc(doc(db, "pools", "pool1"), {
+      members: ["alice", "bob"],
+      bandId: "goose",
+    })
+  );
+});
+
+test("pools: owner cannot change bandId away from phish", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "pools", "pool1"), {
+      name: "Crew",
+      ownerId: "alice",
+      members: ["alice"],
+      bandId: "phish",
+    });
+  });
+  const db = signedInAs("alice");
+  await assertFails(
+    updateDoc(doc(db, "pools", "pool1"), { bandId: "goose" })
+  );
+});
+
+test("official_setlists: admin may write bandId phish and a legacy doc stays readable", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "official_setlists", "2026-08-01"), {
+      showDate: "2026-08-01",
+      status: "COMPLETED",
+    });
+  });
+  await assertSucceeds(
+    getDoc(doc(signedInAs("alice"), "official_setlists", "2026-08-01"))
+  );
+  const adminDb = signedInAs("mod", { admin: true });
+  await assertSucceeds(
+    setDoc(doc(adminDb, "official_setlists", "2026-08-02"), {
+      showDate: "2026-08-02",
+      status: "LIVE",
+      bandId: "phish",
+    })
+  );
+  await assertFails(
+    setDoc(doc(adminDb, "official_setlists", "2026-08-03"), {
+      showDate: "2026-08-03",
+      status: "LIVE",
+      bandId: "goose",
+    })
+  );
+});

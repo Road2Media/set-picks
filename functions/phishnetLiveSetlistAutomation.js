@@ -6,6 +6,7 @@ const {
   sanitizeUpstreamError,
   syncLiveSetlistPublicStatus,
 } = require("./liveSetlistOutage");
+const { stampBandId } = require("./bandScope");
 
 const LIVE_AUTOMATION_COLLECTION = "live_setlist_automation";
 const OFFICIAL_SETLISTS_COLLECTION = "official_setlists";
@@ -1170,10 +1171,10 @@ async function maybeAutoFinalize({
     // Stamp post-rollup so a rollup failure doesn't leave a misleading
     // "already finalized" flag that would suppress future retries.
     await automationRef.set(
-      {
+      stampBandId({
         autoFinalizedAt: admin.firestore.Timestamp.fromMillis(nowMs),
         autoFinalizeTrigger: decision.reason,
-      },
+      }),
       { merge: true }
     );
     return {
@@ -1316,14 +1317,14 @@ async function pollSingleShowDate({
     if (rows.length === 0) {
       const success = successStamp();
       await automationRef.set(
-        {
+        stampBandId({
           showDate,
           enabled: automation.enabled !== false,
           lastPolledAt: admin.firestore.FieldValue.serverTimestamp(),
           lastResult: "no-rows",
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           ...success.fields,
-        },
+        }),
         { merge: true }
       );
       return finish(
@@ -1499,7 +1500,7 @@ async function pollSingleShowDate({
     if (prevSignature === signature && setlistPayloadEqual(prev, nextPayload)) {
       const success = successStamp();
       await automationRef.set(
-        {
+        stampBandId({
           showDate,
           enabled: automation.enabled !== false,
           lastPolledAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1508,7 +1509,7 @@ async function pollSingleShowDate({
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           ...timingStateUpdate,
           ...success.fields,
-        },
+        }),
         { merge: true }
       );
       const autoFinalize = await maybeAutoFinalize(autoFinalizeContext);
@@ -1525,7 +1526,7 @@ async function pollSingleShowDate({
       );
     }
 
-    const setlistPayload = {
+    const setlistPayload = stampBandId({
       showDate,
       status: "LIVE",
       isScored: false,
@@ -1547,9 +1548,10 @@ async function pollSingleShowDate({
         lastFetchedAt: admin.firestore.FieldValue.serverTimestamp(),
         pollMode: force ? "manual" : "scheduled",
       },
-    };
+      bandId: prev.bandId,
+    });
     const success = successStamp();
-    const automationPayload = {
+    const automationPayload = stampBandId({
       showDate,
       enabled: automation.enabled !== false,
       lastPolledAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1557,7 +1559,8 @@ async function pollSingleShowDate({
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       ...timingStateUpdate,
       ...success.fields,
-    };
+      bandId: automation.bandId,
+    });
     const batch = db.batch();
     batch.set(setlistRef, setlistPayload, { merge: true });
     batch.set(automationRef, automationPayload, { merge: true });
@@ -1641,7 +1644,9 @@ async function pollSingleShowDate({
     if (plan.sendEscalation) {
       failurePatch.outageEscalatedAt = admin.firestore.FieldValue.serverTimestamp();
     }
-    await automationRef.set(failurePatch, { merge: true });
+    await automationRef.set(stampBandId({ ...failurePatch, bandId: automation.bandId }), {
+      merge: true,
+    });
     logger?.error?.("live setlist poll failed", {
       showDate,
       failureCount,
