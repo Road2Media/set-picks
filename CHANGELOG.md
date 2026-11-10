@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.122.1] — 2026-11-10
+
+### Added
+- **Wider recommendation backtest (#1002)** — The offline harness can score a 3-year show window (134 shows on this run, capped at 180) and compare `playProb` to what played and to historical pick cards. On 94 nights the current model still beats the simple lists, and the published percent is not a real frequency (a flat 6.5% guess fits better). Real cards from April–October 2026 miss the set less often than a card built from each slot's top suggestion. That does not support shipping Predictive Mode. The live recommendation file stays on the 1-year / 120-show window. No scoring change, no model-weight change, and no new route or callable.
+
 ## [1.122.0] — 2026-11-10
 
 ### Changed
