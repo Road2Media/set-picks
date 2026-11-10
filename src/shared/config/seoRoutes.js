@@ -274,7 +274,7 @@ function buildHundredthShowJsonLd() {
 /** Annual roll-up (#1141). Not a tour slug. */
 const ANNUAL_2026_TITLE = "2026 Phish Tour Statistics | Setlist Pick'Em";
 const ANNUAL_2026_DESCRIPTION =
-  '2026 Phish tour setlist statistics across every tour that year: shows, unique songs, most-played songs, and bustouts. December 31 counts for 2026. January 1 counts for 2027.';
+  '2026 Phish tour statistics across every tour that year: shows, different songs, most-played songs, and bustouts.';
 const ANNUAL_2026_URL = `${SEO_CONFIG.siteUrl}/tour-stats/2026`;
 /**
  * Static opt-in slugs that always prerender facts (#928).
@@ -949,9 +949,7 @@ export const PRERENDER_ROUTES = [
     canonicalUrl: ANNUAL_2026_URL,
     h1: '2026 Phish tour statistics',
     paragraphs: [
-      'Every 2026 Phish tour on one page: shows played, unique songs, most-played songs, and bustouts.',
-      'A show counts for the calendar year of its date. December 30 and December 31, 2026 count for 2026. January 1 and January 2, 2027 count for 2027.',
-      'Show counts and song-row totals add the tour pages. A song played on two tours counts once among unique songs, and its plays add up. Not a night-by-night setlist archive.',
+      'Every 2026 Phish tour on one page: the shows, the different songs, the most-played songs, and the bustouts.',
     ],
     buildJsonLd: buildAnnual2026JsonLd,
   },

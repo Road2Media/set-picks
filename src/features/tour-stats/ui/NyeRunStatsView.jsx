@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 
 import { HUNDREDTH_SHOW_PATH } from '../../hundredth-show/public';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
+import { formatSongNightCount, songListNeedsPlayFootnote } from '../model/songNightCount';
+import { SongPlayCountMarker, SongPlayCountNote } from './SongPlayCountNote';
 
 /**
  * Announced New Year's Run (#1144). Presentational.
@@ -72,16 +74,20 @@ export default function NyeRunStatsView({
             Most-played songs on this run
           </h2>
           <ol className="space-y-1.5 text-sm text-slate-200">
-            {topSongs.map((row, index) => (
+            {topSongs.map((row, index) => {
+              const count = formatSongNightCount(row);
+              return (
               <li key={row.title}>
                 <span className="mr-2 text-slate-500">{index + 1}.</span>
                 <span className="font-semibold text-white">{row.title}</span>
                 <span className="text-slate-400">
                   {' '}
-                  · {row.timesPlayed} plays
+                  · {count.label}
+                  {count.showMarker ? <SongPlayCountMarker /> : null}
                 </span>
               </li>
-            ))}
+              );
+            })}
           </ol>
           <p className="mt-3 text-sm text-slate-400">
             Totals only. Not a night&apos;s setlist. Data courtesy of{' '}
@@ -115,6 +121,10 @@ export default function NyeRunStatsView({
           has the Garden totals.
         </p>
       )}
+
+      {songListNeedsPlayFootnote(topSongs) ? (
+        <SongPlayCountNote className="mb-2 text-sm leading-snug text-slate-400" />
+      ) : null}
 
       <div className="mt-6 flex flex-col items-center gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-slate-400">
