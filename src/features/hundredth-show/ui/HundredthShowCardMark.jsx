@@ -15,7 +15,7 @@ export default function HundredthShowCardMark({ showDate, mode, search }) {
   const mark = hundredthShowCardMark(showDate, resolved);
   if (!mark) return null;
   return (
-    <p className="max-w-full min-w-0 break-words text-[10px] font-black uppercase tracking-widest text-brand-primary">
+    <p className="max-w-full min-w-0 wrap-break-word text-[10px] font-black uppercase tracking-widest text-brand-primary">
       <span className="sr-only">{resolveHundredthShowDate(resolved).dryRun ? 'Dry run. ' : ''}</span>
       {mark.eyebrow}
       <span className="mt-0.5 block font-bold normal-case tracking-normal text-content-secondary">

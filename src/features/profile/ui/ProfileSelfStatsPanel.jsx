@@ -93,7 +93,7 @@ export default function ProfileSelfStatsPanel({ uid, section = 'all' }) {
                   </p>
                   <InfoTooltip label={label} definition={definition} />
                 </div>
-                <div className="flex min-h-[3.25rem] items-center justify-center rounded-2xl border border-border-subtle bg-surface-field px-2 py-3">
+                <div className="flex min-h-13 items-center justify-center rounded-2xl border border-border-subtle/50 bg-surface-field px-2 py-3">
                   <span className="text-2xl font-black tabular-nums leading-none tracking-tight text-brand-primary">
                     {statsLoading && key !== 'vintage' ? '…' : value}
                   </span>

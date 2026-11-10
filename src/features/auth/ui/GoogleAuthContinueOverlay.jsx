@@ -11,7 +11,7 @@ import { resolveGoogleContinueMessage } from './googleContinueCopy';
 export default function GoogleAuthContinueOverlay({ intent = 'signin' }) {
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-brand-bg/85 px-6 backdrop-blur-sm"
+      className="fixed inset-0 z-200 flex items-center justify-center bg-brand-bg/85 px-6 backdrop-blur-xs"
       role="status"
       aria-live="polite"
       aria-busy="true"

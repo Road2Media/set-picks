@@ -70,7 +70,7 @@ export default function PoolHubActiveShow({
             {eyebrow}
           </p>
           <p className="font-display text-lg font-bold leading-snug text-white md:text-xl">
-            <span className="break-words text-brand-primary">{showLabel}</span>
+            <span className="wrap-break-word text-brand-primary">{showLabel}</span>
           </p>
           <HundredthShowCardMark showDate={showDate} />
           {picksStatusLoading && !isLocked ? (
@@ -92,7 +92,7 @@ export default function PoolHubActiveShow({
               type="button"
               variant="primary"
               size="md"
-              className="w-full min-w-[12rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-48 sm:w-auto uppercase tracking-widest"
               onClick={() =>
                 navigate('/dashboard/standings', {
                   state: { targetPoolId: poolId },
@@ -104,7 +104,7 @@ export default function PoolHubActiveShow({
             </Button>
           ) : picksStatusLoading ? (
             <div
-              className="flex h-11 w-full min-w-[12rem] items-center justify-center rounded-xl border border-border-subtle bg-surface-field sm:w-auto"
+              className="flex h-11 w-full min-w-48 items-center justify-center rounded-xl border border-border-subtle/50 bg-surface-field sm:w-auto"
               aria-busy="true"
               aria-label="Loading picks status"
             >
@@ -115,7 +115,7 @@ export default function PoolHubActiveShow({
               type="button"
               variant="primary"
               size="md"
-              className="w-full min-w-[12rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-48 sm:w-auto uppercase tracking-widest"
               onClick={() => navigate('/dashboard')}
             >
               <ListMusic className="mr-2 h-5 w-5 shrink-0" aria-hidden />
@@ -126,7 +126,7 @@ export default function PoolHubActiveShow({
               type="button"
               variant="secondary"
               size="md"
-              className="w-full min-w-[12rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-48 sm:w-auto uppercase tracking-widest"
               onClick={() => navigate('/dashboard')}
             >
               <Pencil className="mr-2 h-5 w-5 shrink-0" aria-hidden />

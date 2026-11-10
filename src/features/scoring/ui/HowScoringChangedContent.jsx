@@ -52,7 +52,7 @@ export default function HowScoringChangedContent() {
   const rows = scoringLadderComparisonRows();
 
   return (
-    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm ring-1 ring-slate-900/5 md:p-8">
+    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-xs ring-1 ring-slate-900/5 md:p-8">
       <p className={BODY}>
         If you&apos;ve been playing Setlist Pick&apos;em, two things are changing: how some picks
         are scored, and how we rank players who finish with the same points.
@@ -126,11 +126,11 @@ export default function HowScoringChangedContent() {
       <div className="mt-6" aria-label="Cards in each score bucket, then and on this ladder">
         <div className={`mb-2 flex justify-end gap-4 ${MARKETING_EDITORIAL_TYPE_META} font-semibold text-slate-500`}>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2 w-4 rounded-sm bg-slate-400" aria-hidden="true" />
+            <span className="inline-block h-2 w-4 rounded-xs bg-slate-400" aria-hidden="true" />
             Then
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2 w-4 rounded-sm bg-teal-700" aria-hidden="true" />
+            <span className="inline-block h-2 w-4 rounded-xs bg-teal-700" aria-hidden="true" />
             This ladder
           </span>
         </div>

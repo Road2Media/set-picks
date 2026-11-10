@@ -141,7 +141,7 @@ export default function CrowdNightPulsePanel({
         {showPlayedLegend ? (
           <p className="mt-2 inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-content-secondary">
             <span
-              className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm bg-brand-primary/80"
+              className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs bg-brand-primary/80"
               aria-hidden
             />
             Highlight = played in setlist
@@ -164,7 +164,7 @@ export default function CrowdNightPulsePanel({
         <Link
           to={statsHref}
           onClick={onFullStatsClick}
-          className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle pt-2 text-[10px] font-black uppercase tracking-widest text-brand-primary"
+          className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle/50 pt-2 text-[10px] font-black uppercase tracking-widest text-brand-primary"
         >
           <span className="inline-flex items-center gap-1.5">
             Full crowd stats

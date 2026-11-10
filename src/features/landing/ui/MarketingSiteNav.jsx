@@ -68,7 +68,7 @@ export function MarketingMobileMenu({ className = 'lg:hidden' }) {
     <div className={`relative ${className}`.trim()}>
       <button
         type="button"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-100 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-100 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={open ? 'Close menu' : 'Open menu'}
@@ -96,7 +96,7 @@ export function MarketingMobileMenu({ className = 'lg:hidden' }) {
                   setOpen(false);
                   scrollMarketingToTop();
                 }}
-                className={`block px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-accent-blue ${
+                className={`block px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-accent-blue ${
                   active
                     ? 'bg-white/10 text-white'
                     : 'text-slate-200 hover:bg-white/5 hover:text-white'

@@ -45,13 +45,13 @@ export default function UserPoolsSection({
       ) : null}
 
       {showListLoading ? (
-        <div className="rounded-3xl border border-dashed border-border-muted bg-surface-glass p-8 text-center shadow-inset-glass">
+        <div className="rounded-3xl border border-dashed border-border-muted/60 bg-surface-glass/32 p-8 text-center shadow-inset-glass">
           <p className="font-bold text-content-secondary">Loading your pools…</p>
         </div>
       ) : null}
 
       {showEmpty ? (
-        <div className="rounded-3xl border border-dashed border-border-muted bg-surface-glass p-8 text-center shadow-inset-glass">
+        <div className="rounded-3xl border border-dashed border-border-muted/60 bg-surface-glass/32 p-8 text-center shadow-inset-glass">
           <p className="font-bold text-content-secondary">You are not in any pools yet.</p>
           <p className="mt-1 text-sm text-content-secondary/90">
             {emptyAction ? (

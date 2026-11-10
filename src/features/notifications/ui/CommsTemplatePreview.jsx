@@ -42,11 +42,11 @@ export default function CommsTemplatePreview() {
                   <h2 className="font-display text-lg font-bold uppercase tracking-tight text-white">
                     {entry?.displayName || templateId}
                   </h2>
-                  <code className="rounded bg-surface-inset px-2 py-0.5 text-xs font-bold text-content-secondary">
+                  <code className="rounded-sm bg-surface-inset/72 px-2 py-0.5 text-xs font-bold text-content-secondary">
                     {templateId}
                   </code>
                   {entry?.triggerId ? (
-                    <code className="rounded bg-surface-inset px-2 py-0.5 text-xs font-bold text-brand-primary">
+                    <code className="rounded-sm bg-surface-inset/72 px-2 py-0.5 text-xs font-bold text-brand-primary">
                       {entry.triggerId}
                     </code>
                   ) : null}

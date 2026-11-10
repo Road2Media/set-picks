@@ -191,7 +191,7 @@ export default function Phase1CardShellPreview() {
                   Invite friends to a pool — share the board, own the night.
                 </p>
               </div>
-              <Button type="button" variant="secondary" size="sm" className="shrink-0 !px-3 !py-1.5 text-[11px]">
+              <Button type="button" variant="secondary" size="sm" className="shrink-0 px-3! py-1.5! text-[11px]">
                 Invite
               </Button>
             </div>
@@ -207,7 +207,7 @@ export default function Phase1CardShellPreview() {
                 Click Invite to send a personalized invite via text or social
               </p>
             </div>
-            <Button type="button" variant="secondary" size="sm" className="shrink-0 !px-3 !py-1.5 text-[11px]">
+            <Button type="button" variant="secondary" size="sm" className="shrink-0 px-3! py-1.5! text-[11px]">
               Invite
             </Button>
           </RowCard>

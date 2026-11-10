@@ -106,7 +106,7 @@ export default function PicksLockTimingBanner({ show, showStatus }) {
       <button
         type="button"
         onClick={dismiss}
-        className="-mr-1 -mt-0.5 rounded-md p-1 text-content-secondary transition hover:bg-surface-inset hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="-mr-1 -mt-0.5 rounded-md p-1 text-content-secondary transition hover:bg-surface-inset/72 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand"
         aria-label="Dismiss picks lock timing"
       >
         <X className="h-3.5 w-3.5" aria-hidden />

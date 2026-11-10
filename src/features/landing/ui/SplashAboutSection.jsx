@@ -25,7 +25,7 @@ export default function SplashAboutSection({
             <h2
               ref={headingRef}
               tabIndex={-1}
-              className="font-display text-[6.5vw] sm:text-4xl md:text-5xl lg:text-6xl font-bold italic text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-blue-500 mb-2 lg:mb-8 outline-none focus-visible:ring-2 focus-visible:ring-teal-400 rounded-md leading-tight whitespace-nowrap sm:whitespace-normal"
+              className="font-display text-[6.5vw] sm:text-4xl md:text-5xl lg:text-6xl font-bold italic text-transparent bg-clip-text bg-linear-to-r from-red-500 to-blue-500 mb-2 lg:mb-8 outline-hidden focus-visible:ring-2 focus-visible:ring-teal-400 rounded-md leading-tight whitespace-nowrap sm:whitespace-normal"
             >
               About Setlist Pick &apos;Em
             </h2>

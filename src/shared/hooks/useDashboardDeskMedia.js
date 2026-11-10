@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * Same query as the Tailwind `desk` screen (`tailwind.config.js`).
+ * Same query as the Tailwind `desk` variant (`src/index.css`).
  * Phone landscape fails the height half, so it stays mobile chrome (#705).
  */
 export const DASHBOARD_DESK_MEDIA_QUERY = '(min-width: 768px) and (min-height: 480px)';

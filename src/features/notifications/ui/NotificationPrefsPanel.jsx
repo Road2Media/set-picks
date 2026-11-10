@@ -23,7 +23,7 @@ function ChannelToggle({ description, disabled, checked, label, onChange }) {
       </span>
       <input
         type="checkbox"
-        className="mt-1 h-4 w-4 shrink-0 rounded border-border-muted text-brand-primary focus:ring-brand-primary"
+        className="mt-1 h-4 w-4 shrink-0 rounded-sm border-border-muted/60 text-brand-primary focus:ring-brand-primary"
         checked={checked}
         disabled={disabled}
         onChange={(e) => onChange(e.target.checked)}
@@ -70,7 +70,7 @@ function NotificationAccordionSection({
         aria-expanded={open}
         aria-controls={panelId}
         onClick={onToggle}
-        className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel"
+        className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-white/4 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel"
       >
         {leading}
         <span className="min-w-0 flex-1">
@@ -321,7 +321,7 @@ export default function NotificationPrefsPanel({
               : 'Get lock reminders, score updates, and recap drops on your phone. Add Setlist Pick \'Em to your home screen for reliable push, then tap Enable and allow notifications.'}
           </p>
           {!showPushDisable && disableUnavailableCopy ? (
-            <p className="mt-3 rounded-xl border border-border-muted bg-surface-inset/60 px-3 py-2 text-xs font-bold leading-relaxed text-content-secondary">
+            <p className="mt-3 rounded-xl border border-border-muted/60 bg-surface-inset/60 px-3 py-2 text-xs font-bold leading-relaxed text-content-secondary">
               {disableUnavailableCopy}
             </p>
           ) : null}
@@ -356,7 +356,7 @@ export default function NotificationPrefsPanel({
                 type="button"
                 onClick={triggerPushCanary}
                 disabled={status !== 'enabled' || canaryStatus === 'working'}
-                className="rounded-lg border border-border-muted bg-surface-inset px-3 py-1.5 text-xs font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg border border-border-muted/60 bg-surface-inset/72 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel/50 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Send test notification"
               >
                 {canaryStatus === 'working' ? 'Sending...' : 'Send test notification'}

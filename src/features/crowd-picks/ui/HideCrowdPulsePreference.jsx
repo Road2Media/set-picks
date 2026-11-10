@@ -24,7 +24,7 @@ export default function HideCrowdPulsePreference() {
         </span>
         <input
           type="checkbox"
-          className="mt-1 h-4 w-4 shrink-0 rounded border-border-muted text-brand-primary focus:ring-brand-primary"
+          className="mt-1 h-4 w-4 shrink-0 rounded-sm border-border-muted/60 text-brand-primary focus:ring-brand-primary"
           checked={hideCrowdPulse}
           disabled={isSaving}
           aria-label="Hide crowd pulse"

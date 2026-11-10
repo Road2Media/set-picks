@@ -102,7 +102,7 @@ export default function PublicTourStatsPanel({
           <div className="relative">
             <select
               id="tour-stats-filter"
-              className="w-full cursor-pointer appearance-none rounded-xl border-2 border-teal-400 bg-brand-bg-deep py-2 pl-3 pr-10 text-sm font-semibold text-white outline-none transition-colors focus-visible:border-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full cursor-pointer appearance-none rounded-xl border-2 border-teal-400 bg-brand-bg-deep py-2 pl-3 pr-10 text-sm font-semibold text-white outline-hidden transition-colors focus-visible:border-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
               value={activeSlug}
               onChange={(e) => onSelectTour(e.target.value)}
               disabled={indexLoading}
@@ -194,7 +194,7 @@ export default function PublicTourStatsPanel({
         </p>
         <AppDocumentAuthLink
           signup
-          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-[0_0_40px_-10px_rgba(45,212,191,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_-15px_rgba(45,212,191,0.7)] active:translate-y-0 active:scale-[0.98]"
+          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-linear-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-glow-brand transition-all hover:-translate-y-0.5 hover:shadow-glow-brand-lg active:translate-y-0 active:scale-[0.98]"
         >
           Make picks for this tour
         </AppDocumentAuthLink>

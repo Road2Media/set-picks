@@ -20,7 +20,7 @@ export default function DashboardMobileChromeBar({ heading, headingId, children 
   return (
     <header
       aria-labelledby={headingId}
-      className="flex min-h-[3.5rem] items-center border-b border-border-subtle/35 bg-brand-bg/95 px-4 py-2 backdrop-blur-sm supports-[backdrop-filter]:backdrop-saturate-125"
+      className="flex min-h-14 items-center border-b border-border-subtle/35 bg-brand-bg/95 px-4 py-2 backdrop-blur-xs supports-backdrop-filter:backdrop-saturate-125"
     >
       <h3 id={headingId} className="sr-only">
         {heading}

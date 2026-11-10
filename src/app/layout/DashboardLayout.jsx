@@ -214,18 +214,18 @@ export default function DashboardLayout() {
     <ScoringRulesModalProvider>
     <CommsInboxProvider userId={user?.uid}>
     <div
-      className="flex h-[100dvh] min-h-0 w-full bg-transparent text-white overflow-hidden desk:h-screen"
+      className="flex h-dvh min-h-0 w-full bg-transparent text-white overflow-hidden desk:h-screen"
       style={{ '--dashboard-mobile-chrome-h': mobileChromeH }}
     >
       
       {/* DESKTOP SIDEBAR — `desk` is width and height, so phone landscape stays mobile */}
-      <nav className="hidden desk:flex flex-col w-64 overflow-visible bg-surface-chrome border-r border-border-muted/65 p-4 z-10">
+      <nav className="hidden desk:flex flex-col w-64 overflow-visible bg-surface-chrome/50 border-r border-border-muted/65 p-4 z-10">
       <div className="mb-6 overflow-visible py-2">
           <h1 className="w-full overflow-visible text-center leading-none">
             <Link
               to="/dashboard"
               onClick={scrollAppToTop}
-              className="block w-full overflow-visible outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm hover:opacity-80 transition-opacity md:flex md:justify-center"
+              className="block w-full overflow-visible outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xs hover:opacity-80 transition-opacity md:flex md:justify-center"
               aria-label="Setlist Pick 'Em — dashboard home"
             >
               <span className={brandWordmarkDashboardSidebarScaleWrapperClassNames}>
@@ -461,7 +461,7 @@ export default function DashboardLayout() {
       <nav
         ref={primaryNavRef}
         data-mobile-primary-nav
-        className="desk:hidden fixed inset-x-0 bottom-0 z-50 w-full border-t border-border-subtle/35 bg-[linear-gradient(to_top,rgb(var(--brand-bg-deep)_/_0.76),rgb(var(--brand-bg)_/_0.60))] pb-[env(safe-area-inset-bottom,0px)] shadow-[inset_0_1px_0_0_rgb(var(--brand-primary)/0.12),0_-10px_28px_-14px_rgba(15,10,46,0.85)] ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl supports-[backdrop-filter]:backdrop-blur-2xl supports-[backdrop-filter]:backdrop-saturate-150"
+        className="desk:hidden fixed inset-x-0 bottom-0 z-50 w-full border-t border-border-subtle/35 bg-[linear-gradient(to_top,rgb(var(--brand-bg-deep)/0.76),rgb(var(--brand-bg)/0.60))] pb-[env(safe-area-inset-bottom,0px)] shadow-[inset_0_1px_0_0_rgb(var(--brand-primary)/0.12),0_-10px_28px_-14px_rgba(15,10,46,0.85)] ring-1 ring-inset ring-white/6 backdrop-blur-xl supports-backdrop-filter:backdrop-blur-2xl supports-backdrop-filter:backdrop-saturate-150"
       >
         <div className={`grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} items-center gap-0.5 px-1.5 h-16`}>
           {navItems.map((item) => (

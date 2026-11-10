@@ -229,7 +229,7 @@ export default function TourRecapInApp(props) {
         label={edition.resultSectionLabel || 'Your final result'}
         id="tour-recap-you"
       />
-      <p className="rounded-xl border border-border-muted/45 bg-surface-inset p-4 text-content-secondary">
+      <p className="rounded-xl border border-border-muted/45 bg-surface-inset/72 p-4 text-content-secondary">
         {personal}
       </p>
 

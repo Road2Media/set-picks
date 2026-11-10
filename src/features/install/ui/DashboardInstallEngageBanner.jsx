@@ -71,7 +71,7 @@ function DashboardInstallEngageBannerLoaded({ userId }) {
   return (
     <div className="mb-4 space-y-2 md:mb-5">
       {showInstall ? (
-        <div className="rounded-2xl border border-border-subtle bg-surface-panel px-4 py-3 shadow-inset-glass md:px-5">
+        <div className="rounded-2xl border border-border-subtle/50 bg-surface-panel/50 px-4 py-3 shadow-inset-glass md:px-5">
           <p className="text-[11px] font-black uppercase tracking-widest text-brand-primary">
             {lead.eyebrow}
           </p>
@@ -97,7 +97,7 @@ function DashboardInstallEngageBannerLoaded({ userId }) {
                 onClick={() =>
                   install.showIosGuide ? install.closeIosGuide() : install.openIosGuide()
                 }
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle bg-surface-field py-2.5 text-xs font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle/50 bg-surface-field py-2.5 text-xs font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel/50"
               >
                 <Share2 className="h-4 w-4 shrink-0" aria-hidden />
                 {install.showIosGuide ? 'Hide steps' : 'Show Safari steps'}
@@ -111,7 +111,7 @@ function DashboardInstallEngageBannerLoaded({ userId }) {
               <button
                 type="button"
                 onClick={() => install.dismissIos()}
-                className="text-[11px] font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted underline-offset-4 hover:text-white"
+                className="text-[11px] font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted/60 underline-offset-4 hover:text-white"
               >
                 Don&apos;t show again
               </button>
@@ -125,7 +125,7 @@ function DashboardInstallEngageBannerLoaded({ userId }) {
                 onClick={() =>
                   install.showIosGuide ? install.closeIosGuide() : install.openIosGuide()
                 }
-                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle bg-surface-field py-2.5 text-xs font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle/50 bg-surface-field py-2.5 text-xs font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel/50"
               >
                 <Share2 className="h-4 w-4 shrink-0" aria-hidden />
                 {install.showIosGuide ? 'Hide steps' : 'Show Chrome steps'}
@@ -138,7 +138,7 @@ function DashboardInstallEngageBannerLoaded({ userId }) {
               <button
                 type="button"
                 onClick={() => install.dismissIos()}
-                className="text-[11px] font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted underline-offset-4 hover:text-white"
+                className="text-[11px] font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted/60 underline-offset-4 hover:text-white"
               >
                 Don&apos;t show again
               </button>

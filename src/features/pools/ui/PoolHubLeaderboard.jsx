@@ -13,7 +13,7 @@ export default function PoolHubLeaderboard({ members }) {
   return (
     <>
       {members.length === 0 ? (
-        <div className="rounded-2xl border border-border-subtle bg-surface-panel p-8 text-center font-bold text-content-secondary shadow-inset-glass">
+        <div className="rounded-2xl border border-border-subtle/50 bg-surface-panel/50 p-8 text-center font-bold text-content-secondary shadow-inset-glass">
           No members to show yet.
         </div>
       ) : (

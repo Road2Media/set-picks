@@ -12,7 +12,7 @@ import {
   Row,
 } from './Card.jsx';
 
-const JOB_WASHES = ['bg-amber-200/[0.06]', 'bg-brand-primary/[0.06]'];
+const JOB_WASHES = ['bg-amber-200/6', 'bg-brand-primary/6'];
 
 function rootClass(html) {
   const match = html.match(/^<[a-z0-9]+ class="([^"]*)"/);
@@ -29,13 +29,13 @@ describe('Panel and Row shells (#1090)', () => {
 
     expect(root).toBe(`${PANEL_SHELL} ${PANEL_PAD.md} mt-6`);
     expect(root).toContain('rounded-3xl');
-    expect(root).toContain('border-border-subtle');
-    expect(root).toContain('bg-surface-panel');
+    expect(root).toContain('border-border-subtle/50');
+    expect(root).toContain('bg-surface-panel/50');
     expect(root).toContain('shadow-inset-glass');
     expect(root).toContain('p-6');
     expect(root).not.toContain('border-brand-primary');
     expect(root).not.toContain('shadow-glow-brand');
-    expect(root).not.toContain('ring-border-glass');
+    expect(root).not.toContain('ring-border-glass/25');
     for (const wash of JOB_WASHES) {
       expect(html).not.toContain(wash);
     }
@@ -63,7 +63,7 @@ describe('Panel and Row shells (#1090)', () => {
     expect(root).toBe(`${ROW_SHELL} ${ROW_EDGE.default} ${ROW_PAD}`);
     expect(root).toContain('rounded-xl');
     expect(root).toContain('border-border-subtle/45');
-    expect(root).toContain('bg-surface-panel');
+    expect(root).toContain('bg-surface-panel/50');
     expect(root).toContain('shadow-inset-glass');
     expect(root).toContain('px-3.5');
     expect(root).not.toContain('rounded-3xl');

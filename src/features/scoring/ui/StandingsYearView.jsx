@@ -57,7 +57,7 @@ export default function StandingsYearView({
         <PageTitle
           as="h2"
           variant="section"
-          className="mb-2 !text-sm !font-bold md:!text-base"
+          className="mb-2 text-sm! font-bold! md:text-base!"
         >
           No year to show
         </PageTitle>

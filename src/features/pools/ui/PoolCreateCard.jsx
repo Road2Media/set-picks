@@ -82,7 +82,7 @@ export default function PoolCreateCard({
               <p className="mt-3 text-xs font-bold uppercase tracking-widest text-content-secondary">
                 Your invite link
               </p>
-              <p className="mt-1 break-all rounded-lg border border-border-subtle bg-surface-field p-3 font-mono text-xs leading-relaxed text-slate-200">
+              <p className="mt-1 break-all rounded-lg border border-border-subtle/50 bg-surface-field p-3 font-mono text-xs leading-relaxed text-slate-200">
                 {inviteUrl || '—'}
               </p>
             </div>

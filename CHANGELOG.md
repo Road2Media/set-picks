@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.119.0] — 2026-11-10
+
+### Changed
+- **Tailwind CSS 4 (#761)** — Styling moves from Tailwind 3.4.19 to 4.3.5. Vite still builds CSS through PostCSS; the plugin is `@tailwindcss/postcss`, and `autoprefixer` is gone (v4 prefixes itself). `src/index.css` imports `tailwindcss` and keeps the theme in `tailwind.config.js` via `@config`. `desk`, `mob`, and `short` are `@custom-variant`s, not `theme.screens`, because v4 breakpoints are min-width only and a raw query was pasted into `width >= …` and failed the build. `md:` is still width reflow. The React media queries in `useDashboardDeskMedia.js` match those variants. Utilities whose size or meaning changed in v4 were renamed so the painted result stays the v3 one (`shadow-sm` → `shadow-xs`, `rounded-sm` → `rounded-xs`, `blur-sm` → `blur-xs`, `backdrop-blur-sm` → `backdrop-blur-xs`, `outline-none` → `outline-hidden`, `bg-gradient-to-*` → `bg-linear-to-*`). Surface and border tokens no longer bake an alpha into the color. v4 mixes that alpha again, which washed panels out, so the old default lives on the utility (`bg-surface-panel/50`, `border-border-subtle/50`, and the same for glass, chrome, inset, muted, and venue). A bare border still defaults to gray-200, placeholders still default to gray-400, and buttons still use a pointer. Dependabot #758 was not merged. No declared API change.
+
 ## [1.118.0] — 2026-11-10
 
 ### Changed
@@ -57,7 +62,7 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 ## [1.111.1] — 2026-11-09
 
 ### Changed
-- **Settings panels and list rows use named shells (Refs #1090)** — Profile, account, inbox, install, admin, and pool join/create blocks use `Panel` (`rounded-3xl`, `border-border-subtle`, `bg-surface-panel`, inset glass, `p-6`). Pool rows, show leaderboard rows, global ranking rows, tour ranking rows, pool hub leaderboard rows, and invite chooser options use `Row` (`rounded-xl`, `border-border-subtle/45`, `bg-surface-panel`, inset glass, the same padding as a dashboard card). A self row and a leading show row are border modifiers. A first-place mark stays on the rank chip. Neither shell uses the Standings you / night wash. `docs/design.md` adds the panel and row branches. `verify:dashboard-ui` fails a new hand-built `rounded-*` card border under `src/features` and `src/pages`. No declared API change.
+- **Settings panels and list rows use named shells (Refs #1090)** — Profile, account, inbox, install, admin, and pool join/create blocks use `Panel` (`rounded-3xl`, `border-border-subtle/50`, `bg-surface-panel/50`, inset glass, `p-6`). Pool rows, show leaderboard rows, global ranking rows, tour ranking rows, pool hub leaderboard rows, and invite chooser options use `Row` (`rounded-xl`, `border-border-subtle/45`, `bg-surface-panel/50`, inset glass, the same padding as a dashboard card). A self row and a leading show row are border modifiers. A first-place mark stays on the rank chip. Neither shell uses the Standings you / night wash. `docs/design.md` adds the panel and row branches. `verify:dashboard-ui` fails a new hand-built `rounded-*` card border under `src/features` and `src/pages`. No declared API change.
 
 ## [1.111.0] — 2026-11-09
 
