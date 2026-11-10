@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.115.0] — 2026-11-10
+
+### Added
+- **Multi-band Phase 2, Phish.net provider (#606, part of #300)** — Phish.net fetch and normalize now go through `functions/providers/phishnet` (`fetchShowsForYear`, `fetchSetlistForDate`, `fetchSongs`, `normalizeShows`, `normalizeSetlistRows`, `responseOk`). Schedulers in `functions/index.js` iterate that one provider and pass `PHISHNET_API_KEY` on `providerArgs`. The provider does not write Firestore or Storage and does not read the secret. Calendar sync, the song catalog, and live setlist polling still persist from the existing modules, on the same schedules, with the same documents and objects. Admin setlist loads use `getProviderClient('phish')`. No player-facing UI, nav, or copy change. No declared API change. **Human:** do not deploy from this pull request. After it is on `staging`, deploy the Phish.net functions (`npm run deploy:functions:phishnet`, plus `backfillBustoutsForShows` if that callable is still in the project) and smoke one calendar refresh, one catalog refresh, and one live-poll or `getPhishnetSetlist` call against the staging Firebase project. Do not run a backfill.
+
 ## [1.114.1] — 2026-11-10
 
 ### Changed

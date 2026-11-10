@@ -628,6 +628,8 @@ When `alreadyLocked` is `true`, the doc already carried `lockReason: admin_overr
 
 Phish.net integration, live scoring, and public tour-stats refresh. Deployed via `npm run deploy:functions:phishnet`. Internal admin use — request/response shapes documented in `docs/PHISHNET_CALLABLE_RUNBOOK.md`.
 
+**Provider dispatch (v1.115.0 / #606):** `getPhishnetSetlist`, show-calendar sync, song-catalog sync, and the live setlist poll resolve the Phish band through `functions/providers` and call `phishnet` for HTTP and normalization. Request and response shapes, cron schedules, Firestore documents, and Storage objects are unchanged. The provider does not write Firestore or Storage. No new callable and no new env var. The deployed behavior starts when those functions are deployed.
+
 **`setLiveSetlistServiceStatus` (v1.89.0 / #644, admin claim):** publish or clear the player delay banner for one show.
 
 ```json
