@@ -1,19 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import Button from '../../../shared/ui/Button';
 import Card from '../../../shared/ui/Card';
 import { trackPhishIqFinish, trackPhishIqShare, trackPhishIqStart } from '../model/phishIqAnalytics';
 import { formatPhishIqReveal, PHISH_IQ_QUESTION_COUNT } from '../model/phishIqQuiz';
 import { PHISH_IQ_SOURCE_URL, buildPhishIqShareText } from '../model/phishIqShare';
+import { computePhishIqStats } from '../model/phishIqStats';
+import PhishIqFinishPanel from './PhishIqFinishPanel';
 
 /**
  * @param {{
  *   quiz: { date: string, questions: Array<{ id: string, prompt: string, fact?: string, choices: { id: string, label: string }[], answerId: string }> } | null,
  *   isLoading: boolean,
  *   played: { date: string, score: number, marks: boolean[] } | null,
- *   streak?: number | null,
- *   bestStreak?: number | null,
- *   showStreak?: boolean,
+ *   historyDays?: Record<string, { score: number, marks: boolean[] }>,
+ *   now?: Date,
  *   onFinished?: (result: { date: string, score: number, marks: boolean[] }) => void,
  *   footer?: React.ReactNode,
  *   saveNote?: string,
@@ -23,9 +24,8 @@ export default function PhishIqPlay({
   quiz,
   isLoading,
   played,
-  streak = null,
-  bestStreak = null,
-  showStreak = false,
+  historyDays = {},
+  now,
   onFinished,
   footer = null,
   saveNote = '',
@@ -41,6 +41,15 @@ export default function PhishIqPlay({
   const finishedRef = useRef(false);
 
   const result = played || localResult;
+  const shareStreak = useMemo(() => {
+    if (!result?.date) return null;
+    const days = { ...historyDays };
+    if (!days[result.date]) {
+      days[result.date] = { score: result.score, marks: result.marks };
+    }
+    const stats = computePhishIqStats(days, result.date);
+    return stats.currentStreak > 0 ? stats.currentStreak : null;
+  }, [historyDays, result]);
   const questions = quiz?.questions || [];
   const ready = questions.length === PHISH_IQ_QUESTION_COUNT;
   const question = !result && ready ? questions[step] : null;
@@ -83,7 +92,7 @@ export default function PhishIqPlay({
       score: result.score,
       total: result.marks.length || PHISH_IQ_QUESTION_COUNT,
       marks: result.marks,
-      streak: showStreak ? streak : null,
+      streak: shareStreak,
     });
     try {
       if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
@@ -128,17 +137,12 @@ export default function PhishIqPlay({
         <h1 className="mt-2 font-display text-3xl font-bold text-content-primary">
           {result.score}/{total}
         </h1>
-        {showStreak && typeof streak === 'number' ? (
-          <p className="mt-2 text-sm text-content-secondary" data-phish-iq-streak>
-            Streak {streak}
-            {typeof bestStreak === 'number' && bestStreak > streak ? ` · best ${bestStreak}` : ''}
-          </p>
-        ) : null}
         {result.marks.length > 0 ? (
           <p className="mt-4 text-2xl tracking-widest" data-phish-iq-grid aria-hidden="true">
             {result.marks.map((hit) => (hit ? '🟩' : '⬛')).join('')}
           </p>
         ) : null}
+        <PhishIqFinishPanel result={result} historyDays={historyDays} now={now} />
         <div
           className="mt-5 rounded-2xl border border-brand-primary/30 bg-surface-inset/72 p-4"
           data-phish-iq-share-card

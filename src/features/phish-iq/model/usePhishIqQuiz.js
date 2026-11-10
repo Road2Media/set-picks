@@ -2,21 +2,23 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { msgGardenSnapshotStats } from '../../msg-stats';
 import { useSongCatalog } from '../../song-catalog';
-import { buildDailyQuiz, quizDateKey } from './phishIqQuiz';
+import { freezePhishIqQuiz, readFrozenPhishIqQuiz } from './phishIqQuizFreeze';
+import { PHISH_IQ_QUESTION_COUNT, buildDailyQuiz, msUntilNextQuiz, quizDateKey } from './phishIqQuiz';
 
 /**
- * One frozen quiz for this visit.
- * Waits until the song catalog resolves (CDN or the bundled fallback) so the
- * questions do not swap mid-play. Garden opener counts and the announced-show
- * count come from the committed public snapshot, which is the same for every
- * player. The signed-in show calendar is not an input: guests cannot read it,
- * and mixing it in would split the daily set.
+ * The quiz for the current America/New_York date.
+ * The first complete five this browser builds for that date is frozen, so a
+ * catalog refresh does not swap the questions. When the date rolls, the clock
+ * below swaps in the next day's quiz and parents remount play state on `date`.
  */
 export function usePhishIqQuiz() {
   const catalog = useSongCatalog();
-  const date = useMemo(() => quizDateKey(new Date()), []);
+  const date = useQuizDate();
   const built = useMemo(() => {
-    if (catalog.isLoading || !date) return null;
+    if (!date) return null;
+    const frozen = readFrozenPhishIqQuiz(date);
+    if (frozen) return frozen;
+    if (catalog.isLoading) return null;
     const venue = msgGardenSnapshotStats();
     return buildDailyQuiz({
       songs: catalog.songs,
@@ -26,16 +28,39 @@ export function usePhishIqQuiz() {
     });
   }, [catalog.isLoading, catalog.songs, date]);
 
-  const [quiz, setQuiz] = useState(/** @type {ReturnType<typeof buildDailyQuiz> | null} */ (null));
-
   useEffect(() => {
-    if (built && !quiz) setQuiz(built);
-  }, [built, quiz]);
+    if (!built || built.date !== date) return;
+    if (built.questions.length !== PHISH_IQ_QUESTION_COUNT) return;
+    freezePhishIqQuiz(built);
+  }, [built, date]);
 
   return {
     date,
-    quiz,
-    isLoading: catalog.isLoading || (!quiz && !built),
+    quiz: built,
+    isLoading: !built && (catalog.isLoading || !date),
     catalogSource: catalog.source,
   };
+}
+
+/**
+ * Quiz date that updates when the Eastern day changes, including after sleep.
+ */
+function useQuizDate() {
+  const [date, setDate] = useState(() => quizDateKey(new Date()));
+
+  useEffect(() => {
+    let timer = 0;
+    function arm() {
+      const now = new Date();
+      const next = quizDateKey(now);
+      if (next) setDate((current) => (current === next ? current : next));
+      const remaining = msUntilNextQuiz(now);
+      const wait = remaining > 0 ? Math.min(remaining + 25, 60 * 60 * 1000) : 60 * 1000;
+      timer = window.setTimeout(arm, Math.max(250, wait));
+    }
+    arm();
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  return date;
 }

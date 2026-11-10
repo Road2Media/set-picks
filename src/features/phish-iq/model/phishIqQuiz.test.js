@@ -8,6 +8,9 @@ import {
   debutYearFromQuizCatalog,
   factSentenceFromTrace,
   formatPhishIqReveal,
+  formatQuizCountdown,
+  msUntilNextQuiz,
+  nextQuizBoundary,
   quizAnswersTraceToSource,
   quizDateKey,
 } from './phishIqQuiz';
@@ -42,6 +45,55 @@ describe('quizDateKey', () => {
   it('uses the America/New_York calendar day', () => {
     expect(quizDateKey(new Date('2026-11-09T04:30:00Z'))).toBe('2026-11-08');
     expect(quizDateKey(new Date('2026-11-09T05:30:00Z'))).toBe('2026-11-09');
+  });
+});
+
+describe('next quiz boundary', () => {
+  const samples = [
+    '2026-11-09T04:30:00Z',
+    '2026-11-09T05:30:00Z',
+    '2026-07-09T03:30:00Z',
+    '2026-03-08T04:30:00Z',
+    '2026-03-08T05:30:00Z',
+    '2026-11-01T03:30:00Z',
+    '2026-11-01T05:30:00Z',
+  ];
+
+  it('lands on the America/New_York date change', () => {
+    for (const iso of samples) {
+      const now = new Date(iso);
+      const today = quizDateKey(now);
+      const boundary = nextQuizBoundary(now);
+      expect(boundary, iso).toBeInstanceOf(Date);
+      expect(quizDateKey(boundary), iso).not.toBe(today);
+      expect(quizDateKey(new Date(boundary.getTime() - 1)), iso).toBe(today);
+      expect(msUntilNextQuiz(now), iso).toBe(boundary.getTime() - now.getTime());
+    }
+  });
+
+  it('matches midnight Eastern in winter, summer, and both daylight-saving weekends', () => {
+    expect(nextQuizBoundary(new Date('2026-11-09T04:30:00Z')).toISOString()).toBe(
+      '2026-11-09T05:00:00.000Z',
+    );
+    expect(nextQuizBoundary(new Date('2026-07-09T03:30:00Z')).toISOString()).toBe(
+      '2026-07-09T04:00:00.000Z',
+    );
+    expect(nextQuizBoundary(new Date('2026-03-08T05:30:00Z')).toISOString()).toBe(
+      '2026-03-09T04:00:00.000Z',
+    );
+    expect(nextQuizBoundary(new Date('2026-11-01T05:30:00Z')).toISOString()).toBe(
+      '2026-11-02T05:00:00.000Z',
+    );
+  });
+
+  it('formats the countdown and treats a bad clock as zero', () => {
+    expect(formatQuizCountdown(msUntilNextQuiz(new Date('2026-11-09T15:00:00Z')))).toBe(
+      '14h 00m 00s',
+    );
+    expect(formatQuizCountdown(0)).toBe('0h 00m 00s');
+    expect(formatQuizCountdown(Number.NaN)).toBe('0h 00m 00s');
+    expect(nextQuizBoundary(new Date('nope'))).toBeNull();
+    expect(msUntilNextQuiz(new Date('nope'))).toBe(0);
   });
 });
 
