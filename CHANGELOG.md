@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.127.3] — 2026-11-10
+
+### Fixed
+- **Marketing footer links (#1287)** — Play and Tour Stats are column headings, with their links stacked and left-aligned underneath. Phish IQ and About share one column instead of sitting in empty columns. The copyright line and the Phish.net credit stay.
+
 ## [1.127.2] — 2026-11-10
 
 ### Changed
