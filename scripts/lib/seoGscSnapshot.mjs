@@ -370,16 +370,14 @@ export function buildPackMarkdown(p) {
   const agentPrompt = `Using docs/SEO_OPTIMIZE_AUTONOMY.md, docs/SEO_GEO_PLAYBOOK.md §4,
 docs/seo/query-registry.json, and this facts pack, run SEO Optimize for
 goal query_coverage covering the last 7 complete days. Post a scored pack
-on #926 with [SKIP-PRD]. Open a draft PR to staging only if scored DRAFT_PR
+on #926. Open a draft PR to staging only if scored DRAFT_PR
 (seoRoutes titles, FAQ, llms, H2s). Never merge, never deploy, never scrape
 Google/Bing SERP HTML, never add /phish-picks, never publish full night
 setlists (aggregates only on /tour-stats). If #933 gap briefs are missing,
 Ingest competitor title/H1 gaps from
 content/marketing/933-competitor-title-h1-gap-brief.md (do not invent titles).`;
 
-  return `[SKIP-PRD]
-
-## SEO Optimize pack — ${p.runDate} (window: last 7 days)
+  return `## SEO Optimize pack — ${p.runDate} (window: last 7 days)
 
 **Epic:** #${SEO_EPIC} · **Child:** #${SEO_CHILD} · **Registry:** \`docs/seo/query-registry.json\`  
 **Source:** \`${p.source}\` · **GSC property:** \`${p.siteUrl}\`  

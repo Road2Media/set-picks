@@ -65,14 +65,14 @@ Order: **analyst → triggers (you) → drafter → architect → PM**.
 
 - Propose catalog rows / experiments that serve the stated `optimize_for`
 - Keep **#572 night** vs **#510 tour** triggers separate
-- File `[SKIP-PRD]` children; PR base **`staging`**; draft-only (no auto-merge)
+- File child issues; PR base **`staging`**; draft-only (no auto-merge)
 
 ## Workflow: add a trigger
 
 1. Draft row in TRIGGER_CATALOG.md (markdown table)
 2. Add JSON object to `catalog.json` `triggers` array
 3. If template needed, file handoff to **comms-drafter** with `templateId`
-4. File `[SKIP-PRD]` issue: `feat(comms): trigger <triggerId>` — link #272
+4. File an issue: `feat(comms): trigger <triggerId>` — link #272
 5. Handoff to **comms-architect** for implementation estimate
 
 ## Workflow: deprecate

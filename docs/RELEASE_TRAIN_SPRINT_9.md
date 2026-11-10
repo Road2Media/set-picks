@@ -31,7 +31,7 @@
 
 | Issue | Notes |
 |-------|-------|
-| Follow-up children from #573 | Accepted Optimize recommendations may become new `[SKIP-PRD]` child issues or planned comms rows |
+| Follow-up children from #573 | Accepted Optimize recommendations may become new child issues or planned comms rows |
 | Backfill tooling for #587 Phase B | Optional if forward-only gap snapshots are enough for promote |
 
 ### OUT - explicit defer

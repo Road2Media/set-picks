@@ -59,11 +59,8 @@ You are an expert React engineer. Every code change MUST follow these rules.
   - a removal target (date or milestone),
   - and a follow-up task to restore compliance.
 - Do not introduce silent or permanent rule bypasses.
-## 9) GitHub Issue Creation & MCP Rules
-- When you are asked to create, draft, or update a GitHub issue using the GitHub MCP, you MUST always include the exact text `[SKIP-PRD]` at the very top of the issue body (unless the user explicitly wants auto-PRD).
-- Why: **`.github/workflows/gemini-pm.yml`** runs on `issues: opened` and replaces the body with a Gemini PRD unless skipped. Skips when: (1) the first non-empty body line is `[SKIP-PRD]` (workflow refetches issue via REST; strips BOM), or (2) labels **`skip-prd`** or **`cursor-authored`**. **Merge workflow YAML to the repo default branch** — otherwise Actions still runs the old workflow without these checks.
-- **Automation context** shared with that workflow and **`scripts/groom-backlog.js`**: **`docs/GITHUB_AUTOMATION_CONTEXT.md`** — keep it accurate when architecture changes.
-- Never omit `[SKIP-PRD]` on agent-authored technical tickets, or the workflow will overwrite them. The groom script also skips issues with that prefix or labels **`skip-groom`**, **`skip-prd`**, **`cursor-authored`**, or **`AI-PRD`**.
+## 9) GitHub Issue Creation
+- Write issue bodies from the current code and the acceptance criteria. Nothing rewrites an issue body when it is opened.
 
 ## 10) PR Workflow & QA
 - **Base branch for every PR is `staging`**, not `main`. Staging auto-promotes to main via a rolled-up PR.

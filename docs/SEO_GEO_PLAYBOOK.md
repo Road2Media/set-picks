@@ -179,7 +179,7 @@ Add/remove rows as pages ship; keep IDs stable once used in the log.
 | Snapshot script | `npm run seo:gsc-weekly-snapshot` (`scripts/seo/gsc-weekly-snapshot.mjs`) |
 | Fixture / dry-run | `npm run seo:gsc-weekly-snapshot -- --fixture` |
 | Cron | `.github/workflows/seo-gsc-weekly-schedule.yml` — Monday `15:00` UTC (~09:00 America/Denver) |
-| Epic comments | Workflow posts a `[SKIP-PRD]` facts pack on **#926** when live GSC credentials exist |
+| Epic comments | Workflow posts a facts pack on **#926** when live GSC credentials exist |
 | Machine log | `crew/output/seo/weekly-log.jsonl` (gitignored — never commit) |
 | Procedure | [`docs/seo/README.md`](seo/README.md) |
 
@@ -292,7 +292,6 @@ Optional future event: `organic_landing` (landing path + campaign) — only if p
 |-------|----------------|
 | OG shell + social UA matrix | `npm run verify:og-home` (`scripts/verify-og-home.mjs`, `og-home-html.mjs`) |
 | Prerender (#659 / #959) | `npm run verify:seo-prerender` (`scripts/prerender-seo.mjs` after build; static registry `src/shared/config/seoRoutes.js`; auto-expand gate `scripts/lib/tourStatsSeoAutoExpand.mjs`) |
-| Automation context | `docs/GITHUB_AUTOMATION_CONTEXT.md` → Public landing SEO + SEO GSC weekly pack |
 | GSC/GA4 weekly pack (#932) | `npm run seo:gsc-weekly-snapshot -- --fixture` · `npm run test:seo-gsc-snapshot` |
 | SEO Optimize scored loop (#934) | [`docs/SEO_OPTIMIZE_AUTONOMY.md`](./SEO_OPTIMIZE_AUTONOMY.md) — follow-up comment on #926; no weekly “open PR” Action |
 

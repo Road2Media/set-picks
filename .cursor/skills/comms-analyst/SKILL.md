@@ -117,7 +117,7 @@ Follow `docs/comms-triggers/EXPERIMENT_PLAYBOOK.md`. Report variant, sample size
 - **New trigger ideas** → comms-triggers skill (Trigger Spec)
 - **Copy underperformance** → comms-drafter skill (variant draft)
 - **Channel or rollout changes** → comms-architect skill
-- **GitHub tracking** → `[SKIP-PRD]` issue under #272 / #573 as appropriate
+- **GitHub tracking** → issue under #272 / #573 as appropriate
 
 ## Constraints
 

@@ -16,7 +16,8 @@ describe("dependabot major migration issue", () => {
     });
     assert.equal(plan.title, "chore(deps): migrate firebase-admin major (Dependabot #1067)");
     assert.deepEqual(plan.labels, MAJOR_MIGRATION_LABELS);
-    assert.match(plan.body, /^\[SKIP-PRD\]/);
+    assert.match(plan.body, /^<!-- dependabot-major-migration pr:1067 -->/);
+    assert.doesNotMatch(plan.body, /\[SKIP-PRD\]/);
     assert.match(plan.body, /<!-- dependabot-major-migration pr:1067 -->/);
     assert.match(plan.body, /was not merged/);
     assert.match(plan.body, /https:\/\/github.com\/Road2Media\/set-picks\/pull\/1067/);

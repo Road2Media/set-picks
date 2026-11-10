@@ -38,7 +38,7 @@ Pass exactly one primary goal string (snake_case). Optional secondary goals go i
 ```text
 Using docs/comms-triggers/OPTIMIZE_AUTONOMY.md and the comms squad skills,
 run Optimize for goal picks_lock covering the last 7 complete days (GA4 property 527619709).
-Produce the PM review pack template, post it on GitHub issue #573 with [SKIP-PRD],
+Produce the PM review pack template, post it on GitHub issue #573,
 open a draft PR to staging only if a low-risk copy/catalog change is justified,
 and never merge or deploy.
 ```
@@ -54,7 +54,7 @@ Swap `picks_lock` / window as needed. First L1 pack: [comment on #573](https://g
 | Goal rotation | [`optimize_for.md`](./optimize_for.md) |
 | Kickoff script | `npm run comms:optimize-kickoff` (`scripts/comms-optimize-kickoff.mjs`) |
 | Cron | `.github/workflows/comms-optimize-schedule.yml` — daily `15:00` UTC (~09:00 America/Denver) |
-| Epic comments | Workflow posts `[SKIP-PRD]` kickoff on **#573** (does not merge/deploy) |
+| Epic comments | Workflow posts a kickoff on **#573** (does not merge/deploy) |
 
 **Note:** GitHub `schedule` workflows run only from the repo **default branch** (`main`). Merge to `staging` first; cron becomes live after promote to `main`. Use `workflow_dispatch` on the workflow file’s branch for earlier dry runs.
 
@@ -155,7 +155,7 @@ Do **not** put tour-length narrative into night `show_recap`, or night setlist f
 | Allowed | Forbidden |
 |---------|-----------|
 | Draft PR to **`staging`** | Merge without PM |
-| `[SKIP-PRD]` child issues / catalog `planned` rows | Production `comms:deploy` from an agent |
+| Child issues / catalog `planned` rows | Production `comms:deploy` from an agent |
 | War Room / `runCommsTrigger` canaries (`dryRun` default) | Resend MCP / ad-hoc production sends |
 | Pack comment on #573 | Changing prefs/caps/dedup without architect + PM |
 

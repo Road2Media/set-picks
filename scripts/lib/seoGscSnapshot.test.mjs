@@ -143,8 +143,9 @@ describe("seoGscSnapshot fixture pack (#932)", () => {
     assert.ok(assembled.ga4.rows.some((r) => r.landingPage === "/tour-stats/2026-summer-tour"));
   });
 
-  it("pack starts with [SKIP-PRD] and never mentions a merge/deploy action", () => {
-    assert.ok(pack.startsWith("[SKIP-PRD]"));
+  it("pack starts with the facts heading and never mentions a merge/deploy action", () => {
+    assert.ok(pack.startsWith("## SEO Optimize pack"));
+    assert.doesNotMatch(pack, /\[SKIP-PRD\]/);
     assert.match(pack, /SEO Optimize pack/);
     assert.match(pack, new RegExp(`#${SEO_EPIC}`));
     assert.match(pack, /aggregates only/i);
@@ -184,7 +185,8 @@ describe("gsc-weekly-snapshot CLI", () => {
       env: { ...process.env, GSC_SERVICE_ACCOUNT_JSON: "", GSC_ACCESS_TOKEN: "" },
     });
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /^\[SKIP-PRD\]/);
+    assert.match(r.stdout, /^## SEO Optimize pack/);
+    assert.doesNotMatch(r.stdout, /\[SKIP-PRD\]/);
     assert.match(r.stdout, /phish setlist game/);
     assert.match(r.stderr, /\(dry\) Pass --write/);
   });

@@ -101,7 +101,7 @@ change regardless of which agent (or human) makes it.
 1. **Spec it** (`comms-triggers`): add a row to `catalog.json` **and**
    `TRIGGER_CATALOG.md` in the same commit — `triggerId`, `family`, `priority`,
    `automation`, `channels`, `prefKeys`, `dedupKey`, `templateId`, `variables`.
-   File a `[SKIP-PRD]` GitHub issue under epic #272.
+   File a GitHub issue under epic #272.
 2. **Draft the copy** (`comms-drafter`): editorial draft in `content/comms/`,
    runtime copy in the in‑app template registry
    (`src/features/notifications/ui/commsTemplates/commsTemplateRegistry.jsx`)

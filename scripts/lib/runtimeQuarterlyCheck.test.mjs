@@ -28,7 +28,8 @@ describe("runtime quarterly check", () => {
     assert.equal(plan.ignoreFloor, ">=25.0.0");
     assert.equal(plan.aligned, true);
     assert.match(plan.title, /2026 Q4/);
-    assert.match(plan.body, /^\[SKIP-PRD\]/);
+    assert.match(plan.body, /^<!-- runtime-quarterly-check -->/);
+    assert.doesNotMatch(plan.body, /\[SKIP-PRD\]/);
     assert.match(plan.body, /Node 24|functions runtime/);
     assert.match(plan.body, /Vercel/);
     assert.deepEqual(plan.labels, RUNTIME_CHECK_LABELS);

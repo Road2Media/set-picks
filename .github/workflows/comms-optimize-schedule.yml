@@ -1,5 +1,5 @@
 # Scheduled Comms Optimize kickoff (#778 / epic #573).
-# Posts a [SKIP-PRD] agent prompt on #573 when:
+# Posts an agent prompt on #573 when:
 #   - yesterday was a show date (post_show → show_recap_uniqueness), or
 #   - today is Monday America/Denver and there was no post-show (weekly rotation).
 #

@@ -265,13 +265,11 @@ export function buildKickoffMarkdown(p) {
 run Optimize for goal ${p.optimize_for} covering ${p.window} (GA4 property 527619709)${
     p.showDate ? ` with night context for show ${p.showDate}` : ""
   }.
-Produce the PM review pack template, post it on GitHub issue #573 with [SKIP-PRD],
+Produce the PM review pack template, post it on GitHub issue #573,
 open a draft PR to staging only if a low-risk copy/catalog change is justified,
 and never merge or deploy.`;
 
-  return `[SKIP-PRD]
-
-## Scheduled Optimize kickoff — ${p.runDate}
+  return `## Scheduled Optimize kickoff — ${p.runDate}
 
 **Epic:** #573 · **Scheduler:** #778  
 **Mode:** \`${p.mode}\`  

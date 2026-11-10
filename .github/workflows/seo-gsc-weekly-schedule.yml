@@ -1,6 +1,6 @@
 # Scheduled SEO Optimize pack (#932 / epic #926).
 # Pulls last-7d GSC (registry queries + top new) and GA4 organic landings
-# for /tour-stats* + /phish-setlist-prediction-game, then posts a [SKIP-PRD]
+# for /tour-stats* + /phish-setlist-prediction-game, then posts a
 # facts pack on #926.
 #
 # Mirrors comms-optimize-schedule.yml:

@@ -14,7 +14,7 @@
 
 [#974](https://github.com/pat792/set-picks/issues/974) closed on the cadence-brief PR. Comments on the issue said **do not close** until accounts, EiC brief approval, one posted L2 cycle, and a monthly UTM note. There is **no open social child in the current sprint**. Standing ops live on Sprint 10: [#695](https://github.com/pat792/set-picks/issues/695) (crew) and [#573](https://github.com/pat792/set-picks/issues/573) (comms Optimize).
 
-**Do this once:** reopen #974 *or* file a thin execution follow-on under #972 / #695, milestone **Sprint 10**, `[SKIP-PRD]`, remaining AC only. Do not invent a new SEO epic.
+**Do this once:** reopen #974 *or* file a thin execution follow-on under #972 / #695, milestone **Sprint 10**, remaining AC only. Do not invent a new SEO epic.
 
 Comment live handles + the exact bio URLs on that ticket.
 
