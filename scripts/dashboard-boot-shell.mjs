@@ -205,7 +205,13 @@ html, body {
   0%, 100% { opacity: 0.72; }
   50% { opacity: 1; }
 }
-@media (min-width: 768px) {
+@media (max-height: 479.98px) {
+  .dbs-brand-bar { display: none; }
+  .dbs-main {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  }
+}
+@media (min-width: 768px) and (min-height: 480px) {
   .dbs-sidebar { display: flex; }
   .dbs-mobile-top,
   .dbs-tabs { display: none; }

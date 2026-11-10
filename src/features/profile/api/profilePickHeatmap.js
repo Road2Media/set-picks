@@ -1,5 +1,7 @@
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 
+import { DEFAULT_BAND_ID } from '../../../shared/config/bands.js';
+import { docBelongsToBand } from '../../../shared/config/bandScope.js';
 import { db } from '../../../shared/lib/firebase';
 import { whenFirebaseReady } from '../../../shared/lib/firebaseAppCheck';
 import { pickCountsTowardSeason } from '../../../shared/utils/showAggregation';
@@ -57,6 +59,9 @@ export async function computeProfilePickHeatmap(uid, options = {}) {
     typeof options.topN === 'number' && options.topN > 0
       ? Math.trunc(options.topN)
       : PROFILE_TOP_PICKS_N;
+  const bandId = typeof options.bandId === 'string' && options.bandId
+    ? options.bandId
+    : DEFAULT_BAND_ID;
 
   /** @type {ProfilePickHeatmapTelemetry} */
   const telemetry = {
@@ -100,6 +105,7 @@ export async function computeProfilePickHeatmap(uid, options = {}) {
   const graded = [];
   for (const pickDoc of picksSnap.docs) {
     const data = pickDoc.data() || {};
+    if (!docBelongsToBand(data, bandId)) continue;
     if (!pickCountsTowardSeason(data)) continue;
     graded.push({
       showDate: typeof data.showDate === 'string' ? data.showDate : '',

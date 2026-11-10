@@ -8,7 +8,7 @@ import {
 
 describe('live setlist player status (#644)', () => {
   it('shows only the approved stalled copy', () => {
-    expect(playerDegradedMessage('phishnet_stalled')).toMatch(/temporarily stalled/);
+    expect(playerDegradedMessage('phishnet_stalled')).toMatch(/running late/);
     expect(playerDegradedMessage('<b>hack</b>')).toBe('');
     expect(playerDegradedMessage(null)).toBe('');
   });

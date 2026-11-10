@@ -15,6 +15,7 @@ import {
   LEADERS_TOP_K,
 } from './aggregateLeadersTonightPicks';
 import { buildOfficialPlayedTitleSet } from './buildOfficialPlayedTitleSet';
+import { buildCrowdNightDeepDive } from './crowdNightDeepDive';
 
 /** Visible teaser row count on Standings crowd pulse. */
 export const CROWD_PULSE_TOP_N = 5;
@@ -54,6 +55,7 @@ export function useCrowdNightStats(
         catalog: null,
         leaders: null,
         playedTitles: null,
+        deepDive: null,
       };
     }
 
@@ -131,6 +133,13 @@ export function useCrowdNightStats(
       enrichOpts
     );
 
+    const deepDive = buildCrowdNightDeepDive({
+      songs: night.songs,
+      pickers: night.pickers,
+      submittedDocs: night.submittedDocs,
+      actualSetlist,
+    });
+
     return {
       ready: true,
       catalogLoading,
@@ -142,6 +151,7 @@ export function useCrowdNightStats(
       catalog,
       leaders,
       playedTitles,
+      deepDive,
     };
   }, [
     showDate,

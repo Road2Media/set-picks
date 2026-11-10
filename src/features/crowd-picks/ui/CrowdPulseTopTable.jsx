@@ -161,7 +161,7 @@ export default function CrowdPulseTopTable({
                     aria-hidden
                   >
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-brand-accent-red to-brand-accent-blue"
+                      className="h-full rounded-full bg-linear-to-r from-brand-accent-red to-brand-accent-blue"
                       style={{ width: `${Math.round(intensity * 100)}%` }}
                     />
                   </div>

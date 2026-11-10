@@ -36,7 +36,7 @@ export default function StandingsTourView({
         <PageTitle
           as="h2"
           variant="section"
-          className="mb-2 !text-sm !font-bold md:!text-base"
+          className="mb-2 text-sm! font-bold! md:text-base!"
         >
           No tour in progress
         </PageTitle>

@@ -1,6 +1,7 @@
 import React from 'react';
 
 import Button from '../../../shared/ui/Button';
+import { Panel } from '../../../shared/ui/Card';
 import Input from '../../../shared/ui/Input';
 
 export default function AccountSecurityForm({
@@ -23,7 +24,7 @@ export default function AccountSecurityForm({
   onPasswordResetEmail,
 }) {
   return (
-    <div className="space-y-6 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+    <Panel className="space-y-6">
       <form onSubmit={onSubmit} className="space-y-4">
         {/* Helps password managers associate the current password + updated password with the right user */}
         <input
@@ -49,7 +50,7 @@ export default function AccountSecurityForm({
           />
         </div>
 
-        <div className="space-y-4 border-t border-border-muted pt-4">
+        <div className="space-y-4 border-t border-border-muted/60 pt-4">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             New sign-in email <span className="normal-case font-medium">(optional)</span>
           </p>
@@ -80,7 +81,7 @@ export default function AccountSecurityForm({
           </div>
         </div>
 
-        <div className="space-y-4 border-t border-border-muted pt-4">
+        <div className="space-y-4 border-t border-border-muted/60 pt-4">
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
             New password <span className="normal-case font-medium">(optional)</span>
           </p>
@@ -131,7 +132,7 @@ export default function AccountSecurityForm({
         </Button>
       </form>
 
-      <div className="space-y-3 border-t border-border-muted pt-6">
+      <div className="space-y-3 border-t border-border-muted/60 pt-6">
         <p className="text-sm text-slate-400 leading-relaxed">
           <strong className="text-slate-300">Forgot your current password?</strong> We&apos;ll email
           a reset link to <span className="font-bold text-slate-300">{currentEmail}</span> — no
@@ -142,7 +143,7 @@ export default function AccountSecurityForm({
           type="button"
           onClick={onPasswordResetEmail}
           disabled={passwordResetSending}
-          className="w-full rounded-xl border-2 border-border-muted bg-surface-field py-3.5 text-sm uppercase tracking-widest text-white hover:border-brand-primary/40 hover:bg-surface-panel"
+          className="w-full rounded-xl border-2 border-border-muted/60 bg-surface-field py-3.5 text-sm uppercase tracking-widest text-white hover:border-brand-primary/40 hover:bg-surface-panel/50"
         >
           {passwordResetSending ? 'Sending…' : 'Send password reset email'}
         </Button>
@@ -160,6 +161,6 @@ export default function AccountSecurityForm({
           </p>
         )}
       </div>
-    </div>
+    </Panel>
   );
 }

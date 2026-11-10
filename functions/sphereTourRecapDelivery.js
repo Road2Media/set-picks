@@ -14,6 +14,7 @@
  */
 
 const { sendWebPushToToken } = require("./fcmMessagingCore");
+const { prefAllows } = require("./notificationPrefs");
 
 const SPHERE_2026_INAUGURAL_TEMPLATE_ID = "sphere-2026-inaugural";
 
@@ -208,14 +209,13 @@ function recapPushLogDocId(templateId, uid) {
 }
 
 /**
- * Reuses existing prefs posture: recap alerts count as results-style updates.
+ * Recap push counts as results. An explicit `notificationPrefs.push.results`
+ * wins; otherwise the legacy flat `results` key still applies.
  * @param {import("firebase-admin").firestore.DocumentData | null | undefined} userData
  * @returns {boolean}
  */
 function userWantsRecapPush(userData) {
-  const prefs = userData?.notificationPrefs;
-  if (!prefs || typeof prefs !== "object") return true;
-  return prefs.results !== false;
+  return prefAllows(userData, "results", "push");
 }
 
 /**

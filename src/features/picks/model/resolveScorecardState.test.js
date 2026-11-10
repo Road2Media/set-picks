@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   resolveScorecardState,
+  scorecardShowsCrowdShare,
   scorecardShowsOverlap,
   scorecardShowsRank,
 } from './resolveScorecardState';
@@ -47,5 +48,15 @@ describe('scorecard visibility gates', () => {
     expect(scorecardShowsOverlap('graded')).toBe(true);
     expect(scorecardShowsRank('locked_ungraded')).toBe(true);
     expect(scorecardShowsRank('graded')).toBe(true);
+  });
+});
+
+describe('scorecardShowsCrowdShare', () => {
+  it('waits until showtime', () => {
+    expect(scorecardShowsCrowdShare('NEXT')).toBe(false);
+    expect(scorecardShowsCrowdShare('FUTURE')).toBe(false);
+    expect(scorecardShowsCrowdShare(null)).toBe(false);
+    expect(scorecardShowsCrowdShare('LIVE')).toBe(true);
+    expect(scorecardShowsCrowdShare('PAST')).toBe(true);
   });
 });

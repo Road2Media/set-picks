@@ -20,18 +20,38 @@ export {
   CROWD_PULSE_TOP_N,
   useCrowdNightStats,
 } from './model/useCrowdNightStats';
+export {
+  TOUR_CHALK_TOP_N,
+  aggregateTourCrowdChalk,
+} from './model/aggregateTourCrowdChalk';
+export {
+  LIVE_CONSENSUS_GAP_LIMIT,
+  LIVE_CONSENSUS_SONG_LIMIT,
+  formatCrowdShare,
+  selectLiveConsensusChips,
+} from './model/selectLiveConsensusChips';
 export { meterIntensity } from './model/meterIntensity';
 export { formatCatalogLastShort } from './model/formatCatalogLastShort';
 export { shouldBlurDeepCrowdStats } from './model/shouldBlurDeepCrowdStats';
 export {
   trackCrowdPulseView,
+  trackCrowdPulseTeaserExpand,
   trackCrowdPulseFullExpand,
   trackCrowdPulseSectionOpen,
+  trackCrowdPulseHelperUse,
 } from './model/crowdPulseAnalytics';
+export {
+  CROWD_PULSE_SURFACES,
+  isCrowdPulseSurfaceEnabled,
+  resolveHideCrowdPulse,
+} from './model/crowdPulsePreference';
+export { useHideCrowdPulse } from './model/useHideCrowdPulse';
 export {
   buildOfficialPlayedTitleSet,
   isCrowdSongPlayed,
 } from './model/buildOfficialPlayedTitleSet';
 export { default as CrowdNightPulsePanel } from './ui/CrowdNightPulsePanel';
+export { default as CrowdNightStatsPanel } from './ui/CrowdNightStatsPanel';
+export { default as CrowdPulseHiddenNotice } from './ui/CrowdPulseHiddenNotice';
 export { default as CrowdPulseTopTable } from './ui/CrowdPulseTopTable';
 export { default as FrequencyMeterRow } from './ui/FrequencyMeterRow';

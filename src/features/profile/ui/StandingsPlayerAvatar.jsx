@@ -35,7 +35,7 @@ export default function StandingsPlayerAvatar({
         to="/dashboard/profile"
         onClick={(e) => e.stopPropagation()}
         aria-label="Add a profile avatar"
-        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-brand-primary/55 bg-surface-field text-brand-primary transition hover:border-brand-primary hover:bg-brand-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-brand-primary/55 bg-surface-field text-brand-primary transition hover:border-brand-primary hover:bg-brand-primary/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand"
       >
         <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
       </Link>
@@ -49,12 +49,12 @@ export default function StandingsPlayerAvatar({
       avatarId={avatarId}
       size="sm"
       alt={`${label}'s avatar`}
-      className="!h-9 !w-9 !rounded-full"
+      className="h-9! w-9! rounded-full!"
     />
   ) : (
     <span
       aria-label={`${label}'s avatar`}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-border-subtle bg-surface-field text-xs font-black uppercase tracking-wide text-content-secondary"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-border-subtle/50 bg-surface-field text-xs font-black uppercase tracking-wide text-content-secondary"
     >
       {initial}
     </span>
@@ -70,7 +70,7 @@ export default function StandingsPlayerAvatar({
           width={18}
           height={18}
           title={showcase.name}
-          className="absolute -bottom-0.5 -right-0.5 h-[18px] w-[18px] rounded-md border border-border-subtle bg-surface-panel shadow-sm"
+          className="absolute -bottom-0.5 -right-0.5 h-[18px] w-[18px] rounded-md border border-border-subtle/50 bg-surface-panel/50 shadow-xs"
           decoding="async"
         />
       ) : null}

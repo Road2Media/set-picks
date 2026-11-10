@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import { HUNDREDTH_SHOW_PATH } from '../../hundredth-show/public';
 import { NYE_RUN_PATH } from '../model/nyeRunContract';
 import { AppDocumentAuthLink } from '../../landing';
 import { StatsEmbedShareRow } from '../../stats-embed';
@@ -159,11 +160,15 @@ export default function MsgGardenStatsView({ stats, heading }) {
             New Year&apos;s Run
           </Link>{' '}
           is December 30, December 31, January 1, and January 2.
-          Lock a card before the lights go down.
+          January 2 is{' '}
+          <Link to={HUNDREDTH_SHOW_PATH} className={LINK_ON_DARK}>
+            the 100th
+          </Link>
+          . Lock a card before the lights go down.
         </p>
         <AppDocumentAuthLink
           signup
-          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-[0_0_40px_-10px_rgba(45,212,191,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_-15px_rgba(45,212,191,0.7)] active:translate-y-0 active:scale-[0.98]"
+          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-linear-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-glow-brand transition-all hover:-translate-y-0.5 hover:shadow-glow-brand-lg active:translate-y-0 active:scale-[0.98]"
         >
           Lock New Year&apos;s Run picks
         </AppDocumentAuthLink>

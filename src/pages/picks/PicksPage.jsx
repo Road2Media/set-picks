@@ -4,7 +4,9 @@ import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Lock } from 'lucide-react';
 
 import { logCommsEmailLanded } from '../../features/comms';
+import { PhishIqEntryLink } from '../../features/phish-iq';
 import {
+  PicksCrowdHelper,
   PicksFieldsForm,
   PicksLockTimingBanner,
   PicksMobileFixedChrome,
@@ -113,6 +115,7 @@ export default function PicksPage({ user: userProp, selectedDate: selectedDatePr
         : null}
 
       <div className="relative">
+        <PhishIqEntryLink />
         <PicksLockTimingBanner
           key={selectedDate}
           show={showForShare}
@@ -120,7 +123,7 @@ export default function PicksPage({ user: userProp, selectedDate: selectedDatePr
         />
         {shouldShowStatus ? (
           <>
-            <div id={statusContentId} className={isMobileStatusExpanded ? 'md:block' : 'hidden md:block'}>
+            <div id={statusContentId} className={isMobileStatusExpanded ? 'block' : 'hidden desk:block'}>
               {shouldShowSavedStatus ? (
                 <div
                   className="mb-4 flex items-center gap-2.5 rounded-md border border-brand-primary/40 bg-brand-primary/10 p-3 text-sm text-brand-primary"
@@ -162,6 +165,14 @@ export default function PicksPage({ user: userProp, selectedDate: selectedDatePr
             }
           />
         ) : null}
+        <PicksCrowdHelper
+          selectedDate={selectedDate}
+          showStatus={showStatus}
+          isLocked={isLocked}
+          formData={formData}
+          onChange={handleInput}
+          pickRecommendationsArtifact={outlet.pickRecommendationsArtifact}
+        />
         <Card
           as="form"
           onSubmit={handleSave}

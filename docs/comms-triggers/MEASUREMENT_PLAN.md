@@ -15,7 +15,7 @@ Client engagement events use `ga4Event` via `src/features/comms/model/commsAnaly
 | `comms_dismissed` | User dismisses without reading | `trigger_id`, `template_id`, `message_id` |
 | `comms_cta_click` | User taps CTA in message | `comms_trigger_id`, `comms_template_id`, `comms_cta`, `comms_destination` (href) |
 | `comms_push_tap` | Notification click opens app | `trigger_id`, `template_id`, `message_id` |
-| `comms_pref_changed` | User toggles notification pref | `pref_key`, `enabled` |
+| `comms_pref_changed` | User toggles notification pref | `pref_key` (`push.lifecycle`, `inApp.results`, `email.lifecycle`, …), `enabled` |
 
 ### v1 requirement
 

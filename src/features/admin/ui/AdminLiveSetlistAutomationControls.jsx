@@ -49,7 +49,7 @@ export default function AdminLiveSetlistAutomationControls({
         only when the payload changes. Save Official Setlist writes the form below. Force poll asks
         Phish.net. The health line is the scheduled poller, not a save confirmation.
       </p>
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl border border-border-subtle bg-surface-panel px-3 py-2 text-[11px]">
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl border border-border-subtle/50 bg-surface-panel/50 px-3 py-2 text-[11px]">
         <dt className="font-bold uppercase tracking-widest text-slate-500">Health</dt>
         <dd className={`font-bold ${healthClass}`}>{health || '—'}</dd>
         <dt className="font-bold uppercase tracking-widest text-slate-500">Last result</dt>
@@ -110,7 +110,7 @@ export default function AdminLiveSetlistAutomationControls({
           Force poll + score refresh
         </Button>
       </div>
-      <div className="space-y-2 rounded-xl border border-border-subtle px-3 py-2">
+      <div className="space-y-2 rounded-xl border border-border-subtle/50 px-3 py-2">
         <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
           Player delay message
         </p>
@@ -118,7 +118,7 @@ export default function AdminLiveSetlistAutomationControls({
           Approved copy
           <select
             id="live-setlist-banner-copy"
-            className="mt-1 w-full rounded-lg border border-border-subtle bg-surface-panel px-2 py-1 text-xs font-bold text-slate-100"
+            className="mt-1 w-full rounded-lg border border-border-subtle/50 bg-surface-panel/50 px-2 py-1 text-xs font-bold text-slate-100"
             value={messageKey}
             onChange={(event) => onMessageKey(event.target.value)}
           >

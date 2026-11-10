@@ -3,6 +3,7 @@ export { fetchShowLockState, subscribeShowLockState } from './api/showLockStateA
 export { default as PastShowLockBanner } from './ui/PastShowLockBanner';
 export { default as TooEarlyBanner } from './ui/TooEarlyBanner';
 export { default as PicksFieldsForm } from './ui/PicksFieldsForm';
+export { default as PicksCrowdHelper } from './ui/PicksCrowdHelper';
 export { default as PickPredictionPanel } from './ui/PickPredictionPanel';
 export { default as PicksLabPanel } from './ui/PicksLabPanel';
 export { default as PicksLabComingSoon } from './ui/PicksLabComingSoon';

@@ -1,4 +1,5 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { stampBandId } from '../../../shared/config/bandScope.js';
 import { db } from '../../../shared/lib/firebase';
 import {
   sanitizeBustouts,
@@ -113,18 +114,22 @@ export async function saveOfficialSetlistByDate({
   const bustouts = reconciled.bustouts;
   const songGaps = reconciled.songGaps;
 
-  await setDoc(docRef, {
-    showDate,
-    status: 'COMPLETED',
-    isScored: false,
-    updatedAt: new Date().toISOString(),
-    updatedBy,
-    setlist: cleanedSlots,
-    officialSetlist: cleanedOfficialSetlist,
-    encoreSongs,
-    bustouts,
-    songGaps,
-  });
+  await setDoc(
+    docRef,
+    stampBandId({
+      showDate,
+      status: 'COMPLETED',
+      isScored: false,
+      updatedAt: new Date().toISOString(),
+      updatedBy,
+      setlist: cleanedSlots,
+      officialSetlist: cleanedOfficialSetlist,
+      encoreSongs,
+      bustouts,
+      songGaps,
+      bandId: prior.bandId,
+    }),
+  );
 
   return {
     cleanedSlots,

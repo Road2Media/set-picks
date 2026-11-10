@@ -6,20 +6,20 @@ import { scrollAppToTop } from '../lib/scrollAppToTop';
 const TONES = {
   chrome: {
     tray:
-      'flex w-full min-w-0 gap-1 rounded-xl border border-border-subtle/60 bg-surface-panel-strong p-1 shadow-inset-glass',
+      'flex w-full min-w-0 gap-1 rounded-xl border border-border-subtle/60 bg-surface-panel-strong/72 p-1 shadow-inset-glass',
     segment:
-      'relative flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-[11px] font-black uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
+      'relative flex items-center justify-center gap-1 rounded-lg px-1.5 py-2 text-center text-[11px] font-black uppercase tracking-widest transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg min-[375px]:px-2',
     active:
       'bg-brand-primary/15 text-brand-primary ring-1 ring-inset ring-brand-primary/35',
-    inactive: 'text-content-secondary hover:bg-surface-inset hover:text-white',
+    inactive: 'text-content-secondary hover:bg-surface-inset/72 hover:text-white',
   },
   /** In-page filters (Stats All-time / boards). Same layout, recessed vs chrome. */
   inset: {
     tray:
       'flex w-full min-w-0 gap-1 rounded-lg border border-border-subtle/30 bg-surface-field p-0.5',
     segment:
-      'relative flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
-    active: 'bg-surface-panel-strong text-white',
+      'relative flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-center text-[10px] font-bold uppercase tracking-widest transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
+    active: 'bg-surface-panel-strong/72 text-white',
     inactive: 'text-content-secondary hover:bg-surface-inset/70 hover:text-white',
   },
 };
@@ -32,7 +32,10 @@ const TONES = {
  * otherwise a `tablist` of buttons (`value` / `onChange`).
  *
  * Placement (mobile portal vs desktop in-page) belongs at the cluster layout
- * call site. Do not add `md:`-as-device visibility here (#704–#707).
+ * call site. Do not add `md:`-as-device visibility here (#704). One mount per
+ * viewport gates with the `desk` media query (#707).
+ * Horizontal padding is `px-1.5` below 375px and `px-2` from there up so
+ * three uppercase labels fit at 320px (#1258). Tracking stays `tracking-widest`.
  *
  * @param {{
  *   ariaLabel: string,

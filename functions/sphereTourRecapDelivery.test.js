@@ -96,6 +96,18 @@ test("userWantsRecapPush: defaults on, honors results=false", () => {
     userWantsRecapPush({ notificationPrefs: { results: false } }),
     false
   );
+  assert.equal(
+    userWantsRecapPush({
+      notificationPrefs: { results: true, push: { results: false } },
+    }),
+    false
+  );
+  assert.equal(
+    userWantsRecapPush({
+      notificationPrefs: { results: false, push: { results: true } },
+    }),
+    true
+  );
 });
 
 test("archive replay inbox keeps the fixed doc id and catalog triggerId", () => {

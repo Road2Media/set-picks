@@ -8,6 +8,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
+import { stampBandId } from '../../../shared/config/bandScope.js';
 import { whenFirebaseReady } from '../../../shared/lib/firebaseAppCheck';
 import { db } from '../../../shared/lib/firebase';
 
@@ -65,7 +66,11 @@ export async function updateUserProfileWithPickHandles(
       batch = writeBatch(db);
       opCount = 0;
     }
-    batch.update(pickDoc.ref, { handle: newHandle });
+    const prior = pickDoc.data() || {};
+    batch.update(
+      pickDoc.ref,
+      stampBandId({ handle: newHandle, bandId: prior.bandId }),
+    );
     opCount++;
   }
 

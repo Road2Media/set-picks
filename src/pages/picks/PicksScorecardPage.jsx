@@ -1,6 +1,7 @@
 import React from 'react';
 import { useOutletContext } from 'react-router-dom';
 
+import { useUserPools } from '../../features/pools';
 import { PicksScorecardCard, usePicksScorecard } from '../../features/picks';
 
 /**
@@ -11,11 +12,13 @@ export default function PicksScorecardPage({ user: userProp, selectedDate: selec
   const outlet = useOutletContext() || {};
   const user = userProp ?? outlet.user;
   const selectedDate = selectedDateProp ?? outlet.selectedDate;
+  const { pools, listLoading: poolsLoading } = useUserPools(user?.uid);
   const scorecard = usePicksScorecard({
     user,
     selectedDate,
     picksForm: outlet.picksForm,
-    artifact: outlet.pickRecommendationsArtifact,
+    pools,
+    poolsLoading,
   });
 
   return <PicksScorecardCard {...scorecard} />;

@@ -1,53 +1,28 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
 
 import { InviteChooserSheet } from '../../features/invite';
 import {
+  StandingsChrome,
   StandingsInvitePromo,
-  StandingsMobileFixedChrome,
   StandingsShowOrPoolView,
   StandingsSponsorPreview,
-  StandingsStickyChrome,
   StandingsTourView,
   StandingsYearView,
   useStandingsScreen,
 } from '../../features/scoring';
-import {
-  useDashboardDesktopPageChromePortal,
-  useDashboardMobileChromePortal,
-} from '../../shared/hooks/useDashboardMobileChromePortal';
 import { SponsorSlot } from '../../shared/ui';
 
 export default function StandingsPage({ selectedDate, onSelectShowDate }) {
   const screen = useStandingsScreen(selectedDate, { onSelectShowDate });
   const invite = screen.inviteChooser;
-  const mobileChromeRoot = useDashboardMobileChromePortal();
-  const desktopChromeRoot = useDashboardDesktopPageChromePortal();
-
-  const mobileFixedChrome = (
-    <StandingsMobileFixedChrome
-      view={screen.view}
-      onChange={screen.setView}
-      onOpenScoringRules={screen.openScoringRules}
-    />
-  );
 
   return (
     <div className="w-full">
-      {mobileChromeRoot
-        ? createPortal(mobileFixedChrome, mobileChromeRoot)
-        : null}
-
-      {desktopChromeRoot
-        ? createPortal(
-            <StandingsStickyChrome
-              view={screen.view}
-              onChange={screen.setView}
-              onOpenScoringRules={screen.openScoringRules}
-            />,
-            desktopChromeRoot,
-          )
-        : null}
+      <StandingsChrome
+        view={screen.view}
+        onChange={screen.setView}
+        onOpenScoringRules={screen.openScoringRules}
+      />
 
       <InviteChooserSheet
         open={invite.open}

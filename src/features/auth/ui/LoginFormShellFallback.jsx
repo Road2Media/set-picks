@@ -34,7 +34,7 @@ export default function LoginFormShellFallback() {
         <div className="absolute bottom-[-10%] right-[-15%] h-[min(70vh,32rem)] w-[min(85vw,28rem)] rounded-full bg-blue-500/12 blur-[100px]" />
       </div>
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-[3px] overflow-hidden bg-teal-400/15"
+        className="pointer-events-none fixed inset-x-0 top-0 z-60 h-[3px] overflow-hidden bg-teal-400/15"
         aria-hidden="true"
       >
         <div className="h-full w-2/5 animate-pulse bg-teal-400" />
@@ -104,7 +104,7 @@ function SigninPanelStatic() {
             type="email"
             autoComplete="username"
             required
-            className="mt-1 w-full rounded-xl border-2 border-border-subtle bg-surface-field px-4 py-3 font-semibold text-white"
+            className="mt-1 w-full rounded-xl border-2 border-border-subtle/50 bg-surface-field px-4 py-3 font-semibold text-white"
             {...emailGuard}
           />
         </div>
@@ -121,7 +121,7 @@ function SigninPanelStatic() {
             type="password"
             autoComplete="current-password"
             required
-            className="mt-1 w-full rounded-xl border-2 border-border-subtle bg-surface-field px-4 py-3 font-semibold text-white"
+            className="mt-1 w-full rounded-xl border-2 border-border-subtle/50 bg-surface-field px-4 py-3 font-semibold text-white"
             {...passwordGuard}
           />
         </div>
@@ -196,7 +196,7 @@ function SignupPanelStatic() {
             type="email"
             autoComplete="email"
             required
-            className="mt-1 w-full rounded-xl border-2 border-border-subtle bg-surface-field px-4 py-3 font-semibold text-white"
+            className="mt-1 w-full rounded-xl border-2 border-border-subtle/50 bg-surface-field px-4 py-3 font-semibold text-white"
             {...emailGuard}
           />
         </div>
@@ -214,7 +214,7 @@ function SignupPanelStatic() {
             autoComplete="new-password"
             required
             minLength={6}
-            className="mt-1 w-full rounded-xl border-2 border-border-subtle bg-surface-field px-4 py-3 font-semibold text-white"
+            className="mt-1 w-full rounded-xl border-2 border-border-subtle/50 bg-surface-field px-4 py-3 font-semibold text-white"
             {...passwordGuard}
           />
         </div>
@@ -231,7 +231,7 @@ function SignupPanelStatic() {
             type="password"
             autoComplete="new-password"
             required
-            className="mt-1 w-full rounded-xl border-2 border-border-subtle bg-surface-field px-4 py-3 font-semibold text-white"
+            className="mt-1 w-full rounded-xl border-2 border-border-subtle/50 bg-surface-field px-4 py-3 font-semibold text-white"
             {...confirmGuard}
           />
         </div>

@@ -11,7 +11,7 @@ const variantStyles = {
   eyebrow: 'text-xs font-black uppercase tracking-widest text-slate-400',
   /** Splash hero wordmark — red → blue gradient text */
   heroGradient:
-    'font-display font-bold italic text-transparent bg-clip-text bg-gradient-to-r from-brand-accent-red to-brand-accent-blue drop-shadow-xl',
+    'font-display font-bold italic text-transparent bg-clip-text bg-linear-to-r from-brand-accent-red to-brand-accent-blue drop-shadow-xl',
 };
 
 /**

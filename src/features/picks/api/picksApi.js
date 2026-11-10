@@ -10,6 +10,13 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
+import { DEFAULT_BAND_ID } from '../../../shared/config/bands.js';
+import {
+  bandIdQueryConstraints,
+  docBelongsToBand,
+  rowsForBand,
+  stampBandId,
+} from '../../../shared/config/bandScope.js';
 import { db } from '../../../shared/lib/firebase';
 import { hasNonEmptyPicksObject } from '../model/pickSubmission';
 
@@ -27,28 +34,36 @@ export function getPickDocumentId(selectedDate, userId) {
 /**
  * Load the user's pick map for a show (field id → song string).
  */
-export async function fetchPickDoc(selectedDate, userId) {
+export async function fetchPickDoc(selectedDate, userId, bandId = DEFAULT_BAND_ID) {
   if (!userId || !selectedDate) return {};
 
   const pickId = getPickDocumentId(selectedDate, userId);
   const docSnap = await getDoc(doc(db, 'picks', pickId));
 
   if (!docSnap.exists()) return {};
-  return docSnap.data().picks ?? {};
+  const data = docSnap.data();
+  if (!docBelongsToBand(data, bandId)) return {};
+  return data.picks ?? {};
 }
 
 /**
  * True when the pick document exists for this show/user and `picks` has at least one non-empty value.
  * (Unlike {@link fetchPickDoc}, distinguishes missing doc from empty picks map.)
  */
-export async function hasSubmittedPicksForShow(selectedDate, userId) {
+export async function hasSubmittedPicksForShow(
+  selectedDate,
+  userId,
+  bandId = DEFAULT_BAND_ID,
+) {
   if (!userId || !selectedDate) return false;
 
   const pickId = getPickDocumentId(selectedDate, userId);
   const docSnap = await getDoc(doc(db, 'picks', pickId));
 
   if (!docSnap.exists()) return false;
-  return hasNonEmptyPicksObject(docSnap.data().picks);
+  const data = docSnap.data();
+  if (!docBelongsToBand(data, bandId)) return false;
+  return hasNonEmptyPicksObject(data.picks);
 }
 
 /**
@@ -68,19 +83,24 @@ export async function resolveHandleForPicks(userId, user) {
 /**
  * Pools the user belongs to, stored on the pick doc for snapshotting.
  */
-export async function fetchPoolsSnapshotForPick(userId) {
+export async function fetchPoolsSnapshotForPick(userId, bandId = DEFAULT_BAND_ID) {
   if (!userId) return [];
 
   const poolsQuery = query(
     collection(db, 'pools'),
-    where('members', 'array-contains', userId)
+    where('members', 'array-contains', userId),
+    ...bandIdQueryConstraints(where, bandId),
   );
   const poolSnapshot = await getDocs(poolsQuery);
 
-  return poolSnapshot.docs.map((poolDoc) => ({
-    id: poolDoc.id,
-    name: poolDoc.data().name,
-  }));
+  return rowsForBand(
+    poolSnapshot.docs.map((poolDoc) => ({
+      id: poolDoc.id,
+      name: poolDoc.data().name,
+      bandId: poolDoc.data().bandId,
+    })),
+    bandId,
+  ).map(({ id, name }) => ({ id, name }));
 }
 
 const BACKFILL_READ_CHUNK = 40;
@@ -148,7 +168,11 @@ export async function arrayUnionPoolOntoUserPickDocs(userId, pool, showDates) {
     for (let j = 0; j < snaps.length; j += 1) {
       if (!snaps[j].exists()) continue;
       const ref = doc(db, 'picks', getPickDocumentId(chunkDates[j], uid));
-      batch.update(ref, { pools: arrayUnion(poolEntry) });
+      const prior = snaps[j].data() || {};
+      batch.update(
+        ref,
+        stampBandId({ pools: arrayUnion(poolEntry), bandId: prior.bandId }),
+      );
       pending += 1;
       if (pending >= BACKFILL_BATCH_MAX) {
         await flush();
@@ -156,6 +180,46 @@ export async function arrayUnionPoolOntoUserPickDocs(userId, pool, showDates) {
     }
     await flush();
   }
+}
+
+/**
+ * Payload for {@link savePickDoc}. Always includes `bandId`.
+ * The document id stays `{showDate}_{uid}` (Phase 3 renames it).
+ *
+ * @param {{
+ *   userId: string,
+ *   selectedDate: string,
+ *   picks: Record<string, unknown>,
+ *   handle?: string,
+ *   pools?: Array<{ id: string, name?: string }>,
+ *   bandId?: string,
+ * }} fields
+ */
+export function buildPickDocument({
+  userId,
+  selectedDate,
+  picks,
+  handle,
+  pools,
+  bandId,
+}) {
+  const safePicks = omitUndefinedShallow(picks);
+  const safePools = (pools || []).map((p) => ({
+    id: p.id,
+    name: p.name ?? '',
+  }));
+
+  return stampBandId({
+    userId,
+    handle: handle ?? 'Anonymous',
+    showDate: selectedDate,
+    updatedAt: new Date().toISOString(),
+    score: 0,
+    isGraded: false,
+    picks: safePicks,
+    pools: safePools,
+    bandId,
+  });
 }
 
 /**
@@ -167,23 +231,11 @@ export async function savePickDoc({
   picks,
   handle,
   pools,
+  bandId,
 }) {
   const pickId = getPickDocumentId(selectedDate, userId);
-
-  const safePicks = omitUndefinedShallow(picks);
-  const safePools = (pools || []).map((p) => ({
-    id: p.id,
-    name: p.name ?? '',
-  }));
-
-  await setDoc(doc(db, 'picks', pickId), {
-    userId,
-    handle: handle ?? 'Anonymous',
-    showDate: selectedDate,
-    updatedAt: new Date().toISOString(),
-    score: 0,
-    isGraded: false,
-    picks: safePicks,
-    pools: safePools,
-  });
+  await setDoc(
+    doc(db, 'picks', pickId),
+    buildPickDocument({ userId, selectedDate, picks, handle, pools, bandId }),
+  );
 }

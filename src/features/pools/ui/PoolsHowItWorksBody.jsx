@@ -16,7 +16,7 @@ export default function PoolsHowItWorksBody({
       id={id}
       className={[
         framed
-          ? 'rounded-xl border border-border-subtle bg-surface-panel-strong px-3 py-3 shadow-inset-glass'
+          ? 'rounded-xl border border-border-subtle/50 bg-surface-panel-strong/72 px-3 py-3 shadow-inset-glass'
           : '',
         className,
       ]

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck, ShieldAlert } from 'lucide-react';
-import Card from '../../../shared/ui/Card';
+import { Panel } from '../../../shared/ui/Card';
 import Button from '../../../shared/ui/Button';
 import { setAdminClaim } from '../api/setAdminClaimApi';
 
@@ -69,17 +69,17 @@ export default function AdminClaimBootstrap({ user }) {
 
   if (status === 'present') {
     return (
-      <Card variant="default" padding="sm" className="mb-4 mt-4">
+      <Panel className="mb-4 mt-4">
         <p className="text-xs text-emerald-400/90 font-bold uppercase tracking-wider flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
           Admin claim active on your account
         </p>
-      </Card>
+      </Panel>
     );
   }
 
   return (
-    <Card variant="default" padding="sm" className="mb-4 mt-4 space-y-3">
+    <Panel className="mb-4 mt-4 space-y-3">
       <div className="flex items-start gap-2">
         <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-amber-400" aria-hidden />
         <div className="space-y-1">
@@ -110,6 +110,6 @@ export default function AdminClaimBootstrap({ user }) {
           {errorText}
         </p>
       ) : null}
-    </Card>
+    </Panel>
   );
 }

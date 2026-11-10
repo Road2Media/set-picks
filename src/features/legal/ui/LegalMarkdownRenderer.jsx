@@ -48,7 +48,7 @@ class LegalMarkdownErrorBoundary extends React.Component {
           <p className="mb-2 text-xs font-bold uppercase tracking-wide text-amber-200">
             This document could not be formatted for display. Raw text:
           </p>
-          <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap break-words text-xs text-slate-300">
+          <pre className="max-h-[70vh] overflow-auto whitespace-pre-wrap wrap-break-word text-xs text-slate-300">
             {this.props.fallbackMarkdown}
           </pre>
         </div>
