@@ -26,7 +26,7 @@ function recapSummaryCompactStats(recap, standingsTo) {
         aria-label={PICKS_SELF_RECAP_STANDINGS_LINK}
         title={PICKS_SELF_RECAP_STANDINGS_LINK}
         onClick={(event) => event.stopPropagation()}
-        className="mt-0.5 inline-flex rounded underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+        className="mt-0.5 inline-flex rounded-sm underline-offset-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
       >
         <p
           className="flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold tabular-nums leading-snug sm:text-base"
@@ -54,7 +54,7 @@ function recapSummaryCompactStats(recap, standingsTo) {
       aria-label={PICKS_SELF_RECAP_STANDINGS_LINK}
       title={PICKS_SELF_RECAP_STANDINGS_LINK}
       onClick={(event) => event.stopPropagation()}
-      className="mt-0.5 inline-flex rounded underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+      className="mt-0.5 inline-flex rounded-sm underline-offset-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
     >
       <p
         className="text-sm font-bold leading-snug text-content-secondary"
@@ -114,7 +114,7 @@ export default function PicksSelfRecapSection({
               {STANDINGS_SELF_RECAP_EYEBROW}
             </p>
             <p
-              className="mt-1 break-words text-base font-bold leading-snug text-slate-100"
+              className="mt-1 wrap-break-word text-base font-bold leading-snug text-slate-100"
               title={recap.handle}
             >
               {recap.handle}

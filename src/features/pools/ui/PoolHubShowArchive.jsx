@@ -22,7 +22,7 @@ export default function PoolHubShowArchive({ poolId }) {
 
   return (
     <section>
-      <details className="group rounded-xl border border-border-subtle bg-surface-glass shadow-inset-glass">
+      <details className="group rounded-xl border border-border-subtle/50 bg-surface-glass/32 shadow-inset-glass">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-bold text-content-secondary transition-colors hover:text-white [&::-webkit-details-marker]:hidden">
           <span className="uppercase tracking-widest">Past shows</span>
           <ChevronDown
@@ -30,14 +30,14 @@ export default function PoolHubShowArchive({ poolId }) {
             aria-hidden
           />
         </summary>
-        <div className="space-y-2 border-t border-border-muted px-3 py-3">
+        <div className="space-y-2 border-t border-border-muted/60 px-3 py-3">
           {pastShows.length > 0 ? (
             <ul className="space-y-2">
               {pastShows.map((show) => (
                 <li key={show.date}>
                   <Link
                     to={`/dashboard/standings?showDate=${encodeURIComponent(show.date)}&poolId=${encodeURIComponent(poolId)}`}
-                    className="block rounded-xl border border-border-subtle bg-surface-panel px-4 py-3 text-sm font-bold text-brand-primary transition-colors hover:bg-surface-panel-strong hover:text-brand-primary-strong"
+                    className="block rounded-xl border border-border-subtle/50 bg-surface-panel/50 px-4 py-3 text-sm font-bold text-brand-primary transition-colors hover:bg-surface-panel-strong/72 hover:text-brand-primary-strong"
                   >
                     Show standings · {formatShowLabel(show.date)}
                   </Link>

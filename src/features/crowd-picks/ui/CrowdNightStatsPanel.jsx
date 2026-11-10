@@ -202,7 +202,7 @@ function CrowdNightBody({
 
       <div
         className={`space-y-3 ${
-          blurDeepStats ? 'pointer-events-none select-none blur-sm' : ''
+          blurDeepStats ? 'pointer-events-none select-none blur-xs' : ''
         }`}
         aria-hidden={blurDeepStats || undefined}
       >
@@ -428,7 +428,7 @@ function MetricTile({ label, value, definition, tone }) {
       pad="tile"
       className="h-full text-center"
       header={
-        <div className="flex min-h-[1.875rem] items-center justify-center gap-1">
+        <div className="flex min-h-7.5 items-center justify-center gap-1">
           <p className={`${DASHBOARD_CARD_EYEBROW} ${labelClass}`}>{label}</p>
           <InfoTooltip label={label} definition={definition} />
         </div>
@@ -445,7 +445,7 @@ function PlayedLegend() {
   return (
     <p className="mb-2 inline-flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-content-secondary">
       <span
-        className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm bg-brand-primary/80"
+        className="inline-block h-2.5 w-2.5 shrink-0 rounded-xs bg-brand-primary/80"
         aria-hidden
       />
       Highlight = that crowd song was played

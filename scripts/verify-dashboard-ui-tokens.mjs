@@ -72,13 +72,13 @@ function walkSource(dir, out = []) {
 }
 
 function assertCardBorderDetector() {
-  const sample = `'rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass'`;
+  const sample = `'rounded-3xl border border-border-subtle/50 bg-surface-panel/50 p-6 shadow-inset-glass'`;
   const button = `'rounded-xl border-2 border-brand-primary bg-brand-primary text-white'`;
   const shellUse = 'className={PANEL_SHELL}';
   const apostrophe =
     "/* user's profile */\n" +
     'alt={`${handle}\'s avatar`}\n' +
-    "const box = 'rounded-3xl border border-border-subtle bg-surface-panel shadow-inset-glass';";
+    "const box = 'rounded-3xl border border-border-subtle/50 bg-surface-panel/50 shadow-inset-glass';";
   if (handBuiltCardBorderHits(sample).length !== 1) {
     console.error('verify-dashboard-ui-tokens: detector missed a hand-built card border');
     process.exit(1);

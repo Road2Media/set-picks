@@ -22,7 +22,7 @@ export default function DashboardMobileContextBar({
   const isWarRoom = contextTitleTone === 'warRoom';
 
   return (
-    <div className="grid min-h-[3.375rem] w-full min-w-0 grid-cols-[minmax(0,1.2fr)_auto_minmax(0,0.8fr)] items-center gap-x-2 bg-[rgb(var(--surface-chrome)_/_0.98)] px-4 py-3 shadow-[0_10px_26px_-18px_rgb(var(--brand-bg-deep)/0.9),0_0_24px_-16px_rgb(var(--brand-primary)/0.07)] backdrop-blur-sm supports-[backdrop-filter]:backdrop-saturate-125">
+    <div className="grid min-h-13.5 w-full min-w-0 grid-cols-[minmax(0,1.2fr)_auto_minmax(0,0.8fr)] items-center gap-x-2 bg-[rgb(var(--surface-chrome)/0.98)] px-4 py-3 shadow-[0_10px_26px_-18px_rgb(var(--brand-bg-deep)/0.9),0_0_24px_-16px_rgb(var(--brand-primary)/0.07)] backdrop-blur-xs supports-backdrop-filter:backdrop-saturate-125">
       <span
         className={`min-w-0 justify-self-start truncate text-sm font-bold ${
           isWarRoom

@@ -25,14 +25,14 @@ export default function AdminActionToggle({
   const panelId = `${id}-panel`;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border-subtle bg-[rgb(var(--surface-field)_/_0.35)] ring-1 ring-border-glass/20">
+    <div className="overflow-hidden rounded-xl border border-border-subtle/50 bg-[rgb(var(--surface-field)/0.35)] ring-1 ring-border-glass/20">
       <button
         type="button"
         id={headerId}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => onOpenChange(!open)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[rgb(var(--surface-field)_/_0.55)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-[rgb(var(--surface-field)/0.55)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand"
       >
         <span className="min-w-0">
           <span className="block text-xs font-bold uppercase tracking-widest text-content-primary">
@@ -56,7 +56,7 @@ export default function AdminActionToggle({
           id={panelId}
           role="region"
           aria-labelledby={headerId}
-          className="space-y-2 border-t border-border-muted px-4 py-4"
+          className="space-y-2 border-t border-border-muted/60 px-4 py-4"
         >
           {children}
         </div>

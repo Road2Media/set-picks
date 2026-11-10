@@ -140,7 +140,7 @@ export default function PhishIqPlay({
           </p>
         ) : null}
         <div
-          className="mt-5 rounded-2xl border border-brand-primary/30 bg-surface-inset p-4"
+          className="mt-5 rounded-2xl border border-brand-primary/30 bg-surface-inset/72 p-4"
           data-phish-iq-share-card
         >
           <p className="text-sm font-semibold text-content-primary">Share card</p>
@@ -191,12 +191,12 @@ export default function PhishIqPlay({
               onClick={() => choose(choice.id)}
               className={[
                 'w-full rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand',
                 isAnswer
                   ? 'border-brand-primary bg-brand-primary/15 text-content-primary'
                   : missed
                     ? 'border-red-400/70 bg-red-500/10 text-content-primary'
-                    : 'border-border-muted/50 bg-surface-inset text-content-primary hover:border-brand-primary/50',
+                    : 'border-border-muted/50 bg-surface-inset/72 text-content-primary hover:border-brand-primary/50',
               ].join(' ')}
             >
               {choice.label}

@@ -19,12 +19,12 @@ export default function DashboardNotificationsBell() {
   return (
     <Link
       to={PROFILE_CLUSTER_PATHS.notifications}
-      className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border-subtle/60 bg-surface-panel-strong text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+      className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border-subtle/60 bg-surface-panel-strong/72 text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary"
       aria-label={label}
     >
       <Bell className="h-5 w-5" aria-hidden />
       {ready && unreadCount > 0 ? (
-        <span className="absolute -left-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-brand-primary ring-2 ring-surface-panel-strong" />
+        <span className="absolute -left-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-brand-primary ring-2 ring-surface-panel-strong/72" />
       ) : null}
       {ready && unreadCount > 0 ? (
         <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-primary px-1 text-[10px] font-black leading-none text-[rgb(var(--brand-bg-deep))]">

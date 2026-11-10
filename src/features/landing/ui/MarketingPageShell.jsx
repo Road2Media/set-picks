@@ -36,7 +36,7 @@ export default function MarketingPageShell({ children }) {
           <a
             href="/"
             aria-label="Setlist Pick 'Em — back to home"
-            className="flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
+            className="flex shrink-0 items-center gap-2 rounded-md outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
           >
             <img
               src={BRAND_SPLASH_HEADER_VINYL_MARK_SRC}

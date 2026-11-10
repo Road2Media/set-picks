@@ -103,7 +103,7 @@ export default function PublicProfileView({
             alt={`${handle}'s avatar`}
           />
           <div className="min-w-0">
-            <h1 className="font-display text-3xl sm:text-4xl font-bold italic text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-blue-500">
+            <h1 className="font-display text-3xl sm:text-4xl font-bold italic text-transparent bg-clip-text bg-linear-to-r from-red-500 to-blue-500">
               {handle}
             </h1>
             {playingSince && (
@@ -136,7 +136,7 @@ export default function PublicProfileView({
               {userPools.map((pool) => (
                 <span
                   key={pool.id}
-                  className="inline-flex items-center rounded-full border border-border-subtle bg-surface-panel-strong px-3 py-1 text-xs font-bold text-brand-primary"
+                  className="inline-flex items-center rounded-full border border-border-subtle/50 bg-surface-panel-strong/72 px-3 py-1 text-xs font-bold text-brand-primary"
                 >
                   {pool.name || 'Unnamed pool'}
                 </span>
@@ -159,7 +159,7 @@ export default function PublicProfileView({
                     </p>
                     <InfoTooltip label={label} definition={definition} />
                   </div>
-                  <div className="flex min-h-[3.25rem] items-center justify-center rounded-2xl border border-border-subtle bg-surface-field px-2 py-3">
+                  <div className="flex min-h-13 items-center justify-center rounded-2xl border border-border-subtle/50 bg-surface-field px-2 py-3">
                     {statsLoading ? (
                       <Loader2
                         className="h-5 w-5 shrink-0 animate-spin text-brand-primary"

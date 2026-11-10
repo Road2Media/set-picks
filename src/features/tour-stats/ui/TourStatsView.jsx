@@ -36,7 +36,7 @@ const { BUSTOUT_MIN_GAP } = SCORING_RULES;
 const TOP_SONGS_COLUMNS = 'grid-cols-[1.5rem_minmax(0,1fr)_2.75rem_4.95rem]';
 
 const TOP_SONGS_ROW_GRID =
-  `grid ${TOP_SONGS_COLUMNS} items-center gap-x-2 min-h-[1.75rem]`;
+  `grid ${TOP_SONGS_COLUMNS} items-center gap-x-2 min-h-7`;
 
 const TOP_SONGS_HEADER_GRID =
   `grid ${TOP_SONGS_COLUMNS} items-end gap-x-2`;
@@ -55,7 +55,7 @@ const DATES_METRIC_GRID = 'grid w-[4.2rem] justify-self-end grid-cols-[2.35rem_1
  * enrichment lands or when some history lookups 429.
  */
 const GAP_ROW_GRID =
-  'grid grid-cols-[minmax(0,1fr)_2.75rem_2.25rem_4.75rem] items-center gap-x-2 min-h-[1.75rem]';
+  'grid grid-cols-[minmax(0,1fr)_2.75rem_2.25rem_4.75rem] items-center gap-x-2 min-h-7';
 
 /** Right-rail numeric cells — nowrap + slightly smaller type on narrow widths. */
 const META_CELL =
@@ -188,7 +188,7 @@ export default function TourStatsView({
           {[0, 1, 2, 3].map((i) => (
             <div
               key={i}
-              className={`h-[4.5rem] animate-pulse ${DASHBOARD_TILE_SHELL}`}
+              className={`h-18 animate-pulse ${DASHBOARD_TILE_SHELL}`}
             />
           ))}
         </div>
@@ -601,7 +601,7 @@ function PagedRows({ rows, label, header, renderRow, listAs: ListTag = 'ul' }) {
           >
             <ChevronLeft className="h-4 w-4" aria-hidden />
           </button>
-          <span className="min-w-[6.5rem] text-center text-[11px] font-semibold tabular-nums text-content-secondary">
+          <span className="min-w-26 text-center text-[11px] font-semibold tabular-nums text-content-secondary">
             {start + 1}–{end} of {total}
           </span>
           <button
@@ -735,7 +735,7 @@ function StatTile({ label, value, definition, accent = 'default', sub = null }) 
       header={(
         /* min-h fits a two-line label so one-line tiles (Bustouts) keep the
            same header band height as wrapping ones at desktop width */
-        <div className="flex min-h-[1.875rem] items-center justify-center gap-1">
+        <div className="flex min-h-7.5 items-center justify-center gap-1">
           <p className={`min-w-0 ${STANDINGS_BOX_EYEBROW} ${tone.label}`}>
             {label}
           </p>

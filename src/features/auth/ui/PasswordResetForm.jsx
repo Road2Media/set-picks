@@ -28,7 +28,7 @@ export default function PasswordResetForm({
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => onPasswordChange(e.target.value)}
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-4 font-bold text-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
+            className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-4 font-bold text-lg text-white focus:outline-hidden focus:border-emerald-500 transition-colors"
             minLength={6}
             required
             disabled={isVerifyingCode || !isReady || isSubmitting}

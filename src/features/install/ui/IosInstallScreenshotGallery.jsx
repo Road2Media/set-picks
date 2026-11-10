@@ -30,8 +30,8 @@ export default function IosInstallScreenshotGallery({ compact = false }) {
           key={step.src}
           className={
             compact
-              ? 'overflow-hidden rounded-xl border border-border-muted bg-surface-inset/70 p-1.5'
-              : 'overflow-hidden rounded-2xl border border-border-muted bg-surface-inset/70 p-2'
+              ? 'overflow-hidden rounded-xl border border-border-muted/60 bg-surface-inset/70 p-1.5'
+              : 'overflow-hidden rounded-2xl border border-border-muted/60 bg-surface-inset/70 p-2'
           }
         >
           <img

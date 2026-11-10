@@ -188,7 +188,7 @@ export default function PickPredictionPanel({
         />
       </summary>
 
-      <div className="mt-3 space-y-3 border-t border-border-subtle pt-3">
+      <div className="mt-3 space-y-3 border-t border-border-subtle/50 pt-3">
         <div
           className="flex flex-wrap gap-1.5"
           role="tablist"

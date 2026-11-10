@@ -231,7 +231,7 @@ export default function StandingsShowOrPoolView({ screen }) {
           <button
             type="button"
             onClick={onOpenPoolHub}
-            className="shrink-0 rounded-full border border-border-subtle bg-surface-panel px-3 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-panel-strong hover:text-white"
+            className="shrink-0 rounded-full border border-border-subtle/50 bg-surface-panel/50 px-3 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-panel-strong/72 hover:text-white"
           >
             Pool details
           </button>

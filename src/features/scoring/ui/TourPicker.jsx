@@ -69,7 +69,7 @@ export function TourPickerControls({ isDesk, tours, activeKey, onSelect, classNa
         </div>
       ) : (
         <select
-          className="w-full rounded-xl border border-border-subtle bg-surface-panel px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand"
+          className="w-full rounded-xl border border-border-subtle/50 bg-surface-panel/50 px-3 py-2 text-sm font-semibold text-white focus:outline-hidden focus:ring-2 focus:ring-brand"
           value={activeKey}
           onChange={(event) => onSelect(event.target.value)}
           aria-label="Select tour"

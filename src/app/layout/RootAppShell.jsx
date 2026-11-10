@@ -33,7 +33,7 @@ export default function RootAppShell() {
   return (
     <>
       <AppBackground />
-      <div className="relative z-[1] min-h-screen">
+      <div className="relative z-1 min-h-screen">
         <div key={transitionKey} className="min-h-screen animate-page-enter">
           <Suspense
             fallback={

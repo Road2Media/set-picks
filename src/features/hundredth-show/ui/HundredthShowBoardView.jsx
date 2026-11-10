@@ -51,7 +51,7 @@ export default function HundredthShowBoardView({
       </header>
 
       {resolved.dryRun ? (
-        <p className="mb-6 break-words text-sm leading-snug text-teal-200" role="status">
+        <p className="mb-6 wrap-break-word text-sm leading-snug text-teal-200" role="status">
           {HUNDREDTH_DRY_RUN_COPY} This preview uses {resolved.date}.
           {sample ? ' The handles below are a sample, not that night.' : ''}
         </p>
@@ -67,7 +67,7 @@ export default function HundredthShowBoardView({
                 className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-x-3 py-2.5 text-sm"
               >
                 <span className="tabular-nums text-slate-400">{row.rank}</span>
-                <span className="min-w-0 break-words font-semibold text-white">{row.handle}</span>
+                <span className="min-w-0 wrap-break-word font-semibold text-white">{row.handle}</span>
                 <span className="col-start-2 text-slate-400">
                   {row.points} points · {row.exactSlots} exact slots
                 </span>

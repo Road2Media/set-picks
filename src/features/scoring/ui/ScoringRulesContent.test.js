@@ -20,7 +20,7 @@ describe('ScoringRulesContent', () => {
   it('defaults to dark modal surface (uppercase product title)', () => {
     const markup = html({ asOf: '2026-10-11' });
     expect(markup).toContain('How Scoring Works');
-    expect(markup).toContain('bg-surface-panel');
+    expect(markup).toContain('bg-surface-panel/50');
     expect(markup).not.toContain('bg-white');
     expect(markup).toContain('>10<');
     expect(markup).toContain('href="/how-scoring-changed"');
@@ -30,7 +30,7 @@ describe('ScoringRulesContent', () => {
     const markup = html({ surface: 'light', asOf: '2026-10-11' });
     expect(markup).toContain('How scoring works');
     expect(markup).toContain('bg-white');
-    expect(markup).not.toContain('bg-surface-panel');
+    expect(markup).not.toContain('bg-surface-panel/50');
     expect(markup).toContain('Encore');
     expect(markup).not.toContain('Later encore');
   });

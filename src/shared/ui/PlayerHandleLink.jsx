@@ -32,7 +32,7 @@ export default function PlayerHandleLink({
 }) {
   const safeHandle = (handle || '').trim() || 'Anonymous';
   const baseClass =
-    'font-bold tracking-tight text-brand-primary hover:text-brand-primary-strong hover:underline decoration-brand-primary/70 underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-sm';
+    'font-bold tracking-tight text-brand-primary hover:text-brand-primary-strong hover:underline decoration-brand-primary/70 underline-offset-2 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand rounded-xs';
   const combined = className ? `${baseClass} ${className}` : baseClass;
 
   if (!userId) {

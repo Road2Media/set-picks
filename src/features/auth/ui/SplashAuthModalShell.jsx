@@ -27,7 +27,7 @@ export default function SplashAuthModalShell({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-brand-bg-deep/85 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-brand-bg-deep/85 p-4 backdrop-blur-xs"
       role="dialog"
       aria-modal="true"
       aria-label={title}

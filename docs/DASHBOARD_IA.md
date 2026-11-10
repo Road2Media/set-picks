@@ -125,7 +125,7 @@ A layout-owned slot API that would replace these per-tab portals was spiked in #
 
 `md:` is **width reflow** only (type size, wrapping, column padding). It is not a device switch. Do **not** add new `md:hidden` / `hidden md:*` chrome gates.
 
-Device chrome uses raw screens in `tailwind.config.js`:
+Device chrome uses `@custom-variant` queries in `src/index.css` (v4 breakpoints are min-width only; these also test height). `useDashboardDeskMedia.js` repeats the `desk` and `short` queries for React:
 
 | Screen | Query | What it means |
 |--------|--------|----------------|

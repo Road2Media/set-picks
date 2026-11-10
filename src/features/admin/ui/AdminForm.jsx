@@ -214,7 +214,7 @@ export default function AdminForm({ user, selectedDate }) {
           </div>
         </div>
 
-        <div className="border-t border-border-muted pt-6 space-y-6">
+        <div className="border-t border-border-muted/60 pt-6 space-y-6">
           <h2 className="text-xs font-bold uppercase tracking-widest text-content-secondary ml-1">
             Official setlist
           </h2>
@@ -252,7 +252,7 @@ export default function AdminForm({ user, selectedDate }) {
             onConfirm={handleConfirmForceFinalizeAndRollup}
           />
 
-          <div className="border-t border-border-muted pt-4 space-y-2">
+          <div className="border-t border-border-muted/60 pt-4 space-y-2">
             <button
               type="button"
               disabled={!selectedShow || isSaving || isReverting}

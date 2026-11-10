@@ -44,14 +44,14 @@ export default function PoolInviteCodeRow({
       <span className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
         Invite code
       </span>
-      <code className="rounded-md border border-border-subtle bg-surface-field px-2 py-1 font-mono text-sm font-bold tracking-[0.2em] text-white">
+      <code className="rounded-md border border-border-subtle/50 bg-surface-field px-2 py-1 font-mono text-sm font-bold tracking-[0.2em] text-white">
         {code}
       </code>
       <button
         type="button"
         onClick={handleCopy}
         disabled={disabled}
-        className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand disabled:cursor-not-allowed disabled:opacity-40"
         title="Copy invite code"
         aria-label={copied ? 'Invite code copied' : 'Copy invite code'}
       >

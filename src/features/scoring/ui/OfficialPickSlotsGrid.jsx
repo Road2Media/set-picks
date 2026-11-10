@@ -40,13 +40,13 @@ export default function OfficialPickSlotsGrid({ actualSetlist }) {
           <div
             key={field.id}
             role="listitem"
-            className="flex min-w-0 flex-col gap-1 rounded-xl border border-border-muted bg-surface-inset p-3"
+            className="flex min-w-0 flex-col gap-1 rounded-xl border border-border-muted/60 bg-surface-inset/72 p-3"
           >
             <span className="text-[8px] font-bold uppercase tracking-wider text-content-secondary">
               {field.label}
             </span>
             <span
-              className={`text-xs font-bold leading-snug break-words ${
+              className={`text-xs font-bold leading-snug wrap-break-word ${
                 value ? 'text-white' : 'text-content-secondary'
               }`}
             >

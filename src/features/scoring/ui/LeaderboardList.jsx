@@ -80,7 +80,7 @@ export default function LeaderboardList({
           <h2 className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
             {SHOW_STANDINGS_EYEBROW}
           </h2>
-          <p className="mt-0.5 text-sm font-bold leading-snug text-white break-words md:text-base">
+          <p className="mt-0.5 text-sm font-bold leading-snug text-white wrap-break-word md:text-base">
             {title}
           </p>
           <p className="mt-1 text-[11px] font-medium leading-snug text-content-secondary md:text-xs">
@@ -107,7 +107,7 @@ export default function LeaderboardList({
           */}
           <details className="relative shrink-0">
             <summary
-              className="list-none cursor-pointer rounded p-0.5 text-brand-primary/85 transition-colors hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg [&::-webkit-details-marker]:hidden"
+              className="list-none cursor-pointer rounded-sm p-0.5 text-brand-primary/85 transition-colors hover:text-brand-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg [&::-webkit-details-marker]:hidden"
               title={STANDINGS_PICK_PRIVACY_TOOLTIP}
               aria-label={STANDINGS_PICK_PRIVACY_INFO_LABEL}
             >
@@ -115,7 +115,7 @@ export default function LeaderboardList({
             </summary>
             <div
               role="tooltip"
-              className="absolute right-0 top-full z-30 mt-1.5 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border-subtle bg-surface-panel-strong px-3 py-2 text-left text-xs font-medium leading-snug text-slate-100 shadow-lg"
+              className="absolute right-0 top-full z-30 mt-1.5 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border-subtle/50 bg-surface-panel-strong/72 px-3 py-2 text-left text-xs font-medium leading-snug text-slate-100 shadow-lg"
             >
               {STANDINGS_PICK_PRIVACY_TOOLTIP}
             </div>

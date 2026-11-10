@@ -164,7 +164,7 @@ export default function PicksScorecardCard({
             aria-label="Scorecard audience"
             value={audienceId}
             onChange={(event) => onAudienceChange?.(event.target.value)}
-            className="min-w-0 max-w-[14rem] rounded-lg border border-border-subtle bg-surface-panel px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand"
+            className="min-w-0 max-w-56 rounded-lg border border-border-subtle/50 bg-surface-panel/50 px-2.5 py-1.5 text-xs font-bold text-white focus:outline-hidden focus:ring-2 focus:ring-brand"
           >
             {audienceOptions.map((option) => (
               <option key={option.id} value={option.id}>
@@ -185,7 +185,7 @@ export default function PicksScorecardCard({
           <p className={`mt-1 ${SCORECARD_BODY}`}>{SCORECARD_EMPTY_BODY}</p>
           <Link
             to={makePicksTo}
-            className="mt-3 inline-flex text-sm font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+            className="mt-3 inline-flex text-sm font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
           >
             Go to Make Picks
           </Link>
@@ -229,7 +229,7 @@ export default function PicksScorecardCard({
               )}
               <Link
                 to={standingsTo}
-                className="mt-1.5 inline-flex text-xs font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+                className="mt-1.5 inline-flex text-xs font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
               >
                 {PICKS_SELF_RECAP_STANDINGS_LINK}
               </Link>
@@ -260,7 +260,7 @@ export default function PicksScorecardCard({
                         aria-hidden
                       />
                     ) : null}
-                    <span className="min-w-0 break-words">{slot.song}</span>
+                    <span className="min-w-0 wrap-break-word">{slot.song}</span>
                     {statusLabel ? <span className="sr-only">{statusLabel}</span> : null}
                   </p>
                   {showOverlap ? (

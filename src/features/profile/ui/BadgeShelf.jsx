@@ -56,7 +56,7 @@ export default function BadgeShelf({
                   title={badge.blurb}
                   className={`flex flex-col items-center gap-2 rounded-2xl border px-2 py-3 text-center ${
                     badge.earned
-                      ? 'border-border-subtle bg-surface-field'
+                      ? 'border-border-subtle/50 bg-surface-field'
                       : 'border-dashed border-border-subtle/60 bg-surface-field/40'
                   }`}
                 >

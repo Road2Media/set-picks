@@ -187,7 +187,7 @@ export default function YearEndCelebration({ year, places, onSkip, onComplete })
             type="button"
             onClick={onSkip}
             aria-label="Skip the year-end celebration"
-            className="shrink-0 rounded-full border border-border-subtle bg-surface-panel px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-content-secondary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            className="shrink-0 rounded-full border border-border-subtle/50 bg-surface-panel/50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-widest text-content-secondary hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand"
           >
             {YEAR_END_CELEBRATION_SKIP_LABEL}
           </button>

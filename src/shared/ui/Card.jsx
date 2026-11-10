@@ -4,13 +4,13 @@ import { DASHBOARD_CARD_PAD } from './dashboardCardClasses';
 
 const variantStyles = {
   panel:
-    'bg-surface-panel border border-border-muted/45 rounded-3xl shadow-inset-glass ring-1 ring-border-glass/25',
+    'bg-surface-panel/50 border border-border-muted/45 rounded-3xl shadow-inset-glass ring-1 ring-border-glass/25',
   default:
-    'bg-surface-panel border border-border-muted/45 rounded-3xl shadow-inset-glass ring-1 ring-border-glass/25',
+    'bg-surface-panel/50 border border-border-muted/45 rounded-3xl shadow-inset-glass ring-1 ring-border-glass/25',
   chrome:
-    'bg-surface-chrome border border-border-muted/45 rounded-2xl shadow-inset-glass ring-1 ring-border-glass/25',
+    'bg-surface-chrome/50 border border-border-muted/45 rounded-2xl shadow-inset-glass ring-1 ring-border-glass/25',
   solid:
-    'bg-surface-panel-strong border border-border-muted/50 rounded-2xl shadow-inset-glass ring-1 ring-border-glass/30',
+    'bg-surface-panel-strong/72 border border-border-muted/50 rounded-2xl shadow-inset-glass ring-1 ring-border-glass/30',
   /**
    * Middle tier — teal border + glass (blur). Detail cards that are not a
    * list row. No gradient / glow; use `venue` for hero surfaces.
@@ -19,16 +19,16 @@ const variantStyles = {
    * A tile keeps this teal edge off the outer box.
    */
   frosted:
-    'rounded-2xl border border-brand-primary/30 bg-surface-panel shadow-inset-glass ring-1 ring-border-glass/25 backdrop-blur-md supports-[backdrop-filter]:backdrop-blur-xl',
+    'rounded-2xl border border-brand-primary/30 bg-surface-panel/50 shadow-inset-glass ring-1 ring-border-glass/25 backdrop-blur-md supports-backdrop-filter:backdrop-blur-xl',
   /** Hero dashboard card — teal border, gradient into deep bg (see PoolHub “Game status”) */
   venue:
-    'rounded-2xl border border-brand-primary/30 bg-gradient-to-br from-surface-panel-strong to-brand-bg-deep shadow-glow-brand shadow-inset-glass ring-1 ring-border-glass/25',
-  inset: 'rounded-xl border border-border-muted/45 bg-surface-inset ring-1 ring-border-glass/20',
+    'rounded-2xl border border-brand-primary/30 bg-linear-to-br from-surface-panel-strong/72 to-brand-bg-deep shadow-glow-brand shadow-inset-glass ring-1 ring-border-glass/25',
+  inset: 'rounded-xl border border-border-muted/45 bg-surface-inset/72 ring-1 ring-border-glass/20',
   glass:
-    'border border-border-muted/50 bg-surface-glass backdrop-blur-xl ring-1 ring-border-glass/25 shadow-inset-glass',
+    'border border-border-muted/50 bg-surface-glass/32 backdrop-blur-xl ring-1 ring-border-glass/25 shadow-inset-glass',
   alert: 'bg-amber-500/10 border border-amber-500/30 rounded-xl',
   danger: 'bg-red-500/10 border border-red-500/50 rounded-2xl',
-  nested: 'rounded-xl border border-border-muted/45 bg-surface-inset ring-1 ring-border-glass/20',
+  nested: 'rounded-xl border border-border-muted/45 bg-surface-inset/72 ring-1 ring-border-glass/20',
   plain: '',
 };
 
@@ -63,10 +63,10 @@ export default Card;
  * Settings or profile block (#1090). Quiet roomy shell.
  * Not a Standings card: no you / night wash, no teal edge, no glow.
  *
- * `rounded-3xl` `border-border-subtle` `bg-surface-panel` inset glass `p-6`.
+ * `rounded-3xl` `border-border-subtle/50` `bg-surface-panel/50` inset glass `p-6`.
  */
 export const PANEL_SHELL =
-  'rounded-3xl border border-border-subtle bg-surface-panel shadow-inset-glass';
+  'rounded-3xl border border-border-subtle/50 bg-surface-panel/50 shadow-inset-glass';
 
 export const PANEL_PAD = {
   none: '',
@@ -79,7 +79,7 @@ export const PANEL_PAD = {
  * border modifier. A first-place badge stays on the rank chip.
  * Neither tone uses the amber or teal wash from #1088.
  */
-export const ROW_SHELL = 'rounded-xl bg-surface-panel shadow-inset-glass';
+export const ROW_SHELL = 'rounded-xl bg-surface-panel/50 shadow-inset-glass';
 
 export const ROW_EDGE = {
   default: 'border border-border-subtle/45',

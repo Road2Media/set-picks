@@ -27,7 +27,7 @@ export default function StatsQuaternaryChrome({ render }) {
   );
 
   const mobile = (
-    <div className="space-y-2 border-b border-border-subtle/40 bg-brand-bg/95 px-4 py-2 backdrop-blur-md supports-[backdrop-filter]:bg-brand-bg/80">
+    <div className="space-y-2 border-b border-border-subtle/40 bg-brand-bg/95 px-4 py-2 backdrop-blur-md supports-backdrop-filter:bg-brand-bg/80">
       {render()}
     </div>
   );

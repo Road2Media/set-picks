@@ -59,7 +59,7 @@ export default function AccountPreferencesScreen({ user }) {
         <AccountSecurity user={user} showHeading={false} />
       </div>
 
-      <div className="border-t border-border-muted pt-6">
+      <div className="border-t border-border-muted/60 pt-6">
         <Button
           variant="text"
           onClick={handleLogout}
@@ -70,7 +70,7 @@ export default function AccountPreferencesScreen({ user }) {
         </Button>
       </div>
 
-      <div className="mt-10 border-t border-border-muted pt-8">
+      <div className="mt-10 border-t border-border-muted/60 pt-8">
         <p className="mb-1 text-xs font-black uppercase tracking-widest text-content-secondary">
           Play
         </p>
@@ -81,7 +81,7 @@ export default function AccountPreferencesScreen({ user }) {
         <HideCrowdPulsePreference />
       </div>
 
-      <div className="mt-10 border-t border-border-muted pt-8">
+      <div className="mt-10 border-t border-border-muted/60 pt-8">
         <p className="mb-1 text-xs font-black uppercase tracking-widest text-content-secondary">
           Notifications
         </p>
@@ -108,21 +108,21 @@ export default function AccountPreferencesScreen({ user }) {
           <span className="space-x-2">
             <Link
               to="/privacy"
-              className="underline decoration-border-muted underline-offset-2 transition-colors hover:text-white"
+              className="underline decoration-border-muted/60 underline-offset-2 transition-colors hover:text-white"
             >
               Privacy
             </Link>
             <span aria-hidden>&middot;</span>
             <Link
               to="/terms"
-              className="underline decoration-border-muted underline-offset-2 transition-colors hover:text-white"
+              className="underline decoration-border-muted/60 underline-offset-2 transition-colors hover:text-white"
             >
               Terms
             </Link>
             <span aria-hidden>&middot;</span>
             <a
               href={PUBLIC_SUPPORT_MAILTO}
-              className="underline decoration-border-muted underline-offset-2 transition-colors hover:text-white"
+              className="underline decoration-border-muted/60 underline-offset-2 transition-colors hover:text-white"
             >
               {PUBLIC_SUPPORT_LABEL}
             </a>

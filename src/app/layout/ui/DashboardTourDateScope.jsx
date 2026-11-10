@@ -19,10 +19,10 @@ import {
 } from '../../../shared/utils/showOptionLabel.js';
 
 const SELECT_CLASS_MOBILE =
-  'show-date-select w-full max-w-full min-w-0 appearance-none rounded-[7px] border-0 bg-surface-field py-1.5 pl-2.5 pr-2 text-[11px] font-bold text-white outline-none ring-0 transition-colors cursor-pointer focus:border-transparent focus:ring-0';
+  'show-date-select w-full max-w-full min-w-0 appearance-none rounded-[7px] border-0 bg-surface-field py-1.5 pl-2.5 pr-2 text-[11px] font-bold text-white outline-hidden ring-0 transition-colors cursor-pointer focus:border-transparent focus:ring-0';
 
 const SELECT_CLASS_DESKTOP =
-  'show-date-select w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-[11px] border-0 bg-surface-field px-3 py-2.5 text-sm font-bold text-white outline-none ring-0 transition-colors focus:border-transparent focus:ring-0';
+  'show-date-select w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-[11px] border-0 bg-surface-field px-3 py-2.5 text-sm font-bold text-white outline-hidden ring-0 transition-colors focus:border-transparent focus:ring-0';
 
 /**
  * Global Tour Date scope control (#609 / #707) — one mount, one select.
@@ -92,7 +92,7 @@ export function DashboardTourDateScopeControl({
           className={
             isDesk
               ? `${dashboardTourDateSelectChromeDesktopWrap} w-64 max-w-full`
-              : `${dashboardTourDateSelectChromeMobileWrap} min-w-0 w-[11rem] max-w-[11rem] sm:w-[12rem] sm:max-w-[12rem]`
+              : `${dashboardTourDateSelectChromeMobileWrap} min-w-0 w-44 max-w-44 sm:w-48 sm:max-w-48`
           }
         >
           <select
