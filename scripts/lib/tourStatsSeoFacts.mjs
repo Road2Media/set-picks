@@ -3,6 +3,13 @@
  * Aggregates only — never full night setlists.
  */
 
+import {
+  SONG_PLAY_COUNT_FOOTNOTE,
+  SONG_PLAY_COUNT_MARKER,
+  formatSongNightCount,
+  songListNeedsPlayFootnote,
+} from '../../src/features/tour-stats/model/songNightCount.js';
+
 /**
  * @typedef {{
  *   tourLabel?: string,
@@ -10,7 +17,7 @@
  *   showsWithSetlist?: number,
  *   tourShowCount?: number,
  *   bustouts?: Array<{ title?: string, gap?: number, showDate?: string }>,
- *   topSongs?: Array<{ title?: string, timesPlayed?: number }>,
+ *   topSongs?: Array<{ title?: string, timesPlayed?: number, showAppearances?: number }>,
  * }} PublicTourStatsFacts
  */
 
@@ -38,10 +45,18 @@ export function normalizeTourStatsFacts(doc, opts = {}) {
     .filter((row) => row.title)
     .slice(0, bustoutLimit);
   const topSongs = (Array.isArray(doc?.topSongs) ? doc.topSongs : [])
-    .map((row) => ({
-      title: typeof row?.title === 'string' ? row.title.trim() : '',
-      timesPlayed: Number(row?.timesPlayed) || 0,
-    }))
+    .map((row) => {
+      const rawAppearances = row?.showAppearances;
+      const appearances = Number(rawAppearances);
+      return {
+        title: typeof row?.title === 'string' ? row.title.trim() : '',
+        timesPlayed: Number(row?.timesPlayed) || 0,
+        showAppearances:
+          rawAppearances != null && rawAppearances !== '' && Number.isFinite(appearances)
+            ? Math.trunc(appearances)
+            : null,
+      };
+    })
     .filter((row) => row.title)
     .slice(0, topLimit);
   return {
@@ -74,11 +89,20 @@ export function buildTourStatsFactsHtml(facts) {
 
   const topItems = facts.topSongs
     .map((row) => {
-      const plays =
-        row.timesPlayed > 0 ? ` — ${row.timesPlayed} plays this tour` : '';
-      return `    <li>${escapeHtml(row.title)}${escapeHtml(plays)}</li>`;
+      const count = formatSongNightCount(row);
+      const marker = count.showMarker ? SONG_PLAY_COUNT_MARKER : '';
+      const detail =
+        count.nights > 0 || (count.plays != null && count.plays > 0)
+          ? `: ${count.label}${marker}`
+          : '';
+      return `    <li>${escapeHtml(`${row.title}${detail}`)}</li>`;
     })
     .join('\n');
+  const playNote = songListNeedsPlayFootnote(facts.topSongs)
+    ? `\n    <p data-seo-tour-stats-facts="play-note">${escapeHtml(
+        `${SONG_PLAY_COUNT_MARKER} ${SONG_PLAY_COUNT_FOOTNOTE}`,
+      )}</p>`
+    : '';
 
   return `    <p data-seo-tour-stats-facts="summary">${escapeHtml(summary)}</p>
     <h2>Bustouts</h2>
@@ -88,7 +112,16 @@ ${bustoutItems || '    <li>No bustouts published yet.</li>'}
     <h2>Most-played songs</h2>
     <ol data-seo-tour-stats-facts="top-songs">
 ${topItems || '    <li>No frequency data published yet.</li>'}
-    </ol>`;
+    </ol>${playNote}`;
+}
+
+/**
+ * @param {{ showAppearances?: unknown, timesPlayed?: unknown }} row
+ * @returns {string | undefined}
+ */
+function songCountLabel(row) {
+  const count = formatSongNightCount(row);
+  return count.nights > 0 ? count.label : undefined;
 }
 
 /**
@@ -133,10 +166,7 @@ export function mergeTourStatsFactsJsonLd(baseJsonLd, facts, pageUrl) {
         '@type': 'ListItem',
         position: i + 1,
         name: row.title,
-        description:
-          row.timesPlayed > 0
-            ? `${row.timesPlayed} plays this tour`
-            : undefined,
+        description: songCountLabel(row),
       })),
     });
   }
@@ -163,6 +193,12 @@ export function mergeTourStatsFactsJsonLd(baseJsonLd, facts, pageUrl) {
         .slice(0, 5)
         .map((r) => r.title)
         .join(', ')}.`,
+    });
+  }
+  if (songListNeedsPlayFootnote(facts.topSongs)) {
+    faqAnswers.push({
+      q: 'Why do some songs have a number in parentheses?',
+      a: SONG_PLAY_COUNT_FOOTNOTE,
     });
   }
 

@@ -9,6 +9,12 @@ import {
   normalizePublishedYearStats,
   rollUpAnnualTourStats,
 } from './rollUpAnnualTourStats.js';
+import {
+  SONG_PLAY_COUNT_FOOTNOTE,
+  SONG_PLAY_COUNT_MARKER,
+  formatSongNightCount,
+  songListNeedsPlayFootnote,
+} from './songNightCount.js';
 
 export const ANNUAL_TOP_SONG_LIMIT = 10;
 export const ANNUAL_BUSTOUT_LIMIT = 8;
@@ -55,27 +61,37 @@ export function formatAnnualFanDate(ymd) {
 }
 
 /**
+ * @param {unknown} n
+ * @param {string} singular
+ * @param {string} plural
+ * @returns {string}
+ */
+function countWord(n, singular, plural) {
+  const value = Number(n);
+  const safe = Number.isFinite(value) ? Math.trunc(value) : 0;
+  return `${formatAnnualCount(safe)} ${safe === 1 ? singular : plural}`;
+}
+
+/**
  * @param {ReturnType<typeof rollUpAnnualTourStats>} stats
  * @returns {string[]}
  */
 export function annualSummarySentences(stats) {
   const year = stats?.year || ANNUAL_TOUR_STATS_YEAR;
   const tourCount = Array.isArray(stats?.tours) ? stats.tours.length : 0;
-  const lines = [
-    `Phish played ${formatAnnualCount(stats?.showsWithSetlist)} shows with a published setlist in ${year}, across ${formatAnnualCount(tourCount)} tours.`,
-    `${formatAnnualCount(stats?.uniqueSongs)} unique songs. ${formatAnnualCount(stats?.totalSongPlays)} song rows, counting a title that comes back later the same night.`,
-    'A show counts for the calendar year of its date. December 30 and December 31, 2026 count for 2026. January 1 and January 2, 2027 count for 2027.',
+  return [
+    `Phish played ${countWord(stats?.showsWithSetlist, 'show', 'shows')} in ${year} across ${countWord(tourCount, 'tour', 'tours')}, with ${countWord(stats?.uniqueSongs, 'different song', 'different songs')}.`,
   ];
-  if (stats?.unsplitTours?.length) {
-    lines.push(
-      'One tour on the calendar crosses into the next year. Its songs stay off these totals until the shows in this year are posted. January shows are not mixed in.',
-    );
-  } else {
-    lines.push(
-      'Show counts and song-row totals add the tour pages for this calendar year. A song played on two tours counts once.',
-    );
-  }
-  return lines;
+}
+
+/**
+ * @param {{ title?: string, showAppearances?: unknown, timesPlayed?: unknown }} row
+ * @returns {string}
+ */
+function annualSongLine(row) {
+  const count = formatSongNightCount(row);
+  const marker = count.showMarker ? SONG_PLAY_COUNT_MARKER : '';
+  return `${row.title}: ${count.label}${marker}`;
 }
 
 /**
@@ -86,15 +102,13 @@ export function buildAnnualFactsHtml(stats) {
   const summary = annualSummarySentences(stats)
     .map((line) => `    <p data-seo-annual-stats="summary">${escapeHtml(line)}</p>`)
     .join('\n');
-  const top = statList(
-    stats.topSongs.slice(0, ANNUAL_TOP_SONG_LIMIT).map((row) => {
-      const plays = formatAnnualCount(row.timesPlayed);
-      const nights = formatAnnualCount(row.showAppearances);
-      const extra =
-        row.timesPlayed > row.showAppearances ? ` (${plays} song rows)` : '';
-      return `${row.title}: ${nights} nights${extra}`;
-    }),
-  );
+  const topSongs = stats.topSongs.slice(0, ANNUAL_TOP_SONG_LIMIT);
+  const top = statList(topSongs.map((row) => annualSongLine(row)));
+  const playNote = songListNeedsPlayFootnote(topSongs)
+    ? `\n    <p data-seo-annual-stats="play-note">${escapeHtml(
+        `${SONG_PLAY_COUNT_MARKER} ${SONG_PLAY_COUNT_FOOTNOTE}`,
+      )}</p>`
+    : '';
   const bustouts = statList(
     stats.bustouts.slice(0, ANNUAL_BUSTOUT_LIMIT).map((row) => {
       const gap = row.gap > 0 ? `${formatAnnualCount(row.gap)}-show gap` : 'bustout';
@@ -109,20 +123,15 @@ export function buildAnnualFactsHtml(stats) {
   );
   const waiting = stats.unsplitTours.length
     ? `\n    <p data-seo-annual-stats="unsplit">${escapeHtml(
-        stats.unsplitTours
-          .map((tour) => `${tour.tourLabel} (${tour.showDatesInYear.join(', ')})`)
-          .join('; '),
+        stats.unsplitTours.map((tour) => `${tour.tourLabel} has its own page.`).join(' '),
       )}</p>`
     : '';
 
   return `${summary}
-    <p data-seo-annual-stats="year-rule">${escapeHtml(
-      'December 31 counts for 2026. January 1 counts for 2027.',
-    )}</p>
     <h2>Most-played songs in ${stats.year}</h2>
     <ol data-seo-annual-stats="top-songs">
 ${top}
-    </ol>
+    </ol>${playNote}
     <h2>Bustouts in ${stats.year}</h2>
     <ol data-seo-annual-stats="bustouts">
 ${bustouts}
@@ -178,7 +187,7 @@ export function buildAnnualTourStatsJsonLd(stats, pageUrl) {
       `Most-played songs in ${stats.year}`,
       top.map((row) => ({
         name: row.title,
-        description: `${formatAnnualCount(row.showAppearances)} nights, ${formatAnnualCount(row.timesPlayed)} song rows`,
+        description: formatSongNightCount(row).label,
       })),
     ),
     itemList(
@@ -194,19 +203,19 @@ export function buildAnnualTourStatsJsonLd(stats, pageUrl) {
       '@id': `${url}#faq`,
       mainEntity: [
         faq(
-          `Which shows count toward the ${stats.year} tour statistics?`,
-          'A show counts for the calendar year of its date. December 30 and December 31, 2026 count for 2026. January 1 and January 2, 2027 count for 2027, including when they are part of the New Year\'s Run.',
-        ),
-        faq(
-          'Do these totals match the tour pages?',
-          'Show counts and song-row totals add the tour pages for this calendar year. A song played on two tours counts once among unique songs, and its plays add up.',
-        ),
-        faq(
           `What was the most-played song in ${stats.year}?`,
           topSong
-            ? `${topSong.title} leads this page with ${formatAnnualCount(topSong.showAppearances)} nights and ${formatAnnualCount(topSong.timesPlayed)} song rows.`
+            ? `${topSong.title} leads this page with ${formatSongNightCount(topSong).label}.`
             : 'Song counts are still loading.',
         ),
+        ...(songListNeedsPlayFootnote(top)
+          ? [
+              faq(
+                'Why do some songs have a number in parentheses?',
+                SONG_PLAY_COUNT_FOOTNOTE,
+              ),
+            ]
+          : []),
         faq(
           `Where is the ${stats.year} annual podium?`,
           `The annual standings board for ${stats.year} is at ${SITE}${ANNUAL_STANDINGS_PATH}. Rank is total points for shows dated in that year.`,

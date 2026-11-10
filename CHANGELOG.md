@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.127.1] — 2026-11-10
+
+### Changed
+- **Tour stats fan copy (#1285)** — Tour pages, the 2026 annual page, the New Year's Run song list, and the crawler song lists say nights, with total times played in parentheses when a song came back in the same show. A footnote marker sits after those parentheses, and the note cites phish.net. The annual summary is shows, tours, and different songs. The calendar-year rule and the song-row explanation stay out of the page.
+
 ## [1.127.0] — 2026-11-10
 
 ### Added

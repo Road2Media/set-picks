@@ -88,4 +88,61 @@ describe('TourStatsView tile shell (#1089)', () => {
       expect(html).not.toContain(wash);
     }
   });
+
+  it('shows nights, and the footnote marker only when total plays exceed nights', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TourStatsView, {
+        tourName: 'Fall Tour 2026',
+        hasTour: true,
+        calendarLoading: false,
+        setlistLoading: false,
+        setlistError: null,
+        stats: {
+          ...STATS,
+          topSongs: [
+            { title: 'Tweezer', showAppearances: 8, timesPlayed: 18 },
+            { title: 'Ghost', showAppearances: 6, timesPlayed: 6 },
+          ],
+        },
+        overlay: null,
+        overlayLoading: false,
+        showSelfOverlay: false,
+      }),
+    );
+
+    expect(html).toContain('Tweezer');
+    expect(html).toContain('8 nights (18)');
+    expect(html).toContain('6 nights');
+    expect(html).not.toContain('6 nights (6)');
+    expect(html).not.toContain('(18x)');
+    expect(html).not.toMatch(/song rows?/i);
+    expect(count(html, 'data-song-play-note="marker"')).toBe(1);
+    expect(html).toContain('data-song-play-note="footnote"');
+    expect(html).toContain(
+      'Songs played more than once in a show are counted toward total times played, per phish.net.',
+    );
+  });
+
+  it('omits the footnote when no song was played more times than nights', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(TourStatsView, {
+        tourName: 'Fall Tour 2026',
+        hasTour: true,
+        calendarLoading: false,
+        setlistLoading: false,
+        setlistError: null,
+        stats: {
+          ...STATS,
+          topSongs: [{ title: 'Ghost', showAppearances: 6, timesPlayed: 6 }],
+        },
+        overlay: null,
+        overlayLoading: false,
+        showSelfOverlay: false,
+      }),
+    );
+
+    expect(html).toContain('6 nights');
+    expect(html).not.toContain('(6)');
+    expect(html).not.toContain('data-song-play-note');
+  });
 });

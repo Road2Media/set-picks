@@ -432,8 +432,16 @@ assert(
   'annual prerender HTML must include most-played songs',
 );
 assert(
-  annualHtml.includes('January 1 counts for 2027'),
-  'annual prerender HTML must state the calendar-year rule',
+  annualHtml.includes('Phish played 3 shows in 2026 across 2 tours, with 1 different song.'),
+  'annual prerender HTML must use the fan summary',
+);
+assert(
+  !annualHtml.includes('song row') && !annualHtml.includes('song-row'),
+  'annual prerender HTML must not say song row',
+);
+assert(
+  !annualHtml.includes('January 1 counts for 2027'),
+  'annual prerender HTML must not explain the calendar-year rule',
 );
 assert(annualHtml.includes('FAQPage'), 'annual prerender JSON-LD must include FAQPage');
 assert(annualHtml.includes('ItemList'), 'annual prerender JSON-LD must include ItemList');
