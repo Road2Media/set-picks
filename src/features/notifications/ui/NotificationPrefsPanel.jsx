@@ -113,7 +113,7 @@ const PUSH_FAMILIES = [
   {
     family: 'results',
     label: 'Wins & final scores',
-    description: 'A push when a show is graded, including if you topped the night.',
+    description: 'A push when a show is scored, including if you topped the night.',
   },
   {
     family: 'nearMiss',
@@ -136,7 +136,7 @@ const IN_APP_FAMILIES = [
   {
     family: 'results',
     label: 'Wins & final scores',
-    description: 'A message in Messages when a show is graded, including if you topped the night.',
+    description: 'A message in Messages when a show is scored, including if you topped the night.',
   },
   {
     family: 'lifecycle',
@@ -149,7 +149,7 @@ const EMAIL_FAMILIES = [
   {
     family: 'results',
     label: 'Wins & final scores',
-    description: 'Recap and rankings email after a show, a tour, or a year is graded.',
+    description: 'Recap and rankings email after a show, a tour, or a year is scored.',
   },
   {
     family: 'lifecycle',

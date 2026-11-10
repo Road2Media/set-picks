@@ -251,7 +251,7 @@ describe('comms template registry', () => {
     });
     expect(recap.eyebrow).toBe('10/07/26 · Show recap');
     expect(recap.paragraphs[0]).toBe(
-      "Rivertranced, here's how your picks for Allianz Amphitheater at Riverfront, Richmond, VA graded out.",
+      "Rivertranced, here's how your picks for Allianz Amphitheater at Riverfront, Richmond, VA scored.",
     );
     expect(recap.paragraphs.join(' ')).not.toMatch(/last night|2026-10-07/);
 

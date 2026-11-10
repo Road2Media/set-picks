@@ -455,7 +455,7 @@ export const COMMS_TEMPLATE_REGISTRY = {
         eyebrow: eyebrowWithDate(p.show_date, 'Show recap'),
         title: p.venue_name ? `Recap: ${p.venue_name}` : 'Your show recap',
         paragraphs: [
-          `${handleOf(p)}, here's how your picks for ${placeLine(p) || 'the show'} graded out.`,
+          `${handleOf(p)}, here's how your picks for ${placeLine(p) || 'the show'} scored.`,
           narrative ||
             (p.correct_picks_count != null && p.total_picks_count != null
               ? `You nailed ${p.correct_picks_count} of ${p.total_picks_count} picks.`

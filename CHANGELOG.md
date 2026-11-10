@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.120.1] — 2026-11-10
+
+### Changed
+- **Player-facing copy** — Tour standings no longer shows a description. Show, year, pool, profile, stats, crowd pulse, notifications, and the show recap drop ranking-engine, grading, and rollup wording. The public scoring pages still explain a shared score in plain language. No declared API change.
+
 ## [1.120.0] — 2026-11-10
 
 ### Changed

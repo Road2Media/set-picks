@@ -60,21 +60,21 @@ export default function PublicProfileView({
       key: 'points',
       label: 'Total points',
       value: totalPoints,
-      definition: 'Career points across every graded show.',
+      definition: 'Career points across every scored show.',
     },
     {
       key: 'avg',
       label: 'Points per show',
       value: avgPointsDisplay,
       definition:
-        'Like points per game in basketball — mean points per graded show.',
+        'Like points per game in basketball: average points per scored show.',
     },
     {
       key: 'avgCorrect',
       label: 'Picking average',
       value: avgCorrectDisplay,
       definition:
-        'Like a batting average in baseball — lifetime correct picks ÷ total picks across graded shows (.500 means half of picks hit).',
+        'Like a batting average in baseball: lifetime correct picks divided by total picks across scored shows. .500 means half of your picks hit.',
     },
     {
       key: 'wins',
@@ -87,7 +87,7 @@ export default function PublicProfileView({
       key: 'shows',
       label: 'Shows',
       value: shows,
-      definition: 'Finalized shows with graded picks.',
+      definition: 'Nights with a score.',
     },
   ];
 

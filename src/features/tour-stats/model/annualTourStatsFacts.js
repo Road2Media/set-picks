@@ -68,7 +68,7 @@ export function annualSummarySentences(stats) {
   ];
   if (stats?.unsplitTours?.length) {
     lines.push(
-      'One tour on the calendar crosses into the next year. Its songs stay off these totals until the nightly rollup publishes the 2026 slice. January shows are not mixed in.',
+      'One tour on the calendar crosses into the next year. Its songs stay off these totals until the shows in this year are posted. January shows are not mixed in.',
     );
   } else {
     lines.push(

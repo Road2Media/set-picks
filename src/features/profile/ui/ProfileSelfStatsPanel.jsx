@@ -40,8 +40,8 @@ export default function ProfileSelfStatsPanel({ uid, section = 'all' }) {
 
   const vintageDefinition =
     vintage.datedCount > 0
-      ? `Mean debut year of songs in your recent top-picks window (${vintage.datedCount} of ${vintage.uniqueCount} dated).`
-      : 'Mean debut year of songs in your recent top-picks window.';
+      ? `Average debut year of songs in your recent top picks (${vintage.datedCount} of ${vintage.uniqueCount} have a debut year).`
+      : 'Average debut year of songs in your recent top picks.';
 
   const columns = [
     {
@@ -49,14 +49,14 @@ export default function ProfileSelfStatsPanel({ uid, section = 'all' }) {
       label: 'Points per show',
       value: avgPoints,
       definition:
-        'Like points per game in basketball — mean points per graded show across your career.',
+        'Like points per game in basketball: average points per scored show across your career.',
     },
     {
       key: 'avgCorrect',
       label: 'Picking average',
       value: avgCorrect,
       definition:
-        'Like a batting average in baseball — lifetime correct picks ÷ total picks across your graded shows (.500 means half your picks hit). Shows — until your account has been rolled up after a finalize.',
+        'Like a batting average in baseball: lifetime correct picks divided by total picks across your scored shows. .500 means half your picks hit. The shows count updates after each scored night.',
     },
     {
       key: 'vintage',
@@ -68,7 +68,7 @@ export default function ProfileSelfStatsPanel({ uid, section = 'all' }) {
       key: 'shows',
       label: 'Shows',
       value: typeof stats?.shows === 'number' ? stats.shows : 0,
-      definition: 'Number of finalized shows you have graded picks for.',
+      definition: 'Nights you played that have a score.',
     },
   ];
 

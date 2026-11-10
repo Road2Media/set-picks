@@ -324,30 +324,29 @@ function CrowdNightBody({
 
           <Section
             title="Highest gaps"
-            definition="Top 10 picks by pre-show gap. A missing catalog gap is left off."
+            definition="Top 10 picks by pre-show gap. A song with no known gap is left off."
           >
             <CrowdPulseTopTable
               rows={catalog?.highestGap || []}
               playedTitles={playedTitles}
               catalogLoading={catalogLoading}
               className=""
-              emptyLabel={catalogLoading ? 'Loading catalog…' : 'No gapped picks yet.'}
+              emptyLabel={catalogLoading ? 'Loading songs…' : 'No gapped picks yet.'}
             />
           </Section>
 
           <Section
             title="Crowd vintage"
-            definition="Mean debut year across filled slots. Unknown debuts are left out of the average."
+            definition="Average debut year across filled slots. Songs with no debut year are left out."
           >
             <p className="text-[12px] font-semibold text-white md:text-sm">
-              Mean debut {vintageLabel}
+              Average debut {vintageLabel}
               {vintage?.medianYear != null
-                ? ` · median ${Math.round(vintage.medianYear)}`
+                ? ` · middle year ${Math.round(vintage.medianYear)}`
                 : ''}
             </p>
             <p className={`mt-1 ${DASHBOARD_CARD_BODY}`}>
-              Coverage {vintage?.coveragePct ?? 0}% ({vintage?.datedSlots ?? 0}/
-              {vintage?.totalSlots ?? 0} slots)
+              {vintage?.datedSlots ?? 0} of {vintage?.totalSlots ?? 0} slots have a debut year
             </p>
           </Section>
 

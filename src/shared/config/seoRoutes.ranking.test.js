@@ -17,7 +17,7 @@ describe('seo ranking copy', () => {
     expect(changed.paragraphs).toContain(RANK_TIE_EXPLANATION);
     expect(faqAnswer(scoring, 'How are ties ranked?')).toBe(RANK_TIE_EXPLANATION);
     expect(faqAnswer(changed, 'How are ties ranked?')).toBe(RANK_TIE_EXPLANATION);
-    expect(RANK_TIE_EXPLANATION).toMatch(/single show skips nightly wins/);
+    expect(RANK_TIE_EXPLANATION).toMatch(/does not use nightly wins/);
     expect(RANK_TIE_EXPLANATION.toLowerCase()).not.toContain('chair');
   });
 });

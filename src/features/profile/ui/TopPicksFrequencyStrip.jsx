@@ -42,7 +42,7 @@ export default function TopPicksFrequencyStrip({
       <p className="mb-4 text-[11px] font-medium leading-relaxed text-content-secondary">
         Songs you lock in most often
         {showsAggregated > 0
-          ? ` · last ${showsAggregated} graded show${showsAggregated === 1 ? '' : 's'}`
+          ? ` · last ${showsAggregated} scored show${showsAggregated === 1 ? '' : 's'}`
           : ''}
         {showsAvailable > showsAggregated
           ? ` (of ${showsAvailable})`
@@ -59,7 +59,7 @@ export default function TopPicksFrequencyStrip({
         </div>
       ) : rows.length === 0 ? (
         <p className="text-sm font-bold text-content-secondary">
-          No graded picks yet — play a show to build your strip.
+          No picks scored yet. Play a show to build your strip.
         </p>
       ) : (
         <ul className="space-y-2.5">

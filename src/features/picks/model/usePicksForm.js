@@ -225,10 +225,8 @@ export default function usePicksForm({
         const code = error?.code;
         const hint =
           code === 'permission-denied'
-            ? ' Firestore blocked this write (check security rules for picks).'
-            : code
-              ? ` (${code})`
-              : '';
+            ? ' Check that you are signed in, then try again.'
+            : '';
         setSaveFeedback({
           tone: 'error',
           text: `Error saving picks. Please try again.${hint}`,
