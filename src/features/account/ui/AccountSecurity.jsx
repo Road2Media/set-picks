@@ -53,7 +53,7 @@ export default function AccountSecurity({ user, showHeading = true }) {
       {showHeading ? (
         <div className="mb-6 text-left">
           <h2
-            className={`hidden md:block font-display text-display-page md:text-display-page-lg font-bold ${dashboardPageTitleGradientClasses}`}
+            className={`hidden desk:block font-display text-display-page md:text-display-page-lg font-bold ${dashboardPageTitleGradientClasses}`}
           >
             Sign-in &amp; password
           </h2>

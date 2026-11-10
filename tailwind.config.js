@@ -19,6 +19,17 @@ export default {
   theme: {
     extend: {
       /**
+       * Device chrome vs width reflow (#705). Stock `sm`/`md`/`lg` stay the
+       * reflow vocabulary. `desk` and `mob` are complements (the 0.02px seam
+       * keeps them from both matching). `short` compacts the mobile header
+       * and does not overlap `desk` (min-height 480px).
+       */
+      screens: {
+        desk: { raw: '(min-width: 768px) and (min-height: 480px)' },
+        mob: { raw: '(max-width: 767.98px), (max-height: 479.98px)' },
+        short: { raw: '(max-height: 479.98px)' },
+      },
+      /**
        * Semantic design tokens (Target 0: design system foundation).
        * Derived from Button.jsx, SplashHeroSection, and dashboard containers (Standings, Admin, forms).
        */

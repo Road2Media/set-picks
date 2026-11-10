@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.117.0] — 2026-11-10
+
+### Added
+- **Dashboard `desk` / `mob` screens (#705, part of #704)** — `tailwind.config.js` adds raw screens `desk` (`min-width: 768px` and `min-height: 480px`) and `mob` (the complement). `md:` stays width reflow. Chrome pairs are `hidden desk:*` and `desk:hidden`. `short` (`max-height: 479.98px`) hides the mobile brand row and shortens the scrollport top padding by 4rem. The static dashboard boot shell uses the same `desk` query. Convention is in `docs/DASHBOARD_IA.md`. No declared API change.
+
+### Fixed
+- **Phone landscape was painting desktop dashboard chrome (#705)** — A phone rotated to landscape is wide enough for `md` and only about 390px tall, so the sidebar and desktop sticky stack replaced the bottom tabs. Landscape now keeps mobile chrome (bottom tabs, no sidebar) with the brand row hidden. Portrait phones, iPad portrait (768×1024), and desktop are unchanged.
+
 ## [1.116.0] — 2026-11-10
 
 ### Added
