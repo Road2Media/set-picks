@@ -14,7 +14,7 @@ What's **already band-agnostic** (small surface to defend):
 
 What is **hard-coupled to Phish** (the work):
 
-- **Server pipelines** are Phish.net-only: `functions/phishnetShowCalendar.js`, `phishnetSongCatalog.js`, `phishnetLiveSetlistAutomation.js`, callable `getPhishnetSetlist`, secret `PHISHNET_API_KEY`. Show normalization filters `Number(row.artistid) !== 1` (Phish-only).
+- **Server pipelines** are Phish.net-only. Fetch and normalize go through `functions/providers/phishnet/` (`providerId: "phishnet"`). `functions/phishnetShowCalendar.js`, `phishnetSongCatalog.js`, and `phishnetLiveSetlistAutomation.js` still write Firestore and Storage. Callable `getPhishnetSetlist` and secret `PHISHNET_API_KEY` are unchanged. Show normalization filters `artistid` against `providerArgs.artistId` (Phish is 1).
 - **Document IDs assume one band per date**: `picks/{showDate}_{uid}`, `official_setlists/{showDate}`, `live_setlist_automation/{showDate}`, `rollup_audit/{showDate}`. Two bands playing 2026-08-15 collide today.
 - **Single calendar / catalog blobs**: `show_calendar/snapshot` (one document), Storage `song-catalog.json` (one object).
 - **Game shape baked in** at [src/shared/data/gameConfig.js](../src/shared/data/gameConfig.js) - six slots `s1o/s1c/s2o/s2c/enc/wild` modeled on Phish's 2-set + encore + wildcard.
@@ -112,11 +112,16 @@ The Songfish discovery (Section 2) reshapes this fork. The right unit of abstrac
 - Readers in [src/features/scoring/api/standingsApi.js](../src/features/scoring/api/standingsApi.js), [src/features/picks/api/picksApi.js](../src/features/picks/api/picksApi.js), and [src/features/pools/api/poolStandings.js](../src/features/pools/api/poolStandings.js) treat a missing `bandId` as Phish. `where('bandId','==', activeBand)` stays off (`STRICT_BAND_ID_QUERIES`) until the backfill is verified.
 - Storage: the catalog sync also writes `song-catalog/phish.json`. Clients keep reading `song-catalog.json`.
 
-### Phase 2 - Wrap Phish.net behind `BandPack`
+### Phase 2 - Wrap Phish.net behind the provider contract
 
-- Move `functions/phishnetShowCalendar.js`, `phishnetSongCatalog.js`, `phishnetLiveSetlistAutomation.js` under `functions/providers/phish/`. No behavior change.
-- Generic scheduler entry points in `functions/index.js` iterate `[phishProvider]` and dispatch.
-- Refactor [src/features/admin-setlist-config/api/phishApiClient.js](../src/features/admin-setlist-config/api/phishApiClient.js) to a `getProviderClient(bandId)` factory.
+Shipped in #606. The folder is `functions/providers/phishnet/`, matching `providerId`, not the earlier `providers/phish/` sketch.
+
+- `fetchShowsForYear`, `fetchSetlistForDate`, `fetchSongs`, `normalizeShows`, `normalizeSetlistRows`, and `responseOk` live on the phishnet provider. It does not write Firestore or Storage and does not read secrets.
+- The original three modules stay the persistence layer. They call the provider and still write `show_calendar`, `song-catalog.json`, and the live setlist docs. Schedules, poll windows, grading, and rollup are unchanged.
+- `functions/index.js` iterates `listProviderDispatches()` (Phish / phishnet only) and passes the resolved `apiKey`. `getPhishnetSetlist` calls `fetchSetlistForDate` instead of an inline URL.
+- The functions registry is a CommonJS mirror of the Phish `BandConfig` row (`functions/providers/registry.js`). Functions cannot import the ESM `src/shared/config/bands.js`.
+- [src/features/admin-setlist-config/api/phishApiClient.js](../src/features/admin-setlist-config/api/phishApiClient.js) exports `getProviderClient(bandId)`. `getProviderClient('phish')` is the admin setlist client. An unknown id throws. No second band and no switcher.
+- `fetchSetlistForDate` throws when the envelope is not `responseOk`. The legacy `fetchPhishnetSetlistForDate` still returns that payload so a bad envelope stays an empty show for importers. `normalizeSetlistRows` on the provider takes raw rows; the automation export still takes the envelope. Song-row mapping stayed in the catalog module (the contract has no `normalizeSongs`).
 
 ### Phase 3 - Migrate doc IDs to composite (`{bandId}_{showDate}[_{uid}]`)
 
@@ -195,7 +200,7 @@ flowchart LR
 |-------|--------|-----------|
 | Phase 0 - Foundation | Done | [#301](https://github.com/Road2Media/set-picks/issues/301) / [#1253](https://github.com/Road2Media/set-picks/pull/1253) |
 | Phase 1 - bandId field | In progress (writes, tolerant reads and rules, script, alias object). Strict `where` and required `bandId` wait on the backfill. | [#605](https://github.com/Road2Media/set-picks/issues/605) / [#1255](https://github.com/Road2Media/set-picks/pull/1255) |
-| Phase 2 - Provider wrap | Not started | - |
+| Phase 2 - Provider wrap | Done | [#606](https://github.com/Road2Media/set-picks/issues/606) |
 | Phase 3 - Composite IDs | Not started | - |
 | Phase 4 - Goose (Songfish provider) | Not started | - |
 | Phase 5a - Umphrey's McGee (reuse Songfish) | Not started | - |

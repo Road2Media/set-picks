@@ -11,6 +11,8 @@
 
 const crypto = require("node:crypto");
 const admin = require("firebase-admin");
+const { fetchSongs, responseOk } = require("./providers/phishnet");
+const { phishProviderArgs } = require("./providers/registry");
 
 /** Object path in the default Storage bucket (live autocomplete fast path). */
 const CATALOG_STORAGE_PATH = "song-catalog.json";
@@ -51,14 +53,7 @@ function catalogArchiveObjectPath(updatedAtIso) {
  */
 function isPhishNetPayloadOk(data) {
   if (!data || typeof data !== "object") return false;
-  const apiErr = /** @type {Record<string, unknown>} */ (data).error;
-  return (
-    apiErr === undefined ||
-    apiErr === null ||
-    apiErr === false ||
-    apiErr === 0 ||
-    apiErr === "0"
-  );
+  return responseOk(data);
 }
 
 /**
@@ -117,49 +112,7 @@ function normalizePhishnetSongRow(row) {
  * @returns {Promise<{ name: string, total: string, gap: string, last: string, debut: string }[]>}
  */
 async function fetchPhishnetSongsNormalized(apiKey) {
-  const key = String(apiKey ?? "").trim();
-  if (!key) {
-    throw new Error("Phish.net API key is empty.");
-  }
-
-  const url = `https://api.phish.net/v5/songs.json?apikey=${encodeURIComponent(
-    key
-  )}&order_by=song&direction=asc&limit=10000`;
-
-  let res;
-  try {
-    res = await fetch(url, { headers: { Accept: "application/json" } });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Network error to Phish.net";
-    throw new Error(msg);
-  }
-
-  let bodyText;
-  try {
-    bodyText = await res.text();
-  } catch {
-    throw new Error("Failed to read Phish.net songs response.");
-  }
-
-  if (!res.ok) {
-    throw new Error(`Phish.net HTTP ${res.status}: ${bodyText.slice(0, 240)}`);
-  }
-
-  let data;
-  try {
-    data = JSON.parse(bodyText);
-  } catch {
-    throw new Error("Phish.net songs returned non-JSON.");
-  }
-
-  if (!isPhishNetPayloadOk(data)) {
-    const msg =
-      typeof data?.error_message === "string"
-        ? data.error_message
-        : "Phish.net API error.";
-    throw new Error(msg);
-  }
-
+  const data = await fetchSongs(phishProviderArgs(apiKey));
   const rows = Array.isArray(data.data) ? data.data : [];
   const songs = rows
     .map((r) => normalizePhishnetSongRow(r))

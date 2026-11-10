@@ -80,6 +80,8 @@ describe('getBandConfig / listBandConfigs', () => {
     const catalogUrl = readRepo('src/features/song-catalog/model/songCatalogUrl.js');
     const catalogFn = readRepo('functions/phishnetSongCatalog.js');
     const calendarFn = readRepo('functions/phishnetShowCalendar.js');
+    const providerFn = readRepo('functions/providers/phishnet/index.js');
+    const registryFn = readRepo('functions/providers/registry.js');
     const functionsIndex = readRepo('functions/index.js');
 
     for (const source of [splash, marketing]) {
@@ -92,12 +94,15 @@ describe('getBandConfig / listBandConfigs', () => {
     expect(catalogFn).toContain(
       `const CATALOG_STORAGE_PATH = "${phish.songCatalogStorageKey}"`,
     );
-    expect(calendarFn).toContain(phish.providerArgs.baseUrl);
-    expect(calendarFn).toContain(
-      `Number(row.artistid) !== ${phish.providerArgs.artistId}`,
-    );
+    expect(calendarFn).toContain('require("./providers/phishnet")');
+    expect(providerFn).toContain(phish.providerArgs.baseUrl);
+    expect(providerFn).toContain('Number(rec.artistid) !== artistId');
+    expect(registryFn).toContain(`baseUrl: "${phish.providerArgs.baseUrl}"`);
+    expect(registryFn).toContain(`artistId: ${phish.providerArgs.artistId}`);
+    expect(registryFn).toContain(`secretName: "${phish.providerArgs.secretName}"`);
     expect(functionsIndex).toContain(
       `defineSecret("${phish.providerArgs.secretName}")`,
     );
+    expect(functionsIndex).toContain('listProviderDispatches()');
   });
 });

@@ -7,10 +7,18 @@ const {
   syncLiveSetlistPublicStatus,
 } = require("./liveSetlistOutage");
 const { stampBandId } = require("./bandScope");
+const {
+  ProviderRequestError,
+  classifySetLabel,
+  fetchSetlistForDate,
+  normalizeSetlistRows: normalizeProviderSetlistRows,
+  parseRowGap,
+  responseOk: phishNetResponseOk,
+} = require("./providers/phishnet");
+const { phishProviderArgs } = require("./providers/registry");
 
 const LIVE_AUTOMATION_COLLECTION = "live_setlist_automation";
 const OFFICIAL_SETLISTS_COLLECTION = "official_setlists";
-const PHISHNET_API_ROOT = "https://api.phish.net/v5/setlists/showdate";
 const DEFAULT_SHOW_TIME_ZONE = "America/Los_Angeles";
 
 const SLOT_KEYS = ["s1o", "s1c", "s2o", "s2c", "enc"];
@@ -94,22 +102,6 @@ function evaluateAutoFinalize(state) {
 /** Normalize a song title for dedupe/compare (must match `normalizeSong` in scoring code). */
 function normalizeSongTitle(value) {
   return String(value ?? "").trim().toLowerCase();
-}
-
-/**
- * Parse a Phish.net setlist row `gap` field into a non-negative integer or null.
- * Phish.net has returned gap as number or numeric string across versions; treat
- * anything unparseable or negative as "unknown" (null).
- */
-function parseRowGap(gap) {
-  if (typeof gap === "number" && Number.isFinite(gap) && gap >= 0) {
-    return Math.trunc(gap);
-  }
-  if (typeof gap === "string") {
-    const n = Number.parseInt(gap.trim(), 10);
-    if (Number.isFinite(n) && n >= 0) return n;
-  }
-  return null;
 }
 
 function formatEtShowDate(now = new Date()) {
@@ -452,37 +444,6 @@ function randomScheduledPollDelayMs(rng = Math.random) {
   return min + Math.floor(rng() * (max - min + 1));
 }
 
-function phishNetResponseOk(data) {
-  const apiErr = data && typeof data === "object" ? data.error : undefined;
-  return (
-    apiErr === undefined ||
-    apiErr === null ||
-    apiErr === false ||
-    apiErr === 0 ||
-    apiErr === "0"
-  );
-}
-
-function classifySetLabel(setLabel) {
-  const raw = String(setLabel ?? "").trim().toLowerCase();
-  if (raw === "e" || raw === "encore" || raw.startsWith("encore")) {
-    return { kind: "encore", order: 1000 };
-  }
-  const m = /^set\s*(\d+)$/.exec(raw);
-  if (m) return { kind: "main", order: Number.parseInt(m[1], 10) };
-  const n = Number.parseInt(raw, 10);
-  if (Number.isFinite(n) && n >= 0) return { kind: "main", order: n };
-  return { kind: "other", order: 500 };
-}
-
-function compareRows(a, b) {
-  const ca = classifySetLabel(a.setKey);
-  const cb = classifySetLabel(b.setKey);
-  if (ca.order !== cb.order) return ca.order - cb.order;
-  if (a.position !== b.position) return a.position - b.position;
-  return a.title.localeCompare(b.title);
-}
-
 function normalizeSetlistRows(payload) {
   if (!payload || typeof payload !== "object") {
     throw new Error("Phish.net payload must be an object.");
@@ -498,29 +459,7 @@ function normalizeSetlistRows(payload) {
   if (!Array.isArray(data)) {
     throw new Error("Phish.net payload has no data array.");
   }
-  const rows = [];
-  for (const row of data) {
-    if (!row || typeof row !== "object") continue;
-    const song = typeof row.song === "string" ? row.song.trim() : "";
-    if (!song) continue;
-    const setRaw = row.set;
-    const setKey =
-      typeof setRaw === "string"
-        ? setRaw.trim()
-        : typeof setRaw === "number"
-        ? String(setRaw)
-        : "unknown";
-    const position =
-      typeof row.position === "number" && Number.isFinite(row.position)
-        ? row.position
-        : typeof row.idx === "number" && Number.isFinite(row.idx)
-        ? row.idx
-        : 0;
-    const gap = parseRowGap(row.gap);
-    rows.push({ setKey: setKey || "unknown", position, title: song, gap });
-  }
-  rows.sort(compareRows);
-  return rows;
+  return normalizeProviderSetlistRows(data, phishProviderArgs());
 }
 
 /**
@@ -1052,21 +991,25 @@ function timeZoneForShowDate(calendarShows, showDate) {
 }
 
 async function fetchPhishnetSetlistForDate(showDate, apiKey) {
-  const url = `${PHISHNET_API_ROOT}/${encodeURIComponent(
-    showDate
-  )}.json?apikey=${encodeURIComponent(String(apiKey).trim())}`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  const bodyText = await res.text();
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${bodyText.slice(0, 240)}`);
-  }
-  let payload;
   try {
-    payload = JSON.parse(bodyText);
-  } catch {
-    throw new Error("Phish.net returned non-JSON payload.");
+    return await fetchSetlistForDate(showDate, phishProviderArgs(apiKey));
+  } catch (e) {
+    if (!(e instanceof ProviderRequestError)) throw e;
+    if (e.kind === "envelope") return e.payload;
+    if (e.kind === "network" || e.kind === "read") {
+      if (e.cause !== undefined) throw e.cause;
+      throw e;
+    }
+    if (e.kind === "http") {
+      throw new Error(
+        `HTTP ${e.status}: ${String(e.bodyText ?? "").slice(0, 240)}`
+      );
+    }
+    if (e.kind === "json") {
+      throw new Error("Phish.net returned non-JSON payload.");
+    }
+    throw e;
   }
-  return payload;
 }
 
 /**

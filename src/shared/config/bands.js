@@ -35,11 +35,11 @@ import {
 export const DEFAULT_BAND_ID = 'phish';
 
 /**
- * Phish.net v5 coordinates already used by the scheduled handlers.
- * `artistId` is the `Number(row.artistid) !== 1` filter in
- * `functions/phishnetShowCalendar.js`. `secretName` is
+ * Phish.net v5 coordinates. `artistId` is the
+ * `Number(row.artistid) !== artistId` filter in
+ * `functions/providers/phishnet/index.js`. `secretName` is
  * `defineSecret("PHISHNET_API_KEY")` in `functions/index.js`.
- * Phase 0 does not read the secret or call the API.
+ * The scheduler resolves the secret and passes `apiKey` on `providerArgs`.
  */
 const PHISH_PROVIDER_ARGS = Object.freeze({
   baseUrl: 'https://api.phish.net/v5',
