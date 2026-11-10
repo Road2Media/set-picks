@@ -1,3 +1,5 @@
+import { isProductionHostname } from './productionHosts';
+
 let initialized = false;
 let gaSilent = false;
 /** @type {Promise<boolean> | null} */
@@ -17,16 +19,6 @@ let queuedEvents = [];
 const MAX_QUEUED_EVENTS = 24;
 
 /**
- * Hostnames where GA4 is allowed to initialize. Anything else (localhost,
- * Vercel preview deployments like *.vercel.app, custom staging domains)
- * stays GA-silent so analytics only reflects real production usage.
- */
-const PROD_HOSTNAMES = new Set([
-  'www.setlistpickem.com',
-  'setlistpickem.com',
-]);
-
-/**
  * Read GA4 Measurement ID from the Vite env. Safe to call when unset (no-op).
  */
 export function getGaMeasurementId() {
@@ -35,9 +27,10 @@ export function getGaMeasurementId() {
   return String(id).trim();
 }
 
+/** Production hosts live in `productionHosts.js` so Remote Config uses the same list. */
 function isProductionHost() {
   if (typeof window === 'undefined') return false;
-  return PROD_HOSTNAMES.has(window.location.hostname);
+  return isProductionHostname(window.location.hostname);
 }
 
 function markSilent() {

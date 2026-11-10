@@ -65,6 +65,12 @@ describe('validateAdCreative', () => {
     ).toBeNull();
   });
 
+  it('caps creative_id at 64 characters', () => {
+    const sixtyFour = `a${'b'.repeat(63)}`;
+    expect(validateAdCreative({ ...valid, creative_id: sixtyFour })?.creative_id).toBe(sixtyFour);
+    expect(validateAdCreative({ ...valid, creative_id: `${sixtyFour}c` })).toBeNull();
+  });
+
   it('rejects missing fields, markup, and non-objects', () => {
     const noHeadline = { ...valid };
     delete noHeadline.headline;

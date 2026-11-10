@@ -3,9 +3,20 @@
  * Text, an https image, and an allowlisted link. No HTML.
  */
 
+/** Character and URL caps. The runbook quotes these numbers. */
+export const AD_CREATIVE_LIMITS = Object.freeze({
+  creativeId: 64,
+  altText: 140,
+  headline: 80,
+  body: 140,
+  ctaLabel: 32,
+  url: 2048,
+});
+
 const CREATIVE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 
-const EXACT_INTERNAL_PATHS = new Set([
+/** Exact internal paths a creative may open. Query and hash are allowed on these. */
+export const AD_INTERNAL_EXACT_PATHS = new Set([
   '/dashboard',
   '/dashboard/picks',
   '/dashboard/picks/lab',
@@ -34,7 +45,13 @@ const EXACT_INTERNAL_PATHS = new Set([
   '/phish-at-msg',
 ]);
 
-const INTERNAL_PREFIXES = ['/dashboard/pool/', '/tour-stats/', '/phish-at-msg/', '/rewind/'];
+/** Prefixes that allow one deeper segment, such as `/dashboard/pool/:id`. */
+export const AD_INTERNAL_PREFIXES = Object.freeze([
+  '/dashboard/pool/',
+  '/tour-stats/',
+  '/phish-at-msg/',
+  '/rewind/',
+]);
 
 /**
  * @param {unknown} value
@@ -57,7 +74,7 @@ function cleanText(value, { max, required = true }) {
 function cleanHttpsUrl(value) {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
-  if (!trimmed || trimmed.length > 2048) return null;
+  if (!trimmed || trimmed.length > AD_CREATIVE_LIMITS.url) return null;
   let url;
   try {
     url = new URL(trimmed);
@@ -74,8 +91,8 @@ function cleanHttpsUrl(value) {
  * @returns {boolean}
  */
 function isAllowlistedInternalPath(pathname) {
-  if (EXACT_INTERNAL_PATHS.has(pathname)) return true;
-  return INTERNAL_PREFIXES.some(
+  if (AD_INTERNAL_EXACT_PATHS.has(pathname)) return true;
+  return AD_INTERNAL_PREFIXES.some(
     (prefix) => pathname.startsWith(prefix) && pathname.length > prefix.length,
   );
 }
@@ -122,14 +139,14 @@ function cleanInternalPath(value) {
 export function validateAdCreative(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
 
-  const creativeId = cleanText(raw.creative_id, { max: 64 });
+  const creativeId = cleanText(raw.creative_id, { max: AD_CREATIVE_LIMITS.creativeId });
   if (!creativeId || !CREATIVE_ID_RE.test(creativeId)) return null;
 
   const imageUrl = cleanHttpsUrl(raw.image_url);
-  const altText = cleanText(raw.alt_text, { max: 140 });
-  const headline = cleanText(raw.headline, { max: 80 });
-  const body = cleanText(raw.body, { max: 140, required: false });
-  const ctaLabel = cleanText(raw.cta_label, { max: 32 });
+  const altText = cleanText(raw.alt_text, { max: AD_CREATIVE_LIMITS.altText });
+  const headline = cleanText(raw.headline, { max: AD_CREATIVE_LIMITS.headline });
+  const body = cleanText(raw.body, { max: AD_CREATIVE_LIMITS.body, required: false });
+  const ctaLabel = cleanText(raw.cta_label, { max: AD_CREATIVE_LIMITS.ctaLabel });
   if (!imageUrl || !altText || !headline || body == null || !ctaLabel) return null;
 
   const destinationType = raw.destination_type;

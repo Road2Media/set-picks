@@ -87,6 +87,16 @@ Runtime behavior is controlled by **Vite env vars**:
 To "toggle a feature," set or unset these in `.env` and restart the dev
 server.
 
+House promos are the exception. They come from Firebase Remote Config
+(`ads_enabled` and per-slot JSON), not from a Vite flag.
+`VITE_ENABLE_SPONSOR_SLOTS=true` only shows the empty proportion shell.
+Local dev sends custom signal `release_channel=development`, so a staging
+or production condition does not fill the unit on localhost. The in-app
+default stays off. Do not change Remote Config from a pull request.
+Operator steps: `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`.
+
+(2026-11-10: house-promo channel signal and the 60 second fetch floor.)
+
 ## 3 — CI verify matrix (run before every push)
 
 These four commands must all pass — they form the blocking `verify` job
