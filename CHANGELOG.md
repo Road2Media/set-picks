@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.120.0] — 2026-11-10
+
+### Changed
+- **Phish IQ leaves the Picks tray (#1258)** — Picks tertiary is Make Picks, Picks Lab, and Scorecard. Those labels stay fully visible at 320px, 375px, and 390px. Below 375px the shared tray uses slightly tighter horizontal padding (`px-1.5`); `uppercase tracking-widest` and equal widths stay. Phish IQ stays a logged-in route at `/dashboard/phish-iq`, nested under the Picks primary (no new top-level nav item). Make Picks has a card that opens it. `/dashboard/picks/phish-iq` redirects there and keeps the query string. The public quiz at `/phish-iq` is unchanged. Date picker stays hidden on the signed-in quiz. Player copy still says slot.
+
 ## [1.119.0] — 2026-11-10
 
 ### Changed

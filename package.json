@@ -1,7 +1,7 @@
 {
   "name": "setlistpickem",
   "private": true,
-  "version": "1.119.0",
+  "version": "1.120.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -35,6 +35,7 @@
     "qa:google-signup": "node --env-file-if-exists=.env.qa.local scripts/qa/google-new-user-signup.mjs",
     "qa:materialize-env": "node scripts/qa/materialize-qa-env-from-cloud.mjs",
     "qa:auth-scenarios": "node --env-file-if-exists=.env.qa.local scripts/qa/auth-scenarios.mjs",
+    "qa:picks-tertiary": "node --env-file-if-exists=.env.qa.local scripts/qa/picks-tertiary-viewport.mjs",
     "qa:setup": "node scripts/qa/setup-qa-harness.mjs",
     "crowd:night-stats": "vite-node scripts/crowd-night-stats-review.mjs",
     "release:gate": "node scripts/release-gate.mjs",

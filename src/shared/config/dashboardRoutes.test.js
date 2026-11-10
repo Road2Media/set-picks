@@ -4,8 +4,10 @@ import {
   PICKS_CLUSTER_PATHS,
   POOLS_CLUSTER_PATHS,
   STATS_CLUSTER_PATHS,
+  PICKS_CLUSTER_LEGACY_PATHS,
   isMakePicksPath,
   isPicksClusterPath,
+  phishIqLegacyRedirect,
   isPersonalStatsPath,
   isGlobalStatsPath,
   isPoolsClusterPath,
@@ -32,6 +34,7 @@ describe('isPicksClusterPath', () => {
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.scorecard)).toBe(true);
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.rewind)).toBe(true);
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.phishIq)).toBe(true);
+    expect(isPicksClusterPath(PICKS_CLUSTER_LEGACY_PATHS.phishIq)).toBe(true);
   });
 
   it('does not match sibling primary tabs', () => {
@@ -41,6 +44,23 @@ describe('isPicksClusterPath', () => {
     expect(isPicksClusterPath('/dashboard/tour-stats')).toBe(false);
     expect(isPicksClusterPath('/dashboard/stats')).toBe(false);
     expect(isPicksClusterPath('/dashboard/stats/global')).toBe(false);
+  });
+});
+
+describe('phishIqLegacyRedirect (#1258)', () => {
+  it('sends the nested picks-tab path to the logged-in quiz', () => {
+    expect(phishIqLegacyRedirect(PICKS_CLUSTER_LEGACY_PATHS.phishIq)).toBe(
+      PICKS_CLUSTER_PATHS.phishIq,
+    );
+    expect(phishIqLegacyRedirect(`${PICKS_CLUSTER_LEGACY_PATHS.phishIq}/`, '?utm=1')).toBe(
+      `${PICKS_CLUSTER_PATHS.phishIq}?utm=1`,
+    );
+  });
+
+  it('leaves the canonical quiz route and other picks paths alone', () => {
+    expect(phishIqLegacyRedirect(PICKS_CLUSTER_PATHS.phishIq)).toBeNull();
+    expect(phishIqLegacyRedirect(PICKS_CLUSTER_PATHS.lab)).toBeNull();
+    expect(phishIqLegacyRedirect('/dashboard')).toBeNull();
   });
 });
 

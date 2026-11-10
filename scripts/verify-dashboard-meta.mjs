@@ -75,7 +75,19 @@ const CASES = [
     },
   },
   {
-    // #1143: Phish IQ stays on the Picks tab. The show date picker is the wrong control.
+    // #1143 / #1258: Phish IQ stays under the Picks primary, not on the tray.
+    // The show date picker is the wrong control.
+    path: '/dashboard/picks/phish-iq',
+    expect: {
+      contextTitle: NAV_LABEL_PICKS,
+      showDatePicker: false,
+      layoutDesktopHeading: null,
+      ownsDesktopStickyChrome: true,
+      layoutDetailEyebrow: null,
+    },
+  },
+  {
+    // #1143 / #1258: canonical logged-in quiz. Same chrome as the redirect hop.
     path: '/dashboard/phish-iq',
     expect: {
       contextTitle: NAV_LABEL_PICKS,

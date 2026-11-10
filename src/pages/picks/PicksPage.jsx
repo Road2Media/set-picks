@@ -4,6 +4,7 @@ import { useOutletContext, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, Lock } from 'lucide-react';
 
 import { logCommsEmailLanded } from '../../features/comms';
+import { PhishIqEntryLink } from '../../features/phish-iq';
 import {
   PicksCrowdHelper,
   PicksFieldsForm,
@@ -114,6 +115,7 @@ export default function PicksPage({ user: userProp, selectedDate: selectedDatePr
         : null}
 
       <div className="relative">
+        <PhishIqEntryLink />
         <PicksLockTimingBanner
           key={selectedDate}
           show={showForShare}

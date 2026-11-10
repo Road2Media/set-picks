@@ -37,8 +37,10 @@ import {
   useStandingsYearSelection,
 } from '../../features/scoring';
 import {
+  PICKS_CLUSTER_LEGACY_PATHS,
   PROFILE_CLUSTER_PATHS,
   STATS_CLUSTER_PATHS,
+  phishIqLegacyRedirect,
   isPicksClusterPath,
   isPoolsTertiaryPath,
   isProfileClusterPath,
@@ -358,6 +360,15 @@ export default function DashboardLayout() {
               <Route
                 path="picks/scorecard"
                 element={<PicksScorecardPage />}
+              />
+              <Route
+                path="picks/phish-iq"
+                element={
+                  <Navigate
+                    to={phishIqLegacyRedirect(PICKS_CLUSTER_LEGACY_PATHS.phishIq, location.search)}
+                    replace
+                  />
+                }
               />
               <Route path="rewind" element={<RewindPlayPage user={user} />} />
               <Route path="phish-iq" element={<PhishIqDashboardPage />} />

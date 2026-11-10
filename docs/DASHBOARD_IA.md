@@ -6,7 +6,7 @@ Single reference for **support**, **product**, and **engineering** when adding r
 
 | Tab (label) | Path | Purpose |
 |-------------|------|---------|
-| **Picks** | `/dashboard` | **Picks cluster** (#766): Make Picks / Picks Lab / Scorecard. Primary tab stays active on all three. Global date picker stays on. |
+| **Picks** | `/dashboard` | **Picks cluster** (#766): Make Picks / Picks Lab / Scorecard. Primary tab stays active on all three, on Rewind, and on Phish IQ. Global date picker stays on for the three tray routes. |
 | **Pools** | `/dashboard/pools` | Pools **cluster**: My Pools, Create Pool, Join Pool (sub-nav). |
 | **Standings** | `/dashboard/standings` | **Show standings** for the selected show (everyone or one pool). Tertiary: Show / Tour / Year / Pools. |
 | **Stats** | `/dashboard/stats` | **Stats cluster** (#769): Personal / Global / Band. Primary tab stays active on all three, on `/dashboard/stats/night` (crowd deep dive, not a chip), and on the `/dashboard/tour-stats` redirect hop. |
@@ -50,7 +50,7 @@ Nested routes (not `?view=`). Primary **Picks** tab stays active. Lab segment is
 | **Picks Lab** | `/dashboard/picks/lab` | Prediction Lab (`PickPredictionPanel`) when the env flag is `true`; otherwise coming-soon. Live **Your card** mirrors the shared draft. **Use** does not persist — Lock In / Update Picks still saves. |
 | **Scorecard** | `/dashboard/picks/scorecard` | Show-scoped self card (#767). Everyone by default. `?pool=` compares with one of your pools (#1043). Not a new tab. |
 | **Rewind** | `/dashboard/rewind` | Weekly historical show (#1142). Segment is **hidden** unless `VITE_ENABLE_REWIND_MODE=true`. Direct URL shows a closed shell when the flag is off. Date picker hides. Scores are not live standings. |
-| **Phish IQ** | `/dashboard/phish-iq` | Daily five-question quiz (#1143). Segment stays visible. Date picker hides. Streak saves on the signed-in user. The public play URL is `/phish-iq`. |
+| **Phish IQ** | `/dashboard/phish-iq` | Daily five-question quiz (#1143 / #1258). **Not** a tertiary segment. Nested under the Picks primary. Make Picks shows a card that links here. `/dashboard/picks/phish-iq` redirects here. Date picker hides. Streak saves on the signed-in user. The public play URL is `/phish-iq`. No new top-level nav item. |
 
 **Scorecard (#767, audience and crowd % #1043):** Show comes from the existing global date picker. Default audience is everyone. When you are in at least one pool, the card has a **Compare** control (Everyone, then each pool). `?pool=<id>` on this route remembers that pool. An unknown id falls back to everyone. Rank, overlap, and crowd % use the same membership filter as Standings (`filterPicksToAudience`, including join-day rules). No new tab, route, or collection. If that night does not count for the pool, the card says so and does not invent a pool rank.
 
@@ -83,7 +83,7 @@ Legacy redirects (preserve bookmarks + email deep links; query string preserved)
 - **Account** tab stays active on the entire Account cluster (including legacy redirect paths).
 - **Standings** tab stays active on `/dashboard/standings` only (Show / Tour / Year / Pools).
 - **Stats** tab stays active on `/dashboard/stats`, `/dashboard/stats/personal`, `/dashboard/stats/global`, `/dashboard/stats/band`, **and** `/dashboard/tour-stats` (redirect hop).
-- **Picks** tab stays active on `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, and `/dashboard/picks/scorecard`.
+- **Picks** tab stays active on `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`, `/dashboard/rewind`, and `/dashboard/phish-iq`.
 
 ## Tertiary chrome contract (#765)
 
@@ -98,7 +98,7 @@ Page and section **descriptions default to an `InfoTooltip`** (`DashboardActionR
 ### Visual
 
 - Rectangular **equal-width** tray (`flex w-full`, segments `flex-1`) — not auto-width pills
-- Uppercase labels (`uppercase tracking-widest`)
+- Uppercase labels (`uppercase tracking-widest`). Below 375px the chrome tray uses `px-1.5` so the three Picks labels fit at 320px (#1258). At 375px and up the padding is `px-2`.
 - Active ring/fill (`tone="chrome"`, default): `bg-brand-primary/15 text-brand-primary ring-1 ring-inset ring-brand-primary/35`
 - In-page filters (`tone="inset"`, Stats All-time / boards trays): same equal-width layout, recessed field, neutral selected chip — do not fork tray CSS in features. Helper `InfoTooltip`s use a **reserved trailing column** beside the tray (empty spacer when no hint) so stacked quaternary trays keep one width. On Personal / Global, both quaternary rows **stick with the Stats chrome** (desktop sticky stack portal below tertiary; mobile fixed chrome below the Personal/Global/Band tray) so boards/cards scroll underneath.
 - Inactive: `text-content-secondary` + inset hover
@@ -154,7 +154,7 @@ When you add or rename a tertiary cluster (or a `/dashboard/*` child):
 | Primary (stays active) | Tertiary segments | Notes |
 |------------------------|-------------------|--------|
 | **Pools** | My Pools · Create Pool · Join Pool | Nested routes; pool details stays a child, not a segment |
-| **Picks** | Make Picks · Picks Lab · Scorecard | Nested routes (#766). Lab segment always visible; Scorecard is the #767 surface. |
+| **Picks** | Make Picks · Picks Lab · Scorecard | Nested routes (#766). Lab segment always visible; Scorecard is the #767 surface. Phish IQ is a child route, not a fourth chip (#1258). Rewind is a chip only when its flag is on. |
 | **Account** | Profile · Messages · Preferences | Nested routes under `/dashboard/profile/*` (#770). |
 | **Standings** | Show · Tour · Year · Pools | Stats moved to the Stats primary (#769). Year is the global calendar-year board (#1110). |
 | **Stats** | Personal · Global · Band | Nested routes (#769 / #1004). Tray drops the redundant “Stats” suffix so three uppercase chips fit. Global is leaderboards; Band is the song explorer. Crowd night is a linked route, not a fourth chip. |
@@ -189,10 +189,11 @@ Rationale: **Entity-first** detail view without a second full-width display titl
 
 | Term | Meaning |
 |------|---------|
-| **Picks** | Tab + context + desktop H1 for the Picks cluster (`NAV_LABEL_PICKS`) — `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`. |
+| **Picks** | Tab + context + desktop H1 for the Picks cluster (`NAV_LABEL_PICKS`) — `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`, `/dashboard/rewind`, `/dashboard/phish-iq`. |
 | **Make Picks** | Picks-cluster tertiary for the form (`NAV_LABEL_MAKE_PICKS`). |
 | **Picks Lab** | Picks-cluster tertiary for Prediction Lab (`NAV_LABEL_PICKS_LAB`); path `/dashboard/picks/lab`. |
 | **Scorecard** | Picks-cluster tertiary (`NAV_LABEL_SCORECARD`); path `/dashboard/picks/scorecard`. Show-scoped self card. Everyone, or one pool via `?pool=` (#767 / #1043). |
+| **Phish IQ** | Logged-in daily quiz (`NAV_LABEL_PHISH_IQ`); path `/dashboard/phish-iq`. Under the Picks primary, not a tray chip (#1258). Entry card on Make Picks. |
 | **Pools** | Tab + context + desktop H1 for `/dashboard/pools`, `/dashboard/pools/create`, and `/dashboard/pools/join` (`NAV_LABEL_POOLS`) — same word in nav and shell. Tertiary labels: **My Pools** / **Create Pool** / **Join Pool**. |
 | **Account** | Primary tab + identity context for the `/dashboard/profile/*` cluster (`NAV_LABEL_ACCOUNT`). Path prefix unchanged. |
 | **Profile** | Identity tertiary only (`NAV_LABEL_PROFILE`); handle / favorite song / avatar / badges. |
@@ -219,10 +220,11 @@ Rationale: **Entity-first** detail view without a second full-width display titl
 
 | Users see | Route / surface | Source of truth |
 |-----------|-----------------|-----------------|
-| Picks | `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard` | `NAV_LABEL_PICKS` |
+| Picks | `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`, `/dashboard/rewind`, `/dashboard/phish-iq` | `NAV_LABEL_PICKS` |
 | Make Picks | Picks cluster tertiary | `NAV_LABEL_MAKE_PICKS` |
 | Picks Lab | `/dashboard/picks/lab` | `NAV_LABEL_PICKS_LAB` |
 | Scorecard | `/dashboard/picks/scorecard` | `NAV_LABEL_SCORECARD` |
+| Phish IQ | `/dashboard/phish-iq` (entry on Make Picks; not a tray chip) | `NAV_LABEL_PHISH_IQ` |
 | Pools | `/dashboard/pools`, `/dashboard/pools/create`, `/dashboard/pools/join` | `NAV_LABEL_POOLS` |
 | Pool Details (context) | `/dashboard/pool/:id` | `NAV_LABEL_POOL_DETAILS` |
 | Pool details (desktop eyebrow) | Pool hub | `POOL_DETAILS_LAYOUT_EYEBROW` |

@@ -26,6 +26,7 @@ describe('isDashboardNavItemActive (#707)', () => {
       ['/dashboard/picks/scorecard', NAV_LABEL_PICKS],
       ['/dashboard/rewind', NAV_LABEL_PICKS],
       ['/dashboard/phish-iq', NAV_LABEL_PICKS],
+      ['/dashboard/picks/phish-iq', NAV_LABEL_PICKS],
       ['/dashboard/pools', NAV_LABEL_POOLS],
       ['/dashboard/pools/create', NAV_LABEL_POOLS],
       ['/dashboard/pools/join', NAV_LABEL_POOLS],
