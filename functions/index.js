@@ -88,6 +88,7 @@ const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorke
 const { getTriggerSpec } = require("./commsCatalog");
 const { tourCountdownDeliveryPlan } = require("./commsTemplates");
 const { refreshPublicTourStats } = require("./publicTourStats");
+const { refreshPublicShowNotes } = require("./publicShowNotes");
 const {
   assertRewindAdmin,
   assertRewindPlayer,
@@ -2245,6 +2246,54 @@ exports.refreshPublicTourStats = onCall(
         `refreshPublicTourStats failed: ${msg}`
       );
     }
+  }
+);
+
+/**
+ * Admin-only rebuild of public show notes from `comms_show_context` (#684).
+ * Does not open that collection to clients. Nights that fail the richness
+ * gate are deleted from `public_show_notes`.
+ */
+exports.refreshPublicShowNotes = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    timeoutSeconds: 120,
+    memory: "512MiB",
+  },
+  async (request) => {
+    try {
+      assertAdminClaim(request);
+      const result = await refreshPublicShowNotes(db, { logger });
+      return { ok: true, ...result };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error("refreshPublicShowNotes unexpected error", msg, e);
+      throw new HttpsError(
+        "failed-precondition",
+        `refreshPublicShowNotes failed: ${msg}`
+      );
+    }
+  }
+);
+
+/**
+ * Nightly public show notes, after tour stats (07:30) and global boards (08:00).
+ * Separate from the tour-stats job so a long Phish.net pass cannot eat this write.
+ */
+exports.scheduledPublicShowNotesRefresh = onSchedule(
+  {
+    schedule: "15 8 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 120,
+    memory: "512MiB",
+  },
+  async () => {
+    await refreshPublicShowNotes(db, { logger });
+    return null;
   }
 );
 

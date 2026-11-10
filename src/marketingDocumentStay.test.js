@@ -5,6 +5,8 @@ import { shouldStayOnMarketingDocument } from './marketingDocumentStay';
 describe('shouldStayOnMarketingDocument', () => {
   it('keeps tour stats and the stats embed on the marketing document', () => {
     expect(shouldStayOnMarketingDocument('/tour-stats')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/tour-notes')).toBe(true);
+    expect(shouldStayOnMarketingDocument('/tour-notes/2026-08-01')).toBe(true);
     expect(shouldStayOnMarketingDocument('/tour-stats/2026-fall-tour')).toBe(true);
     expect(shouldStayOnMarketingDocument('/tour-stats/msg')).toBe(true);
     expect(shouldStayOnMarketingDocument('/phish-at-msg')).toBe(true);

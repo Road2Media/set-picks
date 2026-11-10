@@ -474,6 +474,35 @@ Off-tour week. One admin-chosen historical show. Player surfaces stay dark until
 
 **Deploy (human, not CI):** see §2.10. Do not run a backfill. There is no historical pick migration.
 
+### 1.24 `public_show_notes/{showDate}` (**v1.116.0 / #684**)
+
+Public show-level notes for `/tour-notes`. Written by Cloud Functions Admin SDK (`refreshPublicShowNotes`, `scheduledPublicShowNotesRefresh`, and a soft-fail sync at the end of `ensureCommsShowContext`). Source is server-only `comms_show_context`. **Clients may read this collection. Clients still cannot read or write `comms_show_context`.** Client writes are denied.
+
+A night is published only when it has a bustout or a trusted tour-debut list of 1 to 8 titles. Opener and encore alone are not published. The first show of a tour (`tour_debuts_trusted: false`) is not published unless it has a bustout. The doc never contains `set_songs`, `song_gaps`, `last_played`, `lifetime_plays`, a score, a uid, or a handle.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `showDate` | string | `YYYY-MM-DD`, same as the doc id |
+| `tourKey` / `tourSlug` | string \| null | Calendar label and its kebab slug. `tourSlug` is null when the label does not slug |
+| `venue` / `city` | string \| null | From `show_calendar/snapshot` when that date is on the snapshot. Absent facts stay null |
+| `openerTitle` / `encoreTitle` | string \| null | First song of set 1 and of the encore |
+| `bustouts` | `{ title, gap }[]` | At most 6. `gap` is the pre-show count when it is 30 or more, otherwise null |
+| `tourDebuts` | string[] | At most 4 trusted titles. Empty when the debut list is untrusted or longer than 8 |
+| `tourDebutMore` | number | Trusted debuts past the 4 named titles. Those titles are not stored |
+| `setCounts` | `{ set1, set2, encore }` \| null | Lengths only |
+| `paragraphs` | string[] | 2 to 4 show-level sentences. No player result |
+| `headline` | string | Fan date plus the bustout title, or "new to the tour" |
+| `momentTags` | string[] | `bustout`, `tour_debut`, `multi_encore` |
+| `schemaVersion` | number | `1` |
+| `source` | string | `comms_show_context` |
+| `writtenAt` | string | ISO timestamp |
+
+Doc `_index` lists up to 40 headlines (`showDate`, `headline`, `tourSlug`, `tourKey`), newest first. It is not a setlist.
+
+`/tour-notes` and `/tour-notes/:showDate` are prerendered only for the hub in this version, with `noindex, follow`. They are not in the sitemap or `llms.txt` until `PUBLIC_SHOW_NOTES_INDEXABLE` is turned on in a follow-up that also prerenders nights which already cleared the gate.
+
+**Deploy (human, not CI):** `firebase deploy --only firestore:rules,functions:refreshPublicShowNotes,functions:scheduledPublicShowNotesRefresh --project set-picks`. Then an admin call to `refreshPublicShowNotes`. Same-night updates also run from `ensureCommsShowContext` after the comms functions that call it are deployed. No new secret. No rules change on `comms_show_context`.
+
 ---
 
 ## 2. Cloud Function Callables
@@ -640,6 +669,8 @@ Phish.net integration, live scoring, and public tour-stats refresh. Deployed via
 
 **`public_tour_stats` (#665, year docs #1141 / v1.95.0):** `scheduledPublicTourStatsRefresh` (daily 07:30 ET) and admin callable `refreshPublicTourStats` rebuild aggregate docs, including `public_tour_stats/_year_YYYY`. Calendar sync also triggers a refresh after writing `show_calendar/snapshot`. Callable response adds `yearsWritten` (array of calendar years written). No new callable. The year docs are not live until the functions that call `refreshPublicTourStats` are deployed. See §3 `/tour-stats/2026` for the order.
 
+**`public_show_notes` (#684 / v1.116.0):** admin callable `refreshPublicShowNotes` (no request body; response `{ ok, written, deleted }`) and `scheduledPublicShowNotesRefresh` (daily 08:15 ET). Admin claim required on the callable. The schedule does not call Phish.net. See §1.24 for the deploy order. Pages stay `noindex` until a follow-up.
+
 **`public_venue_stats/msg` (#1139 / v1.94.0):** `scheduledPublicMsgGardenStats` (daily 08:10 ET) and admin callable `refreshPublicMsgGardenStats` rebuild the MSG aggregate. Request: none. Response: `{ ok, written, showCount?, lastShowDate?, reason? }`. Admin claim required. A `showCount` under 90 returns `{ ok: true, written: false, reason: "short-count" }` and does not write. Missing `PHISHNET_API_KEY` returns `reason: "missing-api-key"`. Not included in `npm run deploy:functions:phishnet`. See §1.22 for the deploy order.
 
 **`global_stats_leaderboards` (#1004 / v1.70.0, #1044 / v1.100.0):** `scheduledGlobalStatsLeaderboardsRefresh` (daily 08:00 ET) and admin callable `refreshGlobalStatsLeaderboards` rebuild all-time + every tour. `rollupScoresForShow` also rebuilds all-time + the finalized show’s tour (soft-fail). Request: none. Response: `{ ok, docsWritten, usersScanned, tourKeys, vintageStatus, vintagePlayers }`. `vintageStatus` is `ok` or `skipped` (catalog had no debut years, or the picks/catalog read failed; the previous Average vintage rows are kept). `vintagePlayers` is how many players had a dated mean on that successful pass, otherwise `0`. Admin claim required on the callable. The schedule and callable are unchanged until the functions deploy.
@@ -799,6 +830,8 @@ These routes are part of the public surface. Renaming or removing them is a MAJO
 | `/how-it-works` | None | How to play marketing page. **v1.32.0+ (#659):** served as prerendered `dist/how-it-works/index.html` when present. **v1.47.0:** marketing document. **v1.56.1 (#937):** show-night walkthrough (distinct from splash Game Format teaser). |
 | `/how-scoring-works` | None | Scoring rules marketing page. **v1.32.0+ (#659):** served as prerendered `dist/how-scoring-works/index.html` when present. **v1.47.0:** marketing document. **v1.58.0 (#944):** light editorial main + `ScoringRulesContent surface="light"` (in-app modal remains dark default). **v1.101.0 (#1086):** the ladder on the page is the one in effect for today (America/New_York). Nights before 2026-12-30 keep wildcard 10 and any encore song 15. Starting 2026-12-30 the page shows wildcard 5, first encore 15, later encore 10. |
 | `/how-scoring-changed` | None | **v1.101.0 (#1086):** public explainer for the scoring change. Not in the main nav. Prerendered marketing document. Scoring section only. Ranking and tie-breaks stay on #1172 / #1218. GA4 `route_group=marketing`. |
+| `/tour-notes` | None | **v1.116.0 (#684):** public show notes hub. Prerendered marketing document. `noindex, follow`. Not in the sitemap or `llms.txt`. Editorial copy only until `public_show_notes/_index` has nights. Each linked night is a bustout or a short trusted tour debut, not a setlist. Cross-links to `/tour-stats`, `/how-it-works`, and `/phish-setlist-prediction-game`. CTA is `/login?mode=signup`. Returning sessions stay on the marketing document. GA4 `route_group=marketing`. Not in the header nav. |
+| `/tour-notes/:showDate` | None | **v1.116.0 (#684):** one night from `public_show_notes/{showDate}` via Firestore REST. `noindex, follow`. Not prerendered and not in the sitemap until a follow-up. A date with no published note says so. Invalid dates do not fetch. |
 | `/tour-stats` | None | **v1.33.0 (#665):** public aggregate tour song stats (filter + default Sphere). Prerendered shell; live data from `public_tour_stats`. Never full nightly setlists. **v1.47.1 (#827):** skeleton chrome + `PublicTourStatsPage` modulepreload. **v1.49.0 (#853):** boots the **marketing** document (no `AuthProvider`); App Check + Firestore load at fetch time only — restores cold-open feel after #835 login deferral regressed the app-shell path. **v1.60.0 (#929):** hub “current tour” blurb links to the live summer SEO slug; filter selection always uses slug URLs. **v1.62.0 (#869):** first meaningful stats prefer `/tour-stats-data/*.json` + Firestore REST (no App Check kick on marketing). **v1.91.2 (#930):** build-time `dist/sitemap.xml` stamps `<lastmod>` on this hub from the newest prerendered slug `lastShowDate`. **v1.94.0 (#1139):** hub blurb also links to `/tour-stats/msg`. **v1.95.0 (#1141):** hub blurb also links to `/tour-stats/2026`. **v1.98.0 (#1192):** hub archive line no longer links to Phish at MSG. |
 | `/phish-at-msg/100th` | None | **v1.113.0 (#1147):** public board for January 2, 2027 at Madison Square Garden. Prerendered. Sitemap and `llms.txt`. Handles, rank, points, and exact slots. No email addresses or account fields. Live rows come from `public_night_boards/2027-01-02` after the rules and rollup functions are deployed. Until that doc exists, the page states that the board goes up the morning after the show. `?dryRunDate=YYYY-MM-DD` is honored only when the Vite mode is not `production` (staging and local). Production ignores it. Returning sessions stay on the marketing document. GA4 `route_group=marketing`. |
 | `/phish-at-msg` | None | **v1.98.0 (#1192):** canonical Phish at MSG page. Links to `/phish-at-msg/100th`. Moved out of the tour model. Same aggregates as v1.94.0: played-show count, most-played songs, MSG debuts, longest visit gaps, bustouts, New Year's Eve counts, and set-1 opener frequencies. Prerendered. FAQ + ItemList JSON-LD. Sitemap and `llms.txt` list this URL. Breadcrumb is Home → Phish at MSG. On-page credit links to Phish.net. CTA is `/login?mode=signup`. Sitemap `<lastmod>` is the page's `lastShowDate` and is not folded into the `/tour-stats` hub max. Live numbers come from `public_venue_stats/msg`. Returning sessions stay on the marketing document. GA4 `route_group=marketing`. Header and footer nav include “Phish at MSG”. |

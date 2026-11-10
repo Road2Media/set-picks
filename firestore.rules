@@ -307,6 +307,17 @@ service cloud.firestore {
     }
 
     /**
+     * Public show notes (#684). Written by Cloud Functions from
+     * `comms_show_context`. Show-level facts only: opener, encore, bustout
+     * or tour debut. Never a full setlist and never a player result.
+     * Clients may read; no client writes. The source collection stays closed.
+     */
+    match /public_show_notes/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    /**
      * Aggregate-only MSG Garden stats for /tour-stats/msg (#1139).
      * Written by Cloud Functions Admin SDK. Never full setlists.
      * Clients may read; no client writes.
