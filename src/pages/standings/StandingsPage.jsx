@@ -1,6 +1,11 @@
 import React from 'react';
 
-import { AdPlacement, AD_SLOT_STANDINGS_INLINE } from '../../features/ads';
+import {
+  AdPlacement,
+  AD_SLOT_STANDINGS_INLINE,
+  ProgrammaticAdPlacement,
+  AD_SLOT_PROGRAMMATIC_STANDINGS,
+} from '../../features/ads';
 import { InviteChooserSheet } from '../../features/invite';
 import {
   StandingsChrome,
@@ -48,8 +53,11 @@ export default function StandingsPage({ selectedDate, onSelectShowDate }) {
         {/*
           Existing Standings seam (#609). Filled only when Remote Config
           returns a creative (#121). Empty in production until ads_enabled.
+          The programmatic slot under it stays null unless env, Remote Config,
+          and consent all allow EthicalAds (#422). House creative wins.
         */}
         <AdPlacement slotId={AD_SLOT_STANDINGS_INLINE} className="mb-3" />
+        <ProgrammaticAdPlacement slotId={AD_SLOT_PROGRAMMATIC_STANDINGS} className="mb-3" />
 
         {screen.view === 'tour' ? (
           <StandingsTourView

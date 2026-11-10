@@ -20,7 +20,9 @@ GPT's own script URL, for reference, is `https://securepubads.g.doubleclick.net/
 
 ## Path that fits the current allowlist
 
-EthicalAds uses stable hosts and an image or text placement. It does not ask for `'unsafe-eval'`. If Phase 4 picks it, add:
+Phase 4 picked EthicalAds. The comparison is `docs/ADS_PROGRAMMATIC_DECISION.md`. The exact additions for that choice are in the next section. Do not edit `vercel.json` in this change. Apply the additions only in the release that sets the EthicalAds env.
+
+EthicalAds uses stable hosts and an image or text placement. It does not ask for `'unsafe-eval'`. The hosts are:
 
 | Directive | Host |
 |-----------|------|
@@ -53,6 +55,29 @@ These show up in AdSense and GPT integrations. Google does not publish them as a
 `www.googletagservices.com` is legacy. Prefer to omit it unless a real creative fails without it.
 
 AdSense's loader is `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js`. Same rule: add the host in the pull request that inserts the script.
+
+## Phase 4 paste list (EthicalAds only)
+
+Do not edit `vercel.json` in the spike pull request. When Patrick turns the provider on, append these tokens and nothing from the Google table above.
+
+The live header name stays `Content-Security-Policy-Report-Only`. Edit the same two directives on all three policies: the catch-all `/(.*)`, `/embed`, and `/embed/(.*)`. Leave `frame-ancestors` as it is on each one (`'none'` on the catch-all, `*` on the embed routes).
+
+| Directive | Append |
+| --- | --- |
+| `script-src` | `https://media.ethicalads.io` |
+| `connect-src` | `https://server.ethicalads.io` `https://media.ethicalads.io` |
+
+`img-src` already allows `https:`. Do not add an image host.
+
+Do not add `frame-src` for this placement. The proof of concept is an image unit, not an iframe.
+
+Do not add `style-src` in the first paste. `'unsafe-inline'` already allows a style element. If a report-only violation names a stylesheet on `media.ethicalads.io`, append that one host to `style-src` then.
+
+Do not add `https://*.ethicalads.io`. Name the host that the report shows. Do not add `https://ethicalads.blob.core.windows.net` unless a report names it. EthicalAds said in 2025 that creative bytes are served from `*.ethicalads.io`.
+
+Do not add `'unsafe-eval'`, `'strict-dynamic'`, or a nonce in this paste. Those belong to GPT and AdSense, and this app's static header cannot mint a per-response nonce. Do not add `securepubads.g.doubleclick.net`, `pagead2.googlesyndication.com`, or the other Google rows in the same edit.
+
+`https://fundingchoicesmessages.google.com` is still a separate paste, in the consent section above, and only in the release that sets `VITE_CMP_PROVIDER` and `VITE_CMP_SITE_ID`.
 
 ## Header change, when a script actually ships
 

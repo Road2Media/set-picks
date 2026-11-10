@@ -19,6 +19,8 @@ One unit, on Standings, under the invite promo and above the board. Slot id `das
 
 `VITE_ENABLE_SPONSOR_SLOTS=true` shows the empty proportion shell in local and preview builds. It does not fill a creative and it is not the production control.
 
+A second slot, `programmatic_standings_inline`, sits under that house unit. It renders nothing and reserves no gap unless the EthicalAds env, both kill switches below, and the consent gate are all open. A house creative wins, and EthicalAds is not requested. The decision and the env names are in `docs/ADS_PROGRAMMATIC_DECISION.md`. This runbook does not turn that slot on.
+
 ## Parameters
 
 Project `set-picks`. One Firebase project serves local dev, Vercel staging, and production. A published **default** value applies to every channel that does not match a condition.
@@ -26,11 +28,12 @@ Project `set-picks`. One Firebase project serves local dev, Vercel staging, and 
 | Parameter | Type | In-app default | Console default until launch |
 |-----------|------|----------------|------------------------------|
 | `ads_enabled` | Boolean | false | false |
+| `programmatic_ads_enabled` | Boolean | false | false |
 | `dashboard_standings_inline` | String (JSON) | empty | empty |
 
 The in-app default is `defaultConfig` (the modular equivalent of `setDefaults`). A missing parameter, a failed fetch, or JSON that does not parse is treated as off. The page stays up.
 
-Leave both console defaults false and empty. Put live values on a channel condition, not on the default, until you mean every host.
+`programmatic_ads_enabled` is the Phase 4 proof of concept (#422). There is no JSON parameter for `programmatic_standings_inline`. `ads_enabled` false blocks the house unit and the programmatic slot. `programmatic_ads_enabled` false blocks only the programmatic slot. Leave the console defaults false and empty. Put live values on a channel condition, not on the default, until you mean every host. Do not publish `programmatic_ads_enabled` true until the EthicalAds env, the CSP paste, and the consent env in `docs/ADS_PROGRAMMATIC_DECISION.md` are in the same release.
 
 ## Creative schema
 
@@ -211,6 +214,7 @@ Clearing the unit takes under 5 minutes and does not need a deploy.
 5. Fresh session: private window on the same host, sign in, open Standings. The seam is empty on the first load.
 6. Warm cache: if a normal reload still shows the unit, wait until 60 seconds after that browser's last fetch, then reload once. Do not reload in a loop.
 7. Stop when the open tab and a fresh session are both empty. That is inside the 5 minute budget.
+8. The same `ads_enabled` false also blocks `programmatic_standings_inline`. To stop only the EthicalAds proof of concept, set `programmatic_ads_enabled` false on the default and on every condition, then Publish. An open Standings tab that is showing that unit drops the div and removes the script tag. A request already in flight can finish. The house creative stays up if `ads_enabled` is still true.
 
 ## Rollback
 
@@ -229,8 +233,9 @@ The production minimum fetch interval is 60 seconds. Local dev is 60 seconds too
 - Standings mounts the placement once per full page load. That is the only fetch.
 - Moving between Picks, Pools, Standings, Stats, and Account does not fetch again.
 - A second load inside 60 seconds reuses the last result.
-- While `ads_enabled` is false, the JSON is empty, or the JSON is invalid, the client does not open a live update connection.
-- While a creative is on screen, the client listens for a publish. That is how an open tab clears without a reload. The listener stops when the unit is gone.
+- While `ads_enabled` is false, the JSON is empty, or the JSON is invalid, the house unit does not open a live update connection.
+- While a house creative is on screen, the client listens for a publish. That is how an open tab clears without a reload. The listener stops when the unit is gone.
+- The programmatic unit opens a listener only while that unit is on screen. `programmatic_ads_enabled` false, or `ads_enabled` false, ends it. An empty house JSON does not by itself open that listener.
 
 ## Publish checklist
 
@@ -272,7 +277,7 @@ These would change navigation chrome or the picks flow. They are not slot ids. D
 
 ## Out of this runbook
 
-- Google Ad Manager, AdSense, or any other ad script (#422).
-- Consent, `ads.txt`, and the privacy-policy update. Those live in `docs/ADS_CONSENT_RUNBOOK.md` (#421). This runbook still does not gate house promos on that choice.
+- The EthicalAds script URL, the CSP paste, and the build-time env. Those live in `docs/ADS_PROGRAMMATIC_DECISION.md` and `docs/ADS_CSP_SPIKE.md` (#422). This runbook only holds the `programmatic_ads_enabled` flag. Google Ad Manager and AdSense are not recommended.
+- Consent, `ads.txt`, and the privacy-policy update. Those live in `docs/ADS_CONSENT_RUNBOOK.md` (#421). This runbook still does not gate house promos on that choice. The programmatic slot does use that gate. The house unit does not.
 - A Firestore `ad_campaigns` collection or an admin `?adPreview=` route. One Remote Config JSON value per slot is enough for the mounted unit.
 - Premium or ad-free billing (#423).

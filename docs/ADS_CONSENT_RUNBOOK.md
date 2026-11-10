@@ -38,6 +38,8 @@ The record is `localStorage` key `set-picks:ad-consent`, version 1, shape `{ "v"
 
 `canLoadThirdPartyAdScript(consent)` is the gate a Phase 4 provider calls before it inserts a tag. It returns true only when `advertisingAllowed` and `cmpEnabled` are both true. House promos do not call it. `AdPlacement` does not call it.
 
+Phase 4 (#422) calls that gate from `resolveProgrammaticPhase` before it can import the EthicalAds client. The env and both Remote Config flags also have to be on, or the function is not reached. The default build still creates no tag. EthicalAds does not read TCF. This gate is unchanged: a third-party script stays unloaded until Funding Choices allows advertising. See `docs/ADS_PROGRAMMATIC_DECISION.md`.
+
 ## When the partner signal counts
 
 `advertisingAllowed` is computed in `resolveAdConsent`:
@@ -83,7 +85,7 @@ Seller lines wait on Phase 4. Do not invent a `pub-` id or a `google.com, …, D
 
 Google's certification authority id is `f08c47fec0942fa0`. That id is public. It is not a seller line by itself, and it is not in `public/ads.txt`.
 
-Who maintains the file: Patrick. The next edit belongs with the Phase 4 pull request (#422), after the Ad Manager or AdSense account exists.
+Who maintains the file: Patrick. Phase 4 (#422) recommends EthicalAds and still does not add a seller line. Paste the line from the EthicalAds dashboard in the same change that sets the publisher env. Do not invent the slug. See `docs/ADS_PROGRAMMATIC_DECISION.md`.
 
 ## Commercial posture
 

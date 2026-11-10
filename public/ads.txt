@@ -8,5 +8,6 @@
 # The site does not run programmatic ads.
 #
 # A seller line waits until a real publisher id exists (Phase 4, #422).
+# The provider decision is EthicalAds. No slug is written here.
 # Maintainer: Patrick, in the same change that turns on that network.
-# See docs/ADS_CONSENT_RUNBOOK.md
+# See docs/ADS_CONSENT_RUNBOOK.md and docs/ADS_PROGRAMMATIC_DECISION.md
