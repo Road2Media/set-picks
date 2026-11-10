@@ -34,11 +34,14 @@ export function remoteConfigMinFetchIntervalMs(isDev) {
  * In-app default (modular `defaultConfig`, the `setDefaults` equivalent).
  * Stays false until a published console value says otherwise. A missing
  * parameter or a failed fetch resolves through this default.
- * @returns {{ ads_enabled: string }}
+ * `programmatic_ads_enabled` is the Phase 4 proof of concept (#422). It stays
+ * false, and `ads_enabled` false still blocks that slot.
+ * @returns {{ ads_enabled: string, programmatic_ads_enabled: string }}
  */
 export function buildRemoteConfigDefaults() {
   return {
     ads_enabled: 'false',
+    programmatic_ads_enabled: 'false',
   };
 }
 

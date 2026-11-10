@@ -83,6 +83,8 @@ Runtime behavior is controlled by **Vite env vars**:
 | `VITE_SONG_CATALOG_URL` | Override CDN URL for song catalog JSON |
 | `VITE_GA_MEASUREMENT_ID` | GA4 measurement ID; leave unset locally to avoid polluting analytics |
 | `VITE_FCM_VAPID_KEY` | FCM web-push VAPID key; optional for local dev |
+| `VITE_PROGRAMMATIC_ADS_PROVIDER` | Programmatic proof of concept. The only accepted value is `ethicalads`. Omit to load nothing (default). |
+| `VITE_ETHICALADS_PUBLISHER` | EthicalAds publisher slug. Omit to load nothing. A URL is rejected. Both this and `VITE_PROGRAMMATIC_ADS_PROVIDER` have to be valid, and consent plus Remote Config still have to allow the script. |
 
 To "toggle a feature," set or unset these in `.env` and restart the dev
 server.
@@ -102,8 +104,15 @@ Advertising consent is also off unless both `VITE_CMP_PROVIDER` and
 Firestore are not gated by that choice. Operator steps:
 `docs/ADS_CONSENT_RUNBOOK.md`.
 
+Programmatic fill is also off unless both `VITE_PROGRAMMATIC_ADS_PROVIDER`
+and `VITE_ETHICALADS_PUBLISHER` are set, and consent plus Remote Config
+`ads_enabled` and `programmatic_ads_enabled` allow it. The only provider
+value is `ethicalads`. Leave them unset. No EthicalAds script loads.
+Decision: `docs/ADS_PROGRAMMATIC_DECISION.md`.
+
 (2026-11-10: house-promo channel signal and the 60 second fetch floor.
-2026-11-10: CMP env stays unset; Funding Choices does not load.)
+2026-11-10: CMP env stays unset; Funding Choices does not load.
+2026-11-10: EthicalAds env stays unset; no programmatic script loads.)
 
 ## 3 — CI verify matrix (run before every push)
 

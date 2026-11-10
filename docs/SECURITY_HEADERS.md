@@ -68,7 +68,7 @@ upgrade-insecure-requests
 ### Explicitly not allowed
 
 - `'unsafe-eval'` — not required by current Vite production builds
-- Arbitrary third-party ads / tag managers beyond GA4. Future ad and consent hosts are listed in [`docs/ADS_CSP_SPIKE.md`](ADS_CSP_SPIKE.md) and are **not** in `vercel.json` until a script ships.
+- Arbitrary third-party ads / tag managers beyond GA4. Future ad and consent hosts are listed in [`docs/ADS_CSP_SPIKE.md`](ADS_CSP_SPIKE.md) and are **not** in `vercel.json`. Phase 4 names EthicalAds and the exact tokens to append. Apply them in the release that sets that env, not before.
 - `data:` / `blob:` in `script-src`
 
 ### Embed route (`/embed`, `/embed/*`)

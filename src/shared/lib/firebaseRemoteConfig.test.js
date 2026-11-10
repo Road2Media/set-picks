@@ -62,7 +62,10 @@ describe('resolveReleaseChannel', () => {
 describe('remote config defaults and fetch floor', () => {
   it('keeps the kill switch off and the fetch floor under five minutes', async () => {
     const mod = await loadModule();
-    expect(mod.buildRemoteConfigDefaults()).toEqual({ ads_enabled: 'false' });
+    expect(mod.buildRemoteConfigDefaults()).toEqual({
+      ads_enabled: 'false',
+      programmatic_ads_enabled: 'false',
+    });
     expect(mod.remoteConfigMinFetchIntervalMs(false)).toBe(60 * 1000);
     expect(mod.remoteConfigMinFetchIntervalMs(true)).toBe(60 * 1000);
     expect(mod.REMOTE_CONFIG_PROD_MIN_FETCH_INTERVAL_MS).toBeLessThan(5 * 60 * 1000);
@@ -112,7 +115,10 @@ describe('loadFirebaseRemoteConfig', () => {
     expect(rc.settings.minimumFetchIntervalMillis).toBe(
       mod.remoteConfigMinFetchIntervalMs(import.meta.env.DEV),
     );
-    expect(rc.defaultConfig).toEqual({ ads_enabled: 'false' });
+    expect(rc.defaultConfig).toEqual({
+      ads_enabled: 'false',
+      programmatic_ads_enabled: 'false',
+    });
     expect(h.setCustomSignals).toHaveBeenCalledWith(rc, { release_channel: 'development' });
     expect(first.getBoolean('ads_enabled')).toBe(false);
   });

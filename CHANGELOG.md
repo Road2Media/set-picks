@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.127.0] — 2026-11-10
+
+### Added
+- **Programmatic ads spike (#422)** — The provider recommendation is EthicalAds, written up in `docs/ADS_PROGRAMMATIC_DECISION.md`. Google Ad Manager and AdSense stay off: their supported content-security policy needs a per-response nonce, `'unsafe-eval'`, and `'strict-dynamic'`, and this app's header is a static allowlist. Standings can mount one EthicalAds image under the house promo. It renders nothing, and it does not request `media.ethicalads.io`, unless the EthicalAds env, `ads_enabled`, `programmatic_ads_enabled`, and the consent gate all allow it, and the house slot is empty. Those env vars are unset. The new Remote Config flag defaults to false. `vercel.json` is unchanged. `public/ads.txt` still authorizes no sellers. The exact CSP tokens for Patrick are in `docs/ADS_CSP_SPIKE.md`.
+
 ## [1.126.0] — 2026-11-10
 
 ### Added
