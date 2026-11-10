@@ -200,8 +200,9 @@ features.
 When adding or modifying `/dashboard/*` routes:
 
 1. Update `src/app/layout/model/dashboardPageMeta.js`.
-2. Update `isActive` logic in `src/app/layout/DashboardLayout.jsx` if
-   the new route is a child of an existing tab.
+2. Update `isDashboardNavItemActive` in `src/app/layout/model/dashboardNav.js`
+   if the new route is a child of an existing tab. Sidebar and bottom tabs
+   both use that helper (`DashboardNavItem`).
 3. Add a test case in `scripts/verify-dashboard-meta.mjs`.
 4. Run `npm run verify:dashboard-meta`.
 5. Consult `docs/DASHBOARD_IA.md` for canonical vocabulary.

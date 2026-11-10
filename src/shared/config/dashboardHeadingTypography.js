@@ -31,3 +31,10 @@ export const dashboardTourDateSelectChromeMobileWrap =
 
 export const dashboardTourDateSelectChromeDesktopWrap =
   'rounded-xl bg-gradient-to-r from-white/35 via-brand-primary/85 to-brand-primary p-px shadow-[0_0_20px_rgb(var(--brand-primary)/0.24)] focus-within:ring-2 focus-within:ring-brand-primary/45 focus-within:ring-offset-0 focus-within:ring-offset-transparent';
+
+/**
+ * Desktop card around Tour Date / Tour / Year scope (#609). Mobile keeps the
+ * same node and only paints this frame at the `desk` screen (#707).
+ */
+export const dashboardScopeSelectCardClasses =
+  'desk:justify-between desk:gap-3 desk:rounded-2xl desk:border desk:border-border-muted/70 desk:bg-surface-panel-strong desk:p-3 desk:shadow-inset-glass desk:ring-1 desk:ring-border-glass/45 desk:backdrop-blur-md';

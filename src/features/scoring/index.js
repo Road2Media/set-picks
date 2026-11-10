@@ -50,6 +50,7 @@ export { default as StandingsTourView } from './ui/StandingsTourView';
 export { default as StandingsYearScopeSelect } from './ui/StandingsYearScopeSelect';
 export { default as StandingsYearView } from './ui/StandingsYearView';
 export { default as StandingsViewToggle } from './ui/StandingsViewToggle';
+export { default as StandingsChrome } from './ui/StandingsChrome';
 export { default as StandingsStickyChrome } from './ui/StandingsStickyChrome';
 export { default as StandingsMobileFixedChrome } from './ui/StandingsMobileFixedChrome';
 export { default as StandingsInvitePromo } from './ui/StandingsInvitePromo';

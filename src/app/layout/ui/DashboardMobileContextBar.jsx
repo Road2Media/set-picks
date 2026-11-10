@@ -4,30 +4,20 @@ import {
   dashboardMobileContextTitleGradientClasses,
   dashboardMobileContextTitleWarRoomClasses,
 } from '../../../shared/config/dashboardHeadingTypography';
-import {
-  StandingsTourScopeSelect,
-  StandingsYearScopeSelect,
-} from '../../../features/scoring';
 import { DASHBOARD_MOBILE_CONTEXT_TRAILING_ROOT_ID } from '../../../shared/hooks/useDashboardMobileChromePortal';
-import DashboardTourDateScope from './DashboardTourDateScope';
+import { DASHBOARD_MOBILE_SCOPE_SLOT_ID } from '../../../shared/ui/DashboardAdaptiveScope';
 
 /**
  * Uniform H2 across tabs (#609):
  * - Fixed `min-h` so Profile (no scope) matches Picks/Pools/Standings.
- * - 3-column grid: title | optically centered scope | trailing slot.
+ * - 3-column grid: title | optically centered scope slot | trailing slot.
+ * - The scope slot is filled by one portaled control (Tour Date / Tour / Year).
  * - Trailing column always reserves Scale width (`w-9`) so the date picker
  *   stays in the same place whether Standings mounts Scale or not.
  */
 export default function DashboardMobileContextBar({
   contextTitle,
   contextTitleTone = 'default',
-  showDatePicker,
-  selectedDate,
-  onSelectedDateChange,
-  showDates,
-  showDatesByTour,
-  tourScope = null,
-  yearScope = null,
 }) {
   const isWarRoom = contextTitleTone === 'warRoom';
 
@@ -43,35 +33,7 @@ export default function DashboardMobileContextBar({
         {contextTitle}
       </span>
 
-      <div className="justify-self-center">
-        {showDatePicker ? (
-          <DashboardTourDateScope
-            variant="mobile"
-            selectedDate={selectedDate}
-            onSelectedDateChange={onSelectedDateChange}
-            showDates={showDates}
-            showDatesByTour={showDatesByTour}
-          />
-        ) : null}
-
-        {tourScope ? (
-          <StandingsTourScopeSelect
-            variant="mobile"
-            tours={tourScope.tours}
-            selectedTourKey={tourScope.selectedTourKey}
-            onSelectTour={tourScope.onSelectTour}
-          />
-        ) : null}
-
-        {yearScope ? (
-          <StandingsYearScopeSelect
-            variant="mobile"
-            years={yearScope.years}
-            selectedYearKey={yearScope.selectedYearKey}
-            onSelectYear={yearScope.onSelectYear}
-          />
-        ) : null}
-      </div>
+      <div id={DASHBOARD_MOBILE_SCOPE_SLOT_ID} className="justify-self-center" />
 
       {/*
         Always reserve the Scale hit-target width so optical center of the
