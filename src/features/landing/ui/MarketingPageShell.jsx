@@ -31,7 +31,7 @@ export default function MarketingPageShell({ children }) {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-transparent text-white">
-      <header className={`sticky top-0 z-50 flex items-center border-b border-white/5 bg-brand-bg/80 backdrop-blur-lg ${MARKETING_HEADER_HEIGHT}`}>
+      <header className={`sticky top-0 z-50 flex items-center overflow-visible border-b border-white/5 bg-brand-bg/80 backdrop-blur-lg ${MARKETING_HEADER_HEIGHT}`}>
         <div className={`relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 sm:gap-4 ${MARKETING_PAGE_GUTTER_X}`}>
           <a
             href="/"

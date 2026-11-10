@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.122.0] — 2026-11-10
+
+### Changed
+- **Marketing header hubs (#1232)** — The public header, the mobile menu, and the footer primary nav share four top-level items: Play, Phish IQ, Tour Stats, and About. Sign In and Join stay outside that cap. Play (`/phish-setlist-prediction-game`) opens How it works, Scoring, and How scoring changed. Phish IQ and About are single links. Tour Stats (`/tour-stats`) opens New Year's Run, Phish at MSG, Annual 2026, and All tours. A desktop caret opens on hover or click, closes on leave, Escape, a click outside, or a route change, and Escape puts focus back on that caret. The mobile menu uses the same groups. `/rewind` stays out of the primary nav until Rewind mode is on, and then it is a footer link only. Sitemap and `llms.txt` are unchanged. No new route.
+
 ## [1.121.0] — 2026-11-10
 
 ### Added
