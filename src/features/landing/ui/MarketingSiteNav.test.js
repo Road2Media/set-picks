@@ -135,7 +135,7 @@ describe('marketing mobile menu markup (#1232)', () => {
   });
 });
 
-describe('marketing footer nav markup (#1232)', () => {
+describe('marketing footer nav markup (#1232 / #1287)', () => {
   it('lists every hub and child in the primary footer', () => {
     const html = footer('/how-it-works');
     for (const href of [
@@ -155,13 +155,58 @@ describe('marketing footer nav markup (#1232)', () => {
     expect(html).not.toContain('/rewind');
     expect(html).not.toContain('Privacy Policy');
     expect(html.toLowerCase()).not.toContain('chair');
+    expect(html.toLowerCase()).not.toContain('song row');
+    expect(html.toLowerCase()).not.toContain('methodology');
   });
 
-  it('adds Rewind in the footer only when the flag is on', () => {
+  it('stacks child links under a heading and folds single links into one column', () => {
+    const html = footer('/how-it-works');
+    expect(html).toContain('data-footer-column="play"');
+    expect(html).toContain('data-footer-column="tour-stats"');
+    expect(html).toContain('data-footer-column="singles"');
+    expect(html).not.toContain('data-footer-column="phish-iq"');
+    expect(html).not.toContain('data-footer-column="about"');
+    expect(html.indexOf('data-footer-column="play"')).toBeLessThan(
+      html.indexOf('data-footer-column="tour-stats"'),
+    );
+    expect(html.indexOf('data-footer-column="tour-stats"')).toBeLessThan(
+      html.indexOf('data-footer-column="singles"'),
+    );
+
+    const play = html.match(/<a[^>]*href="\/phish-setlist-prediction-game"[^>]*>/);
+    expect(play?.[0]).toContain('no-underline');
+    expect(play?.[0]).toContain('uppercase');
+    const how = html.match(/<a[^>]*href="\/how-it-works"[^>]*>/);
+    expect(how?.[0]).toContain('underline');
+    expect(how?.[0]).not.toContain('no-underline');
+    expect(html).toContain('flex-col items-start');
+    expect(html).not.toContain('max-w-xs');
+    expect(html).not.toContain('flex-wrap justify-center');
+
+    const playColumn = html.slice(
+      html.indexOf('data-footer-column="play"'),
+      html.indexOf('data-footer-column="tour-stats"'),
+    );
+    expect(playColumn).toContain('href="/how-it-works"');
+    expect(playColumn).toContain('href="/how-scoring-works"');
+    expect(playColumn).toContain('href="/how-scoring-changed"');
+    expect(playColumn).not.toContain('href="/phish-iq"');
+
+    const singles = html.slice(html.indexOf('data-footer-column="singles"'));
+    expect(singles).toContain('href="/phish-iq"');
+    expect(singles).toContain('href="/about"');
+    expect(singles.indexOf('href="/phish-iq"')).toBeLessThan(singles.indexOf('href="/about"'));
+  });
+
+  it('adds Rewind in the singles column only when the flag is on', () => {
     vi.stubEnv('VITE_ENABLE_REWIND_MODE', 'true');
     const html = footer('/');
-    expect(html).toContain('href="/rewind"');
-    expect(html).toContain('>Rewind<');
+    const singles = html.slice(html.indexOf('data-footer-column="singles"'));
+    expect(singles).toContain('href="/rewind"');
+    expect(singles).toContain('>Rewind<');
+    expect(html.indexOf('data-footer-column="tour-stats"')).toBeLessThan(
+      html.indexOf('href="/rewind"'),
+    );
   });
 
   it('keeps legal links on their own row', () => {
