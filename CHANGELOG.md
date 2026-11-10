@@ -8,6 +8,14 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.114.0] — 2026-11-10
+
+### Added
+- **Multi-band Phase 1, additive `bandId` (#605, part of #300)** — New writes on `picks`, `official_setlists`, `live_setlist_automation`, `rollup_audit`, and `pools` set `bandId: "phish"`. Document ids are unchanged. A missing `bandId` still counts as Phish, so standings, picks, and pools keep showing today's data before any backfill. Firestore rules accept a missing value or `phish` and reject any other value. They do not require the field yet (`bandIdRequired()` is `false`). `STRICT_BAND_ID_QUERIES` is `false`, so list queries do not add `where('bandId', '==', 'phish')`. That filter would hide every doc that has not been backfilled. The catalog sync also writes `song-catalog/phish.json`. Players still load `song-catalog.json`.
+
+### Changed
+- **Deploy order for `bandId` (human)** — Do not run the backfill as part of deploy. Order: (1) this client release, so new saves include `bandId`; (2) Cloud Functions that stamp it (`rollupScoresForShow`, `revertRollupForShow`, `refreshLiveScoresForShow`, `scheduledPhishnetLiveSetlistPoll`, `pollLiveSetlistNow`, `setLiveSetlistAutomationState`, `scheduledPhishnetSongCatalog`, `refreshPhishnetSongCatalog`, and `backfillBustoutsForShows` if that callable is still deployed); (3) `firebase deploy --only firestore:rules,storage --project set-picks` (rules stay tolerant; storage allows public read of the alias); (4) `node scripts/migrate-phish-to-bandid.mjs` and read the counts; (5) only then `node scripts/migrate-phish-to-bandid.mjs --confirm`. A later change may set `STRICT_BAND_ID_QUERIES` and `bandIdRequired()` to true, and may point the song picker at `song-catalog/phish.json`. Do that only after the backfill counts check out and the alias object exists. Composite indexes for a `bandId` query are part of that later change, not this one.
+
 ## [1.113.0] — 2026-11-10
 
 ### Added

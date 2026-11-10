@@ -8,6 +8,12 @@ import {
   where,
 } from 'firebase/firestore';
 
+import { DEFAULT_BAND_ID } from '../../../shared/config/bands.js';
+import {
+  bandIdQueryConstraints,
+  docBelongsToBand,
+  rowsForBand,
+} from '../../../shared/config/bandScope.js';
 import { db } from '../../../shared/lib/firebase';
 import {
   sanitizeBustouts,
@@ -49,31 +55,40 @@ export function normalizeOfficialSetlistDocData(data, showDate) {
  * @param {string} showDate
  * @returns {Promise<Array<{ id: string } & Record<string, unknown>>>}
  */
-export async function fetchPicksForShowDate(showDate) {
+export async function fetchPicksForShowDate(showDate, bandId = DEFAULT_BAND_ID) {
   if (!showDate) return [];
 
-  const picksQuery = query(collection(db, 'picks'), where('showDate', '==', showDate));
+  const picksQuery = query(
+    collection(db, 'picks'),
+    where('showDate', '==', showDate),
+    ...bandIdQueryConstraints(where, bandId),
+  );
   const snapshot = await getDocs(picksQuery);
 
-  return snapshot.docs.map((pickDoc) => ({
-    id: pickDoc.id,
-    ...pickDoc.data(),
-  }));
+  return rowsForBand(
+    snapshot.docs.map((pickDoc) => ({
+      id: pickDoc.id,
+      ...pickDoc.data(),
+    })),
+    bandId,
+  );
 }
 
 /**
  * @param {string} showDate
  * @returns {Promise<null | { officialSetlist: unknown[] } & Record<string, unknown>>}
  */
-export async function fetchOfficialSetlistForShow(showDate) {
+export async function fetchOfficialSetlistForShow(showDate, bandId = DEFAULT_BAND_ID) {
   if (!showDate) return null;
 
   const setlistRef = doc(db, 'official_setlists', showDate);
   const setlistSnap = await getDoc(setlistRef);
 
   if (!setlistSnap.exists()) return null;
+  const data = setlistSnap.data();
+  if (!docBelongsToBand(data, bandId)) return null;
 
-  return normalizeOfficialSetlistDocData(setlistSnap.data(), showDate);
+  return normalizeOfficialSetlistDocData(data, showDate);
 }
 
 /**
@@ -84,19 +99,26 @@ export async function fetchOfficialSetlistForShow(showDate) {
  * @param {(err: Error) => void} onError
  * @returns {() => void}
  */
-export function subscribePicksForShowDate(showDate, onNext, onError) {
+export function subscribePicksForShowDate(showDate, onNext, onError, bandId = DEFAULT_BAND_ID) {
   if (!showDate) {
     return () => {};
   }
-  const picksQuery = query(collection(db, 'picks'), where('showDate', '==', showDate));
+  const picksQuery = query(
+    collection(db, 'picks'),
+    where('showDate', '==', showDate),
+    ...bandIdQueryConstraints(where, bandId),
+  );
   return onSnapshot(
     picksQuery,
     (snapshot) => {
       onNext(
-        snapshot.docs.map((pickDoc) => ({
-          id: pickDoc.id,
-          ...pickDoc.data(),
-        }))
+        rowsForBand(
+          snapshot.docs.map((pickDoc) => ({
+            id: pickDoc.id,
+            ...pickDoc.data(),
+          })),
+          bandId,
+        )
       );
     },
     onError
@@ -111,7 +133,12 @@ export function subscribePicksForShowDate(showDate, onNext, onError) {
  * @param {(err: Error) => void} onError
  * @returns {() => void}
  */
-export function subscribeOfficialSetlistForShow(showDate, onNext, onError) {
+export function subscribeOfficialSetlistForShow(
+  showDate,
+  onNext,
+  onError,
+  bandId = DEFAULT_BAND_ID,
+) {
   if (!showDate) {
     return () => {};
   }
@@ -120,6 +147,7 @@ export function subscribeOfficialSetlistForShow(showDate, onNext, onError) {
     setlistRef,
     (snap) => {
       if (!snap.exists()) onNext(null);
+      else if (!docBelongsToBand(snap.data(), bandId)) onNext(null);
       else onNext(normalizeOfficialSetlistDocData(snap.data(), showDate));
     },
     onError

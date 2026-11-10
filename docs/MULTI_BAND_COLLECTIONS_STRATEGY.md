@@ -107,10 +107,10 @@ The Songfish discovery (Section 2) reshapes this fork. The right unit of abstrac
 
 ### Phase 1 - Namespace existing Phish data with `bandId`
 
-- Add `bandId: "phish"` field on writes for: `picks`, `official_setlists`, `live_setlist_automation`, `rollup_audit`, `pools`. Rules updated to require it.
-- One-time migration script in `scripts/migrate-phish-to-bandid.mjs` to backfill the field on existing docs (don't rename doc IDs yet - separate phase to limit risk).
-- Update queries in [src/features/scoring/api/standingsApi.js](../src/features/scoring/api/standingsApi.js), [src/features/picks/api/picksApi.js](../src/features/picks/api/picksApi.js), [src/features/pools/api/poolStandings.js](../src/features/pools/api/poolStandings.js) to filter `where('bandId','==', activeBand)`.
-- Storage: rename `song-catalog.json` -> `song-catalog/phish.json` with a redirect alias.
+- Add `bandId: "phish"` field on writes for: `picks`, `official_setlists`, `live_setlist_automation`, `rollup_audit`, `pools`. Rules accept a missing value or `phish` until the backfill is verified (`bandIdRequired()` stays false). Requiring the field is the follow-up in the runbook.
+- One-time migration script in `scripts/migrate-phish-to-bandid.mjs` (dry-run by default, `--confirm` to write). It does not rename doc IDs.
+- Readers in [src/features/scoring/api/standingsApi.js](../src/features/scoring/api/standingsApi.js), [src/features/picks/api/picksApi.js](../src/features/picks/api/picksApi.js), and [src/features/pools/api/poolStandings.js](../src/features/pools/api/poolStandings.js) treat a missing `bandId` as Phish. `where('bandId','==', activeBand)` stays off (`STRICT_BAND_ID_QUERIES`) until the backfill is verified.
+- Storage: the catalog sync also writes `song-catalog/phish.json`. Clients keep reading `song-catalog.json`.
 
 ### Phase 2 - Wrap Phish.net behind `BandPack`
 
@@ -194,7 +194,7 @@ flowchart LR
 | Phase | Status | Issue / PR |
 |-------|--------|-----------|
 | Phase 0 - Foundation | Done | [#301](https://github.com/Road2Media/set-picks/issues/301) / [#1253](https://github.com/Road2Media/set-picks/pull/1253) |
-| Phase 1 - bandId field | Not started | - |
+| Phase 1 - bandId field | In progress (writes, tolerant reads and rules, script, alias object). Strict `where` and required `bandId` wait on the backfill. | [#605](https://github.com/Road2Media/set-picks/issues/605) / [#1255](https://github.com/Road2Media/set-picks/pull/1255) |
 | Phase 2 - Provider wrap | Not started | - |
 | Phase 3 - Composite IDs | Not started | - |
 | Phase 4 - Goose (Songfish provider) | Not started | - |

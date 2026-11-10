@@ -41,6 +41,7 @@ const {
 const { deliverPostRollupComms } = require("./commsEventAdapters");
 const { publishHundredthNightBoard } = require("./hundredthShowPublish.cjs");
 const { awardBadgesForUsers } = require("./badgeAwards");
+const { stampBandId } = require("./bandScope");
 const { freezeRankSnapshotsAfterShow } = require("./badgeSnapshotJobs");
 const {
   rebuildGlobalStatsLeaderboardsSafe,
@@ -246,13 +247,14 @@ async function runRollupForShow({
       }
     }
 
-    const pickUpdate = {
+    const pickUpdate = stampBandId({
       score: newScore,
       isGraded: true,
       winCredited: plan.newIsWin,
       correctSlotsCredited: plan.newCorrectSlots,
       bustoutBoostsCredited: plan.newBustoutBoosts,
-    };
+      bandId: pickData.bandId,
+    });
     if (plan.isFirstGrade) {
       pickUpdate.gradedAt = admin.firestore.FieldValue.serverTimestamp();
     }
@@ -476,7 +478,7 @@ async function writeRollupAuditDoc({
       .collection("rollup_audit")
       .doc(showDate)
       .set(
-        {
+        stampBandId({
           lastRolledUpAt: admin.firestore.FieldValue.serverTimestamp(),
           processedPicks,
           skippedPicks,
@@ -485,7 +487,7 @@ async function writeRollupAuditDoc({
           trigger: trigger || "manual",
           ...timingExtras,
           ...tourExtras,
-        },
+        }),
         { merge: true }
       );
   } catch (e) {

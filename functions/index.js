@@ -4,6 +4,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret, defineString } = require("firebase-functions/params");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
+const { stampBandId } = require("./bandScope");
 const {
   syncPhishnetShowCalendarToFirestore,
 } = require("./phishnetShowCalendar");
@@ -232,7 +233,7 @@ async function recomputeLiveScoresForShow(showDate, actualSetlistFromWrite = nul
     afterScores.set(pickDoc.id, score);
 
     // Live scoring only: do not set gradedAt here (pool season uses isGraded from rollup).
-    const update = { score };
+    const update = stampBandId({ score, bandId: pickData.bandId });
     if (pickData.isGraded !== true) {
       update.gradedAt = admin.firestore.FieldValue.delete();
     }
@@ -1694,7 +1695,7 @@ exports.setLiveSetlistAutomationState = onCall(
       .collection("live_setlist_automation")
       .doc(showDate)
       .set(
-        {
+        stampBandId({
           showDate,
           enabled,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1705,7 +1706,7 @@ exports.setLiveSetlistAutomationState = onCall(
           pausedBy: enabled
             ? admin.firestore.FieldValue.delete()
             : request.auth.token?.email ?? null,
-        },
+        }),
         { merge: true }
       );
     return { ok: true, showDate, enabled };

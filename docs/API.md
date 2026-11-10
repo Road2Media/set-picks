@@ -103,6 +103,7 @@ New toggles do not write the flat keys. Those keys remain a read fallback. Produ
 | `status` | `'active' \| 'archived'` | |
 | `standingsScope` | `'legacy' \| 'from_membership'`? | **Absent = `legacy`.** New pools write `from_membership` (#417): pool standings count only picks that list this pool in `pick.pools` **and** whose `showDate` is on/after that member’s membership calendar day (`America/Los_Angeles`). Legacy pools keep retroactive carryover + create/join backfill. |
 | `memberJoinedAt` | map `{ [uid]: ISO8601 }`? | Per-member join/create anchor for `from_membership` pools. Set for creator on create; updated on join. |
+| `bandId` | string? | **v1.114.0 / #605.** `phish` on new pool writes. Absent on docs that predate the backfill. Readers treat absent as `phish`, so a pool does not disappear before `scripts/migrate-phish-to-bandid.mjs --confirm`. Rules accept a missing value or `phish`, and reject any other value. Requiring the field is a follow-up after that backfill. Document ids are unchanged. |
 
 ### 1.6 `picks/{pickId}` (subcollection: `pools/{poolId}/picks/{uid}`)
 
@@ -113,6 +114,7 @@ Stores per-user, per-show slot picks and computed scores.
 | `correctSlotsCredited` | number? | **v1.26.0+ (#554)** Slots that scored > 0 on last finalize; used for regrade diffs into `users.careerCorrectSlots` |
 | `bustoutBoostsCredited` | number? | **v1.93.0+ (#1115)** Slots whose bustout boost fired on last finalize. Regrade diffs this into `seasonStats.{tourKey}.bustoutBoosts` so a second finalize does not double-count. |
 | `winCredited` | boolean? | Whether this pick currently counts as a global night win |
+| `bandId` | string? | **v1.114.0 / #605.** `phish` on new pick writes (save, handle sync, grade, live score). Absent until the backfill. A missing value still belongs to Phish. Document id stays `{showDate}_{uid}`. |
 
 ### 1.7 `fcm_notification_log/{dedupId}`
 
@@ -228,6 +230,7 @@ Per-show official results. Document ID is the show date (`YYYY-MM-DD`). Full sch
 | `officialSetlist` | string[] | Ordered full-show song list. |
 | `bustouts` | string[] | Per-show bustout snapshot (pre-show gap ≥ 30). Scoring source of truth (#214). **v1.91.1 (#626)** — once the played list is authoritative, every played song whose frozen gap is still ≥ 30 is included, and titles that were not played are removed. A shorter in-progress live feed still unions with the prior list. |
 | `songGaps` | Record<string,number> | **v1.29.0 (#587 Phase B)** — frozen pre-show gap per dated row, keyed by normalized title. Display-only (Standings “Gap N” signal); not read by scoring. Absent on pre-Phase-B shows. **v1.76.4** — the first positive gap sticks. A live row gap of 0 is not stored and does not replace a positive gap. Songs absent from a partial poll keep their stored gap. **v1.91.1 (#626)** — an authoritative poll or admin save drops keys for songs that are not in the played list. The live writer deletes those keys explicitly because a merged map would keep them. |
+| `bandId` | string? | **v1.114.0 / #605.** `phish` on admin save and on the live poller merge. Absent on older docs. Reads treat absent as `phish`. Document id stays the show date. |
 
 ### 1.13 `public_tour_stats/{tourSlug}` (**v1.33.0 / #665**)
 
@@ -345,6 +348,7 @@ Admin-read, client-write denied. The scheduled poller and `pollLiveSetlistNow` w
 | `recoveredAt` / `recoveryAlertedAt` | Timestamp | First successful upstream response after an alerted outage, and the one-time recovery alert. |
 | `lastSuccessfulPollAt` / `lastSuccessfulPollMode` | Timestamp / `"scheduled"` \| `"force"` | Last upstream success. Force is a Phish.net poll, not a manual Save. |
 | `playedSongHighWater` | number | **v1.91.1 (#626).** Most songs seen on an authoritative poll for this show. A later poll with fewer songs, before auto-finalize, keeps the prior `bustouts` / `songGaps` instead of treating the short payload as the whole show. After `autoFinalizedAt` is set, a shorter feed is authoritative and this number follows it. |
+| `bandId` | string? | **v1.114.0 / #605.** `phish` on poller and pause/resume writes. Client writes stay denied, so rules do not see this field. Absent until the next write or the backfill. |
 
 Ops inbox + email go to `SUPER_ADMIN_UIDS` (and optional `LIVE_SETLIST_OPS_ALERT_EMAILS`). They do not use player prefs, fatigue caps, or `fcm_notification_log`. Dedup lives in server-only `live_setlist_ops_alerts/{messageId}` (client read and write denied). Inbox template id is `live-setlist-ops`.
 
@@ -380,6 +384,7 @@ Admin-read, client-write denied. `rollupScoresForShow` (manual, auto, and auto-r
 | `showDate` | string | **v1.90.0.** `YYYY-MM-DD`. Same as the document id. |
 | `tourKey` | string \| null | **v1.90.0.** Calendar tour label used for `seasonStats`, or null when the snapshot did not list the date. |
 | `tourKeyMissing` | boolean | **v1.90.0.** `true` when this invocation skipped per-tour `seasonStats` because `resolveTourKeyForDate` returned null. `false` when the key resolved. Merge overwrites a prior `true`. Clearing the flag does not replay skipped first-grade tour increments. |
+| `bandId` | string? | **v1.114.0 / #605.** `phish` on rollup and revert merges. Client writes stay denied. Absent on older audit docs until the next rollup or the backfill. |
 
 Global `totalPoints`, `showsPlayed`, and `wins` still update when `tourKeyMissing` is true. War Room reads `tourKeyMissing == true` (limit 50) and lists the dates. Docs written before the functions deploy omit `tourKeyMissing`, so they do not appear until that show is rolled up again.
 
@@ -637,7 +642,7 @@ Phish.net integration, live scoring, and public tour-stats refresh. Deployed via
 
 **`global_stats_leaderboards` (#1004 / v1.70.0, #1044 / v1.100.0):** `scheduledGlobalStatsLeaderboardsRefresh` (daily 08:00 ET) and admin callable `refreshGlobalStatsLeaderboards` rebuild all-time + every tour. `rollupScoresForShow` also rebuilds all-time + the finalized show’s tour (soft-fail). Request: none. Response: `{ ok, docsWritten, usersScanned, tourKeys, vintageStatus, vintagePlayers }`. `vintageStatus` is `ok` or `skipped` (catalog had no debut years, or the picks/catalog read failed; the previous Average vintage rows are kept). `vintagePlayers` is how many players had a dated mean on that successful pass, otherwise `0`. Admin claim required on the callable. The schedule and callable are unchanged until the functions deploy.
 
-**Storage object `song-catalog.json` (v1.25.0+, #554):** published by `scheduledPhishnetSongCatalog` / `refreshPhishnetSongCatalog`. Each song object includes `{ name, total, gap, last, debut }` where `debut` is a string (typically `YYYY-MM-DD`) or `""` when unknown. See `docs/SONG_CATALOG.md`. Adding `debut` is a **MINOR** catalog-field addition (clients may ignore unknown fields).
+**Storage object `song-catalog.json` (v1.25.0+, #554):** published by `scheduledPhishnetSongCatalog` / `refreshPhishnetSongCatalog`. Each song object includes `{ name, total, gap, last, debut }` where `debut` is a string (typically `YYYY-MM-DD`) or `""` when unknown. See `docs/SONG_CATALOG.md`. Adding `debut` is a **MINOR** catalog-field addition (clients may ignore unknown fields). **v1.114.0 / #605:** the same sync also writes a public alias at `song-catalog/phish.json` (best-effort; a failure does not fail the live object). Clients and the health check keep reading `song-catalog.json`. Do not delete that object. Retargeting readers is a follow-up after the alias exists in the bucket.
 
 **Storage archive `song-catalog/archive/{stamp}.json` (v1.36.0+, #647):** each catalog sync also writes a dated private snapshot (same JSON payload as live) at `song-catalog/archive/YYYY-MM-DDTHH-mm-ssZ.json` for leakage-safe recommendation backtests (#646). Not public-read (Admin SDK / ops only). Live client path is unchanged. `refreshPhishnetSongCatalog` may return optional `archivePath` (`string | null`) when the archive write succeeded.
 
