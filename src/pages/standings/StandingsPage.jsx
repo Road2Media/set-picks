@@ -1,16 +1,15 @@
 import React from 'react';
 
+import { AdPlacement, AD_SLOT_STANDINGS_INLINE } from '../../features/ads';
 import { InviteChooserSheet } from '../../features/invite';
 import {
   StandingsChrome,
   StandingsInvitePromo,
   StandingsShowOrPoolView,
-  StandingsSponsorPreview,
   StandingsTourView,
   StandingsYearView,
   useStandingsScreen,
 } from '../../features/scoring';
-import { SponsorSlot } from '../../shared/ui';
 
 export default function StandingsPage({ selectedDate, onSelectShowDate }) {
   const screen = useStandingsScreen(selectedDate, { onSelectShowDate });
@@ -47,12 +46,10 @@ export default function StandingsPage({ selectedDate, onSelectShowDate }) {
         />
 
         {/*
-          Ads epic #419 Phase 1 seam — no-op unless VITE_ENABLE_SPONSOR_SLOTS.
-          Filled house-promo mock for local layout QA (#609); #121 replaces this.
+          Existing Standings seam (#609). Filled only when Remote Config
+          returns a creative (#121). Empty in production until ads_enabled.
         */}
-        <SponsorSlot slotId="dashboard-standings-top" className="mb-3">
-          <StandingsSponsorPreview onCtaClick={invite.openChooser} />
-        </SponsorSlot>
+        <AdPlacement slotId={AD_SLOT_STANDINGS_INLINE} className="mb-3" />
 
         {screen.view === 'tour' ? (
           <StandingsTourView

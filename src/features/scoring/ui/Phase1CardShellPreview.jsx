@@ -101,8 +101,8 @@ export default function Phase1CardShellPreview() {
         </p>
         <h1 className="mt-1 font-display text-display-page font-bold">Phase 1 card shell</h1>
         <p className={`mt-2 max-w-prose ${BODY} md:text-sm`}>
-          One box. Amber wash for you, teal wash for the night, and the plain sponsor fill
-          for quiet cards. The score stays teal.
+          One box. Amber wash for you, teal wash for the night, a violet wash for a
+          filled house promo, and the plain fill for quiet cards. The score stays teal.
         </p>
 
         <Caption>You · amber</Caption>
@@ -171,10 +171,10 @@ export default function Phase1CardShellPreview() {
           </LabeledCard>
         </div>
 
-        <Caption>Quiet · no accent</Caption>
+        <Caption>Sponsored · house promo</Caption>
         <div className="space-y-3">
-          <Shell tone="none" pad={PAD_LABEL} className="flex flex-col">
-            <span className="mb-1.5 self-end text-[9px] font-semibold uppercase tracking-widest text-content-secondary/70">
+          <Shell tone="sponsored" pad={PAD_LABEL} className="flex flex-col">
+            <span className="mb-1.5 self-end text-[9px] font-semibold uppercase tracking-widest text-content-sponsored">
               Sponsored
             </span>
             <div className="flex min-w-0 items-center gap-3">
@@ -196,7 +196,10 @@ export default function Phase1CardShellPreview() {
               </Button>
             </div>
           </Shell>
+        </div>
 
+        <Caption>Quiet · no accent</Caption>
+        <div className="space-y-3">
           <RowCard>
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-border-subtle/60 bg-transparent">
               <UserPlus className="h-7 w-7 text-content-secondary" aria-hidden />

@@ -52,8 +52,16 @@ Phase 1 deliberately **does not** integrate third-party ad networks.
 
 ## Initial placement candidates (Phase 1)
 
-- Dashboard: below mobile context bar on Picks / Standings (authenticated, high engagement).
-- Profile: below install card (`features/install`) — house promos only.
+Mounted:
+
+- **Standings, in flow, under the invite promo** (`dashboard_standings_inline`). This is the #609 seam. It scrolls away. It does not stick and it does not cover the board.
+
+Not mounted. Each one would change navigation chrome or the picks flow:
+
+- Picks, inline above the form (`dashboard_picks_inline`).
+- Profile, below the install card.
+- Dashboard shell, under the context bar on every tab.
+- Standings mobile, sticky under the fixed Views header (would grow the fixed chrome or cover the board).
 - Splash: **defer** until LCP/SEO impact assessed.
 
 ## Child issues

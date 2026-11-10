@@ -36,6 +36,7 @@ Implemented as CSS variables in `src/index.css` and mapped in `tailwind.config.j
 - **Panel Strong (`surface-panel-strong`)**: Elevated rows, modals, gradient starts (~`rgb(42 52 78 / 0.72)` effective).
 - **Inset (`surface-inset`)**: Nested wells inside panels.
 - **Field (`surface-field`)**: Form inputs and song slots (`#0f172a` channel).
+- **Sponsored (`surface-sponsored`, `border-sponsored`, `content-sponsored`)**: Filled house-promo cards only (#121). A muted violet wash and edge so the unit does not blend into quiet standings chrome. Not a CTA color and not rank gold. The empty proportion shell stays on the quiet panel.
 
 **Hero dashboard cards** (e.g. Pool Hub “Game status”, Picks form): use `Card` **`variant="venue"`** — `border-brand-primary/30`, gradient `from-surface-panel-strong/72 to-brand-bg-deep`, `shadow-glow-brand` + inset glass (see [`Card.jsx`](../src/shared/ui/Card.jsx)).
 
@@ -135,9 +136,10 @@ These are one family. The box is the sponsor card (`DashboardJobShell`): `rounde
 |-----|------|-------|-------|
 | **You** | `bg-amber-200/[0.06]` | `text-amber-200/90` | Your rank, scorecard |
 | **The night** | `bg-brand-primary/[0.06]` | `text-brand-primary` | Tonight's show, winner, official setlist, crowd pulse, Picks Lab |
-| **Quiet** | none | `text-content-secondary/70` when a label exists | Sponsor, invite, empty states, waiting, too early, picks lock reminder, picks locked, the stats tip |
+| **Sponsored** | `bg-surface-sponsored/55` plus `border-border-sponsored/80` | `text-content-sponsored` | Filled house promo (`SponsorSlot` when a creative is present). Logo tile is 56px (`h-14`) |
+| **Quiet** | none | `text-content-secondary/70` when a label exists | Invite, empty states, waiting, too early, picks lock reminder, picks locked, the stats tip, the empty sponsor proportion shell |
 
-Scores stay teal on every card. The Invite button stays teal; the invite box does not. The dev gallery at `/card-shell-preview` is the visual spec (production redirects home). The picks form and the one-line lock note inside it stay the heavier hero and do not use this shell. Tonight's show on Standings uses the night shell.
+Scores stay teal on every card. The Invite button stays teal; the invite box does not. A filled house promo uses the sponsored wash so it does not read as another quiet card. The dev gallery at `/card-shell-preview` is the visual spec (production redirects home). The picks form and the one-line lock note inside it stay the heavier hero and do not use this shell. Tonight's show on Standings uses the night shell.
 
 ### Stat tiles (#1089)
 
