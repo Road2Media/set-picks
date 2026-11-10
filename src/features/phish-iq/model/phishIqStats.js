@@ -1,10 +1,12 @@
 /**
- * Wordle-style Phish IQ stats from per-day results (#1267).
+ * Wordle-style Phish IQ stats from per-day results (#1267, #1275).
  *
- * A finished America/New_York day counts once, whatever the score. The next
- * calendar day continues the streak. A missed day breaks the current streak
- * and leaves the best streak in place. Win % counts only a perfect five.
- * Same-day repeats are the caller's job: this reads one result per date.
+ * A finished America/New_York day counts once, whatever the score. A win is a
+ * perfect five. Win % is wins divided by days played. Current streak and best
+ * streak count consecutive wins only, so a run of finished days that were not
+ * perfect cannot show a streak beside a 0% win rate. A missed calendar day
+ * ends the current streak the same way a non-win does, and the best streak
+ * stays. Same-day repeats are the caller's job: this reads one result per date.
  */
 
 import { PHISH_IQ_QUESTION_COUNT } from './phishIqQuiz';
@@ -49,15 +51,29 @@ export function normalizePhishIqDays(raw) {
 }
 
 /**
+ * @param {{ score: number }} day
+ * @returns {boolean}
+ */
+function isWin(day) {
+  return day.score === PHISH_IQ_QUESTION_COUNT;
+}
+
+/**
+ * Longest run of consecutive calendar days that are all wins.
+ *
  * @param {string[]} dates oldest to newest, unique
+ * @param {Record<string, { score: number }>} days
  * @returns {number}
  */
-function longestRun(dates) {
+function longestWinRun(dates, days) {
   let best = 0;
   let run = 0;
   let previous = '';
   for (const date of dates) {
-    run = previous && date === shiftQuizDate(previous, 1) ? run + 1 : 1;
+    const continues =
+      run > 0 && Boolean(previous) && date === shiftQuizDate(previous, 1) && isWin(days[date]);
+    if (!isWin(days[date])) run = 0;
+    else run = continues ? run + 1 : 1;
     if (run > best) best = run;
     previous = date;
   }
@@ -65,17 +81,25 @@ function longestRun(dates) {
 }
 
 /**
- * @param {Set<string>} played
- * @param {string} end
+ * Win streak ending on the latest played day, when that day is still live
+ * (today or yesterday) and is itself a win.
+ *
+ * @param {string[]} dates oldest to newest
+ * @param {Record<string, { score: number }>} days
+ * @param {string} today
  * @returns {number}
  */
-function runEndingOn(played, end) {
-  if (!played.has(end)) return 0;
-  let streak = 1;
-  let cursor = end;
-  while (played.has(shiftQuizDate(cursor, -1))) {
+function currentWinStreak(dates, days, today) {
+  const latest = dates[dates.length - 1] || '';
+  const live = Boolean(latest) && (latest === today || latest === shiftQuizDate(today, -1));
+  if (!live || !isWin(days[latest])) return 0;
+  let streak = 0;
+  let cursor = latest;
+  while (days[cursor] && isWin(days[cursor])) {
     streak += 1;
-    cursor = shiftQuizDate(cursor, -1);
+    const previous = shiftQuizDate(cursor, -1);
+    if (!days[previous]) break;
+    cursor = previous;
   }
   return streak;
 }
@@ -103,18 +127,13 @@ export function computePhishIqStats(days, today) {
     if (day.score === PHISH_IQ_QUESTION_COUNT) wins += 1;
   }
   const played = dates.length;
-  const playedSet = new Set(dates);
-  const latest = dates[dates.length - 1] || '';
   const todayKey = typeof today === 'string' ? today : '';
-  const streakStillLive =
-    Boolean(latest) &&
-    (latest === todayKey || latest === shiftQuizDate(todayKey, -1));
   return {
     played,
     wins,
     winPercent: played === 0 ? 0 : Math.round((wins / played) * 100),
-    currentStreak: streakStillLive ? runEndingOn(playedSet, latest) : 0,
-    bestStreak: longestRun(dates),
+    currentStreak: currentWinStreak(dates, normalized, todayKey),
+    bestStreak: longestWinRun(dates, normalized),
     distribution,
   };
 }

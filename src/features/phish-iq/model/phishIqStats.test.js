@@ -35,11 +35,26 @@ describe('computePhishIqStats', () => {
     expect(stats.wins).toBe(2);
     expect(stats.winPercent).toBe(50);
     expect(stats.distribution).toEqual([1, 0, 1, 0, 0, 2]);
-    expect(stats.currentStreak).toBe(4);
-    expect(stats.bestStreak).toBe(4);
+    expect(stats.currentStreak).toBe(2);
+    expect(stats.bestStreak).toBe(2);
   });
 
-  it('rounds win % and keeps a play streak that is not a win streak', () => {
+  it('agrees a two-day win streak with a 100% win rate (#1275)', () => {
+    const stats = computePhishIqStats(
+      {
+        [shiftQuizDate(TODAY, -1)]: day(5, [true, true, true, true, true]),
+        [TODAY]: day(5, [true, true, true, true, true]),
+      },
+      TODAY,
+    );
+    expect(stats.played).toBe(2);
+    expect(stats.wins).toBe(2);
+    expect(stats.winPercent).toBe(100);
+    expect(stats.currentStreak).toBe(2);
+    expect(stats.bestStreak).toBe(2);
+  });
+
+  it('does not show a streak of 2 beside a 0% win rate (#1275)', () => {
     const stats = computePhishIqStats(
       {
         [shiftQuizDate(TODAY, -1)]: day(1, [true, false, false, false, false]),
@@ -47,20 +62,50 @@ describe('computePhishIqStats', () => {
       },
       TODAY,
     );
+    expect(stats.played).toBe(2);
+    expect(stats.wins).toBe(0);
     expect(stats.winPercent).toBe(0);
-    expect(stats.currentStreak).toBe(2);
-    expect(stats.bestStreak).toBe(2);
+    expect(stats.currentStreak).toBe(0);
+    expect(stats.bestStreak).toBe(0);
   });
 
-  it('breaks the current streak on a missed day and keeps the best run', () => {
+  it('rounds a single win in three plays to 33% and keeps only the win run', () => {
     const stats = computePhishIqStats(
       {
-        '2026-11-01': day(3, []),
-        '2026-11-02': day(3, []),
-        '2026-11-03': day(3, []),
-        '2026-11-04': day(3, []),
-        '2026-11-06': day(2, []),
-        [TODAY]: day(1, []),
+        [shiftQuizDate(TODAY, -2)]: day(5, []),
+        [shiftQuizDate(TODAY, -1)]: day(2, []),
+        [TODAY]: day(3, []),
+      },
+      TODAY,
+    );
+    expect(stats.winPercent).toBe(33);
+    expect(stats.currentStreak).toBe(0);
+    expect(stats.bestStreak).toBe(1);
+  });
+
+  it('ends the win streak when today is not a perfect five (#1275)', () => {
+    const stats = computePhishIqStats(
+      {
+        [shiftQuizDate(TODAY, -1)]: day(5, [true, true, true, true, true]),
+        [TODAY]: day(4, [true, true, true, true, false]),
+      },
+      TODAY,
+    );
+    expect(stats.played).toBe(2);
+    expect(stats.winPercent).toBe(50);
+    expect(stats.currentStreak).toBe(0);
+    expect(stats.bestStreak).toBe(1);
+  });
+
+  it('breaks the current win streak on a missed day and keeps the best run', () => {
+    const stats = computePhishIqStats(
+      {
+        '2026-11-01': day(5, []),
+        '2026-11-02': day(5, []),
+        '2026-11-03': day(5, []),
+        '2026-11-04': day(5, []),
+        '2026-11-06': day(5, []),
+        [TODAY]: day(5, []),
       },
       TODAY,
     );
@@ -81,6 +126,21 @@ describe('computePhishIqStats', () => {
     expect(computePhishIqStats({ [shiftQuizDate(TODAY, -2)]: day(5, []) }, TODAY).currentStreak).toBe(
       0,
     );
+  });
+
+  it('counts a perfect mark row when the score field was not stored (#1275)', () => {
+    const stats = computePhishIqStats(
+      {
+        [shiftQuizDate(TODAY, -1)]: { marks: [true, true, true, true, true] },
+        [TODAY]: { marks: [true, true, true, true, true] },
+      },
+      TODAY,
+    );
+    expect(stats.played).toBe(2);
+    expect(stats.wins).toBe(2);
+    expect(stats.winPercent).toBe(100);
+    expect(stats.currentStreak).toBe(2);
+    expect(stats.bestStreak).toBe(2);
   });
 
   it('fills missing fields and drops bad dates', () => {

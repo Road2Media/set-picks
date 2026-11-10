@@ -36,10 +36,12 @@ describe('Phish IQ finish screen', () => {
     expect(html).toContain(PHISH_IQ_DAILY_LINE);
     expect(html).toContain('Your stats');
     expect(html).toContain('A win is all five correct.');
+    expect(html).toContain('grid-cols-4');
+    expect(html).toContain('grid-rows-subgrid');
     expect(html).toMatch(/data-phish-iq-played=""[\s\S]*?<dd[^>]*>2<\/dd>/);
     expect(html).toMatch(/data-phish-iq-win-percent=""[\s\S]*?<dd[^>]*>50<\/dd>/);
-    expect(html).toMatch(/data-phish-iq-current-streak=""[\s\S]*?<dd[^>]*>2<\/dd>/);
-    expect(html).toMatch(/data-phish-iq-best-streak=""[\s\S]*?<dd[^>]*>2<\/dd>/);
+    expect(html).toMatch(/data-phish-iq-current-streak=""[\s\S]*?<dd[^>]*>0<\/dd>/);
+    expect(html).toMatch(/data-phish-iq-best-streak=""[\s\S]*?<dd[^>]*>1<\/dd>/);
     expect(html).toContain('aria-current="true"');
     expect(html).toContain(PHISH_IQ_BROWSER_NOTE);
     expect(html).toContain('🟩🟩🟩🟩⬛');

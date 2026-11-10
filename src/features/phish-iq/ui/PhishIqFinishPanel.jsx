@@ -33,7 +33,7 @@ export default function PhishIqFinishPanel({ result, historyDays = {}, now }) {
       <PhishIqCountdown now={now} />
       <section data-phish-iq-stats>
         <h2 className="text-sm font-semibold text-content-primary">Your stats</h2>
-        <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <dl className="mt-3 grid grid-cols-4 grid-rows-[auto_auto] gap-x-1.5 gap-y-1 text-center sm:gap-x-2">
           <Stat label="Played" value={stats.played} attr="data-phish-iq-played" />
           <Stat label="Win %" value={stats.winPercent} attr="data-phish-iq-win-percent" />
           <Stat label="Current streak" value={stats.currentStreak} attr="data-phish-iq-current-streak" />
@@ -73,9 +73,16 @@ export default function PhishIqFinishPanel({ result, historyDays = {}, now }) {
  */
 function Stat({ label, value, attr }) {
   return (
-    <div className="rounded-xl bg-surface-inset/72 px-3 py-2" {...{ [attr]: '' }}>
-      <dt className="text-xs font-semibold text-content-secondary">{label}</dt>
-      <dd className="mt-1 font-display text-2xl font-bold tabular-nums text-content-primary">{value}</dd>
+    <div
+      className="row-span-2 grid min-w-0 grid-rows-subgrid gap-y-1 rounded-xl bg-surface-inset/72 px-0.5 py-2 sm:px-2"
+      {...{ [attr]: '' }}
+    >
+      <dt className="row-start-2 self-start text-[11px] font-semibold leading-tight text-content-secondary sm:text-xs">
+        {label}
+      </dt>
+      <dd className="row-start-1 self-end font-display text-xl font-bold tabular-nums leading-none text-content-primary sm:text-2xl">
+        {value}
+      </dd>
     </div>
   );
 }
