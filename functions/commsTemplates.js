@@ -539,7 +539,7 @@ const BUILDERS = {
       "";
     const scoreSentence = buildShowScorecardSentence(p, { rankScope: "globally" });
     const para = [
-      `${handle}, here's how your picks for ${where} graded out.`,
+      `${handle}, here's how your picks for ${where} scored.`,
       narrative,
       scoreSentence,
     ]

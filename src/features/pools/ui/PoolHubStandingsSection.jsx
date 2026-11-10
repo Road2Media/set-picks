@@ -96,12 +96,11 @@ export default function PoolHubStandingsSection({
           <p>{description}</p>
           <p>
             <span className="text-white/90">Shows</span> is how many nights you submitted picks in
-            this pool after that show was finalized (Finalize and rollup). Nights you skip do not add
-            to your count.
+            this pool that now have a score. Nights you skip do not add to your count.
           </p>
           <p>
             <span className="text-white/90">Wins</span> counts the nights you tied or beat the top
-            score across every graded, non-empty pick for that show. Ties share the win.
+            score for that show. A tie shares the win.
           </p>
         </div>
       </details>

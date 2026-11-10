@@ -59,7 +59,7 @@ export default function GlobalLeaderboardBoard({ title, boardKey, rows }) {
       </h3>
       {list.length === 0 ? (
         <p className="text-sm text-content-secondary">
-          No ranked players yet. Boards refresh after each score rollup.
+          No ranked players yet. Boards refresh after each show is scored.
         </p>
       ) : (
         <>

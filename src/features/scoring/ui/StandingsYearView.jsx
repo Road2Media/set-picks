@@ -90,7 +90,7 @@ export default function StandingsYearView({
         heading={YEAR_STANDINGS_HEADING}
         description={YEAR_STANDINGS_DESCRIPTION}
         scopeFallback="This year"
-        emptyMessage="No graded picks in this year yet."
+        emptyMessage="No picks have been scored in this year yet."
         errorMessage="Couldn't load year standings. Try refreshing."
         loadingLabel="Loading year standings"
         placeLabelsByRank={placeLabels}

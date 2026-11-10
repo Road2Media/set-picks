@@ -1,10 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
-import {
-  TOUR_STANDINGS_DESCRIPTION,
-  TOUR_STANDINGS_HEADING,
-} from '../../../shared/config/dashboardVocabulary';
+import { TOUR_STANDINGS_HEADING } from '../../../shared/config/dashboardVocabulary';
 import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import { StandingsPlayerAvatar, usePlayerIdentityMap } from '../../profile';
@@ -62,9 +59,9 @@ export default function TourStandingsSection({
   error,
   selfUserId = null,
   heading = TOUR_STANDINGS_HEADING,
-  description = TOUR_STANDINGS_DESCRIPTION,
+  description = '',
   scopeFallback = 'Current tour',
-  emptyMessage = 'No graded picks in this tour yet.',
+  emptyMessage = 'No picks have been scored in this tour yet.',
   errorMessage = "Couldn't load tour standings. Try refreshing.",
   loadingLabel = 'Loading tour standings',
   placeLabelsByRank = null,
@@ -88,9 +85,11 @@ export default function TourStandingsSection({
           <p className={`mt-0.5 ${STANDINGS_BOX_TITLE}`}>
             {scopeLabel}
           </p>
-          <p className={`mt-0.5 ${STANDINGS_BOX_BODY}`}>
-            {description}
-          </p>
+          {description ? (
+            <p className={`mt-0.5 ${STANDINGS_BOX_BODY}`}>
+              {description}
+            </p>
+          ) : null}
         </div>
         {loading ? (
           <Loader2
