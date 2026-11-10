@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.122.2] — 2026-11-10
+
+### Fixed
+- **Phish IQ stats row (#1275)** — Played, Win %, Current streak, and Best streak sit on one row. The number is above the label, and the four numbers share a line, so a wrapped “Current streak” label does not push its number down. A win is still all five correct. The streak counts those wins in a row. Two finished days that were not perfect now show Win % 0 and a streak of 0, instead of a streak of 2 beside 0%. The saved account streak is still days played.
+
 ## [1.122.1] — 2026-11-10
 
 ### Added
