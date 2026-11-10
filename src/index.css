@@ -120,13 +120,19 @@
     --surface-panel-strong: 42 52 78;
     --surface-inset: 26 32 52;
     --surface-field: 15 23 42;
+    /* House promo wash. Muted violet, not rank gold and not brand teal (#121). */
+    --surface-sponsored: 72 48 96;
 
     /* Helper / meta copy (warm slate, ~Tailwind slate-300) */
     --content-secondary: 203 213 225;
+    /* House promo eyebrow. Light lilac on the sponsored wash (#121). */
+    --content-sponsored: 232 220 242;
 
     --border-glass: 148 163 184;
     --border-subtle: 51 65 85;
     --border-muted: 71 85 105;
+    /* House promo edge. Distinct from quiet slate and from teal CTAs (#121). */
+    --border-sponsored: 186 160 214;
     --border-venue: 45 212 191;
     --border-venue-strong: 45 212 191;
   }

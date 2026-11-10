@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.124.0] — 2026-11-10
+
+### Added
+- **House promos on Standings (#121)** — The existing Standings seam, under the invite promo, can show a first-party banner from Firebase Remote Config. The logo tile is 56px. The card uses a violet sponsored surface so it does not blend into the quiet standings cards. It renders nothing when `ads_enabled` is off or the creative is missing or invalid, and it does not reserve a gap. A click stays in the app for an allowlisted path, or opens an https link in a new tab. GA4 records `ad_impression` (half the unit visible for 1 second, once per mount) and `ad_click`. The kill switch defaults off. Picks, Profile, and the dashboard shell do not gain a unit. No ad network, no popup, and no billing. `VITE_ENABLE_SPONSOR_SLOTS` still only previews the empty shell.
+
 ## [1.123.0] — 2026-11-10
 
 ### Added

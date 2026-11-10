@@ -46,15 +46,21 @@ export default {
           'panel-strong': 'rgb(var(--surface-panel-strong) / <alpha-value>)',
           inset: 'rgb(var(--surface-inset) / <alpha-value>)',
           field: 'rgb(var(--surface-field) / <alpha-value>)',
+          /** House promo wash (#121). Pair with `border-sponsored`. */
+          sponsored: 'rgb(var(--surface-sponsored) / <alpha-value>)',
         },
         /** Secondary UI copy — labels, helper text, meta (dashboard + shared forms) */
         content: {
           secondary: 'rgb(var(--content-secondary) / <alpha-value>)',
+          /** House promo eyebrow (#121). */
+          sponsored: 'rgb(var(--content-sponsored) / <alpha-value>)',
         },
         border: {
           glass: 'rgb(var(--border-glass) / <alpha-value>)',
           subtle: 'rgb(var(--border-subtle) / <alpha-value>)',
           muted: 'rgb(var(--border-muted) / <alpha-value>)',
+          /** House promo edge (#121). Not a CTA color. */
+          sponsored: 'rgb(var(--border-sponsored) / <alpha-value>)',
           /** Kuroda accents — keep one family (teal) for interactive affordances */
           venue: 'rgb(var(--border-venue) / <alpha-value>)',
           'venue-strong': 'rgb(var(--border-venue-strong) / <alpha-value>)',
