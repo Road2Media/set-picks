@@ -5,7 +5,7 @@ Versioned Storage JSON for the upcoming show’s slot-aware song recommendations
 ## Publish path
 
 1. Resolve upcoming show from `show_calendar/snapshot` via `getNextShow`.
-2. Load priors: private Phish.net history window (`pick-recommendations/history/window.json`, ~1y) **merged** with `official_setlists` docs (`showDate < targetDate`; Firestore wins on date ties).
+2. Load priors: private Phish.net history window (`pick-recommendations/history/window.json`, ~1y) **merged** with `official_setlists` docs (`showDate < targetDate`; Firestore wins on date ties). The #1002 backtest tried a 3-year cache and a 120-show cap on the same weights. The cap matched the longer cache, so this publish path stays at 1 year / 120 shows. See `docs/scoring-analysis/09-wider-backtest-and-playprob.md`.
 3. Rank with `v0.1.1-explainable` (`functions/pickRecommendationsModel.js`).
 4. Write live **`pick-recommendations.json`** (+ optional private archive).
 

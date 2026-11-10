@@ -14,6 +14,7 @@ import {
   normalizeTitle,
   loadSetlistAutomation,
 } from "./shared.mjs";
+import { rowsFromPhishinTracks } from "./phishin.mjs";
 
 /**
  * @typedef {import('./features.mjs').ShowRecord} ShowRecord
@@ -45,6 +46,34 @@ export function showRecordFromPhishnetPayload(showDate, payload) {
   const songs = doc.officialSetlist || rows.map((r) => r.title);
   if (!songs.length) return null;
 
+  return {
+    showDate,
+    songs,
+    slots: {
+      s1o: doc.setlist?.s1o || "",
+      s1c: doc.setlist?.s1c || "",
+      s2o: doc.setlist?.s2o || "",
+      s2c: doc.setlist?.s2c || "",
+      enc: doc.setlist?.enc || "",
+      wild: "",
+    },
+    encoreSongs: Array.isArray(doc.encoreSongs) ? doc.encoreSongs : [],
+  };
+}
+
+/**
+ * Same ShowRecord as the Phish.net importer, from a Phish.in v2 show.
+ * @param {object} show
+ * @returns {ShowRecord | null}
+ */
+export function showRecordFromPhishinShow(show) {
+  const showDate = typeof show?.date === "string" ? show.date : "";
+  const rows = rowsFromPhishinTracks(show?.tracks);
+  if (!showDate || !rows.length) return null;
+  const { buildSetlistDocFromRows } = loadSetlistAutomation();
+  const doc = buildSetlistDocFromRows(rows, {}, null);
+  const songs = doc.officialSetlist || rows.map((row) => row.title);
+  if (!songs.length) return null;
   return {
     showDate,
     songs,
