@@ -8,10 +8,15 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
-## [1.112.0] — 2026-11-09
+## [1.113.0] — 2026-11-10
 
 ### Added
 - **Pick the 100th (#1147)** — January 2, 2027 at Madison Square Garden keeps the same scoring. The show card on Standings, Scorecard, pool game status, and the desktop tour-date control carries a 100th mark. `/phish-at-msg/100th` is a public, prerendered board of handles, rank, points, and exact slots. Email addresses and account fields are dropped before a row is stored or rendered. The MSG page and the New Year's Run page link to it. The night-of `show_recap` for that date includes a `share_pack` hook (path, url, text). After that send, `comms_process_state/show_recap:2027-01-02` is `sent`, so a later rollup does not send it again. Staging and local dev can pass `?dryRunDate=YYYY-MM-DD`. Production ignores that query. A past-date board can be printed, and written only with `--confirm`, by `node functions/scripts/publishHundredthNightBoard.js`.
+
+## [1.112.0] — 2026-11-10
+
+### Added
+- **Multi-band foundation contracts (#301)** — `BandConfig` registers Phish only. Slot ids come from `FORM_FIELDS`. The footer credit is the same Mockingbird Foundation / Phish.Net link the splash and marketing shells already render. `BandProvider` wraps the main app shell, defaults to `phish`, and ignores an unknown `?band=`. Nothing reads the context yet. No Firestore writes, rules, nav, or copy changes. No declared API change. Server provider behavior is a spec in `functions/providers/_contract.md` only.
 
 ## [1.111.1] — 2026-11-09
 
