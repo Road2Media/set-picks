@@ -34,6 +34,9 @@ describe('ChromeSegmentedControl (#765 tertiary chrome)', () => {
     expect(html).toContain('uppercase');
     expect(html).toContain('ring-brand-primary/35');
     expect(html).toContain('bg-brand-primary/15');
+    expect(html).toContain('tracking-widest');
+    expect(html).toContain('px-1.5');
+    expect(html).toContain('min-[375px]:px-2');
     expect(html).not.toContain('rounded-full');
     expect(html).toContain('Show');
     expect(html).toContain('Tour');

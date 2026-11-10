@@ -21,6 +21,7 @@ import {
 import {
   PROFILE_CLUSTER_LEGACY_PATHS,
   PROFILE_CLUSTER_PATHS,
+  PICKS_CLUSTER_LEGACY_PATHS,
   PICKS_CLUSTER_PATHS,
   isPicksClusterPath,
   isPoolsTertiaryPath,
@@ -88,7 +89,9 @@ export function getDashboardPageMeta(pathname, search) {
   const isProfileCluster = isProfileClusterPath(normalized);
   const isPicksCluster = isPicksClusterPath(normalized);
   const isRewind = normalized === PICKS_CLUSTER_PATHS.rewind;
-  const isPhishIq = normalized === PICKS_CLUSTER_PATHS.phishIq;
+  const isPhishIq =
+    normalized === PICKS_CLUSTER_PATHS.phishIq ||
+    normalized === PICKS_CLUSTER_LEGACY_PATHS.phishIq;
   const isStatsCluster = isStatsClusterPath(normalized);
   const isCrowdNightStats = isCrowdNightStatsPath(normalized);
   const isAdmin = normalized === '/dashboard/admin';
