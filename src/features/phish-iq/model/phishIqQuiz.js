@@ -4,8 +4,9 @@
  * Same inputs and the same America/New_York date always produce the same five
  * questions. Facts come from the song catalog (debut year, gap, play count)
  * and from aggregate Madison Square Garden counts already published in the
- * app (opener frequencies, announced-show count). No show review, no jam
- * note, and no night's setlist.
+ * app (opener frequencies, announced-show count). Each question's `fact` is a
+ * sentence built only from that question's `trace` (the same catalog or
+ * snapshot fields). No show review, no jam note, and no night's setlist.
  */
 
 export const PHISH_IQ_QUESTION_COUNT = 5;
@@ -199,6 +200,66 @@ function shuffledChoices(rng, choices) {
 }
 
 /**
+ * @param {number} value
+ * @param {string} singular
+ * @param {string} plural
+ * @returns {string}
+ */
+function counted(value, singular, plural) {
+  const n = Math.trunc(value);
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+
+/**
+ * One sentence for the answer reveal. Names and counts come from `trace`
+ * only. An unknown or incomplete trace returns '' so a caller cannot show
+ * a sentence that is not backed by the catalog or the MSG snapshot.
+ *
+ * @param {Record<string, unknown> | null | undefined} trace
+ * @returns {string}
+ */
+export function factSentenceFromTrace(trace) {
+  if (!trace || typeof trace !== 'object') return '';
+  const song = typeof trace.song === 'string' ? trace.song.trim() : '';
+  if (trace.kind === 'catalog-debut' || trace.kind === 'catalog-debut-order') {
+    if (!song || !Number.isInteger(trace.year)) return '';
+    return `${song} debuted in ${trace.year}.`;
+  }
+  if (trace.kind === 'catalog-gap') {
+    if (!song || !Number.isInteger(trace.gap) || trace.gap < 0) return '';
+    return `Phish has not played ${song} for ${counted(trace.gap, 'show', 'shows')}.`;
+  }
+  if (trace.kind === 'catalog-total') {
+    if (!song || !Number.isInteger(trace.total) || trace.total < 1) return '';
+    return `Phish has played ${song} ${counted(trace.total, 'time', 'times')}.`;
+  }
+  if (trace.kind === 'venue-opener') {
+    if (!song || !Number.isInteger(trace.timesPlayed) || trace.timesPlayed < 1) return '';
+    return `${song} opened ${counted(trace.timesPlayed, 'time', 'times')} at MSG.`;
+  }
+  if (trace.kind === 'announced-count') {
+    if (!Number.isInteger(trace.count) || trace.count < 1) return '';
+    return `Phish has announced ${counted(trace.count, 'upcoming show', 'upcoming shows')} at the Garden.`;
+  }
+  return '';
+}
+
+/**
+ * Right/wrong line plus the fact sentence. A blank fact keeps the verdict only.
+ *
+ * @param {{ correct?: boolean, answerLabel?: string, fact?: string }} [input]
+ * @returns {string}
+ */
+export function formatPhishIqReveal(input = {}) {
+  const label = typeof input.answerLabel === 'string' ? input.answerLabel.trim() : '';
+  const verdict = input.correct
+    ? "That's the one."
+    : `The answer is ${label || 'the other one'}.`;
+  const sentence = typeof input.fact === 'string' ? input.fact.trim() : '';
+  return sentence ? `${verdict} ${sentence}` : verdict;
+}
+
+/**
  * @param {{
  *   type: string,
  *   prompt: string,
@@ -212,6 +273,7 @@ function makeQuestion(spec) {
     id: `${spec.type}:${spec.answerId}`,
     type: spec.type,
     prompt: spec.prompt,
+    fact: factSentenceFromTrace(spec.trace),
     choices: spec.choices.map((choice) => ({ id: choice.id, label: choice.label })),
     answerId: spec.answerId,
     trace: spec.trace,
@@ -311,8 +373,8 @@ function buildExtreme(rng, songs, blocked, field) {
   return makeQuestion({
     type: gapQuestion ? 'longer_gap' : 'play_count',
     prompt: gapQuestion
-      ? 'Which of these songs has gone the longest since it was last played?'
-      : 'Which of these songs has been played the most?',
+      ? 'Which of these songs has Phish not played for the most shows?'
+      : 'Which of these songs has Phish played the most times?',
     choices: shuffledChoices(
       rng,
       picked.map((song) => ({ id: `song:${song.name}`, label: song.name })),
@@ -335,7 +397,7 @@ function buildOpener(rng, openers) {
   const answerId = `song:${choices[0].title}`;
   return makeQuestion({
     type: 'opener',
-    prompt: 'Which of these songs has opened the most Phish shows at Madison Square Garden?',
+    prompt: 'Which of these songs has opened the most shows at MSG?',
     choices: shuffledChoices(
       rng,
       choices.map((row) => ({ id: `song:${row.title}`, label: row.title })),
@@ -371,7 +433,7 @@ function buildAnnouncedCount(rng, upcomingDates) {
   const answerId = `count:${count}`;
   return makeQuestion({
     type: 'announced_count',
-    prompt: 'How many Phish shows at Madison Square Garden are announced?',
+    prompt: 'How many upcoming shows has Phish announced at the Garden?',
     choices: shuffledChoices(rng, [
       { id: answerId, label: String(count) },
       ...picked.map((value) => ({ id: `count:${value}`, label: String(value) })),
@@ -457,6 +519,7 @@ export function quizAnswersTraceToSource(quiz, input) {
     const choiceIds = new Set(question.choices.map((choice) => choice.id));
     if (!choiceIds.has(question.answerId) || question.choices.length < 2) return false;
     const trace = question.trace || {};
+    if (question.fact !== factSentenceFromTrace(trace) || !question.fact) return false;
     if (trace.kind === 'catalog-debut' || trace.kind === 'catalog-debut-order') {
       const song = songs.find((row) => row.name === trace.song);
       return Boolean(song && song.debutYear === trace.year);

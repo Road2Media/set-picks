@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.120.2] — 2026-11-10
+
+### Changed
+- **Phish IQ answer reveal (#1266)** — After a right or wrong answer, the quiz states the fact behind that question. The sentence is built from the question’s trace (song catalog debut year, show gap, or play count, or the committed Madison Square Garden opener count and upcoming-show count). The announced-shows prompt is “How many upcoming shows has Phish announced at the Garden?” The gap, play-count, and opener prompts say what is being counted, in plain language. Debut prompts are unchanged. Player copy still says slot. No declared API change.
+
 ## [1.120.1] — 2026-11-10
 
 ### Changed
