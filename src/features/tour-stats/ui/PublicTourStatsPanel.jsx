@@ -182,6 +182,10 @@ export default function PublicTourStatsPanel({
         <Link to="/phish-setlist-prediction-game" className={LINK_ON_DARK}>
           Phish setlist prediction game
         </Link>
+        {' · '}
+        <Link to="/phish-iq" className={LINK_ON_DARK}>
+          Phish IQ
+        </Link>
       </p>
 
       <div className="mt-6 flex flex-col items-center gap-4 border-t border-white/10 pt-8 sm:flex-row sm:items-center sm:justify-between">

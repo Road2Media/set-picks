@@ -24,6 +24,7 @@
 | Dashboard | `/dashboard/*` | **Private** — `robots.txt` Disallow; never prerender for crawlers |
 | Tour Insights | `/tour-stats`, `/tour-stats/:slug` | Product `_index` + docs **auto-update** nightly (filter / hub). **SEO prerender** auto-expands `/tour-stats/{slug}` + sitemap/`llms` on the next production build when the thin-page gate passes (**#959** / v1.63.0). Static opt-in seed: Sphere + `2026-summer-tour` in `seoRoutes.js`. **#1144:** `/tour-stats/2026-2027-nye-run` is prerendered before that gate. See §1.1. |
 | Public discovery gate | `sitemap.xml`, `llms.txt` | **#1144:** every indexable public route in `src/shared/config/publicSitemapRoutes.js` (MSG, annual, Rewind, Phish IQ, the NYE run, and the older marketing pages) must be in both files. `npm run build` and `verify:seo-prerender` fail if one is missing. A new static route in `App.jsx` must be added to that list or to the exclusion list. `/phish-picks` stays out (#975). |
+| Phish IQ | `/phish-iq` | **#1276:** prerendered intro, FAQ, and JSON-LD (Quiz, WebApplication, FAQPage). Share image has no answers. Today's questions stay out of the crawl HTML. `llms.txt` cites Phish.net. |
 
 **Search Console:** Prefer a **Domain** property (`setlistpickem.com`) or the **URL-prefix** property for `https://www.setlistpickem.com/`. When inspecting, always use **www** URLs. Apex showing “Page with redirect” is expected and healthy.
 

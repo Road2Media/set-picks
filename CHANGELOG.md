@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.123.0] — 2026-11-10
+
+### Added
+- **Phish IQ search and answer-engine copy (#1276)** — `/phish-iq` is prerendered. The crawl HTML says what the quiz is, that a new quiz comes every day, how it works, and that it is free with no sign-in. Title, description, canonical, Open Graph, and Twitter tags point at a share image with no answers. JSON-LD is a Quiz and WebApplication plus an FAQPage. The page shows the same intro and FAQ. `llms.txt` cites Phish.net. Home, Phish at MSG, and Tour Stats link to it. The header still lists Phish IQ as its own item. Today's questions and answers stay out of that HTML, the meta tags, and the structured data.
+
 ## [1.122.2] — 2026-11-10
 
 ### Fixed

@@ -18,6 +18,7 @@ import PhishIqFinishPanel from './PhishIqFinishPanel';
  *   onFinished?: (result: { date: string, score: number, marks: boolean[] }) => void,
  *   footer?: React.ReactNode,
  *   saveNote?: string,
+ *   headingLevel?: 1 | 2,
  * }} props
  */
 export default function PhishIqPlay({
@@ -29,7 +30,9 @@ export default function PhishIqPlay({
   onFinished,
   footer = null,
   saveNote = '',
+  headingLevel = 1,
 }) {
+  const TitleTag = headingLevel === 2 ? 'h2' : 'h1';
   const [step, setStep] = useState(0);
   const [marks, setMarks] = useState(/** @type {boolean[]} */ ([]));
   const [pickedId, setPickedId] = useState(/** @type {string | null} */ (null));
@@ -118,7 +121,7 @@ export default function PhishIqPlay({
   if (!ready && !result) {
     return (
       <Card variant="venue" padding="md">
-        <h1 className="font-display text-3xl font-bold text-content-primary">Phish IQ</h1>
+        <TitleTag className="font-display text-3xl font-bold text-content-primary">Phish IQ</TitleTag>
         <p className="mt-3 text-sm leading-relaxed text-content-secondary">
           Today’s quiz needs the song catalog. Try again in a minute.
         </p>
@@ -134,9 +137,9 @@ export default function PhishIqPlay({
         <p className="text-xs font-bold uppercase tracking-widest text-content-secondary">
           Phish IQ
         </p>
-        <h1 className="mt-2 font-display text-3xl font-bold text-content-primary">
+        <TitleTag className="mt-2 font-display text-3xl font-bold text-content-primary">
           {result.score}/{total}
-        </h1>
+        </TitleTag>
         {result.marks.length > 0 ? (
           <p className="mt-4 text-2xl tracking-widest" data-phish-iq-grid aria-hidden="true">
             {result.marks.map((hit) => (hit ? '🟩' : '⬛')).join('')}
@@ -178,9 +181,9 @@ export default function PhishIqPlay({
       <p className="text-xs font-bold uppercase tracking-widest text-content-secondary">
         Phish IQ · question {step + 1} of {questions.length}
       </p>
-      <h1 className="mt-2 font-display text-2xl font-bold text-content-primary" data-phish-iq-prompt>
+      <TitleTag className="mt-2 font-display text-2xl font-bold text-content-primary" data-phish-iq-prompt>
         {question.prompt}
-      </h1>
+      </TitleTag>
       <div className="mt-5 space-y-2" role="group" aria-label="Answers">
         {question.choices.map((choice) => {
           const selected = pickedId === choice.id;

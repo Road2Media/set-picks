@@ -40,7 +40,11 @@ export default function MsgGardenStatsView({ stats, heading }) {
           <Link to="/tour-stats" className={LINK_ON_DARK}>
             One tour at a time
           </Link>
-          .
+          .{' '}
+          <Link to="/phish-iq" className={LINK_ON_DARK}>
+            Phish IQ
+          </Link>{' '}
+          is a free daily Phish quiz.
         </p>
       </header>
 
