@@ -50,7 +50,7 @@ Pick the 100th: the public board for January 2, 2027 at Madison Square Garden. H
 
 Rewind results: how many players locked a past show and how many hit each slot. No setlist. https://www.setlistpickem.com/rewind
 
-Phish IQ: five Phish questions a day. The share card shows a score, not the answers. No setlist. https://www.setlistpickem.com/phish-iq
+Phish IQ: a free daily Phish quiz. Five questions, a new quiz every day, no sign-in. The share card shows a score, not the answers. Questions use public song counts and Madison Square Garden totals. Data courtesy of Phish.net (The Mockingbird Foundation). No setlist. https://www.setlistpickem.com/phish-iq
 
 Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.com/tour-stats
 

@@ -78,6 +78,9 @@ export default function SplashHeroSection({ onPlayNowClick, onAuthCtaIntent }) {
             <Link to="/tour-stats" className={LINK_ON_DARK}>
               Tour stats
             </Link>
+            <Link to="/phish-iq" className={LINK_ON_DARK}>
+              Phish IQ
+            </Link>
             <Link to="/phish-setlist-prediction-game" className={LINK_ON_DARK}>
               What is this game?
             </Link>

@@ -705,6 +705,81 @@ function buildHowScoringChangedJsonLd() {
 }
 
 /**
+ * Public Phish IQ crawl copy (#1276). Evergreen only.
+ * Today's questions, choices, and answer facts stay out of this object.
+ */
+const PHISH_IQ_PATH = '/phish-iq';
+const PHISH_IQ_TITLE = "Phish IQ | Free Daily Phish Quiz | Setlist Pick'Em";
+const PHISH_IQ_DESCRIPTION =
+  'A free daily Phish quiz. Five questions, a new quiz every day, and no sign-in. The share card shows your score, not the answers.';
+const PHISH_IQ_URL = `${SEO_CONFIG.siteUrl}${PHISH_IQ_PATH}`;
+export const PHISH_IQ_OG_IMAGE = `${SEO_CONFIG.siteUrl}/branding/phish-iq-og.jpg?v=20261110`;
+export const PHISH_IQ_OG_IMAGE_ALT =
+  'Phish IQ, a free daily Phish quiz. Five questions, a new quiz every day. No answers on this card.';
+
+/** Crawlable link from home and tour stats. The header placement stays the #1232 hub. */
+const PHISH_IQ_INTERNAL_LINK_HTML =
+  '    <p data-seo-internal="phish-iq"><a href="/phish-iq">Phish IQ</a> is a free daily Phish quiz. Five questions, a new quiz every day, no sign-in.</p>';
+
+export const PHISH_IQ_FAQ = Object.freeze([
+  {
+    name: 'What is Phish IQ?',
+    text: "Phish IQ is a free daily Phish quiz from Setlist Pick'Em. Five trivia questions, the same quiz for everyone that day, and you can play without an account.",
+  },
+  {
+    name: 'How often is there a new quiz?',
+    text: 'A new quiz comes out every day, on the Eastern Time date. Yesterday’s questions stay off this page.',
+  },
+  {
+    name: 'Where do the questions come from?',
+    text: 'Song debuts, gaps between plays, and play counts, plus which songs open a show at Madison Square Garden and how many Garden shows are on the calendar. The numbers come from Phish.net, published by The Mockingbird Foundation. No night’s setlist is on this page.',
+  },
+  {
+    name: 'Do I need an account?',
+    text: 'No. The quiz is free, and you can play without signing in. Create an account if you want a streak saved after you finish.',
+  },
+]);
+
+function buildPhishIqFaqHtml() {
+  const blocks = PHISH_IQ_FAQ.map(
+    (item) => `    <h3>${item.name}</h3>\n    <p>${item.text}</p>`,
+  ).join('\n');
+  return `    <section data-seo-phish-iq="faq">
+    <h2>About this quiz</h2>
+${blocks}
+    <p>Data courtesy of <a href="https://phish.net">Phish.net</a> / The Mockingbird Foundation.</p>
+  </section>`;
+}
+
+function buildPhishIqJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': ['Quiz', 'WebApplication'],
+        '@id': `${PHISH_IQ_URL}#quiz`,
+        name: 'Phish IQ',
+        url: PHISH_IQ_URL,
+        description: PHISH_IQ_DESCRIPTION,
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'Web',
+        isAccessibleForFree: true,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        publisher: { '@id': organizationId },
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: PHISH_IQ_FAQ.map((item) => ({
+          '@type': 'Question',
+          name: item.name,
+          acceptedAnswer: { '@type': 'Answer', text: item.text },
+        })),
+      },
+    ],
+  };
+}
+
+/**
  * @typedef {object} SeoPrerenderRoute
  * @property {string} path - URL path (`/` or `/how-it-works`)
  * @property {string} title
@@ -712,6 +787,9 @@ function buildHowScoringChangedJsonLd() {
  * @property {string} canonicalUrl
  * @property {string} h1
  * @property {string[]} paragraphs - crawler-visible body copy
+ * @property {string} [appendHtml] - extra crawler HTML after the paragraphs
+ * @property {string} [ogImage]
+ * @property {string} [ogImageAlt]
  * @property {() => object} buildJsonLd
  */
 
@@ -738,6 +816,7 @@ export const PRERENDER_ROUTES = [
       "Make picks for tonight's show, watch scores update as songs are played, and compete with your tour crew for the top spot.",
       "Lock It In: predict openers, closers, encore, and a wildcard before the lights go down. Watch It Unfold as scores update live. Claim the Crown in the global pool or private pools with friends. Play and your personal stats build as you rack up points.",
     ],
+    appendHtml: PHISH_IQ_INTERNAL_LINK_HTML,
     buildJsonLd: buildHomeJsonLd,
   },
   {
@@ -793,6 +872,7 @@ export const PRERENDER_ROUTES = [
       'The list updates after every show. Lock a card and your own picks start counting too.',
       'Phish is the band here. One tour at a time, the songs that keep coming back.',
     ],
+    appendHtml: PHISH_IQ_INTERNAL_LINK_HTML,
     buildJsonLd: buildTourStatsHubJsonLd,
   },
   {
@@ -916,6 +996,25 @@ export const PRERENDER_ROUTES = [
     robots: publicShowNotesRobots(),
     paragraphs: PUBLIC_SHOW_NOTES_HUB.paragraphs,
     buildJsonLd: buildTourNotesJsonLd,
+  },
+  {
+    path: PHISH_IQ_PATH,
+    title: PHISH_IQ_TITLE,
+    description: PHISH_IQ_DESCRIPTION,
+    canonicalUrl: PHISH_IQ_URL,
+    h1: 'A free daily Phish quiz',
+    ogImage: PHISH_IQ_OG_IMAGE,
+    ogImageAlt: PHISH_IQ_OG_IMAGE_ALT,
+    ogImageType: 'image/jpeg',
+    ogImageWidth: '1200',
+    ogImageHeight: '630',
+    paragraphs: [
+      'Phish IQ is a free daily Phish quiz. Five questions, a new quiz every day, and you can play with no sign-in.',
+      'Everyone gets the same five questions that day. Answer them, see how you did, and share the score. The share card does not include the questions or the answers.',
+      'The questions draw on public song counts and Madison Square Garden totals. Data courtesy of Phish.net. This is a quiz, not the six slots you lock before a show.',
+    ],
+    appendHtml: buildPhishIqFaqHtml(),
+    buildJsonLd: buildPhishIqJsonLd,
   },
   {
     path: '/privacy',

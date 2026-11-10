@@ -1,7 +1,7 @@
 {
   "name": "setlistpickem",
   "private": true,
-  "version": "1.122.2",
+  "version": "1.123.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,6 +17,7 @@
     "verify:seo-strings": "node scripts/verify-seo-strings.mjs",
     "verify:marketing-voice": "node scripts/verify-marketing-voice.mjs",
     "generate:og-card": "node scripts/generate-og-card.mjs",
+    "generate:phish-iq-og": "node scripts/generate-phish-iq-og.mjs",
     "generate:email-wordmark": "node scripts/generate-email-wordmark.mjs",
     "secrets:sync-phishnet": "node scripts/sync-phishnet-secret.mjs",
     "deploy:functions:phishnet": "firebase deploy --only functions:getPhishnetSetlist,functions:scheduledPhishnetShowCalendar,functions:refreshPhishnetShowCalendar,functions:refreshLiveScoresForShow,functions:scheduledPhishnetSongCatalog,functions:refreshPhishnetSongCatalog,functions:scheduledSongCatalogHealth,functions:scheduledPickRecommendations,functions:refreshPickRecommendations,functions:scheduledPickRecommendationHistory,functions:refreshPickRecommendationHistory,functions:scheduledPhishnetLiveSetlistPoll,functions:scheduledPicksLockReminder,functions:setLiveSetlistAutomationState,functions:pollLiveSetlistNow,functions:setLiveSetlistServiceStatus,functions:sendPushCanary,functions:lockPicksForShowNow,functions:scheduledPublicTourStatsRefresh,functions:refreshPublicTourStats,functions:refreshPublicShowNotes,functions:scheduledPublicShowNotesRefresh",
