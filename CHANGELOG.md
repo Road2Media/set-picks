@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.125.0] — 2026-11-10
+
+### Added
+- **House promo operations (#420)** — The Standings promo can be turned on, swapped, or cleared from Firebase Remote Config without a deploy. The runbook is the creative schema, the staging and production publish steps, the kill switch, and rollback. The in-app default stays off, and a missing or invalid creative still renders nothing. An open Standings tab that is showing a unit clears it when you publish the off switch, without a reload. The next load picks it up after 60 seconds. Moving between dashboard tabs does not fetch Remote Config again, and the live connection stays closed while the unit is empty. The client sends `release_channel` (`development`, `staging`, or `production`) so a console condition can target staging without turning the unit on for production. One Firebase project serves every channel. No new placement, no ad script, no Firestore campaign collection, and no billing.
+
 ## [1.124.0] — 2026-11-10
 
 ### Added

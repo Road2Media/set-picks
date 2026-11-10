@@ -11,12 +11,14 @@ Monetize Setlist Pick 'Em via **non-intrusive, contextual placements** while pre
 | Phase | Scope | Ad source | Primary issue |
 |-------|--------|-----------|----------------|
 | **1** | Static/house promo banners | Firebase Remote Config JSON per slot | #121 |
-| **2** | Slot registry, admin preview, kill switch | RC + optional Firestore `ad_campaigns` | [#420](https://github.com/pat792/set-picks/issues/420) |
+| **2** | Slot registry, kill switch, operator runbook | Remote Config only. Firestore `ad_campaigns` and admin preview were not added | [#420](https://github.com/pat792/set-picks/issues/420) |
 | **3** | Consent / CMP, ads.txt, CSP, measurement | IAB TCF + partner SDK | [#421](https://github.com/pat792/set-picks/issues/421) |
 | **4** | Programmatic third-party fill | Google Ad Manager / AdSense (web) or similar | [#422](https://github.com/pat792/set-picks/issues/422) |
 | **5** | Ad-free premium (optional) | Product + billing (Stripe, etc.) | [#423](https://github.com/pat792/set-picks/issues/423) |
 
 Phase 1 deliberately **does not** integrate third-party ad networks.
+
+Phase 2 (#420) is the operator contract in `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`: schema, staging and production conditions on custom signal `release_channel`, a kill switch that clears an on-screen unit without a deploy, and rollback. The client still has one provider, Remote Config, behind `loadAdCreative(slotId, context)`. Firestore campaigns and `?adPreview=` were not built. One JSON parameter is enough for the one mounted slot, and a preview query would be a new surface.
 
 ## Repo alignment (2026)
 
@@ -41,7 +43,7 @@ Phase 1 deliberately **does not** integrate third-party ad networks.
 
 ## Technical requirements (cross-cutting)
 
-1. **Provider abstraction** — `AdProvider` interface: `loadSlot(slotId, context) → AdCreative | null`. Implementations: `remoteConfigAdProvider`, later `gamAdProvider`.
+1. **Provider abstraction** — `AdProvider` interface: `loadAdCreative(slotId, context) → AdCreative | null`. Implementations: `remoteConfigAdProvider`, later `gamAdProvider`. `watchSlot` runs only while a creative is on screen.
 2. **Slot registry** — `src/features/ads/config/adSlots.js` documents allowed `slotId`, surfaces, max dimensions.
 3. **Context** — `route`, `surface` (splash \| dashboard-picks \| …), `authState`, optional `showDate` / lock status from existing hooks.
 4. **Telemetry** — `ga4Event('ad_impression' \| 'ad_click', { slot_id, creative_id, destination_type })` per `src/shared/lib/ga4.js` conventions.

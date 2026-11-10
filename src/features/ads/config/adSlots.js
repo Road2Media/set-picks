@@ -1,9 +1,10 @@
 /**
- * Mounted Phase 1 slots (#121).
+ * Mounted slots. This registry is the source of truth for allowed `slotId`
+ * values. Keep it in sync with `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`.
  *
  * Picks, Profile, and a dashboard-shell bar are intentionally not registered.
  * Composing them would change the picks flow or add a surface the shell does
- * not already reserve. Options live in `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`.
+ * not already reserve.
  */
 
 /** Standings seam below the invite promo. Remote Config parameter key. */
@@ -18,14 +19,28 @@ const SLOTS = Object.freeze({
     parameterKey: AD_SLOT_STANDINGS_INLINE,
     surface: 'dashboard-standings',
     variant: 'banner',
+    logo: Object.freeze({ widthPx: 56, heightPx: 56 }),
+    minHeight: 'L1',
   }),
 });
 
 /**
  * @param {string} slotId
- * @returns {{ id: string, parameterKey: string, surface: string, variant: 'banner' | 'card' } | null}
+ * @returns {{
+ *   id: string,
+ *   parameterKey: string,
+ *   surface: string,
+ *   variant: 'banner' | 'card',
+ *   logo: { widthPx: number, heightPx: number },
+ *   minHeight: string,
+ * } | null}
  */
 export function getAdSlot(slotId) {
   if (typeof slotId !== 'string' || !slotId) return null;
   return SLOTS[slotId] ?? null;
+}
+
+/** @returns {Array<NonNullable<ReturnType<typeof getAdSlot>>>} */
+export function listAdSlots() {
+  return Object.values(SLOTS);
 }

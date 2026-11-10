@@ -7,12 +7,14 @@ import { useAdImpression } from '../model/useAdImpression';
 import AdCreativeLink from './AdCreativeLink';
 
 /**
- * First-party promo for one explicit slot (#121).
+ * First-party promo for one explicit slot (#121, #420).
  *
- * Renders nothing when the slot is unknown, Remote Config is off, or the
- * creative is missing or invalid. `VITE_ENABLE_SPONSOR_SLOTS=true` still
- * shows the empty proportion shell for local and preview layout checks.
- * That flag does not fill a creative.
+ * The creative comes from the ad provider. This file does not import
+ * Remote Config. It renders nothing when the slot is unknown, the kill
+ * switch is off, or the creative is missing or invalid. A publish can
+ * clear a unit that is already on screen. `VITE_ENABLE_SPONSOR_SLOTS=true`
+ * still shows the empty proportion shell for local and preview layout
+ * checks. That flag does not fill a creative.
  *
  * @param {{ slotId: string, className?: string }} props
  */
