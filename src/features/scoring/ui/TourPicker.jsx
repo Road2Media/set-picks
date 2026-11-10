@@ -8,10 +8,10 @@ import FilterPill from '../../../shared/ui/FilterPill';
  * Renders nothing when there is only one (or zero) tours to choose from —
  * the single-tour case needs no picker UI.
  *
- * Responsive:
- *   - Mobile (< md): native `<select>` for compact, accessible selection.
- *   - Desktop (≥ md): horizontal pill/chip group matching the pool picker
- *     pattern in {@link StandingsPoolPicker}.
+ * Responsive (`desk` / `mob`, #705 — not the `md` width breakpoint):
+ *   - Mobile, including phone landscape: native `<select>`.
+ *   - Desk (wide and at least 480px tall): horizontal pill/chip group
+ *     matching the pool picker pattern in {@link StandingsPoolPicker}.
  *
  * @param {{
  *   tours: Array<{ tour: string }>,
@@ -29,7 +29,7 @@ export default function TourPicker({ tours, selectedTourKey, onSelect, className
     <div className={['mb-4', className].filter(Boolean).join(' ')}>
       {/* Mobile: native select */}
       <select
-        className="md:hidden w-full rounded-xl border border-border-subtle bg-surface-panel px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand"
+        className="desk:hidden w-full rounded-xl border border-border-subtle bg-surface-panel px-3 py-2 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand"
         value={activeKey}
         onChange={(e) => onSelect(e.target.value)}
         aria-label="Select tour"
@@ -43,7 +43,7 @@ export default function TourPicker({ tours, selectedTourKey, onSelect, className
 
       {/* Desktop: pill group */}
       <div
-        className="hidden md:flex flex-wrap gap-1.5 px-1"
+        className="hidden desk:flex flex-wrap gap-1.5 px-1"
         role="group"
         aria-label="Select tour"
       >

@@ -223,10 +223,10 @@ export default function DashboardLayout() {
   return (
     <ScoringRulesModalProvider>
     <CommsInboxProvider userId={user?.uid}>
-    <div className="flex h-[100dvh] min-h-0 w-full bg-transparent text-white overflow-hidden md:h-screen">
+    <div className="flex h-[100dvh] min-h-0 w-full bg-transparent text-white overflow-hidden desk:h-screen">
       
-      {/* DESKTOP SIDEBAR */}
-      <nav className="hidden md:flex flex-col w-64 overflow-visible bg-surface-chrome border-r border-border-muted/65 p-4 z-10">
+      {/* DESKTOP SIDEBAR — `desk` is width and height, so phone landscape stays mobile */}
+      <nav className="hidden desk:flex flex-col w-64 overflow-visible bg-surface-chrome border-r border-border-muted/65 p-4 z-10">
       <div className="mb-6 overflow-visible py-2">
           <h1 className="w-full overflow-visible text-center leading-none">
             <Link
@@ -303,7 +303,7 @@ export default function DashboardLayout() {
       <div
         ref={topChromeRef}
         data-mobile-top-chrome
-        className="md:hidden fixed top-0 left-0 w-full z-50 pt-[env(safe-area-inset-top,0px)]"
+        className="desk:hidden fixed top-0 left-0 w-full z-50 pt-[env(safe-area-inset-top,0px)]"
       >
         <div className="relative">
           <DashboardMobileBrandBar user={user} />
@@ -356,19 +356,20 @@ export default function DashboardLayout() {
         id={DASHBOARD_SCROLLPORT_ID}
         className={[
           'flex-1 min-w-0 overflow-y-auto relative',
-          'pb-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] md:pt-8 md:pb-8',
+          'pb-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] desk:pt-8 desk:pb-8',
           usesMobileFixedChrome
             ? // Picks: tertiary + optional Make Picks tools. Stats Personal/Global:
               // tertiary + up to two quaternary inset trays.
+              // `short` drops 4rem (brand row) — see DashboardMobileBrandBar.
               isPicksCluster
-              ? 'pt-[calc(env(safe-area-inset-top,0px)+15.25rem)]'
+              ? 'pt-[calc(env(safe-area-inset-top,0px)+15.25rem)] short:pt-[calc(env(safe-area-inset-top,0px)+11.25rem)]'
               : isStatsQuaternary
-                ? 'pt-[calc(env(safe-area-inset-top,0px)+17.75rem)]'
-                : 'pt-[calc(env(safe-area-inset-top,0px)+11.75rem)]'
-            : 'pt-[calc(env(safe-area-inset-top,0px)+9rem)]',
+                ? 'pt-[calc(env(safe-area-inset-top,0px)+17.75rem)] short:pt-[calc(env(safe-area-inset-top,0px)+13.75rem)]'
+                : 'pt-[calc(env(safe-area-inset-top,0px)+11.75rem)] short:pt-[calc(env(safe-area-inset-top,0px)+7.75rem)]'
+            : 'pt-[calc(env(safe-area-inset-top,0px)+9rem)] short:pt-[calc(env(safe-area-inset-top,0px)+5rem)]',
         ].join(' ')}
       >
-        <div className="max-w-xl mx-auto w-full min-w-0 px-4 pt-2 md:p-8">
+        <div className="max-w-xl mx-auto w-full min-w-0 px-4 pt-2 desk:p-8">
           {meta.ownsDesktopStickyChrome ||
           meta.showDatePicker ||
           meta.showTourScopePicker ||
@@ -408,7 +409,7 @@ export default function DashboardLayout() {
           <DashboardInstallEngageBanner userId={user?.uid} pathname={location.pathname} />
 
           {meta.layoutDetailEyebrow ? (
-            <p className="mb-3 ml-1 hidden text-xs font-bold uppercase tracking-widest text-content-secondary md:block">
+            <p className="mb-3 ml-1 hidden text-xs font-bold uppercase tracking-widest text-content-secondary desk:block">
               {meta.layoutDetailEyebrow}
             </p>
           ) : null}
@@ -537,7 +538,7 @@ export default function DashboardLayout() {
       <nav
         ref={primaryNavRef}
         data-mobile-primary-nav
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 w-full border-t border-border-subtle/35 bg-[linear-gradient(to_top,rgb(var(--brand-bg-deep)_/_0.76),rgb(var(--brand-bg)_/_0.60))] pb-[env(safe-area-inset-bottom,0px)] shadow-[inset_0_1px_0_0_rgb(var(--brand-primary)/0.12),0_-10px_28px_-14px_rgba(15,10,46,0.85)] ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl supports-[backdrop-filter]:backdrop-blur-2xl supports-[backdrop-filter]:backdrop-saturate-150"
+        className="desk:hidden fixed inset-x-0 bottom-0 z-50 w-full border-t border-border-subtle/35 bg-[linear-gradient(to_top,rgb(var(--brand-bg-deep)_/_0.76),rgb(var(--brand-bg)_/_0.60))] pb-[env(safe-area-inset-bottom,0px)] shadow-[inset_0_1px_0_0_rgb(var(--brand-primary)/0.12),0_-10px_28px_-14px_rgba(15,10,46,0.85)] ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl supports-[backdrop-filter]:backdrop-blur-2xl supports-[backdrop-filter]:backdrop-saturate-150"
       >
         <div className={`grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} items-center gap-0.5 px-1.5 h-16`}>
           {navItems.map((item) => {

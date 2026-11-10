@@ -108,10 +108,10 @@ Page and section **descriptions default to an `InfoTooltip`** (`DashboardActionR
 
 | Viewport | Pattern |
 |----------|---------|
-| **Mobile** | Fixed under the context bar via `useDashboardMobileChromePortal` (`ProfileMobileFixedChrome`, `StandingsMobileFixedChrome`) |
-| **Desktop** | One sticky stack in `#dashboard-scrollport`: optional Tour Date / Tour scope / Year scope, then cluster title + full-width tertiary tray (`DashboardStickyPageChrome` portaled into `DashboardStickyChromeStack`). Optional utilities sit on the **title row** as icon buttons (`ChromeIconButton` — Scale for Scoring rules on Picks/Standings, BookOpen for How pools work), never labeled pills beside the tray — trays stay equal width across clusters. Stats Personal / Global also portal quaternary inset trays into the same sticky stack (below tertiary). Lock / install banners and page body scroll underneath. Pool details stays Option C (no cluster title). War Room keeps the layout H2. |
+| **Mobile (`mob`)** | Fixed under the context bar via `useDashboardMobileChromePortal` (`ProfileMobileFixedChrome`, `StandingsMobileFixedChrome`). Phone landscape is mobile. |
+| **Desktop (`desk`)** | One sticky stack in `#dashboard-scrollport`: optional Tour Date / Tour scope / Year scope, then cluster title + full-width tertiary tray (`DashboardStickyPageChrome` portaled into `DashboardStickyChromeStack`). Optional utilities sit on the **title row** as icon buttons (`ChromeIconButton` — Scale for Scoring rules on Picks/Standings, BookOpen for How pools work), never labeled pills beside the tray — trays stay equal width across clusters. Stats Personal / Global also portal quaternary inset trays into the same sticky stack (below tertiary). Lock / install banners and page body scroll underneath. Pool details stays Option C (no cluster title). War Room keeps the layout H2. |
 
-Visibility (`hidden md:block` vs portal) lives at the **cluster layout call site**, not inside `ChromeSegmentedControl`.
+Visibility (`hidden desk:block` vs portal) lives at the **cluster layout call site**, not inside `ChromeSegmentedControl`.
 
 ### Behavior
 
@@ -119,9 +119,21 @@ Visibility (`hidden md:block` vs portal) lives at the **cluster layout call site
 2. **Snap-to-top** on tertiary change (`scrollAppToTop`) — already inside `ChromeSegmentedControl`.
 3. `aria-label` on the tray; NavLink clusters use `<nav>`; view switches use `role="tablist"` + `role="tab"` / `aria-selected`.
 
-### Landscape / `desk` screens (#704–#707)
+### Landscape / `desk` and `mob` screens (#705, part of #704)
 
-Do **not** add new `md:`-as-device assumptions in **shared** chrome. Until `desk` / `mob` screens land, keep existing call-site `md:` splits (portal vs in-page) and prefer one tray primitive rather than a second desktop-only pill group.
+`md:` is **width reflow** only (type size, wrapping, column padding). It is not a device switch. Do **not** add new `md:hidden` / `hidden md:*` chrome gates.
+
+Device chrome uses raw screens in `tailwind.config.js`:
+
+| Screen | Query | What it means |
+|--------|--------|----------------|
+| `desk` | `(min-width: 768px) and (min-height: 480px)` | Sidebar, sticky stack, desktop headings. iPad portrait (768×1024) and desktop stay here. |
+| `mob` | `(max-width: 767.98px), (max-height: 479.98px)` | Exact complement of `desk`. Portrait phones and phone landscape (wide, under 480px tall) stay here. |
+| `short` | `(max-height: 479.98px)` | Landscape compaction only. Does not overlap `desk`. |
+
+Write chrome pairs as `hidden desk:*` (desktop tree) and `desk:hidden` (mobile tree) so exactly one tree is visible. `mob:` is the mobile-side screen when a rule must be authored from that side. `variant="mobile"` / `"desktop"` mounts stay until #707. Marketing nav stays on its own breakpoints (#706).
+
+Under `short`, `DashboardMobileBrandBar` is hidden and the scrollport top padding drops by 4rem (the brand row: `h-12` + `py-2`). The context bar still scroll-hides through `useScrollDirection`. The static dashboard boot shell uses the same `desk` query and hides `.dbs-brand-bar` under `short`.
 
 ### Checklist: adding a cluster
 
@@ -132,7 +144,7 @@ When you add or rename a tertiary cluster (or a `/dashboard/*` child):
 3. Add a row to **`scripts/verify-dashboard-meta.mjs`** and run **`npm run verify:dashboard-meta`**.
 4. Update **`src/shared/config/dashboardVocabulary.js`** (`NAV_LABEL_*`) and this doc.
 5. If paths change: **`src/shared/config/dashboardRoutes.js`** (cluster constants + legacy redirects) and **`docs/API.md`** when a declared route is added/renamed.
-6. Compose **`ChromeSegmentedControl`** — mobile portal chrome + desktop sticky/in-page tray. No per-feature tray class strings.
+6. Compose **`ChromeSegmentedControl`** — mobile portal chrome + desktop sticky/in-page tray. Gate those trees with `desk:` / `desk:hidden`, not `md:hidden`. No per-feature tray class strings.
 7. Run **`npm run verify:dashboard-ui`**.
 
 ### Current tertiary clusters

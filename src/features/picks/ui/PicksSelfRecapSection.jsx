@@ -98,7 +98,7 @@ export default function PicksSelfRecapSection({
 
   return (
     <div className="mb-4 mt-2">
-      <div className="hidden md:block">
+      <div className="hidden desk:block">
         <StandingsSelfRecapCard {...cardProps} showEyebrow />
       </div>
 
@@ -106,7 +106,7 @@ export default function PicksSelfRecapSection({
         as="details"
         tone="amber"
         pad="row"
-        className="group md:hidden"
+        className="group desk:hidden"
       >
         <summary className="flex list-none cursor-pointer items-center gap-2 text-left [&::-webkit-details-marker]:hidden">
           <div className="min-w-0 flex-1">
