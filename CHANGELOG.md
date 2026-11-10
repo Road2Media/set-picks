@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.121.0] — 2026-11-10
+
+### Added
+- **Phish IQ next quiz and stats (#1267)** — The finish screen on `/phish-iq` and `/dashboard/phish-iq` counts down to the next quiz at midnight Eastern and says a new set of five questions arrives every day. Your stats (played, win % for a perfect five, current streak, best streak, and how many quizzes landed on each score from 0 to 5) come from this browser’s per-day history. That history stays after sign-in. The first time this browser builds a day’s quiz, those five questions are kept, so a later catalog refresh does not swap them. Guests still do not write Firestore. The account streak field is unchanged. No new route, callable, or Firestore field.
+
 ## [1.120.2] — 2026-11-10
 
 ### Changed

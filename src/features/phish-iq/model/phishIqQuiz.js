@@ -42,6 +42,54 @@ export function quizDateKey(now = new Date(), timeZone = PHISH_IQ_TIME_ZONE) {
 }
 
 /**
+ * First instant the quiz date changes after `now`.
+ * Same America/New_York boundary as `quizDateKey`, including daylight saving.
+ *
+ * @param {Date} [now]
+ * @param {string} [timeZone]
+ * @returns {Date | null}
+ */
+export function nextQuizBoundary(now = new Date(), timeZone = PHISH_IQ_TIME_ZONE) {
+  if (!(now instanceof Date) || Number.isNaN(now.getTime())) return null;
+  const today = quizDateKey(now, timeZone);
+  if (!today) return null;
+  let lo = now.getTime();
+  let hi = lo + 48 * 60 * 60 * 1000;
+  if (quizDateKey(new Date(hi), timeZone) === today) return null;
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (quizDateKey(new Date(mid), timeZone) === today) lo = mid;
+    else hi = mid;
+  }
+  return new Date(hi);
+}
+
+/**
+ * @param {Date} [now]
+ * @param {string} [timeZone]
+ * @returns {number}
+ */
+export function msUntilNextQuiz(now = new Date(), timeZone = PHISH_IQ_TIME_ZONE) {
+  const boundary = nextQuizBoundary(now, timeZone);
+  if (!boundary) return 0;
+  return Math.max(0, boundary.getTime() - now.getTime());
+}
+
+/**
+ * @param {number} ms
+ * @returns {string} `5h 02m 09s`
+ */
+export function formatQuizCountdown(ms) {
+  const value = Number(ms);
+  const total = Number.isFinite(value) && value > 0 ? Math.floor(value / 1000) : 0;
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const pad = (part) => String(part).padStart(2, '0');
+  return `${hours}h ${pad(minutes)}m ${pad(seconds)}s`;
+}
+
+/**
  * Catalog / Phish.net debut → calendar year. Mirrors the profile parser
  * without pulling that feature into this chunk.
  *
