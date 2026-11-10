@@ -46,6 +46,8 @@ Phish at Madison Square Garden: the songs they play most, what opens the night, 
 
 New Year's Run 2026-2027 at Madison Square Garden: December 30, December 31, January 1, and January 2. January 2, 2027 is the 100th performance at the Garden. The page lists those four shows and links to phish.com. It does not list a night's setlist. Create a NYE pool from that page. https://www.setlistpickem.com/tour-stats/2026-2027-nye-run
 
+Pick the 100th: the public board for January 2, 2027 at Madison Square Garden. Handles, rank, points, and exact slots. No email addresses. https://www.setlistpickem.com/phish-at-msg/100th
+
 Rewind results: how many players locked a past show and how many hit each slot. No setlist. https://www.setlistpickem.com/rewind
 
 Phish IQ: five Phish questions a day. The share card shows a score, not the answers. No setlist. https://www.setlistpickem.com/phish-iq
@@ -62,6 +64,7 @@ Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.c
 - 2026 Sphere tour statistics: https://www.setlistpickem.com/tour-stats/2026-sphere
 - 2026 Summer Tour setlist statistics: https://www.setlistpickem.com/tour-stats/2026-summer-tour
 - Phish at MSG: https://www.setlistpickem.com/phish-at-msg
+- Pick the 100th at MSG: https://www.setlistpickem.com/phish-at-msg/100th
 - 2026 Phish tour statistics: https://www.setlistpickem.com/tour-stats/2026
 - New Year's Run 2026-2027 at MSG: https://www.setlistpickem.com/tour-stats/2026-2027-nye-run
 - Rewind results: https://www.setlistpickem.com/rewind

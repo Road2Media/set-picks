@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, Mail, Smartphone } from 'lucide-react';
+import { Bell, ChevronDown, Mail, Smartphone } from 'lucide-react';
 
+import { Panel } from '../../../shared/ui/Card';
 import { isInstalled } from '../../install';
 import { logCommsPrefChanged } from '../../comms';
 import { useCommsEmailStatus } from '../model/useCommsEmailStatus';
@@ -57,9 +58,11 @@ function NotificationAccordionSection({
   const panelId = `${sectionId}-panel`;
 
   return (
-    <li
+    <Panel
+      as="li"
       ref={sectionRef}
-      className="overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-inset-glass"
+      padding="none"
+      className="overflow-hidden"
     >
       <button
         type="button"
@@ -97,13 +100,87 @@ function NotificationAccordionSection({
           {children}
         </div>
       ) : null}
-    </li>
+    </Panel>
+  );
+}
+
+const PUSH_FAMILIES = [
+  {
+    family: 'reminders',
+    label: 'Lock reminders',
+    description: 'A push on this device before picks lock, when push is turned on above.',
+  },
+  {
+    family: 'results',
+    label: 'Wins & final scores',
+    description: 'A push when a show is graded, including if you topped the night.',
+  },
+  {
+    family: 'nearMiss',
+    label: 'Close calls',
+    description: 'A push when you finished within a couple of points of the top score but did not win.',
+  },
+  {
+    family: 'lifecycle',
+    label: 'Tour & onboarding updates',
+    description: 'Welcome notes, tour countdowns, and pick confirmations on this device.',
+  },
+];
+
+const IN_APP_FAMILIES = [
+  {
+    family: 'reminders',
+    label: 'Lock reminders',
+    description: 'A message in Messages before picks lock.',
+  },
+  {
+    family: 'results',
+    label: 'Wins & final scores',
+    description: 'A message in Messages when a show is graded, including if you topped the night.',
+  },
+  {
+    family: 'lifecycle',
+    label: 'Tour & onboarding updates',
+    description: 'Welcome notes, tour countdowns, and pick confirmations in Messages.',
+  },
+];
+
+const EMAIL_FAMILIES = [
+  {
+    family: 'results',
+    label: 'Wins & final scores',
+    description: 'Recap and rankings email after a show, a tour, or a year is graded.',
+  },
+  {
+    family: 'lifecycle',
+    label: 'Tour & onboarding updates',
+    description:
+      'Welcome notes, tour countdowns, and other tour email. A show-day pick reminder still goes out when you have not entered picks.',
+  },
+];
+
+function CategoryToggleList({ families, channel, prefs, disabled, onChange }) {
+  const channelPrefs = prefs?.[channel] || {};
+  return (
+    <div className="mt-4 space-y-2">
+      {families.map((item) => (
+        <ChannelToggle
+          key={`${channel}.${item.family}`}
+          label={item.label}
+          description={item.description}
+          checked={channelPrefs[item.family] === true}
+          disabled={disabled}
+          onChange={(value) => onChange(channel, item.family, value)}
+        />
+      ))}
+    </div>
   );
 }
 
 /**
- * Notification prefs (same `notificationPrefs` keys as before — Phase 1 move-only).
- * Cosmetic Push / Email grouping only; per-channel keys are #513 Phase 3 (out).
+ * Per-channel notification prefs (#1045). Push, in-app, and email each store
+ * their own family booleans. A missing channel key still follows the legacy
+ * flat `notificationPrefs` value.
  *
  * @param {{
  *   focusSection?: 'push' | null,
@@ -179,9 +256,9 @@ export default function NotificationPrefsPanel({
   } = useCommsEmailStatus();
 
   const handlePrefChange = useCallback(
-    (key, value) => {
-      logCommsPrefChanged({ prefKey: key, enabled: value });
-      setField(key, value);
+    (channel, family, value) => {
+      logCommsPrefChanged({ prefKey: `${channel}.${family}`, enabled: value });
+      setField(channel, family, value);
     },
     [setField],
   );
@@ -203,7 +280,7 @@ export default function NotificationPrefsPanel({
         ? 'Email paused.'
         : emailStatus.lifecycleEnabled
           ? 'On — tour and onboarding emails are enabled.'
-          : 'Off — turn on Tour & onboarding updates below.';
+          : 'Off — tour and onboarding email is off.';
 
   const emailLeading = (
     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand-primary/30 bg-brand-primary/10">
@@ -214,6 +291,12 @@ export default function NotificationPrefsPanel({
   const pushLeading = (
     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand-primary/30 bg-brand-primary/10">
       <Smartphone className="h-5 w-5 text-brand-primary" aria-hidden />
+    </span>
+  );
+
+  const inAppLeading = (
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand-primary/30 bg-brand-primary/10">
+      <Bell className="h-5 w-5 text-brand-primary" aria-hidden />
     </span>
   );
 
@@ -302,46 +385,48 @@ export default function NotificationPrefsPanel({
 
         <NotificationAccordionSection
           sectionId="notif-categories"
-          title="Push categories"
-          summary="Reminders, scores, close calls, and tour updates — tap to adjust."
+          title="Push updates"
+          summary="Reminders, scores, close calls, and tour updates on this device."
           open={openSection === 'categories'}
           onToggle={() => handleAccordion('categories')}
         >
           <p className="text-xs font-bold leading-relaxed text-content-secondary">
-            Lock reminders, score / win alerts, and near-miss nudges default to on. Turn off any
-            channel you do not want — we still respect browser permission and whether push is enabled
-            in Push notifications.
+            These switches are for push only. Messages in the app and email have their own
+            switches. Push still needs permission and Enable in Push notifications.
           </p>
-          <div className="mt-4 space-y-2">
-            <ChannelToggle
-              label="Lock reminders"
-              description="Push and in-app nudge before picks lock. Email is sent only when you have no picks for tonight's show."
-              checked={prefs.reminders}
-              disabled={prefsSaving}
-              onChange={(v) => handlePrefChange('reminders', v)}
-            />
-            <ChannelToggle
-              label="Wins & final scores"
-              description="When a show is graded, including if you topped the night."
-              checked={prefs.results}
-              disabled={prefsSaving}
-              onChange={(v) => handlePrefChange('results', v)}
-            />
-            <ChannelToggle
-              label="Close calls"
-              description="When you finished within a couple points of the top score but did not win."
-              checked={prefs.nearMiss}
-              disabled={prefsSaving}
-              onChange={(v) => handlePrefChange('nearMiss', v)}
-            />
-            <ChannelToggle
-              label="Tour & onboarding updates"
-              description="Welcome notes, tour countdowns, pick confirmations, and post-show nudges — on push, in-app, and email."
-              checked={prefs.lifecycle}
-              disabled={prefsSaving}
-              onChange={(v) => handlePrefChange('lifecycle', v)}
-            />
-          </div>
+          <CategoryToggleList
+            families={PUSH_FAMILIES}
+            channel="push"
+            prefs={prefs}
+            disabled={prefsSaving}
+            onChange={handlePrefChange}
+          />
+          {prefsError ? <p className="mt-3 text-xs text-amber-300">{prefsError}</p> : null}
+        </NotificationAccordionSection>
+      </ul>
+
+      <p className="mb-3 mt-8 text-xs font-black uppercase tracking-widest text-content-secondary">
+        In the app
+      </p>
+      <ul className="space-y-3">
+        <NotificationAccordionSection
+          sectionId="notif-in-app"
+          title="Messages"
+          summary="Reminders, scores, and tour updates in your inbox."
+          leading={inAppLeading}
+          open={openSection === 'inApp'}
+          onToggle={() => handleAccordion('inApp')}
+        >
+          <p className="text-xs font-bold leading-relaxed text-content-secondary">
+            These messages stay in Messages. Turning one off does not change push or email.
+          </p>
+          <CategoryToggleList
+            families={IN_APP_FAMILIES}
+            channel="inApp"
+            prefs={prefs}
+            disabled={prefsSaving}
+            onChange={handlePrefChange}
+          />
           {prefsError ? <p className="mt-3 text-xs text-amber-300">{prefsError}</p> : null}
         </NotificationAccordionSection>
       </ul>
@@ -359,9 +444,9 @@ export default function NotificationPrefsPanel({
           onToggle={() => handleAccordion('email')}
         >
           <p className="text-sm font-bold leading-relaxed text-content-secondary">
-            Tour countdowns and post-show recaps use your &ldquo;Tour &amp; onboarding updates&rdquo;
-            preference. Show-day pick reminders by email are service notices when you have not
-            entered picks — they are not controlled by that toggle.
+            Unsubscribe pauses every email to this address. The switches under Email updates
+            turn individual notes off without pausing the address. Show-day pick reminders still
+            go out when you have not entered picks, unless email to this address is paused.
           </p>
 
           {emailStatus.suppressed && emailStatus.message ? (
@@ -414,6 +499,29 @@ export default function NotificationPrefsPanel({
         </NotificationAccordionSection>
 
         <NotificationAccordionSection
+          sectionId="notif-email-categories"
+          title="Email updates"
+          summary="Scores and tour email. Show-day pick reminders stay on unless email is paused."
+          open={openSection === 'emailCategories'}
+          onToggle={() => handleAccordion('emailCategories')}
+        >
+          <p className="text-xs font-bold leading-relaxed text-content-secondary">
+            These switches are for email only. They do not change push or messages in the app.
+            {emailStatus.suppressed
+              ? ' Email is paused, so nothing sends until you re-enable it. These switches are saved for then.'
+              : ''}
+          </p>
+          <CategoryToggleList
+            families={EMAIL_FAMILIES}
+            channel="email"
+            prefs={prefs}
+            disabled={prefsSaving}
+            onChange={handlePrefChange}
+          />
+          {prefsError ? <p className="mt-3 text-xs text-amber-300">{prefsError}</p> : null}
+        </NotificationAccordionSection>
+
+        <NotificationAccordionSection
           sectionId="notif-privacy"
           title="Privacy & devices"
           summary="What we save on this device and how to turn alerts off."
@@ -431,9 +539,9 @@ export default function NotificationPrefsPanel({
               Home Screen and open it from there. Otherwise Apple may not show them.
             </p>
             <p>
-              Turn off push above, change categories in this screen, or sign out to stop new alerts
-              from reaching this device. If you join a pool later, a message might mention that pool
-              by name so you know what it&apos;s about.
+              Turn off push above, change the push, in-app, or email switches, or sign out to stop
+              new alerts from reaching this device. If you join a pool later, a message might mention
+              that pool by name so you know what it&apos;s about.
             </p>
           </div>
         </NotificationAccordionSection>

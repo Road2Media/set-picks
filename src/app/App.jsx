@@ -4,6 +4,7 @@ import { Navigate, Routes, Route } from 'react-router-dom';
 import { registerRouteChunkLoaders } from '../shared/lib/routeChunkPrefetch';
 
 import RootAppShell from './layout/RootAppShell';
+import { BandProvider } from './providers/BandContext';
 
 // Every top-level route is lazy-loaded so direct hits on e.g.
 // `/dashboard/profile` don't pay the full dashboard+admin+pools download on
@@ -43,6 +44,7 @@ const HowScoringWorksPage = lazy(() => import('../pages/marketing/HowScoringWork
 const HowScoringChangedPage = lazy(() => import('../pages/marketing/HowScoringChangedPage'));
 const PublicTourStatsPage = lazy(() => import('../pages/marketing/PublicTourStatsPage'));
 const MsgGardenStatsPage = lazy(() => import('../pages/marketing/MsgGardenStatsPage'));
+const HundredthShowPage = lazy(() => import('../pages/marketing/HundredthShowPage'));
 const AnnualTourStatsPage = lazy(() => import('../pages/marketing/AnnualTourStatsPage'));
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
 const PhishIqPage = lazy(() => import('../pages/marketing/PhishIqPage'));
@@ -61,7 +63,13 @@ const CardShellPreviewPage = lazy(() => import('../pages/dev/CardShellPreviewPag
 function App() {
   return (
     <Routes>
-      <Route element={<RootAppShell />}>
+      <Route
+        element={
+          <BandProvider>
+            <RootAppShell />
+          </BandProvider>
+        }
+      >
         {/* Soft-nav compat inside app SPA. Marketing hard-nav uses login.html (#892). */}
         <Route path="/login" element={<LoginPage />} />
 
@@ -77,6 +85,7 @@ function App() {
         <Route path="/how-scoring-changed" element={<HowScoringChangedPage />} />
         <Route path="/tour-stats" element={<PublicTourStatsPage />} />
         <Route path="/phish-at-msg" element={<MsgGardenStatsPage />} />
+        <Route path="/phish-at-msg/100th" element={<HundredthShowPage />} />
         <Route
           path="/tour-stats/msg"
           element={<Navigate to="/phish-at-msg" replace />}

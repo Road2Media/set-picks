@@ -1,6 +1,8 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
+import { Panel } from '../../../shared/ui/Card';
+
 /**
  * Ranked top-picks intensity strip (#553). Frequency-forward; secondary
  * hit counts when available from setlist join.
@@ -33,9 +35,7 @@ export default function TopPicksFrequencyStrip({
   );
 
   return (
-    <section
-      className={`${flushTop ? '' : 'mt-6 '}rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass`}
-    >
+    <Panel as="section" className={flushTop ? '' : 'mt-6'}>
       <h2 className="mb-1 text-xs font-black uppercase tracking-widest text-content-secondary">
         Top picks
       </h2>
@@ -99,6 +99,6 @@ export default function TopPicksFrequencyStrip({
           })}
         </ul>
       )}
-    </section>
+    </Panel>
   );
 }

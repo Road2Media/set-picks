@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 import { useSignOut } from '../../auth';
+import { HideCrowdPulsePreference } from '../../crowd-picks/preference';
 import { InstallAppCard, isInstalled } from '../../install';
 import { NotificationPrefsPanel } from '../../notifications';
 import Button from '../../../shared/ui/Button';
@@ -14,7 +15,7 @@ import AccountSecurity from './AccountSecurity';
 import DeleteAccountSection from './DeleteAccountSection';
 
 /**
- * Preferences tertiary — sign-in, logout, notification prefs, install/PWA, legal.
+ * Preferences tertiary — sign-in, logout, play prefs, notification prefs, install/PWA, legal.
  * Contact us is `support@setlistpickem.com` (inbound allowlist → Workspace).
  *
  * @param {{ user: import('firebase/auth').User | null | undefined }} props
@@ -71,11 +72,22 @@ export default function AccountPreferencesScreen({ user }) {
 
       <div className="mt-10 border-t border-border-muted pt-8">
         <p className="mb-1 text-xs font-black uppercase tracking-widest text-content-secondary">
+          Play
+        </p>
+        <p className="mb-6 text-sm font-bold leading-relaxed text-content-secondary">
+          Crowd pulse shows songs other players locked in. Hide it when you
+          want to pick without that.
+        </p>
+        <HideCrowdPulsePreference />
+      </div>
+
+      <div className="mt-10 border-t border-border-muted pt-8">
+        <p className="mb-1 text-xs font-black uppercase tracking-widest text-content-secondary">
           Notifications
         </p>
         <p className="mb-6 text-sm font-bold leading-relaxed text-content-secondary">
-          Messages always appear in your inbox on Messages. Use the controls below for push and
-          email.
+          Push, messages in the app, and email each have their own switches. Turning one off
+          does not change the others.
         </p>
         <NotificationPrefsPanel
           focusSection={focusPush ? 'push' : null}

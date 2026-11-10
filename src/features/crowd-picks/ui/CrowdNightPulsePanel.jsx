@@ -1,6 +1,8 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ChevronDown, Lock, Radio } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { ChevronDown, ChevronRight, Lock, Radio } from 'lucide-react';
 
+import { crowdNightStatsHref } from '../../../shared/config/dashboardRoutes';
 import {
   DASHBOARD_CARD_BODY,
   DASHBOARD_CARD_CHEVRON,
@@ -10,36 +12,21 @@ import {
 import DashboardJobShell, { DASHBOARD_JOB_ICON } from '../../../shared/ui/DashboardJobShell';
 import {
   trackCrowdPulseFullExpand,
-  trackCrowdPulseSectionOpen,
+  trackCrowdPulseTeaserExpand,
   trackCrowdPulseView,
 } from '../model/crowdPulseAnalytics';
 import CrowdPulseTopTable from './CrowdPulseTopTable';
 
 /**
- * Crowd pulse summary + expandable deep analysis (#694 ship).
- * Collapsed by default to match sibling Standings card heights: the summary
- * row teases the leading multi-picker song; expanding reveals the top table
- * and the "Full crowd stats" disclosure.
- * Pre-lock (NEXT): preview Song + Last blur (pickers / gap stay clear);
- * deep tables (full multi / gaps / vintage / leaders) blur until showtime.
- * Deep sections are exclusive (one open at a time). Closing a sibling shifts
- * layout; we keep the tapped header at its pre-click viewport Y (no pin-to-top).
+ * Crowd pulse summary on Standings (#694).
+ * Collapsed by default. Expanding shows the top multi-picker table and a
+ * link to the Stats night deep dive. Named chalk stays blurred pre-lock.
  * Presentational — data from `useCrowdNightStats`.
  *
  * @param {object} props
  * @param {string} [props.showDate]
- * @param {import('../model/aggregateCrowdNightSongs').CrowdNightSongStats & {
- *   multiPickerFull?: Array<{
- *     title: string,
- *     cardCount: number,
- *     pctOfPickers: number,
- *     gap?: number | null,
- *     last?: string | null,
- *   }>
- * } | null} props.night
+ * @param {import('../model/aggregateCrowdNightSongs').CrowdNightSongStats | null} props.night
  * @param {{ pickers: number, uniqueSongs: number, topMulti: Array<{ title: string, cardCount: number, pctOfPickers: number, gap?: number | null, last?: string | null }> } | null} props.card
- * @param {{ highestGap: Array<{ title: string, cardCount: number, pctOfPickers?: number, gap: number, last?: string | null }>, vintage: { avgYear: number | null, medianYear: number | null, coveragePct: number, datedSlots: number, totalSlots: number } } | null} props.catalog
- * @param {{ lockedInLabel: string, leaders: Array<{ rank: number, handle: string, totalPoints: number }>, songs: Array<{ title: string, cardCount: number, subtitle?: string | null, gap?: number | null, last?: string | null }> } | null} props.leaders
  * @param {boolean} [props.catalogLoading]
  * @param {boolean} [props.blurDeepStats] — true while picks still editable (NEXT)
  * @param {Set<string> | null} [props.playedTitles] — official setlist hits (LIVE + PAST)
@@ -49,18 +36,12 @@ export default function CrowdNightPulsePanel({
   showDate = '',
   night,
   card,
-  catalog,
-  leaders,
   catalogLoading = false,
   blurDeepStats = false,
   playedTitles = null,
   className = '',
 }) {
-  const [openDeepSection, setOpenDeepSection] = useState(
-    /** @type {string | null} */ (null)
-  );
-  const pickers =
-    card && night && night.pickers > 0 ? card.pickers : 0;
+  const pickers = card && night && night.pickers > 0 ? card.pickers : 0;
 
   useCrowdPulseViewTelemetry(showDate, blurDeepStats, pickers);
 
@@ -86,41 +67,35 @@ export default function CrowdNightPulsePanel({
     );
   }
 
-  const vintageLabel =
-    catalog?.vintage?.avgYear != null
-      ? `~${Math.round(catalog.vintage.avgYear)}`
-      : catalogLoading
-        ? '…'
-        : '—';
-
-  const multiFull = night.multiPickerFull || night.multiPickerSongs || [];
-  const highestGapRows = catalog?.highestGap || [];
-  const leaderSongs = leaders?.songs || [];
   const showPlayedLegend =
     playedTitles instanceof Set && playedTitles.size > 0;
-
-  const multiLead = multiFull[0] || null;
-  const gapLead = highestGapRows[0] || null;
-  const leadersLead = leaderSongs[0] || null;
-
-  const onFullToggle = (event) => {
-    if (event.currentTarget.open) {
-      trackCrowdPulseFullExpand({ show_date: showDate || '' });
-    } else {
-      setOpenDeepSection(null);
-    }
-  };
+  const topSong = card.topMulti[0] || null;
+  const statsHref = crowdNightStatsHref(showDate);
 
   const onPanelToggle = (event) => {
     if (event.currentTarget.open) {
-      trackCrowdPulseSectionOpen({
+      trackCrowdPulseTeaserExpand({
         show_date: showDate || '',
-        section: 'top_songs',
+        deep_stats: blurDeepStats ? 'locked' : 'open',
+        via: 'summary',
       });
     }
   };
 
-  const topSong = card.topMulti[0] || null;
+  const onFullStatsClick = () => {
+    if (blurDeepStats) {
+      trackCrowdPulseTeaserExpand({
+        show_date: showDate || '',
+        deep_stats: 'locked',
+        via: 'full_link',
+      });
+      return;
+    }
+    trackCrowdPulseFullExpand({
+      show_date: showDate || '',
+      deep_stats: 'open',
+    });
+  };
 
   return (
     <DashboardJobShell
@@ -147,7 +122,6 @@ export default function CrowdNightPulsePanel({
               />
             </p>
           </div>
-          {/* Full-width row so long song titles get the whole card width. */}
           {topSong ? (
             <p className={`mt-0.5 truncate ${DASHBOARD_CARD_BODY}`}>
               <BlurredSongTitle
@@ -187,166 +161,24 @@ export default function CrowdNightPulsePanel({
           </p>
         )}
 
-        <details
-          className="group mt-3 border-t border-border-subtle pt-2"
-          onToggle={onFullToggle}
+        <Link
+          to={statsHref}
+          onClick={onFullStatsClick}
+          className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle pt-2 text-[10px] font-black uppercase tracking-widest text-brand-primary"
         >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-[10px] font-black uppercase tracking-widest text-brand-primary [&::-webkit-details-marker]:hidden">
-            <span className="inline-flex items-center gap-1.5">
-              Full crowd stats
-              {blurDeepStats ? (
-                <Lock className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
-              ) : null}
-            </span>
-            <ChevronDown
-              className="h-3.5 w-3.5 shrink-0 transition-transform group-open:rotate-180"
-              aria-hidden
-            />
-          </summary>
-
-          <div className="relative mt-3 min-h-[7rem]">
+          <span className="inline-flex items-center gap-1.5">
+            Full crowd stats
             {blurDeepStats ? (
-              <div
-                className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1 rounded-lg px-3 text-center"
-                role="status"
-              >
-                <p className="text-[11px] font-bold text-white md:text-xs">
-                  Unlocks at showtime
-                </p>
-                <p className="max-w-[16rem] text-[10px] font-medium text-content-secondary">
-                  Full tables, vintage, and tour leaders stay private until
-                  picks lock
-                </p>
-              </div>
+              <Lock className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
             ) : null}
-
-            <div
-              className={`space-y-2 ${
-                blurDeepStats
-                  ? 'pointer-events-none select-none blur-sm'
-                  : ''
-              }`}
-              aria-hidden={blurDeepStats || undefined}
-            >
-              <CrowdDeepSection
-                title="Multi-picker songs"
-                subtitle="Every song on 2+ cards tonight"
-                sectionId="multi_picker"
-                showDate={showDate}
-                open={openDeepSection === 'multi_picker'}
-                onOpenChange={setOpenDeepSection}
-                teaser={
-                  multiLead ? (
-                    <>
-                      <BlurredSongTitle
-                        title={multiLead.title}
-                        blur={blurDeepStats}
-                      />{' '}
-                      leads on {multiLead.cardCount} cards
-                    </>
-                  ) : null
-                }
-              >
-                <CrowdPulseTopTable
-                  rows={multiFull}
-                  playedTitles={playedTitles}
-                  catalogLoading={catalogLoading}
-                  blurSongTitles={blurDeepStats}
-                  className=""
-                />
-              </CrowdDeepSection>
-
-              <CrowdDeepSection
-                title="Highest gaps"
-                subtitle="Top 10 picks by pre-show gap"
-                sectionId="highest_gaps"
-                showDate={showDate}
-                open={openDeepSection === 'highest_gaps'}
-                onOpenChange={setOpenDeepSection}
-                teaser={
-                  gapLead ? (
-                    <>
-                      <BlurredSongTitle
-                        title={gapLead.title}
-                        blur={blurDeepStats}
-                      />
-                      {typeof gapLead.gap === 'number'
-                        ? ` · gap ${gapLead.gap}`
-                        : ''}
-                    </>
-                  ) : catalogLoading ? (
-                    'Loading…'
-                  ) : null
-                }
-              >
-                {catalogLoading && !highestGapRows.length ? (
-                  <p className="text-[11px] text-content-secondary md:text-xs">
-                    Loading catalog…
-                  </p>
-                ) : (
-                  <CrowdPulseTopTable
-                    rows={highestGapRows}
-                    playedTitles={playedTitles}
-                    catalogLoading={catalogLoading}
-                    blurSongTitles={blurDeepStats}
-                    className=""
-                  />
-                )}
-              </CrowdDeepSection>
-
-              <CrowdDeepSection
-                title="Crowd vintage"
-                subtitle="Slot-weighted debut years across all picks"
-                sectionId="vintage"
-                showDate={showDate}
-                open={openDeepSection === 'vintage'}
-                onOpenChange={setOpenDeepSection}
-              >
-                <p className="text-[12px] font-semibold text-white md:text-sm">
-                  Mean debut {vintageLabel}
-                  {catalog?.vintage?.medianYear != null
-                    ? ` · median ${Math.round(catalog.vintage.medianYear)}`
-                    : ''}
-                </p>
-                <p className="mt-1 text-[10px] font-medium text-content-secondary md:text-[11px]">
-                  Coverage {catalog?.vintage?.coveragePct ?? 0}% (
-                  {catalog?.vintage?.datedSlots ?? 0}/
-                  {catalog?.vintage?.totalSlots ?? 0} slots)
-                </p>
-              </CrowdDeepSection>
-
-              <CrowdDeepSection
-                title="Songs from top tour leaders"
-                subtitle="What the tour top 5 locked in tonight"
-                sectionId="leaders"
-                showDate={showDate}
-                open={openDeepSection === 'leaders'}
-                onOpenChange={setOpenDeepSection}
-                teaser={
-                  leadersLead ? (
-                    <>
-                      <BlurredSongTitle
-                        title={leadersLead.title}
-                        blur={blurDeepStats}
-                      />{' '}
-                      · on {leadersLead.cardCount} leader
-                      {leadersLead.cardCount === 1 ? '' : 's'}
-                    </>
-                  ) : null
-                }
-              >
-                <CrowdPulseTopTable
-                  rows={leaderSongs}
-                  playedTitles={playedTitles}
-                  catalogLoading={catalogLoading}
-                  blurSongTitles={blurDeepStats}
-                  countHeader="Among"
-                  className=""
-                />
-              </CrowdDeepSection>
-            </div>
-          </div>
-        </details>
+          </span>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        </Link>
+        {blurDeepStats ? (
+          <p className="mt-1 text-[10px] font-medium text-content-secondary">
+            Names, vintage, and tour leaders unlock at showtime
+          </p>
+        ) : null}
       </details>
     </DashboardJobShell>
   );
@@ -369,193 +201,16 @@ function useCrowdPulseViewTelemetry(showDate, blurDeepStats, pickers) {
       show_date: showDate,
       deep_stats,
       pickers,
+      surface: 'standings',
     });
   }, [showDate, blurDeepStats, pickers]);
-}
-
-/**
- * Exclusive expandable deep-stats card (one open at a time via parent).
- * On open, siblings close synchronously; scroll is adjusted only enough to
- * keep the tapped header at the same viewport Y (avoids mid-list landings
- * and pin-to-top overshoot under fixed dashboard chrome).
- *
- * @param {{
- *   title: string,
- *   subtitle?: string,
- *   sectionId: string,
- *   showDate?: string,
- *   open: boolean,
- *   onOpenChange: (
- *     next: string | null | ((current: string | null) => string | null)
- *   ) => void,
- *   teaser?: React.ReactNode,
- *   children: React.ReactNode,
- * }} props
- */
-function CrowdDeepSection({
-  title,
-  subtitle,
-  sectionId,
-  showDate = '',
-  open,
-  onOpenChange,
-  teaser = null,
-  children,
-}) {
-  const summaryRef = useRef(/** @type {HTMLElement | null} */ (null));
-  /** @type {React.MutableRefObject<number | null>} */
-  const anchorYRef = useRef(null);
-
-  const onToggle = (event) => {
-    const details = event.currentTarget;
-    const nextOpen = details.open;
-    if (nextOpen) {
-      // Keep anchor through sibling close + React commit (useLayoutEffect).
-      if (anchorYRef.current == null && summaryRef.current) {
-        anchorYRef.current = summaryRef.current.getBoundingClientRect().top;
-      }
-
-      closeSiblingDetails(details);
-      onOpenChange(sectionId);
-      trackCrowdPulseSectionOpen({
-        show_date: showDate || '',
-        section: sectionId,
-      });
-
-      const summary = summaryRef.current;
-      const anchorY = anchorYRef.current;
-      if (summary && typeof anchorY === 'number') {
-        keepHeaderAtViewportY(summary, anchorY);
-      }
-      return;
-    }
-    // Sibling close sets `.open = false` and fires toggle — don't clobber
-    // the section that just opened.
-    onOpenChange((current) => (current === sectionId ? null : current));
-  };
-
-  // React controlled `open` may shift layout again after the sync close.
-  useLayoutEffect(() => {
-    if (!open) return;
-    const summary = summaryRef.current;
-    const anchorY = anchorYRef.current;
-    if (!summary || typeof anchorY !== 'number') return;
-    keepHeaderAtViewportY(summary, anchorY);
-    anchorYRef.current = null;
-  }, [open]);
-
-  return (
-    <details
-      className="group/deep rounded-lg border border-border-subtle/70 bg-brand-bg/35 open:bg-brand-bg/50"
-      open={open}
-      onToggle={onToggle}
-    >
-      <summary
-        ref={summaryRef}
-        className="flex cursor-pointer list-none items-start justify-between gap-2 px-2.5 py-2 transition-colors hover:bg-white/[0.03] [&::-webkit-details-marker]:hidden"
-        onPointerDown={(event) => {
-          if (!open) {
-            anchorYRef.current = event.currentTarget.getBoundingClientRect().top;
-          }
-        }}
-      >
-        <div className="min-w-0">
-          <p className="text-[12px] font-bold leading-snug text-brand-accent-blue md:text-[13px]">
-            {title}
-          </p>
-          {subtitle ? (
-            <p className="mt-0.5 text-[10px] font-medium leading-snug text-content-secondary md:text-[11px]">
-              {subtitle}
-            </p>
-          ) : null}
-          {teaser ? (
-            <p className="mt-0.5 truncate text-[10px] font-medium leading-snug text-content-secondary md:text-[11px]">
-              {teaser}
-            </p>
-          ) : null}
-        </div>
-        <ChevronDown
-          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-content-secondary transition-transform group-open/deep:rotate-180"
-          aria-hidden
-        />
-      </summary>
-      <div className="border-t border-border-subtle/50 px-2.5 pb-2.5 pt-2">
-        {children}
-      </div>
-    </details>
-  );
-}
-
-/**
- * @param {HTMLDetailsElement} current
- */
-function closeSiblingDetails(current) {
-  const parent = current.parentElement;
-  if (!parent) return;
-  for (const child of parent.children) {
-    if (
-      child !== current &&
-      child instanceof HTMLDetailsElement &&
-      child.open
-    ) {
-      child.open = false;
-    }
-  }
-}
-
-/**
- * Prefer the dashboard `main` scrollport; fall back to nearest scroller.
- * @param {Element} node
- * @returns {HTMLElement}
- */
-function getScrollParent(node) {
-  /** @type {HTMLElement | null} */
-  let mainEl = null;
-  /** @type {HTMLElement | null} */
-  let firstScrollable = null;
-  let el = node.parentElement;
-  while (el) {
-    if (el instanceof HTMLElement) {
-      if (el.tagName === 'MAIN') mainEl = el;
-      const { overflowY } = window.getComputedStyle(el);
-      const scrolls =
-        (overflowY === 'auto' ||
-          overflowY === 'scroll' ||
-          overflowY === 'overlay') &&
-        el.scrollHeight > el.clientHeight + 1;
-      if (scrolls && !firstScrollable) firstScrollable = el;
-    }
-    el = el.parentElement;
-  }
-  if (mainEl && mainEl.scrollHeight > mainEl.clientHeight + 1) {
-    return mainEl;
-  }
-  if (firstScrollable) return firstScrollable;
-  if (mainEl) return mainEl;
-  const doc = document.scrollingElement || document.documentElement;
-  return doc instanceof HTMLElement ? doc : document.documentElement;
-}
-
-/**
- * After sibling collapse, keep `headerEl` at the same viewport Y as before.
- * @param {HTMLElement} headerEl
- * @param {number} anchorY
- */
-function keepHeaderAtViewportY(headerEl, anchorY) {
-  const parent = getScrollParent(headerEl);
-  const nowY = headerEl.getBoundingClientRect().top;
-  const dy = nowY - anchorY;
-  if (Math.abs(dy) < 1) return;
-  parent.scrollTop += dy;
-  if (parent.scrollTop < 0) parent.scrollTop = 0;
 }
 
 /**
  * @param {{ title: string, blur?: boolean, tone?: 'red' | 'blue' }} props
  */
 function BlurredSongTitle({ title, blur = false, tone = 'red' }) {
-  const toneClass =
-    tone === 'blue' ? 'text-brand-accent-blue' : 'text-white';
+  const toneClass = tone === 'blue' ? 'text-brand-accent-blue' : 'text-white';
   return (
     <>
       <span

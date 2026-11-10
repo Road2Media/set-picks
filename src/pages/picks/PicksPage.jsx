@@ -5,6 +5,7 @@ import { CheckCircle2, Lock } from 'lucide-react';
 
 import { logCommsEmailLanded } from '../../features/comms';
 import {
+  PicksCrowdHelper,
   PicksFieldsForm,
   PicksLockTimingBanner,
   PicksMobileFixedChrome,
@@ -162,6 +163,14 @@ export default function PicksPage({ user: userProp, selectedDate: selectedDatePr
             }
           />
         ) : null}
+        <PicksCrowdHelper
+          selectedDate={selectedDate}
+          showStatus={showStatus}
+          isLocked={isLocked}
+          formData={formData}
+          onChange={handleInput}
+          pickRecommendationsArtifact={outlet.pickRecommendationsArtifact}
+        />
         <Card
           as="form"
           onSubmit={handleSave}

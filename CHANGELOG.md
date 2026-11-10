@@ -8,6 +8,55 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.113.0] — 2026-11-10
+
+### Added
+- **Pick the 100th (#1147)** — January 2, 2027 at Madison Square Garden keeps the same scoring. The show card on Standings, Scorecard, pool game status, and the desktop tour-date control carries a 100th mark. `/phish-at-msg/100th` is a public, prerendered board of handles, rank, points, and exact slots. Email addresses and account fields are dropped before a row is stored or rendered. The MSG page and the New Year's Run page link to it. The night-of `show_recap` for that date includes a `share_pack` hook (path, url, text). After that send, `comms_process_state/show_recap:2027-01-02` is `sent`, so a later rollup does not send it again. Staging and local dev can pass `?dryRunDate=YYYY-MM-DD`. Production ignores that query. A past-date board can be printed, and written only with `--confirm`, by `node functions/scripts/publishHundredthNightBoard.js`.
+
+## [1.112.0] — 2026-11-10
+
+### Added
+- **Multi-band foundation contracts (#301)** — `BandConfig` registers Phish only. Slot ids come from `FORM_FIELDS`. The footer credit is the same Mockingbird Foundation / Phish.Net link the splash and marketing shells already render. `BandProvider` wraps the main app shell, defaults to `phish`, and ignores an unknown `?band=`. Nothing reads the context yet. No Firestore writes, rules, nav, or copy changes. No declared API change. Server provider behavior is a spec in `functions/providers/_contract.md` only.
+
+## [1.111.1] — 2026-11-09
+
+### Changed
+- **Settings panels and list rows use named shells (Refs #1090)** — Profile, account, inbox, install, admin, and pool join/create blocks use `Panel` (`rounded-3xl`, `border-border-subtle`, `bg-surface-panel`, inset glass, `p-6`). Pool rows, show leaderboard rows, global ranking rows, tour ranking rows, pool hub leaderboard rows, and invite chooser options use `Row` (`rounded-xl`, `border-border-subtle/45`, `bg-surface-panel`, inset glass, the same padding as a dashboard card). A self row and a leading show row are border modifiers. A first-place mark stays on the rank chip. Neither shell uses the Standings you / night wash. `docs/design.md` adds the panel and row branches. `verify:dashboard-ui` fails a new hand-built `rounded-*` card border under `src/features` and `src/pages`. No declared API change.
+
+## [1.111.0] — 2026-11-09
+
+### Added
+- **Per-channel notification prefs (#1045 / #513 Phase 3)** — Preferences keeps separate switches for push, messages in the app, and email. Each switch writes `users/{uid}.notificationPrefs.push`, `.inApp`, or `.email` (family keys `reminders`, `results`, `nearMiss`, `lifecycle`, `commercial`). A boolean on that channel wins. If the channel key was never set, the old flat `notificationPrefs.<family>` value still applies, so an existing opt-out keeps blocking every channel until that channel is changed on its own. `commercial` stays off until an explicit `true`. Close calls stay on push only. Email has scores and tour updates. The show-day pick reminder email is still a service note and is not one of those switches.
+
+### Changed
+- **Email unsubscribe no longer turns off push or in-app messages** — Unsubscribe, the one-click header, a mailto unsubscribe, and a spam complaint set `notificationPrefs.email.lifecycle` and `notificationPrefs.email.commercial` to `false`. They leave the flat keys alone. `email_suppression` still pauses every email to that address. Re-enable email turns `email.lifecycle` back on and does not turn commercial email, push, or in-app back on. Delivery, the legacy post-show push, the Sphere recap replay push, and the Summer Tour reminder audience use the same per-channel read. That server behavior starts when those Functions are deployed. Until then, delivery still reads the flat keys.
+
+## [1.110.0] — 2026-11-09
+
+### Added
+- **Scorecard pool audience and live crowd % (#1043)** — `/dashboard/picks/scorecard` still uses the date picker. A Compare control appears when you are in a pool: Everyone, or one pool (`?pool=`). Rank, “N players also picked this,” and crowd % use that pool’s membership filter, including the join-day rule. A night that does not count for the pool says so. After showtime, each slot shows Crowd and the share of locked cards that include that song. That number is the same night aggregate as Standings and Make Picks. It is not the play guess. It stays off before showtime. Hide crowd pulse hides Crowd and the overlap line. Rank and graded hits stay. Make Picks Odds and Picks Lab are unchanged. No new tab or collection. Pre-lock overlap stays off: those counts would show how the room is leaning while picks are still open.
+
+### Changed
+- **Scorecard no longer shows model odds** — `playProb` from `pick-recommendations.json` left this card. `scorecard_metric_impression` `metric` is `overlap`, `crowd`, or `rank`.
+
+## [1.109.0] — 2026-11-09
+
+### Added
+- **Hide crowd pulse (#694 P3)** — Preferences has a Play control, Hide crowd pulse. It is off until a player turns it on. The choice is stored on `users/{uid}.gamePrefs.hideCrowdPulse`. When it is on, Standings drops the crowd pulse card, Make Picks drops tour chalk and crowd lean, and `/dashboard/stats/night` says crowd pulse is hidden with a link back to Preferences. That page does not load the night's picks while the preference is on. Pre-lock blur is unchanged when the surfaces stay visible. GA4: `crowd_pulse_teaser_expand` (opening the Standings teaser, and a pre-lock click on Full crowd stats), `crowd_pulse_full_expand` with `deep_stats: open` after lock, and `crowd_pulse_helper_use` when Use fills a slot. `picks_night_stats/{showDate}` stays deferred: the night aggregates already read `picks` by show date, and there is no lock step that already holds that aggregate to write safely. Rare-only, diversity, slot fill %, and pool % stay off the product UI.
+
+### Fixed
+- **Dev dashboard load** — `npm run dev` on Vite 8 serves `functions/pointsTieRanking.cjs` as ESM so the dashboard can import `COMPARATORS`. The production build already did. No scoring change.
+
+## [1.108.0] — 2026-11-09
+
+### Added
+- **Picks crowd helper (#694 P2)** — Make Picks shows tour chalk before showtime and live crowd chips after picks lock. Chalk is songs the room locked on earlier nights of this tour, using the same night aggregate. It does not include the open night. Use fills the first open slot and does not save until Lock In Picks. When the prediction file matches this night, a chip can show Odds. That number is the play guess, not how many people picked the song tonight. After lock (live or past), the helper shows consensus (at least 25% of cards, or at least 3 cards), the favorite in each slot that clears that bar, and the highest gaps. Full crowd stats still opens `/dashboard/stats/night`. No new nav item. Hide-crowd preference and expand telemetry stay on #694 P3.
+
+## [1.107.0] — 2026-11-09
+
+### Added
+- **Crowd night on Stats (#694 P1)** — `/dashboard/stats/night` is the show-scoped deep dive behind Standings **Full crowd stats**. Same crowd aggregates as the standings card. Consensus is a song on at least 25% of cards or on at least 3 cards. Each slot shows its favorite title. After lock, the page says how often those favorites matched the official slot (Set 1 opener, Set 1 closer, Set 2 opener, Set 2 closer, and encore). A miss does not name what played. Wildcard stays a pick slot and is left out of that comparison. Gap, last played, and slot results cite Phish.net. The page does not list the night's setlist. Pre-lock, names stay blurred until showtime. The Stats tab stays active. Personal, Global, and Band stay the only tertiary chips. This path uses the date picker. No new top-level nav item.
+
 ## [1.106.1] — 2026-11-09
 
 ### Changed

@@ -65,6 +65,10 @@ const {
   automatedFanoutBlock,
 } = require("./commsProcessState");
 const {
+  hundredthRecapSentSpec,
+  withHundredthSharePack,
+} = require("./hundredthShowBoard.cjs");
+const {
   editionStatusFromGroup,
   editionBlocksAutomatedSend,
   campaignIdForTourGroup,
@@ -582,16 +586,19 @@ async function deliverPostRollupComms({
     recapRecipients.push({
       uid,
       userData,
-      payload: {
-        handle: handleFromUser(pickData) || handleFromUser(userData),
-        show_date: showDate,
-        venue_name: meta.venue || "",
-        venue_city: meta.city || "",
-        show_score: score,
-        global_rank: rankInfo.rank,
-        global_total_pickers: rankInfo.total,
-        ...enrichment,
-      },
+      payload: withHundredthSharePack(
+        {
+          handle: handleFromUser(pickData) || handleFromUser(userData),
+          show_date: showDate,
+          venue_name: meta.venue || "",
+          venue_city: meta.city || "",
+          show_score: score,
+          global_rank: rankInfo.rank,
+          global_total_pickers: rankInfo.total,
+          ...enrichment,
+        },
+        showDate,
+      ),
       vars: { uid, showDate },
     });
 
@@ -622,6 +629,20 @@ async function deliverPostRollupComms({
   }
 
   const recapSummary = await runtime.deliver("show_recap", recapRecipients);
+  const sentSpec = hundredthRecapSentSpec(showDate, recapSummary);
+  if (sentSpec && admin) {
+    await writeProcessState({
+      db,
+      admin,
+      triggerId: sentSpec.triggerId,
+      scope: sentSpec.scope,
+      status: sentSpec.status,
+      finalDate: sentSpec.finalDate,
+      source: sentSpec.source,
+      supersedes: sentSpec.supersedes,
+      extra: sentSpec.extra,
+    });
+  }
   const engagementSummary =
     engagementRecipients.length > 0
       ? await runtime.deliver("tour_engagement_reminder", engagementRecipients)

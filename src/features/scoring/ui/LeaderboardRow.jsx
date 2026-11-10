@@ -1,4 +1,5 @@
 import React from 'react';
+import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import { calculateTotalScore } from '../../../shared/utils/scoring';
 import { StandingsPlayerAvatar } from '../../profile';
@@ -36,18 +37,16 @@ export default function LeaderboardRow({
     (typeof p.avatarId === 'string' ? p.avatarId : null);
   const badges = identity?.badges ?? null;
 
-  // Self gets a stronger brand ring so users can locate themselves at
-  // a glance — doubly useful pre-grade when the row is pinned to rank 1.
-  const borderTone = isSelf
-    ? 'border-brand-primary/55 ring-1 ring-brand-primary/35'
-    : isLeaderRow
-    ? 'border-border-venue/55 ring-1 ring-brand-primary/15'
-    : 'border-border-subtle/35';
+  // Self and the leading row are border modifiers on the shared row
+  // shell. A first-place badge stays on the rank chip.
+  const tone = isSelf ? 'self' : isLeaderRow ? 'leader' : 'default';
 
   return (
-    <div
+    <Row
       id={anchorId || undefined}
-      className={`bg-surface-panel rounded-xl border overflow-hidden shadow-inset-glass transition-all scroll-mt-24 md:scroll-mt-28 ${borderTone}`}
+      padding="none"
+      tone={tone}
+      className="overflow-hidden transition-all scroll-mt-24 md:scroll-mt-28"
     >
       <div
         role="button"
@@ -124,6 +123,6 @@ export default function LeaderboardRow({
           />
         </div>
       )}
-    </div>
+    </Row>
   );
 }

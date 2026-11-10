@@ -9,7 +9,7 @@ Internal analytics for **nightly picker volume** and **crowd pick composition**.
 | **A** | Admin report script + methodology | Done (PR #688) |
 | **B** | Human review of Summer Tour reports | Done — see [02-phase-b-review.md](./02-phase-b-review.md) |
 | **C** | Stats candidates + C1–C3 + Standings UI | Spec [#689](https://github.com/pat792/set-picks/issues/689); pre-lock [04-prelock-disclosure.md](./04-prelock-disclosure.md); **Standings ship** [#694](https://github.com/pat792/set-picks/issues/694) P0 |
-| **Later** | Stats page deep dive, picks helper | [#694](https://github.com/pat792/set-picks/issues/694) P1–P2 |
+| **Later** | Stats page deep dive (shipped v1.107.0), picks helper (shipped v1.108.0) | [#694](https://github.com/pat792/set-picks/issues/694) P3 prefs/telemetry still open |
 
 ## Data spine
 

@@ -64,7 +64,8 @@ export const NAV_LABEL_ACCOUNT = 'Account';
 
 /**
  * Preferences tertiary (`/dashboard/profile/account`) — security, logout, legal,
- * install/PWA, and notification prefs. Path stays `PROFILE_CLUSTER_PATHS.account`.
+ * install/PWA, notification prefs, and Hide crowd pulse. Path stays
+ * `PROFILE_CLUSTER_PATHS.account`.
  */
 export const NAV_LABEL_PREFERENCES = 'Preferences';
 

@@ -5,6 +5,7 @@ import {
   SCORECARD_EMPTY_TITLE,
   SCORECARD_HINT,
   SCORECARD_LOCKED_UNGRADED_COPY,
+  scorecardPoolExcludedCopy,
 } from './PicksScorecardCard';
 
 describe('PicksScorecardCard copy (#767)', () => {
@@ -13,11 +14,20 @@ describe('PicksScorecardCard copy (#767)', () => {
     expect(SCORECARD_EMPTY_BODY).toMatch(/Make Picks/i);
   });
 
-  it('explains odds in plain language and showtime comparison in the header hint', () => {
-    expect(SCORECARD_HINT).toMatch(/best guess/i);
+  it('explains crowd share, slot overlap, and showtime in the header hint', () => {
     expect(SCORECARD_HINT).toMatch(/showtime/i);
+    expect(SCORECARD_HINT).toMatch(/slot/i);
     expect(SCORECARD_HINT).toMatch(/Standings/i);
-    expect(SCORECARD_HINT).not.toMatch(/predictive|Overlap unlocks|model odds/i);
+    expect(SCORECARD_HINT).toMatch(/Hide crowd pulse/i);
+    expect(SCORECARD_HINT).not.toMatch(/predictive|model odds|chair|best guess/i);
+  });
+
+  it('says when a night does not count for the selected pool', () => {
+    expect(scorecardPoolExcludedCopy('Alpha')).toBe(
+      'This night does not count for Alpha.',
+    );
+    expect(scorecardPoolExcludedCopy('')).toMatch(/this pool/i);
+    expect(scorecardPoolExcludedCopy('Alpha')).not.toMatch(/chair/i);
   });
 
   it('explains locked / ungraded rank pending', () => {

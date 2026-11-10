@@ -25,7 +25,7 @@ In Resend → Webhooks → the `commsResendWebhook` endpoint, enable **all** of:
 | Event | Handler | Firestore write |
 |-------|---------|-----------------|
 | `email.bounced` (Permanent only) | hard-suppress | `email_suppression/{sha256(email)}` |
-| `email.complained` | suppress + opt out lifecycle email | `email_suppression` + `users.notificationPrefs` |
+| `email.complained` | suppress + opt out lifecycle and commercial email | `email_suppression` + `users.notificationPrefs.email.lifecycle` and `.email.commercial` (#1045). Push and in-app keys are not written. |
 | `email.suppressed` | suppress | `email_suppression` |
 | `email.opened` | first-open stamp | `comms_email_engagement/{email_id}` `openedAt` |
 | `email.clicked` | first-click stamp (also sets `openedAt` if missing) | `comms_email_engagement/{email_id}` `clickedAt` |

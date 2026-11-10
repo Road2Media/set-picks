@@ -39,6 +39,7 @@ const {
   CLOSE_CALL_MAX_GAP,
 } = require("./postShowRollupPush");
 const { deliverPostRollupComms } = require("./commsEventAdapters");
+const { publishHundredthNightBoard } = require("./hundredthShowPublish.cjs");
 const { awardBadgesForUsers } = require("./badgeAwards");
 const { freezeRankSnapshotsAfterShow } = require("./badgeSnapshotJobs");
 const {
@@ -361,6 +362,19 @@ async function runRollupForShow({
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     logger?.warn?.("runRollupForShow.comms failed", { showDate, trigger, msg });
+  }
+
+  try {
+    await publishHundredthNightBoard({
+      db,
+      showDate,
+      pickDocs: picksSnap.docs,
+      scoresByPickId: newScoresById,
+      actualSetlist,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logger?.warn?.("runRollupForShow.hundredthBoard failed", { showDate, trigger, msg });
   }
 
   if (processedUserIds.size > 0) {

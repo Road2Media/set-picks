@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ListMusic, Loader2, Pencil, Trophy } from 'lucide-react';
 
+import { HundredthShowCardMark } from '../../hundredth-show';
 import Button from '../../../shared/ui/Button';
 import Card from '../../../shared/ui/Card';
 
@@ -10,6 +11,7 @@ import Card from '../../../shared/ui/Card';
  *
  * @param {Object} props
  * @param {string} props.showLabel — e.g. venue + date line for the next pickable show
+ * @param {string} [props.showDate] — YYYY-MM-DD, for 100th-show branding
  * @param {boolean} props.isShowToday — when next pickable show’s calendar date is today
  * @param {boolean} props.isSecured — defensive: false while loading or on fetch error
  * @param {boolean} props.isLocked — show is not in NEXT pick window (LIVE / PAST / FUTURE)
@@ -19,6 +21,7 @@ import Card from '../../../shared/ui/Card';
  */
 export default function PoolHubActiveShow({
   showLabel,
+  showDate = '',
   isShowToday,
   isSecured,
   isLocked,
@@ -67,8 +70,9 @@ export default function PoolHubActiveShow({
             {eyebrow}
           </p>
           <p className="font-display text-lg font-bold leading-snug text-white md:text-xl">
-            <span className="text-brand-primary">{showLabel}</span>
+            <span className="break-words text-brand-primary">{showLabel}</span>
           </p>
+          <HundredthShowCardMark showDate={showDate} />
           {picksStatusLoading && !isLocked ? (
             <p className="flex items-center gap-2 text-sm font-bold text-content-secondary">
               <Loader2

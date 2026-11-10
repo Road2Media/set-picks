@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { revertRollupForShow } from '../api/adminRollupApi';
-import Card from '../../../shared/ui/Card';
+import Card, { Panel } from '../../../shared/ui/Card';
 import { AlertTriangle } from 'lucide-react';
 import { useShowCalendar } from '../../show-calendar';
 import { resolveShowTimeZone } from '../../../shared/utils/showTimeZone';
@@ -129,12 +129,7 @@ export default function AdminForm({ user, selectedDate }) {
         </p>
       </Card>
 
-      <Card
-        as="section"
-        variant="default"
-        padding="md"
-        className="space-y-6"
-      >
+      <Panel as="section" className="space-y-6">
         <div className="space-y-3">
           <h2 className="text-xs font-bold uppercase tracking-widest text-content-secondary ml-1">
             Admin actions
@@ -316,7 +311,7 @@ export default function AdminForm({ user, selectedDate }) {
             ) : null}
           </div>
         </div>
-      </Card>
+      </Panel>
       <div className="mt-6">
         <RewindWeekAdminCard {...rewindWeek} />
       </div>

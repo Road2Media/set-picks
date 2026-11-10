@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import {
   GLOBAL_LEADERBOARD_PAGE_SIZE,
@@ -117,12 +118,10 @@ function LeaderboardRow({ row, boardKey }) {
         : '—';
 
   return (
-    <li
-      className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 ${
-        row.isSelf
-          ? 'border-brand-primary/45 bg-brand-primary/10'
-          : 'border-border-subtle/30 bg-surface-panel/80'
-      }`}
+    <Row
+      as="li"
+      tone={row.isSelf ? 'self' : 'default'}
+      className="flex items-center justify-between gap-3"
     >
       <div className="flex min-w-0 items-center gap-3">
         <span
@@ -163,6 +162,6 @@ function LeaderboardRow({ row, boardKey }) {
           </p>
         ) : null}
       </div>
-    </li>
+    </Row>
   );
 }
