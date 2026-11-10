@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { createPoolInviteLink } from '../../../shared/lib/createPoolInviteLink';
 import Button from '../../../shared/ui/Button';
-import Card from '../../../shared/ui/Card';
+import { Panel } from '../../../shared/ui/Card';
 import Input from '../../../shared/ui/Input';
 import PoolInviteCodeRow from './PoolInviteCodeRow';
 import PoolInviteShareButton from './PoolInviteShareButton';
@@ -86,8 +86,8 @@ export default function PoolJoinCreateCard({
       : '';
 
   return (
-    <Card variant="default" padding="none" className="overflow-hidden">
-      <div className="flex border-b border-border-muted">
+    <Panel padding="none" className="overflow-hidden">
+      <div className="flex border-b border-border-muted/60">
         <Button
           variant="text"
           size="none"
@@ -175,7 +175,7 @@ export default function PoolJoinCreateCard({
               <p className="mt-3 text-xs font-bold uppercase tracking-widest text-content-secondary">
                 Your invite link
               </p>
-              <p className="mt-1 break-all rounded-lg border border-border-subtle bg-surface-field p-3 font-mono text-xs leading-relaxed text-slate-200">
+              <p className="mt-1 break-all rounded-lg border border-border-subtle/50 bg-surface-field p-3 font-mono text-xs leading-relaxed text-slate-200">
                 {inviteUrl || '—'}
               </p>
             </div>
@@ -208,6 +208,6 @@ export default function PoolJoinCreateCard({
           </form>
         )}
       </div>
-    </Card>
+    </Panel>
   );
 }

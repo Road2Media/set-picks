@@ -35,7 +35,7 @@ export default function AdminSongCatalogRefresh({ disabled = false, embedded = f
   };
 
   return (
-    <div className={`space-y-2 ${embedded ? '' : 'border-b border-border-muted pb-4'}`}>
+    <div className={`space-y-2 ${embedded ? '' : 'border-b border-border-muted/60 pb-4'}`}>
       <p className="text-[11px] text-slate-500 font-bold leading-relaxed ml-1">
         Picks and admin autocomplete <code className="text-slate-400">fetch</code> public{' '}
         <code className="text-slate-400">song-catalog.json</code> from Cloud Storage (Phish.net{' '}

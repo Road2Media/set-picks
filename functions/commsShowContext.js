@@ -180,7 +180,7 @@ async function loadCommsShowContext(db, showDate) {
  * A current doc still refreshes last-played dates so the morning email can
  * pick up the tour table after the night-of push.
  */
-async function ensureCommsShowContext(params) {
+async function loadOrWriteCommsShowContext(params) {
   const existing = await loadCommsShowContext(params.db, params.showDate);
   const version = Number(existing?.schemaVersion) || 0;
   if (
@@ -214,6 +214,24 @@ async function ensureCommsShowContext(params) {
     return existing;
   }
   return writeCommsShowContext(params);
+}
+
+/**
+ * Ensure context exists, then project a public show note when the night
+ * clears the richness gate (#684). Projection failures do not block comms.
+ */
+async function ensureCommsShowContext(params) {
+  const context = await loadOrWriteCommsShowContext(params);
+  try {
+    const { syncPublicShowNote } = require("./publicShowNotes");
+    await syncPublicShowNote(params.db, context, params.logger);
+  } catch (e) {
+    params.logger?.warn?.("public_show_notes sync failed", {
+      showDate: params.showDate,
+      msg: e instanceof Error ? e.message : String(e),
+    });
+  }
+  return context;
 }
 
 /**

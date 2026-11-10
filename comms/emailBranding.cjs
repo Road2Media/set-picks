@@ -181,8 +181,9 @@ function buildEmailWordmarkCidSrc() {
 }
 
 /**
- * Resend inline attachment for the service comms shell wordmark (Node SDK shape).
- * @returns {{ filename: string, content: string, contentType: string, inlineContentId: string }}
+ * Resend inline attachment for the service comms shell wordmark (Node SDK 6 shape).
+ * SDK 6 maps `contentId` to REST `content_id`. SDK 4's `inlineContentId` is ignored.
+ * @returns {{ filename: string, content: string, contentType: string, contentId: string }}
  */
 function buildEmailWordmarkResendAttachment() {
   const buf = readEmailWordmarkPngBuffer();
@@ -190,23 +191,23 @@ function buildEmailWordmarkResendAttachment() {
     filename: EMAIL_WORDMARK_PNG_FILE,
     content: buf.toString('base64'),
     contentType: 'image/png',
-    inlineContentId: EMAIL_WORDMARK_INLINE_CONTENT_ID,
+    contentId: EMAIL_WORDMARK_INLINE_CONTENT_ID,
   };
 }
 
 /**
  * REST API attachment shape for raw `fetch` to api.resend.com (preview script).
- * SDK maps camelCase itself; do not pass `inlineContentId` to the REST API.
+ * SDK 6 maps `contentId` itself; do not pass `contentId` to the REST API.
  *
  * @param {ReturnType<typeof buildEmailWordmarkResendAttachment>} attachment
- * @returns {{ filename: string, content: string, content_type: string, inline_content_id: string }}
+ * @returns {{ filename: string, content: string, content_type: string, content_id: string }}
  */
 function formatWordmarkAttachmentForResendApi(attachment) {
   return {
     filename: attachment.filename,
     content: attachment.content,
     content_type: attachment.contentType,
-    inline_content_id: attachment.inlineContentId,
+    content_id: attachment.contentId,
   };
 }
 

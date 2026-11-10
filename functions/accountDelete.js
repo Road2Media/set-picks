@@ -2,6 +2,7 @@
 
 const { HttpsError } = require("firebase-functions/v2/https");
 const { logger } = require("firebase-functions");
+const { stampBandId } = require("./bandScope");
 
 /** Must match client copy in `DeleteAccountSection.jsx`. */
 const DELETE_ACCOUNT_CONFIRMATION_PHRASE = "DELETE MY ACCOUNT";
@@ -92,9 +93,11 @@ async function runAccountDeletionForCaller({
       batch = db.batch();
       opCount = 0;
     }
-    batch.update(poolDoc.ref, {
+    const poolData = poolDoc.data() || {};
+    batch.update(poolDoc.ref, stampBandId({
       members: admin.firestore.FieldValue.arrayRemove(callerUid),
-    });
+      bandId: poolData.bandId,
+    }));
     opCount += 1;
     poolsUpdated += 1;
   }

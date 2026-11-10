@@ -163,7 +163,7 @@ export default function InfoTooltip({
       <button
         ref={triggerRef}
         type="button"
-        className={`shrink-0 rounded p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg ${triggerClassName}`}
+        className={`shrink-0 rounded-sm p-0.5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg ${triggerClassName}`}
         aria-label={`About ${label}`}
         aria-expanded={open}
         aria-controls={tooltipId}
@@ -200,7 +200,7 @@ export default function InfoTooltip({
                       visibility: 'hidden',
                     }
               }
-              className="rounded-lg border border-border-muted bg-[rgb(var(--surface-panel-strong))] px-3 py-2 text-left text-xs font-medium leading-snug text-slate-100 shadow-lg"
+              className="rounded-lg border border-border-muted/60 bg-[rgb(var(--surface-panel-strong))] px-3 py-2 text-left text-xs font-medium leading-snug text-slate-100 shadow-lg"
             >
               {definition}
             </div>,

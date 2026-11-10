@@ -267,7 +267,8 @@ test("machine mailto on unsubscribe@ suppresses and does not forward", async () 
   assert.equal(captured.length, 0);
   const docId = emailSuppressionDocId("jane@example.com");
   assert.equal(db._suppressionDocs.get(docId).reason, "mailto_unsubscribe");
-  assert.equal(db._userDocs.get("uid_jane")["notificationPrefs.lifecycle"], false);
+  assert.equal(db._userDocs.get("uid_jane")["notificationPrefs.email.lifecycle"], false);
+  assert.equal(db._userDocs.get("uid_jane")["notificationPrefs.email.commercial"], false);
 });
 
 test("prose on unsubscribe@ suppresses and still forwards for a human reply", async () => {
@@ -296,7 +297,8 @@ test("prose on unsubscribe@ suppresses and still forwards for a human reply", as
   });
   assert.equal(result.forwarded, true);
   assert.equal(captured.length, 1);
-  assert.equal(db._userDocs.get("uid_jane")["notificationPrefs.lifecycle"], false);
+  assert.equal(db._userDocs.get("uid_jane")["notificationPrefs.email.lifecycle"], false);
+  assert.equal(db._userDocs.get("uid_jane")["notificationPrefs.email.commercial"], false);
 });
 
 test("unsubscribe@ and support@ are allowlisted; help@ is not", async () => {

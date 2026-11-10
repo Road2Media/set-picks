@@ -35,6 +35,7 @@ import { useYearEndCelebration } from './useYearEndCelebration';
 import { useStandingsView } from './useStandingsView';
 import { useStandingsViewChange } from './useStandingsViewChange';
 import { useLiveSetlistServiceStatus } from './useLiveSetlistServiceStatus';
+import { useCrowdPulseTourLeaders } from './useCrowdPulseTourLeaders';
 import { useTourStandings } from './useTourStandings';
 import { useScoringRulesModal } from '../ui/ScoringRulesModalProvider';
 
@@ -218,16 +219,8 @@ export function useStandingsScreen(selectedDate, options = {}) {
   });
 
   // Crowd pulse leaders: tour points from shows *before* the selected night (#692).
-  const crowdTourShows = useMemo(() => {
-    if (view !== 'show' || !currentTour?.shows?.length || !selectedDate) {
-      return null;
-    }
-    const prior = currentTour.shows.filter((s) => s?.date && s.date < selectedDate);
-    return prior.length ? prior : null;
-  }, [view, currentTour, selectedDate]);
-
   const { leaders: crowdTourLeaders, loading: crowdTourLoading } =
-    useTourStandings(crowdTourShows);
+    useCrowdPulseTourLeaders(selectedDate, { enabled: view === 'show' });
 
 
   // Card / banner surfaces have room for the full city/venue token —

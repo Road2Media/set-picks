@@ -9,6 +9,13 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
+import { DEFAULT_BAND_ID } from '../../../shared/config/bands.js';
+import {
+  bandIdQueryConstraints,
+  docBelongsToBand,
+  rowsForBand,
+  stampBandId,
+} from '../../../shared/config/bandScope.js';
 import { arrayUnionPoolOntoUserPickDocs } from '../../picks';
 import { db } from '../../../shared/lib/firebase';
 import { MAX_USER_POOLS_FETCH } from './poolReadLimits';
@@ -26,30 +33,52 @@ function generateInviteCode() {
   return code;
 }
 
-export async function fetchPools(userId) {
+export async function fetchPools(userId, bandId = DEFAULT_BAND_ID) {
   if (!userId) return [];
 
   const poolsQuery = query(
     collection(db, 'pools'),
     where('members', 'array-contains', userId),
+    ...bandIdQueryConstraints(where, bandId),
     limit(MAX_USER_POOLS_FETCH)
   );
   const snapshot = await getDocs(poolsQuery);
 
-  return snapshot.docs
-    .map((poolDoc) => ({
+  return rowsForBand(
+    snapshot.docs.map((poolDoc) => ({
       id: poolDoc.id,
       ...poolDoc.data(),
-    }))
-    .filter((p) => p.status !== 'archived');
+    })),
+    bandId,
+  ).filter((p) => p.status !== 'archived');
 }
 
 /**
- * @param {{ userId: string, name: string, showDates?: Array<string | { date?: string }> }} params
+ * New-pool body. Always includes `bandId`. Document id is still the
+ * auto-id Firestore assigns (not `{bandId}_…`).
+ *
+ * @param {{ userId: string, name: string, inviteCode: string, createdAt: string, bandId?: string }} fields
+ */
+export function buildNewPoolPayload({ userId, name, inviteCode, createdAt, bandId }) {
+  return stampBandId({
+    name,
+    inviteCode,
+    ownerId: userId,
+    members: [userId],
+    createdAt,
+    status: 'active',
+    standingsScope: STANDINGS_SCOPE_FROM_MEMBERSHIP,
+    memberJoinedAt: { [userId]: createdAt },
+    bandId,
+  });
+}
+
+/**
+ * @param {{ userId: string, name: string, showDates?: Array<string | { date?: string }>, bandId?: string }} params
  * `showDates` is accepted for call-site compatibility but unused: new pools are
  * `from_membership` and never backfill historical `pick.pools` snapshots (#417).
  */
-export async function createPool({ userId, name, showDates: _showDates }) {
+export async function createPool({ userId, name, showDates: _showDates, bandId }) {
   const trimmedName = name?.trim();
   if (!userId || !trimmedName) {
     throw new Error('Missing required create pool fields.');
@@ -62,16 +91,13 @@ export async function createPool({ userId, name, showDates: _showDates }) {
 
   // New pools start at zero for every member (#417). Absent standingsScope
   // on existing docs remains legacy (retroactive carryover + backfill).
-  const poolPayload = {
+  const poolPayload = buildNewPoolPayload({
+    userId,
     name: trimmedName,
     inviteCode,
-    ownerId: userId,
-    members: [userId],
     createdAt,
-    status: 'active',
-    standingsScope: STANDINGS_SCOPE_FROM_MEMBERSHIP,
-    memberJoinedAt: { [userId]: createdAt },
-  };
+    bandId,
+  });
 
   const batch = writeBatch(db);
   batch.set(poolRef, poolPayload);
@@ -94,7 +120,7 @@ export async function createPool({ userId, name, showDates: _showDates }) {
 /**
  * @param {{ userId: string, inviteCode: string, showDates?: Array<string | { date?: string }> }} params
  */
-export async function joinPool({ userId, inviteCode, showDates }) {
+export async function joinPool({ userId, inviteCode, showDates, bandId = DEFAULT_BAND_ID }) {
   const normalizedCode = inviteCode?.trim().toUpperCase();
   if (!userId || !normalizedCode) {
     throw new Error('Missing required join pool fields.');
@@ -121,6 +147,12 @@ export async function joinPool({ userId, inviteCode, showDates }) {
     throw err;
   }
 
+  if (!docBelongsToBand(poolData, bandId)) {
+    const err = new Error('Invalid invite code.');
+    err.code = 'invalid-invite-code';
+    throw err;
+  }
+
   if (
     typeof poolData.maxMembers === 'number' &&
     poolData.maxMembers > 0 &&
@@ -143,7 +175,10 @@ export async function joinPool({ userId, inviteCode, showDates }) {
   const joinedAt = new Date().toISOString();
   const fromMembership = isFromMembershipStandingsScope(poolData.standingsScope);
 
-  const poolUpdate = { members: arrayUnion(userId) };
+  const poolUpdate = stampBandId({
+    members: arrayUnion(userId),
+    bandId: poolData.bandId,
+  });
   if (fromMembership) {
     poolUpdate[`memberJoinedAt.${userId}`] = joinedAt;
   }

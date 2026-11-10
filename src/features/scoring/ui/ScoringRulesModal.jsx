@@ -27,12 +27,12 @@ export default function ScoringRulesModal({ open, onClose }) {
   // Portal + z above dashboard mobile header / bottom nav (both z-50) so the sheet is not clipped or covered.
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-100 flex items-end sm:items-center justify-center p-0 sm:p-4"
       role="presentation"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs"
         aria-label="Close scoring rules"
         onClick={onClose}
       />
@@ -40,13 +40,13 @@ export default function ScoringRulesModal({ open, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="scoring-rules-heading"
-        className="relative z-10 flex max-h-[min(90vh,calc(100dvh-env(safe-area-inset-bottom,0px)))] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-border-subtle bg-surface-panel-strong shadow-inset-glass ring-1 ring-white/10 sm:max-h-[90vh] sm:rounded-2xl"
+        className="relative z-10 flex max-h-[min(90vh,calc(100dvh-env(safe-area-inset-bottom,0px)))] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-border-subtle/50 bg-surface-panel-strong/72 shadow-inset-glass ring-1 ring-white/10 sm:max-h-[90vh] sm:rounded-2xl"
       >
-        <div className="flex shrink-0 justify-end border-b border-border-muted bg-surface-panel-strong px-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-1">
+        <div className="flex shrink-0 justify-end border-b border-border-muted/60 bg-surface-panel-strong/72 px-2 pt-[max(0.5rem,env(safe-area-inset-top))] pb-1">
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center rounded-lg p-2 text-slate-300 transition-colors hover:bg-surface-panel hover:text-white"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-slate-300 transition-colors hover:bg-surface-panel/50 hover:text-white"
             aria-label="Close"
           >
             <X className="h-5 w-5" aria-hidden />

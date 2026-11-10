@@ -76,7 +76,7 @@ describe('blurAutofocusedCredentialField', () => {
     }
   });
 
-  it('does not blur after a user gesture (#1050)', () => {
+  it('does not blur-sm after a user gesture (#1050)', () => {
     const blur = vi.fn();
     const prev = globalThis.document;
     globalThis.document = {
@@ -253,7 +253,7 @@ describe('login boot shell focus guard', () => {
     delete globalThis.requestAnimationFrame;
   });
 
-  it('does not blur a first tap inside the neutralize window (#1050)', () => {
+  it('does not blur-sm a first tap inside the neutralize window (#1050)', () => {
     vi.useFakeTimers();
     const schedule = globalThis.setTimeout.bind(globalThis);
     const cancel = globalThis.clearTimeout.bind(globalThis);

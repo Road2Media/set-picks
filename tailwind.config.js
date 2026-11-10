@@ -6,21 +6,18 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}", 
   ],
   /**
-   * Extended `fontSize` tokens (`text-display-*`) were present on nodes but computed as 16px in dev
-   * (inherits preflight `h*` reset) — rules were missing from the served stylesheet. Safelist guarantees
-   * emission so display typography always has matching CSS in Vite dev + production.
+   * v4 does not support `safelist`. Display sizes (`text-display-*`) are
+   * emitted when the class string appears in a scanned source file.
+   * A dynamic class needs `@source inline()` in `src/index.css`.
    */
-  safelist: [
-    {
-      pattern: /^text-display-[-\w]+$/,
-      variants: ['responsive'],
-    },
-  ],
   theme: {
     extend: {
       /**
        * Semantic design tokens (Target 0: design system foundation).
        * Derived from Button.jsx, SplashHeroSection, and dashboard containers (Standings, Admin, forms).
+       *
+       * `desk`, `mob`, and `short` are `@custom-variant`s in `src/index.css`,
+       * not `theme.screens`. v4 breakpoints are min-width only (#705, #761).
        */
       colors: {
         brand: {
@@ -36,25 +33,31 @@ export default {
           },
         },
         surface: {
-          glass: 'rgb(var(--surface-glass) / 0.32)',
-          chrome: 'rgb(var(--surface-chrome) / 0.5)',
-          /** ~design.md panel translucency */
-          panel: 'rgb(var(--surface-panel) / 0.5)',
-          'panel-strong': 'rgb(var(--surface-panel-strong) / 0.72)',
-          inset: 'rgb(var(--surface-inset) / 0.72)',
-          field: 'rgb(var(--surface-field) / 1)',
+          /*
+           * Opaque channels. v4 applies `/40` with color-mix against the whole
+           * color, so a baked alpha (the v3 `rgb(... / 0.5)` form) would stack
+           * and wash the panel out. Default alphas live on the utilities
+           * (`bg-surface-panel/50`, and so on).
+           */
+          glass: 'rgb(var(--surface-glass) / <alpha-value>)',
+          chrome: 'rgb(var(--surface-chrome) / <alpha-value>)',
+          /** ~design.md panel translucency — bare utilities use `/50` */
+          panel: 'rgb(var(--surface-panel) / <alpha-value>)',
+          'panel-strong': 'rgb(var(--surface-panel-strong) / <alpha-value>)',
+          inset: 'rgb(var(--surface-inset) / <alpha-value>)',
+          field: 'rgb(var(--surface-field) / <alpha-value>)',
         },
         /** Secondary UI copy — labels, helper text, meta (dashboard + shared forms) */
         content: {
           secondary: 'rgb(var(--content-secondary) / <alpha-value>)',
         },
         border: {
-          glass: 'rgb(var(--border-glass) / 0.25)',
-          subtle: 'rgb(var(--border-subtle) / 0.5)',
-          muted: 'rgb(var(--border-muted) / 0.6)',
+          glass: 'rgb(var(--border-glass) / <alpha-value>)',
+          subtle: 'rgb(var(--border-subtle) / <alpha-value>)',
+          muted: 'rgb(var(--border-muted) / <alpha-value>)',
           /** Kuroda accents — keep one family (teal) for interactive affordances */
-          venue: 'rgb(var(--border-venue) / 0.34)',
-          'venue-strong': 'rgb(var(--border-venue-strong) / 0.46)',
+          venue: 'rgb(var(--border-venue) / <alpha-value>)',
+          'venue-strong': 'rgb(var(--border-venue-strong) / <alpha-value>)',
         },
       },
       boxShadow: {

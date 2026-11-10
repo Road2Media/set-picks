@@ -6,6 +6,7 @@ import { FeatureNewBadge, useFeatureSpotlight } from '../../../features/feature-
 import { StatsEmbedShareRow } from '../../../features/stats-embed';
 import {
   STATS_CLUSTER_PATHS,
+  isCrowdNightStatsPath,
   isPersonalStatsPath,
   normalizeDashboardPathname,
 } from '../../../shared/config/dashboardRoutes';
@@ -33,6 +34,7 @@ export default function StatsClusterLayout({ user }) {
   const mobileChromeRoot = useDashboardMobileChromePortal();
   const desktopChromeRoot = useDashboardDesktopPageChromePortal();
   const tourStatsSpotlight = useFeatureSpotlight('tour-stats');
+  const isCrowdNight = isCrowdNightStatsPath(location.pathname);
   const personalTo = isPersonalStatsPath(location.pathname)
     ? normalizeDashboardPathname(location.pathname)
     : STATS_CLUSTER_PATHS.root;
@@ -60,7 +62,7 @@ export default function StatsClusterLayout({ user }) {
           )
         : null}
       <Outlet context={{ user }} />
-      <StatsEmbedShareRow />
+      {isCrowdNight ? null : <StatsEmbedShareRow />}
     </div>
   );
 }

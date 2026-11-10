@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import {
   GLOBAL_LEADERBOARD_PAGE_SIZE,
@@ -12,12 +13,12 @@ const PAGER_BUTTON =
   'inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border-subtle/50 text-slate-200 transition-colors hover:border-brand-primary/50 hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-border-subtle/50 disabled:hover:text-slate-200';
 
 const rankBadgeClass = (rank, outsideTop) => {
-  if (outsideTop) return 'bg-surface-inset text-content-secondary ring-1 ring-border-muted';
+  if (outsideTop) return 'bg-surface-inset/72 text-content-secondary ring-1 ring-border-muted/60';
   if (rank === 1) return 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/40';
   if (rank === 2)
     return 'bg-brand-accent-blue/15 text-blue-200 ring-1 ring-brand-accent-blue/35';
   if (rank === 3) return 'bg-orange-900/40 text-orange-200 ring-1 ring-orange-700/40';
-  return 'bg-surface-inset text-slate-300 ring-1 ring-border-muted';
+  return 'bg-surface-inset/72 text-slate-300 ring-1 ring-border-muted/60';
 };
 
 /**
@@ -78,7 +79,7 @@ export default function GlobalLeaderboardBoard({ title, boardKey, rows }) {
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden />
               </button>
-              <span className="min-w-[6.5rem] text-center text-[11px] font-semibold tabular-nums text-content-secondary">
+              <span className="min-w-26 text-center text-[11px] font-semibold tabular-nums text-content-secondary">
                 {start + 1}–{end} of {total}
               </span>
               <button
@@ -117,12 +118,10 @@ function LeaderboardRow({ row, boardKey }) {
         : '—';
 
   return (
-    <li
-      className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 ${
-        row.isSelf
-          ? 'border-brand-primary/45 bg-brand-primary/10'
-          : 'border-border-subtle/30 bg-surface-panel/80'
-      }`}
+    <Row
+      as="li"
+      tone={row.isSelf ? 'self' : 'default'}
+      className="flex items-center justify-between gap-3"
     >
       <div className="flex min-w-0 items-center gap-3">
         <span
@@ -163,6 +162,6 @@ function LeaderboardRow({ row, boardKey }) {
           </p>
         ) : null}
       </div>
-    </li>
+    </Row>
   );
 }

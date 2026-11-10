@@ -60,7 +60,7 @@ export default function MarketingIphoneCarousel({
             <button
               type="button"
               onClick={() => go(-1)}
-              className="absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-700 shadow-sm transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
+              className="absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-700 shadow-xs transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
               aria-label="Previous screenshot"
             >
               <ChevronLeft className="h-5 w-5" aria-hidden />
@@ -68,7 +68,7 @@ export default function MarketingIphoneCarousel({
             <button
               type="button"
               onClick={() => go(1)}
-              className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-700 shadow-sm transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
+              className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-700 shadow-xs transition-colors hover:bg-white hover:text-slate-900 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
               aria-label="Next screenshot"
             >
               <ChevronRight className="h-5 w-5" aria-hidden />
@@ -104,7 +104,7 @@ export default function MarketingIphoneCarousel({
                 aria-selected={selected}
                 aria-label={`Show screenshot ${i + 1}`}
                 onClick={() => setIndex(i)}
-                className={`h-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent-blue ${
+                className={`h-2.5 rounded-full transition-all focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue ${
                   selected
                     ? 'w-6 bg-teal-600'
                     : 'w-2.5 bg-slate-300 hover:bg-slate-400'

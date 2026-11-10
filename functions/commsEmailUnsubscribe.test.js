@@ -108,8 +108,9 @@ test("processOneClickUnsubscribe suppresses + opts out prefs on a valid signatur
   });
   assert.equal(result.ok, true);
   assert.equal(await isEmailSuppressed(db, EMAIL), true);
-  assert.equal(db._users.get(UID)["notificationPrefs.lifecycle"], false);
-  assert.equal(db._users.get(UID)["notificationPrefs.commercial"], false);
+  assert.equal(db._users.get(UID)["notificationPrefs.email.lifecycle"], false);
+  assert.equal(db._users.get(UID)["notificationPrefs.email.commercial"], false);
+  assert.equal(db._users.get(UID)["notificationPrefs.lifecycle"], undefined);
 });
 
 test("processOneClickUnsubscribe rejects a tampered signature", async () => {

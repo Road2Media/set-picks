@@ -11,7 +11,7 @@ When implementing or changing comms delivery:
 1. **Catalog required** — Implementation must match a row in `docs/comms-triggers/catalog.json` (`triggerId`, `dedupKey`, `prefKeys`).
 2. **Server-only inbox creates** — Only Admin SDK / Cloud Functions create `users/{uid}/commsInbox/{messageId}`. Clients may set `readAt` / `archivedAt` and may delete their own inbox docs.
 3. **Dedup before send** — Check `fcm_notification_log` or use fixed inbox doc id. Never double-send on scheduler retries.
-4. **Prefs** — Respect `notificationPrefs` (default allow when key missing, match existing `picksLockReminder` / `postShowRollupPush` patterns).
+4. **Prefs** — Respect `notificationPrefs` per channel (`push`, `inApp`, `email`) via `functions/notificationPrefs.js`. A boolean on `notificationPrefs.<channel>.<family>` wins. Otherwise the legacy flat key still applies. Default allow when both are missing, except `commercial` (default deny). Match `picksLockReminder` / `postShowRollupPush`.
 5. **Dry run** — New callables default `dryRun: true`; document execute flag in admin UI or script.
 6. **Push limits** — Cap sends per tick (`MAX_REMINDER_SENDS_PER_TICK` pattern); document fatigue in catalog.
 7. **Measurement** — Log delivery with `trigger_id`, `template_id`, `channel`, `variant: control` (see `docs/comms-triggers/MEASUREMENT_PLAN.md`).

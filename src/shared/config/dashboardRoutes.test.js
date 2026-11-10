@@ -4,13 +4,17 @@ import {
   PICKS_CLUSTER_PATHS,
   POOLS_CLUSTER_PATHS,
   STATS_CLUSTER_PATHS,
+  PICKS_CLUSTER_LEGACY_PATHS,
   isMakePicksPath,
   isPicksClusterPath,
+  phishIqLegacyRedirect,
   isPersonalStatsPath,
   isGlobalStatsPath,
   isPoolsClusterPath,
   isPoolsTertiaryPath,
   isProfileClusterPath,
+  crowdNightStatsHref,
+  isCrowdNightStatsPath,
   isStatsClusterPath,
   isStatsQuaternaryPath,
   isStatsTourScopedPath,
@@ -30,6 +34,7 @@ describe('isPicksClusterPath', () => {
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.scorecard)).toBe(true);
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.rewind)).toBe(true);
     expect(isPicksClusterPath(PICKS_CLUSTER_PATHS.phishIq)).toBe(true);
+    expect(isPicksClusterPath(PICKS_CLUSTER_LEGACY_PATHS.phishIq)).toBe(true);
   });
 
   it('does not match sibling primary tabs', () => {
@@ -39,6 +44,23 @@ describe('isPicksClusterPath', () => {
     expect(isPicksClusterPath('/dashboard/tour-stats')).toBe(false);
     expect(isPicksClusterPath('/dashboard/stats')).toBe(false);
     expect(isPicksClusterPath('/dashboard/stats/global')).toBe(false);
+  });
+});
+
+describe('phishIqLegacyRedirect (#1258)', () => {
+  it('sends the nested picks-tab path to the logged-in quiz', () => {
+    expect(phishIqLegacyRedirect(PICKS_CLUSTER_LEGACY_PATHS.phishIq)).toBe(
+      PICKS_CLUSTER_PATHS.phishIq,
+    );
+    expect(phishIqLegacyRedirect(`${PICKS_CLUSTER_LEGACY_PATHS.phishIq}/`, '?utm=1')).toBe(
+      `${PICKS_CLUSTER_PATHS.phishIq}?utm=1`,
+    );
+  });
+
+  it('leaves the canonical quiz route and other picks paths alone', () => {
+    expect(phishIqLegacyRedirect(PICKS_CLUSTER_PATHS.phishIq)).toBeNull();
+    expect(phishIqLegacyRedirect(PICKS_CLUSTER_PATHS.lab)).toBeNull();
+    expect(phishIqLegacyRedirect('/dashboard')).toBeNull();
   });
 });
 
@@ -92,6 +114,7 @@ describe('isStatsClusterPath (#769)', () => {
     expect(isStatsClusterPath(STATS_CLUSTER_PATHS.personal)).toBe(true);
     expect(isStatsClusterPath(STATS_CLUSTER_PATHS.global)).toBe(true);
     expect(isStatsClusterPath(STATS_CLUSTER_PATHS.band)).toBe(true);
+    expect(isStatsClusterPath(STATS_CLUSTER_PATHS.night)).toBe(true);
   });
 
   it('keeps the tour-stats redirect hop in the cluster (Stats primary active)', () => {
@@ -130,5 +153,18 @@ describe('isStatsClusterPath (#769)', () => {
     expect(isStatsTourScopedPath(STATS_CLUSTER_PATHS.band)).toBe(true);
     expect(isStatsTourScopedPath('/dashboard/tour-stats')).toBe(true);
     expect(isStatsTourScopedPath('/dashboard/standings')).toBe(false);
+    expect(isStatsTourScopedPath(STATS_CLUSTER_PATHS.night)).toBe(false);
+  });
+
+  it('keeps crowd night on the date picker, not the tour picker or the tray', () => {
+    expect(isCrowdNightStatsPath('/dashboard/stats/night')).toBe(true);
+    expect(isCrowdNightStatsPath('/dashboard/stats/night/')).toBe(true);
+    expect(isCrowdNightStatsPath(STATS_CLUSTER_PATHS.band)).toBe(false);
+    expect(isPersonalStatsPath(STATS_CLUSTER_PATHS.night)).toBe(false);
+    expect(isStatsQuaternaryPath(STATS_CLUSTER_PATHS.night)).toBe(false);
+    expect(crowdNightStatsHref('2026-07-17')).toBe(
+      '/dashboard/stats/night?showDate=2026-07-17'
+    );
+    expect(crowdNightStatsHref('not-a-date')).toBe('/dashboard/stats/night');
   });
 });

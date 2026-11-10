@@ -462,6 +462,9 @@ export const COMMS_TEMPLATE_REGISTRY = {
               : 'Tap through for the full breakdown.'),
           // Bonus stays on the stats row when the composer already named the bustout.
           !narrative && p.bustout_bonus ? `Bustout bonus: +${p.bustout_bonus}.` : null,
+          typeof p.share_pack?.text === 'string' && p.share_pack.text.trim()
+            ? p.share_pack.text.trim()
+            : null,
         ].filter(Boolean),
         stats: [
           p.show_score != null ? { label: 'Show score', value: p.show_score } : null,

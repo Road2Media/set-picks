@@ -1,7 +1,7 @@
 import React from 'react';
 
 const baseClass =
-  'inline-flex cursor-pointer items-center rounded-full border border-border-subtle bg-surface-panel px-3 py-1.5 font-sans transition-colors hover:bg-surface-panel-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg [&::-webkit-details-marker]:hidden';
+  'inline-flex cursor-pointer items-center rounded-full border border-border-subtle/50 bg-surface-panel/50 px-3 py-1.5 font-sans transition-colors hover:bg-surface-panel-strong/72 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg [&::-webkit-details-marker]:hidden';
 
 const toneClass = {
   /** Muted label; hover shifts to brand primary (overflow menu trigger, etc.) */
