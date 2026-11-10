@@ -15,7 +15,7 @@ Until Phase 3, do not ingest a second band into `official_setlists`, `picks`, or
 
 ## Phase 1 — `bandId` field backfill
 
-Shipped as code in the Phase 1 pull request (issue #605). The script is not run by CI, deploy, or an agent. Document ids stay `{showDate}` / `{showDate}_{uid}`.
+Shipped as code in [#1255](https://github.com/Road2Media/set-picks/pull/1255) (issue #605). The script is not run by CI, deploy, or an agent. Document ids stay `{showDate}` / `{showDate}_{uid}`.
 
 Collections: `picks`, `official_setlists`, `live_setlist_automation`, `rollup_audit`, `pools`.
 

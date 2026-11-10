@@ -194,7 +194,7 @@ flowchart LR
 | Phase | Status | Issue / PR |
 |-------|--------|-----------|
 | Phase 0 - Foundation | Done | [#301](https://github.com/Road2Media/set-picks/issues/301) / [#1253](https://github.com/Road2Media/set-picks/pull/1253) |
-| Phase 1 - bandId field | In progress (writes, tolerant reads and rules, script, alias object). Strict `where` and required `bandId` wait on the backfill. | [#605](https://github.com/Road2Media/set-picks/issues/605) |
+| Phase 1 - bandId field | In progress (writes, tolerant reads and rules, script, alias object). Strict `where` and required `bandId` wait on the backfill. | [#605](https://github.com/Road2Media/set-picks/issues/605) / [#1255](https://github.com/Road2Media/set-picks/pull/1255) |
 | Phase 2 - Provider wrap | Not started | - |
 | Phase 3 - Composite IDs | Not started | - |
 | Phase 4 - Goose (Songfish provider) | Not started | - |
