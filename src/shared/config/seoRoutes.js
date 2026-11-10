@@ -705,8 +705,9 @@ function buildHowScoringChangedJsonLd() {
 }
 
 /**
- * Public Phish IQ crawl copy (#1276). Evergreen only.
+ * Public Phish IQ crawl copy (#1276, fan language #1286). Evergreen only.
  * Today's questions, choices, and answer facts stay out of this object.
+ * The Phish.net line is the API courtesy credit, not a source explainer.
  */
 const PHISH_IQ_PATH = '/phish-iq';
 const PHISH_IQ_TITLE = "Phish IQ | Free Daily Phish Quiz | Setlist Pick'Em";
@@ -728,11 +729,11 @@ export const PHISH_IQ_FAQ = Object.freeze([
   },
   {
     name: 'How often is there a new quiz?',
-    text: 'A new quiz comes out every day, on the Eastern Time date. Yesterday’s questions stay off this page.',
+    text: 'A new quiz comes out every day, at midnight Eastern. Yesterday’s questions are gone.',
   },
   {
-    name: 'Where do the questions come from?',
-    text: 'Song debuts, gaps between plays, and play counts, plus which songs open a show at Madison Square Garden and how many Garden shows are on the calendar. The numbers come from Phish.net, published by The Mockingbird Foundation. No night’s setlist is on this page.',
+    name: 'What are the questions about?',
+    text: 'Phish songs. Debuts, long gaps, which one came first, and the Garden. Everyone gets the same five that day.',
   },
   {
     name: 'Do I need an account?',
@@ -1008,8 +1009,7 @@ export const PRERENDER_ROUTES = [
     ogImageHeight: '630',
     paragraphs: [
       'Phish IQ is a free daily Phish quiz. Five questions, a new quiz every day, and you can play with no sign-in.',
-      'Everyone gets the same five questions that day. Answer them, see how you did, and share the score. The share card does not include the questions or the answers.',
-      'The questions draw on public song counts and Madison Square Garden totals. Data courtesy of Phish.net. This is a quiz, not the six slots you lock before a show.',
+      'Everyone gets the same five questions that day. Answer them, see how you did, and share the score. The card shows your score, not the answers.',
     ],
     appendHtml: buildPhishIqFaqHtml(),
     buildJsonLd: buildPhishIqJsonLd,

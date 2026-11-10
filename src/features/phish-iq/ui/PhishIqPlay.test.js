@@ -30,6 +30,22 @@ function renderFinish(props = {}) {
 }
 
 describe('Phish IQ finish screen', () => {
+  it('says the quiz is not ready yet, without a catalog explainer', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(PhishIqPlay, {
+        quiz: { date: '2026-11-09', questions: [] },
+        isLoading: false,
+        played: null,
+      }),
+    );
+    expect(html).toContain('Today’s quiz isn’t ready yet. Try again in a minute.');
+    expect(html.toLowerCase()).not.toContain('catalog');
+    expect(html).not.toContain('public song counts');
+    expect(html).not.toContain('six slots you lock');
+    expect(html).toContain('Data courtesy of');
+    expect(html).toContain('https://phish.net');
+  });
+
   it('shows the next-quiz countdown, daily line, and stats from this browser', () => {
     const html = renderFinish();
     expect(html).toContain('Next quiz in 14h 00m 00s');
@@ -45,6 +61,12 @@ describe('Phish IQ finish screen', () => {
     expect(html).toContain('aria-current="true"');
     expect(html).toContain(PHISH_IQ_BROWSER_NOTE);
     expect(html).toContain('🟩🟩🟩🟩⬛');
+    expect(html).toContain('Share your score');
+    expect(html).toContain('The answers stay off.');
+    expect(html).not.toContain('public song counts');
+    expect(html).not.toContain('six slots you lock');
+    expect(html.toLowerCase()).not.toContain('song row');
+    expect(html).toContain('Data courtesy of');
     const lower = html.toLowerCase();
     expect(lower).not.toContain('localstorage');
     expect(lower).not.toContain('firestore');
