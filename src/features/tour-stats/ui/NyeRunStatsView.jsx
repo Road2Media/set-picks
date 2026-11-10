@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import { HUNDREDTH_SHOW_PATH } from '../../hundredth-show/public';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
 
 /**
@@ -32,7 +33,11 @@ export default function NyeRunStatsView({
         <p className="text-base leading-snug text-slate-300">
           Four nights at Madison Square Garden. January 2, 2027 is the 100th
           performance at the Garden. Call the slot you want before the lights go
-          down.
+          down.{' '}
+          <Link to={HUNDREDTH_SHOW_PATH} className={LINK_ON_DARK}>
+            Pick the 100th
+          </Link>
+          .
         </p>
       </header>
 

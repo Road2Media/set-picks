@@ -864,6 +864,27 @@ test("rewind: public week is readable and not client-writable (#1142)", async ()
   );
 });
 
+test("public night board is readable and not client-writable (#1147)", async () => {
+  await seed(async (adminDb) => {
+    await setDoc(doc(adminDb, "public_night_boards", "2027-01-02"), {
+      showDate: "2027-01-02",
+      venue: "Madison Square Garden",
+      rows: [{ rank: 1, handle: "Fan Handle", points: 40, exactSlots: 3 }],
+    });
+  });
+
+  const snap = await assertSucceeds(
+    getDoc(doc(anon(), "public_night_boards", "2027-01-02")),
+  );
+  assert.equal(snap.data().rows[0].handle, "Fan Handle");
+  assert.equal(snap.data().rows[0].email, undefined);
+  await assertFails(
+    setDoc(doc(signedInAs("fan"), "public_night_boards", "2027-01-02"), {
+      rows: [{ rank: 1, handle: "Fan Handle", email: "fan@example.com" }],
+    }),
+  );
+});
+
 test("rewind: answers stay server-only (#1142)", async () => {
   await seed(async (adminDb) => {
     await setDoc(doc(adminDb, "rewind_answers", "2026-11-23"), {

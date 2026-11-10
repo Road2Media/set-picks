@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ListMusic, Loader2, Pencil, Ticket } from 'lucide-react';
 
+import { HundredthShowCardMark } from '../../hundredth-show';
 import Button from '../../../shared/ui/Button';
 import DashboardJobShell, { DASHBOARD_JOB_ICON } from '../../../shared/ui/DashboardJobShell';
 import {
@@ -23,12 +24,14 @@ import {
  *
  * @param {Object} props
  * @param {string} props.showLabel — venue + date for the selected show
+ * @param {string} [props.showDate] — YYYY-MM-DD, for 100th-show branding
  * @param {boolean} props.isShowToday — selectedDate === today
  * @param {boolean} props.isSecured — user has submitted non-empty picks
  * @param {boolean} [props.picksStatusLoading] — avoids flashing "no picks" before Firestore resolves
  */
 export default function StandingsActiveShowCard({
   showLabel,
+  showDate = '',
   isShowToday,
   isSecured,
   picksStatusLoading = false,
@@ -69,6 +72,7 @@ export default function StandingsActiveShowCard({
           {showLabel ? (
             <p className={`break-words ${STANDINGS_BOX_TITLE}`}>{showLabel}</p>
           ) : null}
+          <HundredthShowCardMark showDate={showDate} />
           {picksStatusLoading ? (
             <p className={`flex items-center gap-2 ${STANDINGS_BOX_BODY}`}>
               <Loader2

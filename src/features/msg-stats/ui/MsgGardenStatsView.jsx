@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import { HUNDREDTH_SHOW_PATH } from '../../hundredth-show/public';
 import { NYE_RUN_PATH } from '../model/nyeRunContract';
 import { AppDocumentAuthLink } from '../../landing';
 import { StatsEmbedShareRow } from '../../stats-embed';
@@ -159,7 +160,11 @@ export default function MsgGardenStatsView({ stats, heading }) {
             New Year&apos;s Run
           </Link>{' '}
           is December 30, December 31, January 1, and January 2.
-          Lock a card before the lights go down.
+          January 2 is{' '}
+          <Link to={HUNDREDTH_SHOW_PATH} className={LINK_ON_DARK}>
+            the 100th
+          </Link>
+          . Lock a card before the lights go down.
         </p>
         <AppDocumentAuthLink
           signup

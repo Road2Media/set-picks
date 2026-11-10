@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { HundredthShowCardMark } from '../../hundredth-show';
 import { StatsRatesDidYouKnow } from '../../feature-discovery';
 import { PICKS_SELF_RECAP_STANDINGS_LINK } from '../../../shared/config/dashboardVocabulary';
 import InfoTooltip, { InfoTooltipProvider } from '../../../shared/ui/InfoTooltip';
@@ -112,6 +113,7 @@ function hitStatusLabel(grade) {
 export default function PicksScorecardCard({
   isLoading = false,
   state,
+  showDate = '',
   showLabel = '',
   slots = [],
   showOverlap = false,
@@ -153,6 +155,7 @@ export default function PicksScorecardCard({
           triggerClassName="text-content-secondary hover:text-white"
         />
       </div>
+      <HundredthShowCardMark showDate={showDate} />
 
       {showAudience ? (
         <label className="mt-3 flex items-center justify-between gap-3">

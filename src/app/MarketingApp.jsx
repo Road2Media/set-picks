@@ -28,6 +28,9 @@ const PublicTourStatsPage = lazy(
 const MsgGardenStatsPage = lazy(
   () => import('../pages/marketing/MsgGardenStatsPage'),
 );
+const HundredthShowPage = lazy(
+  () => import('../pages/marketing/HundredthShowPage'),
+);
 const AnnualTourStatsPage = lazy(
   () => import('../pages/marketing/AnnualTourStatsPage'),
 );
@@ -169,6 +172,14 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <MsgGardenStatsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/phish-at-msg/100th"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <HundredthShowPage />
             </Suspense>
           }
         />

@@ -171,32 +171,55 @@ function loginFormShellHtmlPlugin() {
  * `.cjs`). The dev server then serves `functions/pointsTieRanking.cjs?import`
  * as a raw script, and the browser rejects
  * `export { COMPARATORS } from '…cjs'` — the dashboard white-screens.
- * The production build still converts that file. This serve-only load hook
- * wraps the same source as ESM named exports so dev matches the build.
+ * The production build still converts that file. The same gap applies to
+ * `functions/hundredthShowBoard.cjs` (#1147). This serve-only load hook
+ * wraps those sources as ESM named exports so dev matches the build.
  */
 function pointsTieRankingDevEsmPlugin() {
-  const suffix = '/functions/pointsTieRanking.cjs';
+  /** @type {Record<string, string[]>} */
+  const files = {
+    '/functions/pointsTieRanking.cjs': [
+      'RANK_POLICIES',
+      'LIVE_RANK_POLICY',
+      'SURFACES',
+      'COMPARATORS',
+      'comparatorsForSurface',
+      'rankScoredRows',
+      'readPoints',
+      'readHandle',
+    ],
+    '/functions/hundredthShowBoard.cjs': [
+      'HUNDREDTH_SHOW_DATE',
+      'HUNDREDTH_SHOW_PATH',
+      'HUNDREDTH_SHOW_VENUE',
+      'HUNDREDTH_SHOW_CITY',
+      'PUBLIC_NIGHT_BOARDS',
+      'DRY_RUN_SAMPLE_ROWS',
+      'HUNDREDTH_EMPTY_BOARD_COPY',
+      'HUNDREDTH_DRY_RUN_COPY',
+      'resolveHundredthShowDate',
+      'isHundredthShowDate',
+      'hundredthShowCardMark',
+      'projectPublicNightBoard',
+      'projectPublicNightRow',
+    ],
+  };
   return {
     name: 'points-tie-ranking-dev-esm',
     apply: 'serve',
     enforce: 'pre',
     load(id) {
       const clean = id.split('?')[0].replace(/\\/g, '/');
-      if (!clean.endsWith(suffix)) return null;
+      const match = Object.keys(files).find((suffix) => clean.endsWith(suffix));
+      if (!match) return null;
       const source = readFileSync(clean, 'utf8');
+      const names = files[match].join(',\n  ');
       return {
         code: `const module = { exports: {} };
 const exports = module.exports;
 ${source}
 export {
-  RANK_POLICIES,
-  LIVE_RANK_POLICY,
-  SURFACES,
-  COMPARATORS,
-  comparatorsForSurface,
-  rankScoredRows,
-  readPoints,
-  readHandle,
+  ${names}
 };
 export default module.exports;
 `,

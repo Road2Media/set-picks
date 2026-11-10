@@ -134,6 +134,7 @@ export default function StandingsShowOrPoolView({ screen }) {
         ) : null}
         <StandingsActiveShowCard
           showLabel={showLabel}
+          showDate={selectedDate}
           isShowToday={Boolean(isShowToday)}
           isSecured={Boolean(isSecured)}
           picksStatusLoading={Boolean(picksStatusLoading)}
