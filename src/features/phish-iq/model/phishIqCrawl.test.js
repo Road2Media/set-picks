@@ -25,7 +25,13 @@ describe('Phish IQ crawl document (#1276)', () => {
     expect(html).toContain('data-seo-phish-iq="faq"');
     expect(html).toContain('What is Phish IQ?');
     expect(html).toContain('How often is there a new quiz?');
-    expect(html).toContain('Where do the questions come from?');
+    expect(html).toContain('What are the questions about?');
+    expect(html).toContain('Debuts, long gaps, which one came first, and the Garden.');
+    expect(html).not.toContain('Where do the questions come from?');
+    expect(html).not.toContain('public song counts');
+    expect(html).not.toContain('six slots you lock');
+    expect(html.toLowerCase()).not.toContain('song row');
+    expect(html).toContain('Data courtesy of');
     expect(html).toContain('href="https://phish.net"');
     expect(html).toContain(`<link rel="canonical" href="${route.canonicalUrl}" />`);
     expect(html).toContain('property="og:image" content="https://www.setlistpickem.com/branding/phish-iq-og.jpg?v=20261110"');

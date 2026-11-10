@@ -123,7 +123,7 @@ export default function PhishIqPlay({
       <Card variant="venue" padding="md">
         <TitleTag className="font-display text-3xl font-bold text-content-primary">Phish IQ</TitleTag>
         <p className="mt-3 text-sm leading-relaxed text-content-secondary">
-          Today’s quiz needs the song catalog. Try again in a minute.
+          Today’s quiz isn’t ready yet. Try again in a minute.
         </p>
         <Credit />
       </Card>
@@ -150,9 +150,9 @@ export default function PhishIqPlay({
           className="mt-5 rounded-2xl border border-brand-primary/30 bg-surface-inset/72 p-4"
           data-phish-iq-share-card
         >
-          <p className="text-sm font-semibold text-content-primary">Share card</p>
+          <p className="text-sm font-semibold text-content-primary">Share your score</p>
           <p className="mt-1 text-sm text-content-secondary">
-            Score only. The share text does not include the answers.
+            Your score and the grid. The answers stay off.
           </p>
           <div className="mt-4">
             <Button type="button" variant="secondary" size="sm" onClick={onShare}>

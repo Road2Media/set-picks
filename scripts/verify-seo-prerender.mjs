@@ -300,8 +300,24 @@ assert(
   'Phish IQ prerender FAQ must ask how often',
 );
 assert(
-  phishIqHtml.includes('Where do the questions come from?'),
-  'Phish IQ prerender FAQ must ask where the questions come from',
+  phishIqHtml.includes('What are the questions about?'),
+  'Phish IQ prerender FAQ must ask what the questions are about',
+);
+assert(
+  !phishIqHtml.includes('Where do the questions come from?'),
+  'Phish IQ prerender must not explain where the questions come from',
+);
+assert(
+  !phishIqHtml.includes('public song counts'),
+  'Phish IQ prerender must not explain the question source',
+);
+assert(
+  !phishIqHtml.includes('six slots you lock'),
+  'Phish IQ prerender must not compare the quiz to locked slots',
+);
+assert(
+  !phishIqHtml.toLowerCase().includes('song row'),
+  'Phish IQ prerender must not say song row',
 );
 assert(
   phishIqHtml.includes('<a href="https://phish.net">Phish.net</a>'),
@@ -379,6 +395,10 @@ assert(
 assert(
   publicLlms.includes('Data courtesy of Phish.net'),
   'public llms.txt must cite Phish.net for Phish IQ',
+);
+assert(
+  !publicLlms.includes('public song counts'),
+  'public llms.txt must not explain the Phish IQ question source',
 );
 
 const annualRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/2026');

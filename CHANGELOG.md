@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.127.2] — 2026-11-10
+
+### Changed
+- **Phish IQ copy (#1286)** — The quiz intro no longer says where the questions come from, or that this is not the six slots you lock before a show. The public FAQ asks what the questions are about. A short “Data courtesy of Phish.net” credit stays, because the Phish.net API terms require it.
+
 ## [1.127.1] — 2026-11-10
 
 ### Changed
