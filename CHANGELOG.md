@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.118.0] — 2026-11-10
+
+### Changed
+- **One mount for dashboard scope and nav (#707, part of #704)** — Tour Date, Tour, and Year each render once. Below the `desk` screen they portal into the mobile context bar; on `desk` they stay in the sticky stack. Option labels and the stepper still follow that screen. Pool past-tours keeps a native select on mobile and pills on `desk`, with one handler, and only the widget for the current viewport is in the DOM. Standings Show / Tour / Year / Pools is one `StandingsChrome` mount, so one tablist is present. The sidebar and the bottom tabs share `DashboardNavItem` / `isDashboardNavItemActive` (pool details and the account cluster stay on their primary tab). Mobile scrollport top padding reads `--dashboard-mobile-chrome-h` instead of a per-route `pt-[calc(...)]` chain. The shell sets that variable, including the 4rem `short` drop when the brand row hides. No declared API change.
+
 ## [1.117.0] — 2026-11-10
 
 ### Added

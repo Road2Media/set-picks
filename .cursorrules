@@ -43,7 +43,7 @@ You are an expert React engineer. Every code change MUST follow these rules.
 - When adding UI requested in a page, build it in `features/<domain>/ui` and compose from the page.
 - When adding data access, place IO in `features/<domain>/api` and consume via `features/<domain>/model`.
 - If a requested change conflicts with these rules, propose an FSD-compliant alternative first.
-- **Dashboard routes:** Treat `src/app/layout/model/dashboardPageMeta.js` and nav `isActive` logic in `DashboardLayout.jsx` as part of the feature when adding or renaming `/dashboard/*` paths. For child routes, mirror **Profile + account-security** or **Pools + pool details** active-state patterns. After changing meta, extend `scripts/verify-dashboard-meta.mjs` and run `npm run verify:dashboard-meta`. Canonical IA + vocabulary: `docs/DASHBOARD_IA.md`.
+- **Dashboard routes:** Treat `src/app/layout/model/dashboardPageMeta.js` and `isDashboardNavItemActive` in `src/app/layout/model/dashboardNav.js` as part of the feature when adding or renaming `/dashboard/*` paths. For child routes, mirror **Profile + account-security** or **Pools + pool details** active-state patterns. After changing meta, extend `scripts/verify-dashboard-meta.mjs` and run `npm run verify:dashboard-meta`. Canonical IA + vocabulary: `docs/DASHBOARD_IA.md`.
 - **Dashboard breakpoints:** `md:` is width reflow only. Mobile-vs-desktop chrome uses `desk:` / `mob:` (`tailwind.config.js`, documented in `docs/DASHBOARD_IA.md`). Do not add new `md:hidden` / `hidden md:*` chrome gates.
 
 ## 7) Enforcement Expectations (Lint + CI)

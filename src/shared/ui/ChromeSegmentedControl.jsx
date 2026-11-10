@@ -32,7 +32,8 @@ const TONES = {
  * otherwise a `tablist` of buttons (`value` / `onChange`).
  *
  * Placement (mobile portal vs desktop in-page) belongs at the cluster layout
- * call site. Do not add `md:`-as-device visibility here (#704–#707).
+ * call site. Do not add `md:`-as-device visibility here (#704). One mount per
+ * viewport gates with the `desk` media query (#707).
  *
  * @param {{
  *   ariaLabel: string,

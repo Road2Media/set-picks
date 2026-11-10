@@ -131,16 +131,16 @@ Device chrome uses raw screens in `tailwind.config.js`:
 | `mob` | `(max-width: 767.98px), (max-height: 479.98px)` | Exact complement of `desk`. Portrait phones and phone landscape (wide, under 480px tall) stay here. |
 | `short` | `(max-height: 479.98px)` | Landscape compaction only. Does not overlap `desk`. |
 
-Write chrome pairs as `hidden desk:*` (desktop tree) and `desk:hidden` (mobile tree) so exactly one tree is visible. `mob:` is the mobile-side screen when a rule must be authored from that side. `variant="mobile"` / `"desktop"` mounts stay until #707. Marketing nav stays on its own breakpoints (#706).
+Write chrome pairs as `hidden desk:*` (desktop tree) and `desk:hidden` (mobile tree) so exactly one tree is visible. `mob:` is the mobile-side screen when a rule must be authored from that side. Tour Date, Tour, and Year each mount once in the sticky stack and portal into `#dashboard-mobile-scope-slot` below `desk` (#707). Standings Show / Tour / Year / Pools is one `StandingsChrome` mount, so one tablist is in the DOM per viewport. The scrollport top padding is `mob:pt-[calc(env(safe-area-inset-top)+var(--dashboard-mobile-chrome-h))]`. The shell sets that variable from the route’s chrome reservation. Marketing nav stays on its own breakpoints (#706).
 
-Under `short`, `DashboardMobileBrandBar` is hidden and the scrollport top padding drops by 4rem (the brand row: `h-12` + `py-2`). The context bar still scroll-hides through `useScrollDirection`. The static dashboard boot shell uses the same `desk` query and hides `.dbs-brand-bar` under `short`.
+Under `short`, `DashboardMobileBrandBar` is hidden and `--dashboard-mobile-chrome-h` drops by 4rem (the brand row: `h-12` + `py-2`). The context bar still scroll-hides through `useScrollDirection`. The static dashboard boot shell uses the same `desk` query and hides `.dbs-brand-bar` under `short`.
 
 ### Checklist: adding a cluster
 
 When you add or rename a tertiary cluster (or a `/dashboard/*` child):
 
 1. Update **`getDashboardPageMeta`** (`contextTitle`, `showDatePicker`, `showTourScopePicker`, `showYearScopePicker`, `layoutDesktopHeading`, `ownsDesktopStickyChrome`, `layoutDetailEyebrow` if needed).
-2. Update **`DashboardLayout`** nav **`isActive`** so the primary tab stays active on every child (mirror **Pools / pool details** and **Account / Preferences**).
+2. Update **`isDashboardNavItemActive`** in `src/app/layout/model/dashboardNav.js` so the primary tab stays active on every child (mirror **Pools / pool details** and **Account / Preferences**). The sidebar and the bottom tabs both render `DashboardNavItem`.
 3. Add a row to **`scripts/verify-dashboard-meta.mjs`** and run **`npm run verify:dashboard-meta`**.
 4. Update **`src/shared/config/dashboardVocabulary.js`** (`NAV_LABEL_*`) and this doc.
 5. If paths change: **`src/shared/config/dashboardRoutes.js`** (cluster constants + legacy redirects) and **`docs/API.md`** when a declared route is added/renamed.
