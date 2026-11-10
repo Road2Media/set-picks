@@ -1,6 +1,8 @@
 import React, { useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
+import { AdPreferencesSection } from '../../ads/consent';
+import { AD_PREFERENCES_HREF } from '../../ads/adPreferencesPath';
 import { useSignOut } from '../../auth';
 import { HideCrowdPulsePreference } from '../../crowd-picks/preference';
 import { InstallAppCard, isInstalled } from '../../install';
@@ -95,6 +97,8 @@ export default function AccountPreferencesScreen({ user }) {
         />
       </div>
 
+      <AdPreferencesSection />
+
       {installed ? (
         <p className="mt-8 rounded-2xl border border-border-muted/60 bg-surface-inset/40 px-4 py-3 text-xs font-bold leading-relaxed text-content-secondary">
           Installed on this device — Setlist Pick &apos;Em is on your home screen.
@@ -118,6 +122,13 @@ export default function AccountPreferencesScreen({ user }) {
               className="underline decoration-border-muted/60 underline-offset-2 transition-colors hover:text-white"
             >
               Terms
+            </Link>
+            <span aria-hidden>&middot;</span>
+            <Link
+              to={AD_PREFERENCES_HREF}
+              className="underline decoration-border-muted/60 underline-offset-2 transition-colors hover:text-white"
+            >
+              Ad preferences
             </Link>
             <span aria-hidden>&middot;</span>
             <a

@@ -12,13 +12,15 @@ Monetize Setlist Pick 'Em via **non-intrusive, contextual placements** while pre
 |-------|--------|-----------|----------------|
 | **1** | Static/house promo banners | Firebase Remote Config JSON per slot | #121 |
 | **2** | Slot registry, kill switch, operator runbook | Remote Config only. Firestore `ad_campaigns` and admin preview were not added | [#420](https://github.com/pat792/set-picks/issues/420) |
-| **3** | Consent / CMP, ads.txt, CSP, measurement | IAB TCF + partner SDK | [#421](https://github.com/pat792/set-picks/issues/421) |
+| **3** | Consent gate, privacy copy, ads.txt with no sellers, CSP spike | First-party gate. Funding Choices stays off until a site id is set | [#421](https://github.com/pat792/set-picks/issues/421) |
 | **4** | Programmatic third-party fill | Google Ad Manager / AdSense (web) or similar | [#422](https://github.com/pat792/set-picks/issues/422) |
 | **5** | Ad-free premium (optional) | Product + billing (Stripe, etc.) | [#423](https://github.com/pat792/set-picks/issues/423) |
 
 Phase 1 deliberately **does not** integrate third-party ad networks.
 
 Phase 2 (#420) is the operator contract in `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`: schema, staging and production conditions on custom signal `release_channel`, a kill switch that clears an on-screen unit without a deploy, and rollback. The client still has one provider, Remote Config, behind `loadAdCreative(slotId, context)`. Firestore campaigns and `?adPreview=` were not built. One JSON parameter is enough for the one mounted slot, and a preview query would be a new surface.
+
+Phase 3 (#421) is `docs/ADS_CONSENT_RUNBOOK.md` and `docs/ADS_CSP_SPIKE.md`. `useAdConsent()` blocks a future third-party ad script. The Funding Choices tag stays unmounted until `VITE_CMP_PROVIDER` and `VITE_CMP_SITE_ID` are both set, which needs Patrick's Ad Manager or AdSense account. House promos are not gated by that hook. Privacy and terms copy matches a site with no programmatic ads. `public/ads.txt` authorizes no sellers. The CSP host list is documented and is not in `vercel.json`.
 
 ## Repo alignment (2026)
 
@@ -49,7 +51,7 @@ Phase 2 (#420) is the operator contract in `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`: 
 4. **Telemetry** — `ga4Event('ad_impression' \| 'ad_click', { slot_id, creative_id, destination_type })` per `src/shared/lib/ga4.js` conventions.
 5. **Safety** — Render `alt`, `href`, `img[src]` only; validate URLs (https + internal path allowlist); no `dangerouslySetInnerHTML`.
 6. **Performance** — Lazy-init Remote Config; defer fetch until dashboard mount or first `AdPlacement`; no blocking splash LCP.
-7. **Privacy** — Phase 3+: CMP before personalized ads; document in privacy policy; align with future IDFA/GAID language already in policy.
+7. **Privacy** — Phase 3 records the consent gate in `docs/ADS_CONSENT_RUNBOOK.md`. Advertising scripts stay unloaded until that gate allows them. GA4 stays analytics and is not gated. IDFA and GAID are not collected. The privacy policy says so.
 8. **Commercial posture** — `docs/MULTI_BAND_COLLECTIONS_STRATEGY.md` flags setlist.fm API as non-commercial; confirm before expanding data partners under monetization.
 
 ## Initial placement candidates (Phase 1)

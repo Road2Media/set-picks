@@ -273,6 +273,6 @@ These would change navigation chrome or the picks flow. They are not slot ids. D
 ## Out of this runbook
 
 - Google Ad Manager, AdSense, or any other ad script (#422).
-- Consent, `ads.txt`, and privacy-policy updates (#421).
+- Consent, `ads.txt`, and the privacy-policy update. Those live in `docs/ADS_CONSENT_RUNBOOK.md` (#421). This runbook still does not gate house promos on that choice.
 - A Firestore `ad_campaigns` collection or an admin `?adPreview=` route. One Remote Config JSON value per slot is enough for the mounted unit.
 - Premium or ad-free billing (#423).
