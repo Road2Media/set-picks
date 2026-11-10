@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.114.1] — 2026-11-10
+
+### Changed
+- **Resend 6 in Cloud Functions (#762)** — `functions` depends on `resend` 6.37.0. The 4.8.0 → 6 jump already landed with inbound forwarding; Dependabot #755 was not merged. SDK 5 made `@react-email/render` an optional peer. Sends pass `html` and `text`, not `react`, so that peer stays uninstalled. SDK 6 renamed inline attachments from `inlineContentId` to `contentId` (`content_id` on the wire). The deprecated wordmark helper uses `contentId`. Production mail still uses the hosted wordmark URL, not a CID attachment. Password reset, comms `emails.send` (idempotency key, tags, List-Unsubscribe), inbound `.eml` forwards, and tracked CTA hrefs are unchanged. The SDK does not set `click_tracking`, so `links.setlistpickem.com` still follows the domain toggle. `npm install` in `functions/` reproduced the existing lockfile (`resend` 6.37.0). No declared API change. **Human:** do not send from this change. After the next functions deploy, smoke one password-reset mail and one tracked CTA on the staging Firebase project.
+
 ## [1.114.0] — 2026-11-10
 
 ### Added

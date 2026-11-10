@@ -732,7 +732,7 @@ Any `origin` or `continueUrl` on the body is ignored. Preview and localhost rese
 
 **Redeploy after this response change:** `firebase deploy --only functions:requestPasswordResetEmail --project set-picks`. The previous deploy of this function does not return `signIn`. Until this deploy, a Google-only reset still mails a link.
 
-**Link:** `https://www.setlistpickem.com/password-reset-complete?oobCode=…` (www, not the apex). From `Setlist Pick 'Em <updates@setlistpickem.com>`. Reply-To `support@setlistpickem.com`. Not a comms trigger: no suppression list, no daily cap, no unsubscribe.
+**Link:** `https://www.setlistpickem.com/password-reset-complete?oobCode=…` (www, not the apex). From `Setlist Pick 'Em <updates@setlistpickem.com>`. Reply-To `support@setlistpickem.com`. Not a comms trigger: no suppression list, no daily cap, no unsubscribe. Cloud Functions send it with Resend Node SDK 6 `emails.send` (`html` and `text`, no `react` body, no `click_tracking` field). The www href is posted as written. Domain click tracking may still wrap it through `links.setlistpickem.com`; this callable does not turn that wrap off.
 
 **Deploy:** `firebase deploy --only functions:requestPasswordResetEmail,firestore:rules --project set-picks`. Binds the existing `RESEND_API_KEY` secret. No new secret, DNS, or Resend dashboard change. The Vercel client calls this function; until the deploy lands, both reset buttons fail.
 
@@ -857,7 +857,7 @@ Service comms email bodies expose **one** tracked CTA link (the teal button). Th
 |-------------|---------|-------------|
 | `https://click.setlistpickem.com/{path}` | Vercel `api/email-click/[[...path]].js` (host rewrite in `vercel.json`) | 302 redirect to `https://www.setlistpickem.com/{path}` with `utm_source=email`, `utm_medium=comms`, and trigger metadata (`utm_campaign` ← `tid`, `utm_content` ← `tpl`, `utm_term` ← `cta`) |
 
-URL builder: `comms/emailLinks.cjs` (`buildEmailTrackedCtaUrl`). Applied at send time in `commsEmailWorker.js`. Resend domain **Click tracking** stays **on** (`links.setlistpickem.com` wrap → our host → www). That wrap does not strip UTM/trigger query params. Webhook `email.clicked` is not sufficient without the domain toggle — see [`docs/comms-triggers/RESEND_WEBHOOK.md`](comms-triggers/RESEND_WEBHOOK.md). Cloudflare DNS: CNAME `click` → same Vercel target as `www`.
+URL builder: `comms/emailLinks.cjs` (`buildEmailTrackedCtaUrl`). Applied at send time in `commsEmailWorker.js`. Resend domain **Click tracking** stays **on** (`links.setlistpickem.com` wrap → our host → www). That wrap does not strip UTM/trigger query params. Cloud Functions use Resend Node SDK 6. `emails.send` does not set `click_tracking` or `open_tracking`, and it does not rewrite the `click.setlistpickem.com` href, so the domain toggle still performs that wrap. Webhook `email.clicked` is not sufficient without the domain toggle — see [`docs/comms-triggers/RESEND_WEBHOOK.md`](comms-triggers/RESEND_WEBHOOK.md). Cloudflare DNS: CNAME `click` → same Vercel target as `www`.
 
 ### 3.2 HTTP security headers (Vercel)
 
