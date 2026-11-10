@@ -113,6 +113,8 @@ Page and section **descriptions default to an `InfoTooltip`** (`DashboardActionR
 
 Visibility (`hidden desk:block` vs portal) lives at the **cluster layout call site**, not inside `ChromeSegmentedControl`.
 
+A layout-owned slot API that would replace these per-tab portals was spiked in #708 and declined. The portal contract, the route-keyed `--dashboard-mobile-chrome-h` tiers, and the scroll-away transform stay as they are. Record: `docs/decisions/708-layout-chrome-slot-api.md`.
+
 ### Behavior
 
 1. **Primary tab stays active** on all child routes/views (mirror Pools → pool details and Profile cluster `isActive` in `DashboardLayout`).
