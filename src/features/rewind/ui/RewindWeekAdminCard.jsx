@@ -4,7 +4,7 @@ import Button from '../../../shared/ui/Button';
 import Card from '../../../shared/ui/Card';
 
 const fieldClass =
-  'w-full rounded-xl border border-border-muted/50 bg-surface-inset px-3 py-2 text-sm text-content-primary outline-none focus-visible:ring-2 focus-visible:ring-brand';
+  'w-full rounded-xl border border-border-muted/50 bg-surface-inset/72 px-3 py-2 text-sm text-content-primary outline-hidden focus-visible:ring-2 focus-visible:ring-brand';
 
 /**
  * @param {ReturnType<import('../model/useRewindWeekAdmin').useRewindWeekAdmin>} props

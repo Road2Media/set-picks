@@ -1,5 +1,7 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
 
+import { DEFAULT_BAND_ID } from '../../../shared/config/bands.js';
+import { bandIdQueryConstraints, rowsForBand } from '../../../shared/config/bandScope.js';
 import { db } from '../../../shared/lib/firebase';
 import { reduceShowWinners } from '../../../shared/utils/showAggregation';
 
@@ -24,14 +26,21 @@ import { reduceShowWinners } from '../../../shared/utils/showAggregation';
  * }>}
  *   `max === null` signals "no winner" (no eligible picks, or top score 0).
  */
-export async function fetchGlobalShowWinners(showDate) {
+export async function fetchGlobalShowWinners(showDate, bandId = DEFAULT_BAND_ID) {
   const date = showDate?.trim?.();
   if (!date) return { max: null, winners: [] };
 
   const snap = await getDocs(
-    query(collection(db, 'picks'), where('showDate', '==', date))
+    query(
+      collection(db, 'picks'),
+      where('showDate', '==', date),
+      ...bandIdQueryConstraints(where, bandId),
+    )
   );
-  const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const rows = rowsForBand(
+    snap.docs.map((d) => ({ id: d.id, ...d.data() })),
+    bandId,
+  );
   return reduceShowWinners(rows);
 }
 

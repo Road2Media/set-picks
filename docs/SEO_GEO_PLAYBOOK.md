@@ -13,7 +13,7 @@
 | Homepage | `https://www.setlistpickem.com/` | Canonical; social scrapers get OG shell via `middleware.js` + `og-home-html.mjs` (**not** Googlebot — see #658) |
 | How it works | `/how-it-works` | In `public/sitemap.xml` |
 | Scoring | `/how-scoring-works` | In `public/sitemap.xml` |
-| Scoring change | `/how-scoring-changed` | In `public/sitemap.xml`. Not in the main nav (#1086). |
+| Scoring change | `/how-scoring-changed` | In `public/sitemap.xml`. Play menu and footer (#1232). Not a top-level header item. |
 | About | `/about` | **v1.56.0 (#941):** origin story; in `public/sitemap.xml` |
 | Keyword landing | `/phish-setlist-prediction-game` | In `public/sitemap.xml` (#660 / #940) |
 | Sitemap | `/sitemap.xml` | Listed in `robots.txt` |
@@ -133,6 +133,14 @@ Track these weekly in Search Console (Performance → Queries) and spot-check SE
 Public surface: `/tour-stats` + `/tour-stats/:tourSlug` (kebab-case labels from Phish.net calendar ingest). **Aggregates only** — most played, bustouts, gap highlights; never full night setlists. Default tour: **current** (newest `lastShowDate`). Prerender hub + Sphere + **2026 Summer Tour** (`2026-summer-tour`) stay static opt-in; later tours that clear the §1.1 gate auto-prerender on the next production build (#959). Definitions in `/llms.txt` match the public UI: unique = distinct titles this tour; frequency = plays this tour; bustout = 30+ show pre-show gap.
 
 **GEO / LLM brief (#930):** `/llms.txt` restates those three definitions and deep-links the summer slug so agents can cite the live tour page, not only home.
+
+### Show notes (#684) — not indexed yet
+
+| ID | Query | Target path |
+|----|--------|-------------|
+| N1 | `phish show notes` / `phish bustout [show date]` | `/tour-notes`, `/tour-notes/YYYY-MM-DD` |
+
+`noindex, follow` until `PUBLIC_SHOW_NOTES_INDEXABLE` is turned on. Not in the sitemap or `llms.txt`. Do not request indexing. A note names the opener, the encore, and a bustout or a few songs new to that tour. It does not list the set. N1 is not a weekly measurement row until that flag changes.
 
 ### SERP snapshot (2026-08, owner notes)
 

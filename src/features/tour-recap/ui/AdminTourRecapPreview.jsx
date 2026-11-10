@@ -69,7 +69,7 @@ export default function AdminTourRecapPreview() {
             max={999}
             value={rank}
             onChange={(e) => setRank(Number(e.target.value) || 1)}
-            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset px-3 py-2 text-sm font-bold text-white"
+            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset/72 px-3 py-2 text-sm font-bold text-white"
           />
         </label>
         <label className="block text-xs font-bold uppercase tracking-wider text-content-secondary">
@@ -79,7 +79,7 @@ export default function AdminTourRecapPreview() {
             min={0}
             value={points}
             onChange={(e) => setPoints(Number(e.target.value) || 0)}
-            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset px-3 py-2 text-sm font-bold text-white"
+            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset/72 px-3 py-2 text-sm font-bold text-white"
           />
         </label>
         <label className="block text-xs font-bold uppercase tracking-wider text-content-secondary">
@@ -89,7 +89,7 @@ export default function AdminTourRecapPreview() {
             min={0}
             value={wins}
             onChange={(e) => setWins(Number(e.target.value) || 0)}
-            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset px-3 py-2 text-sm font-bold text-white"
+            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset/72 px-3 py-2 text-sm font-bold text-white"
           />
         </label>
         <label className="block text-xs font-bold uppercase tracking-wider text-content-secondary">
@@ -102,7 +102,7 @@ export default function AdminTourRecapPreview() {
             onChange={(e) =>
               setShowsPlayed(Math.min(edition.showCount, Math.max(1, Number(e.target.value) || 1)))
             }
-            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset px-3 py-2 text-sm font-bold text-white"
+            className="mt-1 w-full rounded-lg border border-border-muted/50 bg-surface-inset/72 px-3 py-2 text-sm font-bold text-white"
           />
         </label>
       </div>
@@ -124,7 +124,7 @@ export default function AdminTourRecapPreview() {
         <p className="mb-2 text-xs font-bold text-content-secondary">
           Short body to drive logins; full recap stays in-app. URLs use production site config.
         </p>
-        <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-border-muted/45 bg-surface-inset p-3 text-xs font-mono text-content-secondary">
+        <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-border-muted/45 bg-surface-inset/72 p-3 text-xs font-mono text-content-secondary">
           {emailTeaserBody}
         </pre>
       </div>
@@ -133,7 +133,7 @@ export default function AdminTourRecapPreview() {
         <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-content-secondary">
           Full narrative (optional reference)
         </h3>
-        <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-xl border border-border-muted/45 bg-surface-inset p-3 text-xs font-mono text-content-secondary opacity-90">
+        <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-xl border border-border-muted/45 bg-surface-inset/72 p-3 text-xs font-mono text-content-secondary opacity-90">
           {emailFullBody}
         </pre>
       </div>
@@ -142,7 +142,7 @@ export default function AdminTourRecapPreview() {
         <h3 className="mb-2 text-xs font-bold uppercase tracking-widest text-content-secondary">
           Push preview (FCM)
         </h3>
-        <div className="rounded-xl border border-border-muted/45 bg-surface-inset p-3 text-xs font-bold text-content-secondary">
+        <div className="rounded-xl border border-border-muted/45 bg-surface-inset/72 p-3 text-xs font-bold text-content-secondary">
           <p className="text-white">{push.title}</p>
           <p className="mt-1">{push.body}</p>
         </div>

@@ -9,7 +9,7 @@
 
 export const LIVE_SETLIST_DEGRADED_MESSAGES = {
   phishnet_stalled:
-    'Live setlist updates are delayed. Our Phish.net connection is temporarily stalled, so songs and scores may update more slowly than normal.',
+    'Live setlist updates are running late, so songs and scores may come in more slowly than usual.',
 };
 
 export const LIVE_SETLIST_DEGRADED_MESSAGE_KEYS = Object.keys(

@@ -9,7 +9,7 @@ import {
 } from '../../../shared/ui/DashboardTileShell.jsx';
 import TourStatsView, { TourStatsSelfOverlay } from './TourStatsView.jsx';
 
-const JOB_WASHES = ['bg-amber-200/[0.06]', 'bg-brand-primary/[0.06]'];
+const JOB_WASHES = ['bg-amber-200/6', 'bg-brand-primary/6'];
 
 const STATS = {
   tourShowCount: 3,
@@ -50,8 +50,8 @@ describe('TourStatsView tile shell (#1089)', () => {
     expect(count(html, DASHBOARD_TILE_SHELL)).toBe(6);
     expect(html).toContain(DASHBOARD_TILE_BAND.teal);
     expect(html).toContain(DASHBOARD_TILE_BAND.amber);
-    expect(html).not.toContain('backdrop-blur');
-    expect(html).not.toContain('ring-border-glass');
+    expect(html).not.toContain('backdrop-blur-sm');
+    expect(html).not.toContain('ring-border-glass/25');
     expect(html).not.toMatch(/chair/i);
     for (const wash of JOB_WASHES) {
       expect(html).not.toContain(wash);
@@ -82,7 +82,7 @@ describe('TourStatsView tile shell (#1089)', () => {
     expect(count(html, DASHBOARD_TILE_SHELL)).toBe(5);
     expect(count(html, DASHBOARD_TILE_BAND.blue)).toBe(4);
     expect(count(html, DASHBOARD_TILE_BAND.emerald)).toBe(1);
-    expect(html).not.toContain('backdrop-blur');
+    expect(html).not.toContain('backdrop-blur-sm');
     expect(html).not.toMatch(/chair/i);
     for (const wash of JOB_WASHES) {
       expect(html).not.toContain(wash);

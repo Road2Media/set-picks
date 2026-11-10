@@ -1,6 +1,7 @@
 /**
- * This-browser memory for a guest quiz result and the sign-up handoff.
- * The streak itself is saved only after sign-in (#1143).
+ * This-browser handoff for one guest quiz result and the sign-up intent.
+ * Per-day history lives beside this key and is not cleared on sign-in (#1267).
+ * The account streak is still saved only after sign-in (#1143).
  */
 
 import {
@@ -55,6 +56,7 @@ export function writeGuestPhishIqResult(result) {
   );
 }
 
+/** Drops the one-day handoff. Day history and frozen quizzes stay. */
 export function clearGuestPhishIqResult() {
   removeLocalStorageItem(PHISH_IQ_GUEST_RESULT_KEY);
 }

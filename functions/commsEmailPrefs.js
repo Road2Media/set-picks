@@ -14,6 +14,7 @@ const {
   suppressEmail,
   optOutUserEmailPrefs,
 } = require("./commsEmailSuppression");
+const { prefAllows } = require("./notificationPrefs");
 
 /** Reasons a user may clear via the Notifications screen (not deliverability blocks). */
 const RESUBSCRIBABLE_REASONS = new Set([
@@ -74,7 +75,7 @@ async function getCommsEmailStatusForUser(db, uid) {
 
   const userData = userSnap.data() || {};
   const email = normalizeEmail(userData.email);
-  const lifecycleEnabled = userData.notificationPrefs?.lifecycle !== false;
+  const lifecycleEnabled = prefAllows(userData, "lifecycle", "email");
 
   if (!email) {
     return {
@@ -125,7 +126,7 @@ async function resubscribeCommsEmailForUser(db, admin, uid) {
   await db.collection(SUPPRESSION_COLLECTION).doc(docId).delete();
   await db.collection("users").doc(uid).set(
     {
-      "notificationPrefs.lifecycle": true,
+      "notificationPrefs.email.lifecycle": true,
     },
     { merge: true }
   );

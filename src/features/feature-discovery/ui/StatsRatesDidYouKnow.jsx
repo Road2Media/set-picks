@@ -10,7 +10,7 @@ import DashboardJobShell from '../../../shared/ui/DashboardJobShell';
 import { useFeatureSpotlight } from '../model/useFeatureSpotlight';
 
 const LINK =
-  'font-bold text-slate-100 underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg rounded';
+  'font-bold text-slate-100 underline-offset-2 hover:text-white hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg rounded-sm';
 
 /**
  * Dismissible note that Personal and Global carry picking average, PPS, and SLG.
@@ -55,7 +55,7 @@ export default function StatsRatesDidYouKnow({ className = '' }) {
       <button
         type="button"
         onClick={markSeen}
-        className="-mr-1 -mt-0.5 rounded-md p-1 text-content-secondary transition hover:bg-surface-inset hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="-mr-1 -mt-0.5 rounded-md p-1 text-content-secondary transition hover:bg-surface-inset/72 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand"
         aria-label="Dismiss stats tip"
       >
         <X className="h-3.5 w-3.5" aria-hidden />

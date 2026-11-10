@@ -10,8 +10,8 @@ import React from 'react';
  */
 
 const WASH = {
-  amber: 'bg-amber-200/[0.06]',
-  teal: 'bg-brand-primary/[0.06]',
+  amber: 'bg-amber-200/6',
+  teal: 'bg-brand-primary/6',
   none: '',
 };
 

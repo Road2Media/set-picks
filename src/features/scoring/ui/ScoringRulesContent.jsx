@@ -20,7 +20,7 @@ import {
 const SURFACES = {
   dark: {
     shell:
-      'rounded-2xl border border-border-muted/45 bg-surface-panel p-6 shadow-inset-glass ring-1 ring-border-glass/25',
+      'rounded-2xl border border-border-muted/45 bg-surface-panel/50 p-6 shadow-inset-glass ring-1 ring-border-glass/25',
     title:
       'font-display text-display-md font-bold uppercase tracking-tight text-white mb-2',
     lede: 'mb-6 text-sm font-bold leading-relaxed text-content-secondary',
@@ -49,7 +49,7 @@ const SURFACES = {
   light: {
     // Soft paper panel — not dark glass island on slate-50 (#944).
     shell:
-      'rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm ring-1 ring-slate-900/5 md:p-8',
+      'rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-xs ring-1 ring-slate-900/5 md:p-8',
     title: MARKETING_EDITORIAL_H1_INSET,
     lede: `mb-6 font-semibold leading-relaxed text-slate-600 ${MARKETING_EDITORIAL_TYPE_LEDE}`,
     ruleTitle:

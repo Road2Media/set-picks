@@ -30,7 +30,7 @@ export default function SplashHowItWorksSection({
         <h2
           ref={headingRef}
           tabIndex={-1}
-          className="mb-4 rounded-md text-center font-display text-display-lg font-bold text-slate-900 outline-none focus-visible:ring-2 focus-visible:ring-brand-accent-blue md:text-display-lg-lg"
+          className="mb-4 rounded-md text-center font-display text-display-lg font-bold text-slate-900 outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue md:text-display-lg-lg"
         >
           Game Format
         </h2>

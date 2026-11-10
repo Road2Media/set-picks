@@ -6,23 +6,24 @@ Single reference for **support**, **product**, and **engineering** when adding r
 
 | Tab (label) | Path | Purpose |
 |-------------|------|---------|
-| **Picks** | `/dashboard` | **Picks cluster** (#766): Make Picks / Picks Lab / Scorecard. Primary tab stays active on all three. Global date picker stays on. |
+| **Picks** | `/dashboard` | **Picks cluster** (#766): Make Picks / Picks Lab / Scorecard. Primary tab stays active on all three, on Rewind, and on Phish IQ. Global date picker stays on for the three tray routes. |
 | **Pools** | `/dashboard/pools` | Pools **cluster**: My Pools, Create Pool, Join Pool (sub-nav). |
 | **Standings** | `/dashboard/standings` | **Show standings** for the selected show (everyone or one pool). Tertiary: Show / Tour / Year / Pools. |
-| **Stats** | `/dashboard/stats` | **Stats cluster** (#769): Personal / Global / Band. Primary tab stays active on all three and on the `/dashboard/tour-stats` redirect hop. |
+| **Stats** | `/dashboard/stats` | **Stats cluster** (#769): Personal / Global / Band. Primary tab stays active on all three, on `/dashboard/stats/night` (crowd deep dive, not a chip), and on the `/dashboard/tour-stats` redirect hop. |
 | **Account** | `/dashboard/profile` | Account **cluster** (#770): identity, **Messages**, **Preferences** (sub-nav). Path prefix stays `/dashboard/profile/*`. |
 
 **Admin** (sixth item, single admin user): `/dashboard/admin` — War Room. Bottom nav is **5 columns** for players, **6** when Admin is present.
 
 ### Stats cluster (#769 chrome / #1004 content)
 
-Nested routes (not `?view=`). Icon: `BarChart3`. Every Stats destination uses the chrome tour scope picker (`?tour=`). Personal’s **All-time** block is tour-agnostic; the picker restamps only **This tour**.
+Nested routes (not `?view=`). Icon: `BarChart3`. Personal, Global, and Band use the chrome tour scope picker (`?tour=`). Personal’s **All-time** block is tour-agnostic; the picker restamps only **This tour**. **Crowd night** (`/dashboard/stats/night`, #694) is show-scoped: the date picker shows, the tour picker hides, and it is not a fourth tray chip. Standings crowd pulse links to it.
 
 | Sub-nav | Path | Responsibility |
 |---------|------|----------------|
 | **Personal Stats** | `/dashboard/stats` and `/dashboard/stats/personal` | Every *your* stat. **All-time \| This tour** tray (All-time default). All-time inner tray: **Your stats \| Top picks**. This tour is the “Your picks this tour” self overlay (no inner tray). Profile may keep a quiet **View personal stats** link. |
 | **Global Stats** | `/dashboard/stats/global` | Leaderboards of those same individual stats (best → worst). **v1.77.0:** **All-time \| This tour** tray, then **PPS \| Picking Avg \| SLG**. **v1.100.0 (#1044):** **Vintage** and **Bustout** on the same tray. Vintage is the mean debut year of the different songs picked; an older year ranks higher and needs 3 shows. Bustout is the count of slots whose Bustout Boost fired; a count of 0 is not ranked. SLG is total points ÷ (shows × 30); a show of in-setlist hits is 1.000. All-time SLG needs 15 shows; other ratio boards (and tour SLG) need 3. Top 50 paginated (10/page) + you-row (pinned when off-page). No song explorer. No self overlay. In most played and pool-scoped boards stay out. |
 | **Band Stats** | `/dashboard/stats/band` | Band/song datasets now: #555 `TourStatsView` frequency / bustouts / high gaps. `#300` adds more bands later — it does not gate this slot. |
+| **Crowd night** | `/dashboard/stats/night` | Show-scoped crowd deep dive (#694). Not a tertiary chip. Date picker, not the tour picker. Aggregates only — no night setlist. |
 
 **Legacy redirect:** `/dashboard/tour-stats` → `/dashboard/stats/band` (preserve `?tour=`). Stats primary stays active on the hop.
 
@@ -45,15 +46,17 @@ Nested routes (not `?view=`). Primary **Picks** tab stays active. Lab segment is
 
 | Sub-nav | Path | Responsibility |
 |---------|------|----------------|
-| **Make Picks** | `/dashboard` and `/dashboard/picks` | Existing picks form (lock/edit). `utm_campaign` landed logging stays here. |
+| **Make Picks** | `/dashboard` and `/dashboard/picks` | Existing picks form (lock/edit). `utm_campaign` landed logging stays here. **Crowd helper (#694 P2):** tour chalk before showtime (earlier locked nights only; Use fills an open slot and does not save). Live consensus, slot favorites, and highest gaps after lock. Full crowd stats links to `/dashboard/stats/night`. Not a new tertiary chip. |
 | **Picks Lab** | `/dashboard/picks/lab` | Prediction Lab (`PickPredictionPanel`) when the env flag is `true`; otherwise coming-soon. Live **Your card** mirrors the shared draft. **Use** does not persist — Lock In / Update Picks still saves. |
-| **Scorecard** | `/dashboard/picks/scorecard` | Global, show-scoped self card + comparison metrics (#767). |
+| **Scorecard** | `/dashboard/picks/scorecard` | Show-scoped self card (#767). Everyone by default. `?pool=` compares with one of your pools (#1043). Not a new tab. |
 | **Rewind** | `/dashboard/rewind` | Weekly historical show (#1142). Segment is **hidden** unless `VITE_ENABLE_REWIND_MODE=true`. Direct URL shows a closed shell when the flag is off. Date picker hides. Scores are not live standings. |
-| **Phish IQ** | `/dashboard/phish-iq` | Daily five-question quiz (#1143). Segment stays visible. Date picker hides. Streak saves on the signed-in user. The public play URL is `/phish-iq`. |
+| **Phish IQ** | `/dashboard/phish-iq` | Daily five-question quiz (#1143 / #1258). **Not** a tertiary segment. Nested under the Picks primary. Make Picks shows a card that links here. `/dashboard/picks/phish-iq` redirects here. Date picker hides. Streak saves on the signed-in user. The finish screen counts down to the next quiz and shows this browser’s stats (#1267). The public play URL is `/phish-iq`. No new top-level nav item. |
 
-**Scorecard v1 (#767):** Global only (not pool-scoped). Show comes from the existing global date picker. Overlap (“N players also picked this song”) is **post-lock only** (LIVE / PAST or admin-locked NEXT). Pre-lock shows the player’s own card plus locked copy — no overlap. Odds are optional show-wide `playProb` from Storage `pick-recommendations.json` (same artifact as Lab; **`playProbBySong`** when present so every pick on the card has a percent, `<1%` if the title is not in history). Omit all odds if the artifact is missing or for another night. Score / rank reuse the show-scoped standings query already used by `useStandings` / `computeStandingsSelfRecap` — no new collections or unbounded picks scans.
+**Scorecard (#767, audience and crowd % #1043):** Show comes from the existing global date picker. Default audience is everyone. When you are in at least one pool, the card has a **Compare** control (Everyone, then each pool). `?pool=<id>` on this route remembers that pool. An unknown id falls back to everyone. Rank, overlap, and crowd % use the same membership filter as Standings (`filterPicksToAudience`, including join-day rules). No new tab, route, or collection. If that night does not count for the pool, the card says so and does not invent a pool rank.
 
-**Deferred (not v1):** pool-scoped Scorecard, live crowd %, pre-lock overlap.
+Overlap (“N players also picked this”) is **post-lock only** (LIVE / PAST or admin-locked NEXT). Pre-lock shows the player’s own card — no overlap. **Pre-lock overlap stays deferred:** counts beside the player’s songs while picks are still open would show how the room is leaning before showtime. That stays behind the crowd-pulse disclosure gate.
+
+Crowd % replaces model odds on this card. After showtime (`LIVE` / `PAST`), each filled slot shows **Crowd** and the share of locked cards in the selected audience that include that song. The number comes from the same night aggregate as Standings and Make Picks (`aggregateCrowdNightSongs`). It is not Storage `playProb`. It stays off before showtime, including an admin lock that is still `NEXT`. **Hide crowd pulse** hides Crowd and the overlap line. Rank and graded hits stay. Make Picks and Picks Lab still use `playProb` (#1013). Score / rank reuse the show-scoped standings query — no unbounded picks scan.
 
 Mobile: tertiary tray portals under the context bar via `ChromeSegmentedControl` (same primitive as Profile). Desktop: in-page tray at the cluster layout call site. Make Picks keeps scoring / lock-status tools (`PicksMobileFixedChrome`) on that destination only.
 
@@ -65,7 +68,7 @@ Primary nav **label** is **Account**. Path prefix stays `/dashboard/profile/*` (
 |---------|------|----------------|
 | **Profile** | `/dashboard/profile` | Handle, favorite song, avatar, badges. Appearance helper is an **InfoTooltip**. Prominent **View public profile** CTA. Quiet **View personal stats** link. |
 | **Messages** | `/dashboard/profile/notifications` | Inbox only — Unopened / Read / Archived; archive + delete. No prefs accordion. |
-| **Preferences** | `/dashboard/profile/account` | Sign-in, logout, legal, install/PWA, notification prefs (same `notificationPrefs` keys). Delete account is a text-link disclosure. Contact us is `mailto:support@setlistpickem.com` (inbound allowlist). |
+| **Preferences** | `/dashboard/profile/account` | Sign-in, logout, legal, install/PWA, notification prefs (per-channel `notificationPrefs.push`, `.inApp`, and `.email`, #1045), and Hide crowd pulse (`users.gamePrefs.hideCrowdPulse`, #694). That switch also hides Scorecard crowd % and overlap (#1043). Delete account is a text-link disclosure. Contact us is `mailto:support@setlistpickem.com` (inbound allowlist). |
 
 Legacy redirects (preserve bookmarks + email deep links; query string preserved):
 
@@ -80,7 +83,7 @@ Legacy redirects (preserve bookmarks + email deep links; query string preserved)
 - **Account** tab stays active on the entire Account cluster (including legacy redirect paths).
 - **Standings** tab stays active on `/dashboard/standings` only (Show / Tour / Year / Pools).
 - **Stats** tab stays active on `/dashboard/stats`, `/dashboard/stats/personal`, `/dashboard/stats/global`, `/dashboard/stats/band`, **and** `/dashboard/tour-stats` (redirect hop).
-- **Picks** tab stays active on `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, and `/dashboard/picks/scorecard`.
+- **Picks** tab stays active on `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`, `/dashboard/rewind`, and `/dashboard/phish-iq`.
 
 ## Tertiary chrome contract (#765)
 
@@ -95,7 +98,7 @@ Page and section **descriptions default to an `InfoTooltip`** (`DashboardActionR
 ### Visual
 
 - Rectangular **equal-width** tray (`flex w-full`, segments `flex-1`) — not auto-width pills
-- Uppercase labels (`uppercase tracking-widest`)
+- Uppercase labels (`uppercase tracking-widest`). Below 375px the chrome tray uses `px-1.5` so the three Picks labels fit at 320px (#1258). At 375px and up the padding is `px-2`.
 - Active ring/fill (`tone="chrome"`, default): `bg-brand-primary/15 text-brand-primary ring-1 ring-inset ring-brand-primary/35`
 - In-page filters (`tone="inset"`, Stats All-time / boards trays): same equal-width layout, recessed field, neutral selected chip — do not fork tray CSS in features. Helper `InfoTooltip`s use a **reserved trailing column** beside the tray (empty spacer when no hint) so stacked quaternary trays keep one width. On Personal / Global, both quaternary rows **stick with the Stats chrome** (desktop sticky stack portal below tertiary; mobile fixed chrome below the Personal/Global/Band tray) so boards/cards scroll underneath.
 - Inactive: `text-content-secondary` + inset hover
@@ -105,10 +108,12 @@ Page and section **descriptions default to an `InfoTooltip`** (`DashboardActionR
 
 | Viewport | Pattern |
 |----------|---------|
-| **Mobile** | Fixed under the context bar via `useDashboardMobileChromePortal` (`ProfileMobileFixedChrome`, `StandingsMobileFixedChrome`) |
-| **Desktop** | One sticky stack in `#dashboard-scrollport`: optional Tour Date / Tour scope / Year scope, then cluster title + full-width tertiary tray (`DashboardStickyPageChrome` portaled into `DashboardStickyChromeStack`). Optional utilities sit on the **title row** as icon buttons (`ChromeIconButton` — Scale for Scoring rules on Picks/Standings, BookOpen for How pools work), never labeled pills beside the tray — trays stay equal width across clusters. Stats Personal / Global also portal quaternary inset trays into the same sticky stack (below tertiary). Lock / install banners and page body scroll underneath. Pool details stays Option C (no cluster title). War Room keeps the layout H2. |
+| **Mobile (`mob`)** | Fixed under the context bar via `useDashboardMobileChromePortal` (`ProfileMobileFixedChrome`, `StandingsMobileFixedChrome`). Phone landscape is mobile. |
+| **Desktop (`desk`)** | One sticky stack in `#dashboard-scrollport`: optional Tour Date / Tour scope / Year scope, then cluster title + full-width tertiary tray (`DashboardStickyPageChrome` portaled into `DashboardStickyChromeStack`). Optional utilities sit on the **title row** as icon buttons (`ChromeIconButton` — Scale for Scoring rules on Picks/Standings, BookOpen for How pools work), never labeled pills beside the tray — trays stay equal width across clusters. Stats Personal / Global also portal quaternary inset trays into the same sticky stack (below tertiary). Lock / install banners and page body scroll underneath. Pool details stays Option C (no cluster title). War Room keeps the layout H2. |
 
-Visibility (`hidden md:block` vs portal) lives at the **cluster layout call site**, not inside `ChromeSegmentedControl`.
+Visibility (`hidden desk:block` vs portal) lives at the **cluster layout call site**, not inside `ChromeSegmentedControl`.
+
+A layout-owned slot API that would replace these per-tab portals was spiked in #708 and declined. The portal contract, the route-keyed `--dashboard-mobile-chrome-h` tiers, and the scroll-away transform stay as they are. Record: `docs/decisions/708-layout-chrome-slot-api.md`.
 
 ### Behavior
 
@@ -116,20 +121,32 @@ Visibility (`hidden md:block` vs portal) lives at the **cluster layout call site
 2. **Snap-to-top** on tertiary change (`scrollAppToTop`) — already inside `ChromeSegmentedControl`.
 3. `aria-label` on the tray; NavLink clusters use `<nav>`; view switches use `role="tablist"` + `role="tab"` / `aria-selected`.
 
-### Landscape / `desk` screens (#704–#707)
+### Landscape / `desk` and `mob` screens (#705, part of #704)
 
-Do **not** add new `md:`-as-device assumptions in **shared** chrome. Until `desk` / `mob` screens land, keep existing call-site `md:` splits (portal vs in-page) and prefer one tray primitive rather than a second desktop-only pill group.
+`md:` is **width reflow** only (type size, wrapping, column padding). It is not a device switch. Do **not** add new `md:hidden` / `hidden md:*` chrome gates.
+
+Device chrome uses `@custom-variant` queries in `src/index.css` (v4 breakpoints are min-width only; these also test height). `useDashboardDeskMedia.js` repeats the `desk` and `short` queries for React:
+
+| Screen | Query | What it means |
+|--------|--------|----------------|
+| `desk` | `(min-width: 768px) and (min-height: 480px)` | Sidebar, sticky stack, desktop headings. iPad portrait (768×1024) and desktop stay here. |
+| `mob` | `(max-width: 767.98px), (max-height: 479.98px)` | Exact complement of `desk`. Portrait phones and phone landscape (wide, under 480px tall) stay here. |
+| `short` | `(max-height: 479.98px)` | Landscape compaction only. Does not overlap `desk`. |
+
+Write chrome pairs as `hidden desk:*` (desktop tree) and `desk:hidden` (mobile tree) so exactly one tree is visible. `mob:` is the mobile-side screen when a rule must be authored from that side. Tour Date, Tour, and Year each mount once in the sticky stack and portal into `#dashboard-mobile-scope-slot` below `desk` (#707). Standings Show / Tour / Year / Pools is one `StandingsChrome` mount, so one tablist is in the DOM per viewport. The scrollport top padding is `mob:pt-[calc(env(safe-area-inset-top)+var(--dashboard-mobile-chrome-h))]`. The shell sets that variable from the route’s chrome reservation. Marketing nav stays on its own breakpoints (#706).
+
+Under `short`, `DashboardMobileBrandBar` is hidden and `--dashboard-mobile-chrome-h` drops by 4rem (the brand row: `h-12` + `py-2`). The context bar still scroll-hides through `useScrollDirection`. The static dashboard boot shell uses the same `desk` query and hides `.dbs-brand-bar` under `short`.
 
 ### Checklist: adding a cluster
 
 When you add or rename a tertiary cluster (or a `/dashboard/*` child):
 
 1. Update **`getDashboardPageMeta`** (`contextTitle`, `showDatePicker`, `showTourScopePicker`, `showYearScopePicker`, `layoutDesktopHeading`, `ownsDesktopStickyChrome`, `layoutDetailEyebrow` if needed).
-2. Update **`DashboardLayout`** nav **`isActive`** so the primary tab stays active on every child (mirror **Pools / pool details** and **Account / Preferences**).
+2. Update **`isDashboardNavItemActive`** in `src/app/layout/model/dashboardNav.js` so the primary tab stays active on every child (mirror **Pools / pool details** and **Account / Preferences**). The sidebar and the bottom tabs both render `DashboardNavItem`.
 3. Add a row to **`scripts/verify-dashboard-meta.mjs`** and run **`npm run verify:dashboard-meta`**.
 4. Update **`src/shared/config/dashboardVocabulary.js`** (`NAV_LABEL_*`) and this doc.
 5. If paths change: **`src/shared/config/dashboardRoutes.js`** (cluster constants + legacy redirects) and **`docs/API.md`** when a declared route is added/renamed.
-6. Compose **`ChromeSegmentedControl`** — mobile portal chrome + desktop sticky/in-page tray. No per-feature tray class strings.
+6. Compose **`ChromeSegmentedControl`** — mobile portal chrome + desktop sticky/in-page tray. Gate those trees with `desk:` / `desk:hidden`, not `md:hidden`. No per-feature tray class strings.
 7. Run **`npm run verify:dashboard-ui`**.
 
 ### Current tertiary clusters
@@ -137,10 +154,10 @@ When you add or rename a tertiary cluster (or a `/dashboard/*` child):
 | Primary (stays active) | Tertiary segments | Notes |
 |------------------------|-------------------|--------|
 | **Pools** | My Pools · Create Pool · Join Pool | Nested routes; pool details stays a child, not a segment |
-| **Picks** | Make Picks · Picks Lab · Scorecard | Nested routes (#766). Lab segment always visible; Scorecard is the #767 surface. |
+| **Picks** | Make Picks · Picks Lab · Scorecard | Nested routes (#766). Lab segment always visible; Scorecard is the #767 surface. Phish IQ is a child route, not a fourth chip (#1258). Rewind is a chip only when its flag is on. |
 | **Account** | Profile · Messages · Preferences | Nested routes under `/dashboard/profile/*` (#770). |
 | **Standings** | Show · Tour · Year · Pools | Stats moved to the Stats primary (#769). Year is the global calendar-year board (#1110). |
-| **Stats** | Personal · Global · Band | Nested routes (#769 / #1004). Tray drops the redundant “Stats” suffix so three uppercase chips fit. Global is leaderboards; Band is the song explorer. |
+| **Stats** | Personal · Global · Band | Nested routes (#769 / #1004). Tray drops the redundant “Stats” suffix so three uppercase chips fit. Global is leaderboards; Band is the song explorer. Crowd night is a linked route, not a fourth chip. |
 
 `NAV_LABEL_STATS` is the **Stats** primary. `NAV_LABEL_ACCOUNT` is the **Account** primary; `NAV_LABEL_PROFILE` is identity tertiary only; `NAV_LABEL_PREFERENCES` is the Preferences tertiary (`/dashboard/profile/account`).
 
@@ -172,10 +189,11 @@ Rationale: **Entity-first** detail view without a second full-width display titl
 
 | Term | Meaning |
 |------|---------|
-| **Picks** | Tab + context + desktop H1 for the Picks cluster (`NAV_LABEL_PICKS`) — `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`. |
+| **Picks** | Tab + context + desktop H1 for the Picks cluster (`NAV_LABEL_PICKS`) — `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`, `/dashboard/rewind`, `/dashboard/phish-iq`. |
 | **Make Picks** | Picks-cluster tertiary for the form (`NAV_LABEL_MAKE_PICKS`). |
 | **Picks Lab** | Picks-cluster tertiary for Prediction Lab (`NAV_LABEL_PICKS_LAB`); path `/dashboard/picks/lab`. |
-| **Scorecard** | Picks-cluster tertiary (`NAV_LABEL_SCORECARD`); path `/dashboard/picks/scorecard`. Global self card + post-lock metrics (#767). |
+| **Scorecard** | Picks-cluster tertiary (`NAV_LABEL_SCORECARD`); path `/dashboard/picks/scorecard`. Show-scoped self card. Everyone, or one pool via `?pool=` (#767 / #1043). |
+| **Phish IQ** | Logged-in daily quiz (`NAV_LABEL_PHISH_IQ`); path `/dashboard/phish-iq`. Under the Picks primary, not a tray chip (#1258). Entry card on Make Picks. |
 | **Pools** | Tab + context + desktop H1 for `/dashboard/pools`, `/dashboard/pools/create`, and `/dashboard/pools/join` (`NAV_LABEL_POOLS`) — same word in nav and shell. Tertiary labels: **My Pools** / **Create Pool** / **Join Pool**. |
 | **Account** | Primary tab + identity context for the `/dashboard/profile/*` cluster (`NAV_LABEL_ACCOUNT`). Path prefix unchanged. |
 | **Profile** | Identity tertiary only (`NAV_LABEL_PROFILE`); handle / favorite song / avatar / badges. |
@@ -183,7 +201,7 @@ Rationale: **Entity-first** detail view without a second full-width display titl
 | **Preferences** | Account-cluster settings (`NAV_LABEL_PREFERENCES`); path `/dashboard/profile/account`. |
 | **Admin** | Tab label for `/dashboard/admin` (`NAV_LABEL_ADMIN`); context + desktop H1 stay **War Room** (meta string in `dashboardPageMeta.js`). |
 | **Standings** | Tab, context bar for `/dashboard/standings` (`NAV_LABEL_STANDINGS`). Desktop **Standings** title + Show/Tour/Year/Pools tray live in the shared sticky stack (not the layout H2). Lock / install banners sit in the scrolling body below that stack. View is URL-synced via `?view=show\|tour\|year\|pools`. Pools view takes an optional `?pool=<id>` sub-selector. `?view=tour` hides the global date picker and shows the shared tour scope picker (`?tour=`). `?view=year` hides the date picker and shows the year picker (`?year=YYYY`, omitted when the year is the newest selectable year). |
-| **Stats** | Primary tab + context + desktop H1 for the Stats cluster (`NAV_LABEL_STATS`) — `/dashboard/stats`, `/dashboard/stats/personal`, `/dashboard/stats/global`, `/dashboard/stats/band`. Tertiary chips: **Personal** / **Global** / **Band**. |
+| **Stats** | Primary tab + context + desktop H1 for the Stats cluster (`NAV_LABEL_STATS`) — `/dashboard/stats`, `/dashboard/stats/personal`, `/dashboard/stats/global`, `/dashboard/stats/band`, `/dashboard/stats/night`. Tertiary chips: **Personal** / **Global** / **Band**. Crowd night is not a chip. |
 | **Personal** | Stats-cluster tertiary for career self stats (`NAV_LABEL_PERSONAL_STATS`). Destination name: Personal Stats. |
 | **Global** | Stats-cluster tertiary for the private tour explorer (`NAV_LABEL_GLOBAL_STATS`); path `/dashboard/stats/global`. Destination name: Global Stats. |
 | **Band** | Stats-cluster tertiary shell (`NAV_LABEL_BAND_STATS`); path `/dashboard/stats/band`. Destination name: Band Stats. |
@@ -202,15 +220,16 @@ Rationale: **Entity-first** detail view without a second full-width display titl
 
 | Users see | Route / surface | Source of truth |
 |-----------|-----------------|-----------------|
-| Picks | `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard` | `NAV_LABEL_PICKS` |
+| Picks | `/dashboard`, `/dashboard/picks`, `/dashboard/picks/lab`, `/dashboard/picks/scorecard`, `/dashboard/rewind`, `/dashboard/phish-iq` | `NAV_LABEL_PICKS` |
 | Make Picks | Picks cluster tertiary | `NAV_LABEL_MAKE_PICKS` |
 | Picks Lab | `/dashboard/picks/lab` | `NAV_LABEL_PICKS_LAB` |
 | Scorecard | `/dashboard/picks/scorecard` | `NAV_LABEL_SCORECARD` |
+| Phish IQ | `/dashboard/phish-iq` (entry on Make Picks; not a tray chip) | `NAV_LABEL_PHISH_IQ` |
 | Pools | `/dashboard/pools`, `/dashboard/pools/create`, `/dashboard/pools/join` | `NAV_LABEL_POOLS` |
 | Pool Details (context) | `/dashboard/pool/:id` | `NAV_LABEL_POOL_DETAILS` |
 | Pool details (desktop eyebrow) | Pool hub | `POOL_DETAILS_LAYOUT_EYEBROW` |
 | Standings | `/dashboard/standings` | `NAV_LABEL_STANDINGS` |
-| Stats | `/dashboard/stats`, `/dashboard/stats/personal`, `/dashboard/stats/global`, `/dashboard/stats/band` | `NAV_LABEL_STATS` |
+| Stats | `/dashboard/stats`, `/dashboard/stats/personal`, `/dashboard/stats/global`, `/dashboard/stats/band`, `/dashboard/stats/night` | `NAV_LABEL_STATS` |
 | Personal | Stats cluster tertiary | `NAV_LABEL_PERSONAL_STATS` |
 | Global | `/dashboard/stats/global` | `NAV_LABEL_GLOBAL_STATS` |
 | Band | `/dashboard/stats/band` | `NAV_LABEL_BAND_STATS` |
@@ -274,6 +293,7 @@ flowchart TB
   St --> StatsPersonalAlias["/dashboard/stats/personal · Personal"]
   St --> StatsGlobal["/dashboard/stats/global · Global"]
   St --> StatsBand["/dashboard/stats/band · Band"]
+  St --> StatsNight["/dashboard/stats/night · Crowd night"]
   St --> TourStatsRedirect["/dashboard/tour-stats → Band"]
   Pr --> ProfileRoute["/dashboard/profile\nProfile"]
   Pr --> MessagesRoute["/dashboard/profile/notifications\nMessages"]
@@ -288,6 +308,7 @@ flowchart TB
   StatsPersonalAlias -.->|same tab active| StatsPersonal
   StatsGlobal -.->|same tab active| StatsPersonal
   StatsBand -.->|same tab active| StatsPersonal
+  StatsNight -.->|same tab active, not a chip| StatsPersonal
   TourStatsRedirect -.->|same tab active| StatsPersonal
 
   subgraph modal [Global modal]

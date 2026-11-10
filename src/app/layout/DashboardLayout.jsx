@@ -28,6 +28,7 @@ import ProfilePage from '../../pages/profile/ProfilePage';
 import PersonalStatsPage from '../../pages/stats/PersonalStatsPage';
 import GlobalStatsPage from '../../pages/stats/GlobalStatsPage';
 import BandStatsPage from '../../pages/stats/BandStatsPage';
+import CrowdNightStatsPage from '../../pages/stats/CrowdNightStatsPage';
 import {
   ScoringRulesModalProvider,
   StandingsTourScopeSelect,
@@ -36,18 +37,11 @@ import {
   useStandingsYearSelection,
 } from '../../features/scoring';
 import {
-  NAV_LABEL_ACCOUNT,
-  NAV_LABEL_ADMIN,
-  NAV_LABEL_PICKS,
-  NAV_LABEL_POOLS,
-  NAV_LABEL_STANDINGS,
-  NAV_LABEL_STATS,
-} from '../../shared/config/dashboardVocabulary';
-import {
+  PICKS_CLUSTER_LEGACY_PATHS,
   PROFILE_CLUSTER_PATHS,
   STATS_CLUSTER_PATHS,
+  phishIqLegacyRedirect,
   isPicksClusterPath,
-  isPoolsClusterPath,
   isPoolsTertiaryPath,
   isProfileClusterPath,
   isStatsClusterPath,
@@ -75,12 +69,16 @@ import {
   brandAppChromeMarkImgClassNames,
   brandWordmarkDashboardSidebarScaleWrapperClassNames,
 } from '../../shared/config/branding';
+import { useDashboardShortMedia } from '../../shared/hooks/useDashboardDeskMedia';
 import { getDashboardPageMeta } from './model/dashboardPageMeta';
+import { buildDashboardNavItems } from './model/dashboardNav';
+import { resolveDashboardMobileChromeHeight } from './model/dashboardMobileChromeHeight';
 import { usePrefetchDashboardRoutes } from './model/usePrefetchDashboardRoutes';
 import { useHideMobilePrimaryNavForKeyboard } from './model/useHideMobilePrimaryNavForKeyboard';
 import DashboardMobileBrandBar from './ui/DashboardMobileBrandBar';
 import MobileKeyboardProbe from './ui/MobileKeyboardProbe';
 import DashboardMobileContextBar from './ui/DashboardMobileContextBar';
+import DashboardNavItem from './ui/DashboardNavItem';
 import DashboardPageHeading from './ui/DashboardPageHeading';
 import DashboardStickyChromeStack from './ui/DashboardStickyChromeStack';
 import DashboardTourDateScope from './ui/DashboardTourDateScope';
@@ -88,8 +86,6 @@ import {
   DASHBOARD_MOBILE_FIXED_CHROME_ROOT_ID,
   DASHBOARD_SCROLLPORT_ID,
 } from '../../shared/hooks/useDashboardMobileChromePortal';
-
-import { ListMusic, Users, Medal, BarChart3, User as UserIcon, Settings } from 'lucide-react';
 
 // Primary nav tabs are static imports so tab switches never hit Suspense
 // (lazy + single boundary unmounts the old route before the new chunk resolves).
@@ -132,6 +128,7 @@ export default function DashboardLayout() {
   usePrefetchDashboardRoutes(location.pathname);
 
   const scrollDirection = useScrollDirection();
+  const isShortChrome = useDashboardShortMedia();
   const primaryNavRef = useRef(null);
   const topChromeRef = useRef(null);
   useHideMobilePrimaryNavForKeyboard(primaryNavRef, topChromeRef);
@@ -163,13 +160,16 @@ export default function DashboardLayout() {
     setSelectedDate((prev) => resolveSelectedShowDate(prev, showDates));
   }, [showDates, scheduleDay]);
 
-  const showDateFromStandingsUrl = searchParams.get('showDate');
+  const showDateFromUrl = searchParams.get('showDate');
   useEffect(() => {
-    if (location.pathname !== '/dashboard/standings') return;
-    if (!showDateFromStandingsUrl) return;
-    const valid = showDates.some((s) => s.date === showDateFromStandingsUrl);
-    if (valid) setSelectedDate(showDateFromStandingsUrl);
-  }, [location.pathname, showDateFromStandingsUrl, showDates]);
+    const path = location.pathname.replace(/\/+$/, '') || location.pathname;
+    const acceptsShowDate =
+      path === '/dashboard/standings' || path === STATS_CLUSTER_PATHS.night;
+    if (!acceptsShowDate) return;
+    if (!showDateFromUrl) return;
+    const valid = showDates.some((s) => s.date === showDateFromUrl);
+    if (valid) setSelectedDate(showDateFromUrl);
+  }, [location.pathname, showDateFromUrl, showDates]);
 
   useEffect(() => {
     persistDashboardPath(location.pathname, location.search, {
@@ -177,17 +177,7 @@ export default function DashboardLayout() {
     });
   }, [location.pathname, location.search, isAdmin]);
 
-    const navItems = [
-    { name: NAV_LABEL_PICKS, path: '/dashboard', icon: ListMusic },
-    { name: NAV_LABEL_POOLS, path: '/dashboard/pools', icon: Users },
-    { name: NAV_LABEL_STANDINGS, path: '/dashboard/standings', icon: Medal },
-    { name: NAV_LABEL_STATS, path: STATS_CLUSTER_PATHS.root, icon: BarChart3 },
-    { name: NAV_LABEL_ACCOUNT, path: '/dashboard/profile', icon: UserIcon },
-  ];
-
-  if (isAdmin) {
-    navItems.push({ name: NAV_LABEL_ADMIN, path: '/dashboard/admin', icon: Settings });
-  }
+  const navItems = buildDashboardNavItems(isAdmin);
 
   const meta = getDashboardPageMeta(location.pathname, location.search);
   const datePickerStatus = getShowStatus(selectedDate, showDates);
@@ -215,20 +205,29 @@ export default function DashboardLayout() {
     isPoolsTertiary ||
     isProfileCluster ||
     isStatsCluster;
+  const mobileChromeH = resolveDashboardMobileChromeHeight({
+    fixedChrome: usesMobileFixedChrome,
+    picksCluster: isPicksCluster,
+    statsQuaternary: isStatsQuaternary,
+    short: isShortChrome,
+  });
 
   return (
     <ScoringRulesModalProvider>
     <CommsInboxProvider userId={user?.uid}>
-    <div className="flex h-[100dvh] min-h-0 w-full bg-transparent text-white overflow-hidden md:h-screen">
+    <div
+      className="flex h-dvh min-h-0 w-full bg-transparent text-white overflow-hidden desk:h-screen"
+      style={{ '--dashboard-mobile-chrome-h': mobileChromeH }}
+    >
       
-      {/* DESKTOP SIDEBAR */}
-      <nav className="hidden md:flex flex-col w-64 overflow-visible bg-surface-chrome border-r border-border-muted/65 p-4 z-10">
+      {/* DESKTOP SIDEBAR — `desk` is width and height, so phone landscape stays mobile */}
+      <nav className="hidden desk:flex flex-col w-64 overflow-visible bg-surface-chrome/50 border-r border-border-muted/65 p-4 z-10">
       <div className="mb-6 overflow-visible py-2">
           <h1 className="w-full overflow-visible text-center leading-none">
             <Link
               to="/dashboard"
               onClick={scrollAppToTop}
-              className="block w-full overflow-visible outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm hover:opacity-80 transition-opacity md:flex md:justify-center"
+              className="block w-full overflow-visible outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xs hover:opacity-80 transition-opacity md:flex md:justify-center"
               aria-label="Setlist Pick 'Em — dashboard home"
             >
               <span className={brandWordmarkDashboardSidebarScaleWrapperClassNames}>
@@ -248,50 +247,15 @@ export default function DashboardLayout() {
           <DashboardNotificationsBell />
         </div>
         <div className="flex flex-col gap-2 flex-1">
-          {navItems.map((item) => {
-            const Icon = item.icon; // Extract the icon component
-            const isPicksSection =
-              item.path === '/dashboard' && isPicksClusterPath(location.pathname);
-            const isProfileSection =
-              item.path === PROFILE_CLUSTER_PATHS.profile &&
-              isProfileClusterPath(location.pathname);
-            const isPoolsSection =
-              item.path === '/dashboard/pools' &&
-              isPoolsClusterPath(location.pathname);
-            const isStandingsSection =
-              item.path === '/dashboard/standings' &&
-              (location.pathname === '/dashboard/standings' ||
-                location.pathname === '/dashboard/standings/');
-            const isStatsSection =
-              item.path === STATS_CLUSTER_PATHS.root &&
-              isStatsClusterPath(location.pathname);
-            const isActive =
-              isPicksSection ||
-              isProfileSection ||
-              isPoolsSection ||
-              isStandingsSection ||
-              isStatsSection ||
-              (!isPicksSection &&
-                !isProfileSection &&
-                !isPoolsSection &&
-                !isStandingsSection &&
-                !isStatsSection &&
-                (location.pathname === item.path ||
-                  (item.path === '/dashboard' && location.pathname === '/dashboard/')));
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={scrollAppToTop}
-                {...navPrefetchHandlers(item.path)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 font-bold transition-all ${isActive ? 'bg-brand-primary/10 text-brand-primary' : 'text-content-secondary hover:bg-surface-inset hover:text-white'}`}
-              >
-                {/* Render the Lucide icon instead of text */}
-                <Icon className="w-5 h-5 shrink-0" />
-                {item.name}
-              </Link>
-            );
-          })}
+          {navItems.map((item) => (
+            <DashboardNavItem
+              key={item.name}
+              item={item}
+              pathname={location.pathname}
+              surface="sidebar"
+              linkProps={navPrefetchHandlers(item.path)}
+            />
+          ))}
         </div>
       </nav>
 
@@ -299,7 +263,7 @@ export default function DashboardLayout() {
       <div
         ref={topChromeRef}
         data-mobile-top-chrome
-        className="md:hidden fixed top-0 left-0 w-full z-50 pt-[env(safe-area-inset-top,0px)]"
+        className="desk:hidden fixed top-0 left-0 w-full z-50 pt-[env(safe-area-inset-top,0px)]"
       >
         <div className="relative">
           <DashboardMobileBrandBar user={user} />
@@ -316,29 +280,6 @@ export default function DashboardLayout() {
             <DashboardMobileContextBar
               contextTitle={meta.contextTitle}
               contextTitleTone={meta.desktopHeadingTone}
-              showDatePicker={meta.showDatePicker}
-              selectedDate={selectedDate}
-              onSelectedDateChange={setSelectedDate}
-              showDates={showDates}
-              showDatesByTour={showDatesByTour}
-              tourScope={
-                meta.showTourScopePicker
-                  ? {
-                      tours: selectableTours,
-                      selectedTourKey: selectedTour?.tour ?? null,
-                      onSelectTour: setTourKey,
-                    }
-                  : null
-              }
-              yearScope={
-                meta.showYearScopePicker
-                  ? {
-                      years: selectableYears,
-                      selectedYearKey: selectedYear?.year ?? null,
-                      onSelectYear: setYearKey,
-                    }
-                  : null
-              }
             />
             {usesMobileFixedChrome ? (
               <div id={DASHBOARD_MOBILE_FIXED_CHROME_ROOT_ID} />
@@ -347,24 +288,16 @@ export default function DashboardLayout() {
         </div>
       </div>
 
-      {/* MAIN CONTENT — routes with fixed chrome get extra top pad for the pills row */}
+      {/* MAIN CONTENT — top pad tracks --dashboard-mobile-chrome-h (#707) */}
       <main
         id={DASHBOARD_SCROLLPORT_ID}
         className={[
           'flex-1 min-w-0 overflow-y-auto relative',
-          'pb-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] md:pt-8 md:pb-8',
-          usesMobileFixedChrome
-            ? // Picks: tertiary + optional Make Picks tools. Stats Personal/Global:
-              // tertiary + up to two quaternary inset trays.
-              isPicksCluster
-              ? 'pt-[calc(env(safe-area-inset-top,0px)+15.25rem)]'
-              : isStatsQuaternary
-                ? 'pt-[calc(env(safe-area-inset-top,0px)+17.75rem)]'
-                : 'pt-[calc(env(safe-area-inset-top,0px)+11.75rem)]'
-            : 'pt-[calc(env(safe-area-inset-top,0px)+9rem)]',
+          'pb-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] desk:pb-8',
+          'mob:pt-[calc(env(safe-area-inset-top,0px)+var(--dashboard-mobile-chrome-h,9rem))] desk:pt-8',
         ].join(' ')}
       >
-        <div className="max-w-xl mx-auto w-full min-w-0 px-4 pt-2 md:p-8">
+        <div className="max-w-xl mx-auto w-full min-w-0 px-4 pt-2 desk:p-8">
           {meta.ownsDesktopStickyChrome ||
           meta.showDatePicker ||
           meta.showTourScopePicker ||
@@ -372,7 +305,6 @@ export default function DashboardLayout() {
             <DashboardStickyChromeStack>
               {meta.showDatePicker ? (
                 <DashboardTourDateScope
-                  variant="desktop"
                   selectedDate={selectedDate}
                   onSelectedDateChange={setSelectedDate}
                   showDates={showDates}
@@ -380,14 +312,12 @@ export default function DashboardLayout() {
                 />
               ) : meta.showTourScopePicker ? (
                 <StandingsTourScopeSelect
-                  variant="desktop"
                   tours={selectableTours}
                   selectedTourKey={selectedTour?.tour ?? null}
                   onSelectTour={setTourKey}
                 />
               ) : meta.showYearScopePicker ? (
                 <StandingsYearScopeSelect
-                  variant="desktop"
                   years={selectableYears}
                   selectedYearKey={selectedYear?.year ?? null}
                   onSelectYear={setYearKey}
@@ -404,7 +334,7 @@ export default function DashboardLayout() {
           <DashboardInstallEngageBanner userId={user?.uid} pathname={location.pathname} />
 
           {meta.layoutDetailEyebrow ? (
-            <p className="mb-3 ml-1 hidden text-xs font-bold uppercase tracking-widest text-content-secondary md:block">
+            <p className="mb-3 ml-1 hidden text-xs font-bold uppercase tracking-widest text-content-secondary desk:block">
               {meta.layoutDetailEyebrow}
             </p>
           ) : null}
@@ -430,6 +360,15 @@ export default function DashboardLayout() {
               <Route
                 path="picks/scorecard"
                 element={<PicksScorecardPage />}
+              />
+              <Route
+                path="picks/phish-iq"
+                element={
+                  <Navigate
+                    to={phishIqLegacyRedirect(PICKS_CLUSTER_LEGACY_PATHS.phishIq, location.search)}
+                    replace
+                  />
+                }
               />
               <Route path="rewind" element={<RewindPlayPage user={user} />} />
               <Route path="phish-iq" element={<PhishIqDashboardPage />} />
@@ -461,6 +400,10 @@ export default function DashboardLayout() {
               <Route path="personal" element={<PersonalStatsPage />} />
               <Route path="global" element={<GlobalStatsPage />} />
               <Route path="band" element={<BandStatsPage />} />
+              <Route
+                path="night"
+                element={<CrowdNightStatsPage selectedDate={selectedDate} />}
+              />
             </Route>
             <Route
               path="admin"
@@ -529,59 +472,18 @@ export default function DashboardLayout() {
       <nav
         ref={primaryNavRef}
         data-mobile-primary-nav
-        className="md:hidden fixed inset-x-0 bottom-0 z-50 w-full border-t border-border-subtle/35 bg-[linear-gradient(to_top,rgb(var(--brand-bg-deep)_/_0.76),rgb(var(--brand-bg)_/_0.60))] pb-[env(safe-area-inset-bottom,0px)] shadow-[inset_0_1px_0_0_rgb(var(--brand-primary)/0.12),0_-10px_28px_-14px_rgba(15,10,46,0.85)] ring-1 ring-inset ring-white/[0.06] backdrop-blur-xl supports-[backdrop-filter]:backdrop-blur-2xl supports-[backdrop-filter]:backdrop-saturate-150"
+        className="desk:hidden fixed inset-x-0 bottom-0 z-50 w-full border-t border-border-subtle/35 bg-[linear-gradient(to_top,rgb(var(--brand-bg-deep)/0.76),rgb(var(--brand-bg)/0.60))] pb-[env(safe-area-inset-bottom,0px)] shadow-[inset_0_1px_0_0_rgb(var(--brand-primary)/0.12),0_-10px_28px_-14px_rgba(15,10,46,0.85)] ring-1 ring-inset ring-white/6 backdrop-blur-xl supports-backdrop-filter:backdrop-blur-2xl supports-backdrop-filter:backdrop-saturate-150"
       >
         <div className={`grid ${isAdmin ? 'grid-cols-6' : 'grid-cols-5'} items-center gap-0.5 px-1.5 h-16`}>
-          {navItems.map((item) => {
-            const Icon = item.icon; // Extract the icon component
-            const isPicksSection =
-              item.path === '/dashboard' && isPicksClusterPath(location.pathname);
-            const isProfileSection =
-              item.path === PROFILE_CLUSTER_PATHS.profile &&
-              isProfileClusterPath(location.pathname);
-            const isPoolsSection =
-              item.path === '/dashboard/pools' &&
-              isPoolsClusterPath(location.pathname);
-            const isStandingsSection =
-              item.path === '/dashboard/standings' &&
-              (location.pathname === '/dashboard/standings' ||
-                location.pathname === '/dashboard/standings/');
-            const isStatsSection =
-              item.path === STATS_CLUSTER_PATHS.root &&
-              isStatsClusterPath(location.pathname);
-            const isActive =
-              isPicksSection ||
-              isProfileSection ||
-              isPoolsSection ||
-              isStandingsSection ||
-              isStatsSection ||
-              (!isPicksSection &&
-                !isProfileSection &&
-                !isPoolsSection &&
-                !isStandingsSection &&
-                !isStatsSection &&
-                (location.pathname === item.path ||
-                  (item.path === '/dashboard' && location.pathname === '/dashboard/')));
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                onClick={scrollAppToTop}
-                {...navPrefetchHandlers(item.path)}
-                className={`flex h-[calc(100%-10px)] min-h-0 w-full flex-col items-center justify-center space-y-1 self-center rounded-xl transition-colors ${
-                  isActive
-                    ? 'text-brand-primary bg-brand-primary/[0.14] ring-1 ring-inset ring-brand-primary/30 shadow-[inset_0_1px_0_0_rgb(255_255_255_/_0.06)]'
-                    : 'text-content-secondary hover:text-white'
-                }`}
-              >
-                {/* Render the Lucide icon */}
-                <Icon className="w-5 h-5 mb-0.5 drop-shadow-[0_1px_1px_rgb(15_10_46_/_0.75)]" />
-                <span className="text-[10px] font-bold tracking-wider [text-shadow:0_1px_2px_rgb(15_10_46_/_0.88)]">
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
+          {navItems.map((item) => (
+            <DashboardNavItem
+              key={item.name}
+              item={item}
+              pathname={location.pathname}
+              surface="tab"
+              linkProps={navPrefetchHandlers(item.path)}
+            />
+          ))}
         </div>
       </nav>
 

@@ -47,7 +47,7 @@ export default function SplashAuthPanel({
 
   return (
     <div
-      className={`w-full max-w-md ${DASHBOARD_CARD_RADIUS} border border-border-subtle/60 bg-surface-panel/40 ${DASHBOARD_CARD_PAD} md:!p-6`}
+      className={`w-full max-w-md ${DASHBOARD_CARD_RADIUS} border border-border-subtle/60 bg-surface-panel/40 ${DASHBOARD_CARD_PAD} md:p-6!`}
     >
       <div className="mb-5 flex items-start justify-between gap-3">
         <h1 className="font-display text-2xl font-bold tracking-tight text-white md:text-[1.75rem]">

@@ -216,6 +216,9 @@ export function injectPrerenderHtml(shellHtml, route, enrichment = {}) {
   const ogImage = enrichment.ogImage || SEO_CONFIG.ogImageUrl;
   html = upsertTitle(html, route.title);
   html = upsertMetaByName(html, 'description', route.description);
+  if (typeof route.robots === 'string' && route.robots.trim()) {
+    html = upsertMetaByName(html, 'robots', route.robots.trim());
+  }
   html = upsertMetaByName(html, 'author', SEO_CONFIG.publisherName);
   html = upsertMetaByProperty(html, 'og:site_name', SEO_CONFIG.siteName);
   html = upsertMetaByProperty(html, 'og:type', 'website');

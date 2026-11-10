@@ -18,7 +18,7 @@ export default function EditPoolNameForm({
   }, [initialName]);
 
   return (
-    <div className="space-y-3 rounded-xl border border-border-subtle bg-surface-inset p-4 shadow-inset-glass">
+    <div className="space-y-3 rounded-xl border border-border-subtle/50 bg-surface-inset/72 p-4 shadow-inset-glass">
       <label className="block">
         <span className="text-xs font-bold uppercase tracking-widest text-content-secondary">
           Pool name

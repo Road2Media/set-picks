@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+import { HUNDREDTH_SHOW_PATH } from '../../hundredth-show/public';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
 
 /**
@@ -32,7 +33,11 @@ export default function NyeRunStatsView({
         <p className="text-base leading-snug text-slate-300">
           Four nights at Madison Square Garden. January 2, 2027 is the 100th
           performance at the Garden. Call the slot you want before the lights go
-          down.
+          down.{' '}
+          <Link to={HUNDREDTH_SHOW_PATH} className={LINK_ON_DARK}>
+            Pick the 100th
+          </Link>
+          .
         </p>
       </header>
 
@@ -120,7 +125,7 @@ export default function NyeRunStatsView({
         <a
           href={poolHref}
           onClick={onPoolClick}
-          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-[0_0_40px_-10px_rgba(45,212,191,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_-15px_rgba(45,212,191,0.7)] active:translate-y-0 active:scale-[0.98]"
+          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-linear-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-glow-brand transition-all hover:-translate-y-0.5 hover:shadow-glow-brand-lg active:translate-y-0 active:scale-[0.98]"
         >
           Create a NYE pool
         </a>

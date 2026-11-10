@@ -41,7 +41,7 @@ export default function SponsorSlot({
   // Banner variant reserves the shared L1 promo height so it lines up with
   // sibling L1 cards (e.g. Invite promo) in dashboard stacks.
   const minHeight =
-    variant === 'card' ? 'min-h-[7.5rem]' : DASHBOARD_CARD_L1_MIN_H;
+    variant === 'card' ? 'min-h-30' : DASHBOARD_CARD_L1_MIN_H;
 
   return (
     <aside
@@ -63,18 +63,18 @@ export default function SponsorSlot({
 function PlaceholderCreative({ slotId, variant }) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-border-subtle/60 bg-surface-inset text-[9px] font-bold uppercase text-content-secondary/50">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-dashed border-border-subtle/60 bg-surface-inset/72 text-[9px] font-bold uppercase text-content-secondary/50">
         Logo
       </div>
       <div className="min-w-0 flex-1 space-y-1.5">
-        <div className="h-2.5 w-3/4 rounded bg-surface-panel-strong/80" />
-        <div className="h-2 w-1/2 rounded bg-surface-panel-strong/50" />
+        <div className="h-2.5 w-3/4 rounded-sm bg-surface-panel-strong/80" />
+        <div className="h-2 w-1/2 rounded-sm bg-surface-panel-strong/50" />
         <p className="truncate pt-0.5 text-[9px] font-medium text-content-secondary/40">
           {slotId}
         </p>
       </div>
       {variant === 'card' ? (
-        <div className="h-8 w-20 shrink-0 rounded-full border border-dashed border-border-subtle/60 bg-surface-inset" />
+        <div className="h-8 w-20 shrink-0 rounded-full border border-dashed border-border-subtle/60 bg-surface-inset/72" />
       ) : null}
     </div>
   );

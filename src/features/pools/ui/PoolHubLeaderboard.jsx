@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import { StandingsPlayerAvatar, usePlayerIdentityMap } from '../../profile';
 import { useAuth } from '../../auth';
@@ -12,7 +13,7 @@ export default function PoolHubLeaderboard({ members }) {
   return (
     <>
       {members.length === 0 ? (
-        <div className="rounded-2xl border border-border-subtle bg-surface-panel p-8 text-center font-bold text-content-secondary shadow-inset-glass">
+        <div className="rounded-2xl border border-border-subtle/50 bg-surface-panel/50 p-8 text-center font-bold text-content-secondary shadow-inset-glass">
           No members to show yet.
         </div>
       ) : (
@@ -29,9 +30,11 @@ export default function PoolHubLeaderboard({ members }) {
             const isSelf = Boolean(selfUserId) && m.id === selfUserId;
             const identity = identities[m.id] || null;
             return (
-              <li
+              <Row
+                as="li"
                 key={m.id}
-                className="flex min-w-0 items-center justify-between gap-2 rounded-2xl border border-border-subtle bg-surface-panel px-4 py-3 shadow-inset-glass sm:gap-3"
+                tone={isSelf ? 'self' : 'default'}
+                className="flex min-w-0 items-center justify-between gap-2 sm:gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <span className="w-8 shrink-0 font-black tabular-nums text-content-secondary/90">
@@ -75,7 +78,7 @@ export default function PoolHubLeaderboard({ members }) {
                     </span>
                   </div>
                 </div>
-              </li>
+              </Row>
             );
           })}
         </ul>

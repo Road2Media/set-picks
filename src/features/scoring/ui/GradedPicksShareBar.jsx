@@ -14,7 +14,7 @@ function GradedPicksShareEmojiPreview({ userPicks, actualSetlist }) {
   const slots = buildGradedPicksShareSlots(userPicks, actualSetlist);
   const rowClass = 'flex gap-0.5';
   const tileClass =
-    'inline-flex h-[1.35rem] w-[1.35rem] shrink-0 items-center justify-center rounded border border-slate-500/55 bg-slate-950/70 sm:h-7 sm:w-7';
+    'inline-flex h-[1.35rem] w-[1.35rem] shrink-0 items-center justify-center rounded-sm border border-slate-500/55 bg-slate-950/70 sm:h-7 sm:w-7';
 
   return (
     <div
@@ -99,7 +99,7 @@ export default function GradedPicksShareBar({
           <button
             type="button"
             onClick={onCopy}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border-muted bg-surface-inset px-3 py-2 text-xs font-bold text-slate-200 transition-colors hover:bg-surface-panel-strong hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-muted/60 bg-surface-inset/72 px-3 py-2 text-xs font-bold text-slate-200 transition-colors hover:bg-surface-panel-strong/72 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
           >
             <Copy className="h-3.5 w-3.5" aria-hidden />
             Copy
@@ -107,7 +107,7 @@ export default function GradedPicksShareBar({
           <button
             type="button"
             onClick={onShare}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-xs font-bold text-brand-primary transition-colors hover:bg-brand-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-primary/40 bg-brand-primary/10 px-3 py-2 text-xs font-bold text-brand-primary transition-colors hover:bg-brand-primary/15 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
           >
             <Share2 className="h-3.5 w-3.5" aria-hidden />
             Share…

@@ -48,7 +48,7 @@ export default function StandingsInvitePromo({ onInvite, className = '' }) {
           type="button"
           variant="secondary"
           size="sm"
-          className="shrink-0 !px-3 !py-1.5 text-[11px] sm:!px-3.5 sm:!py-2"
+          className="shrink-0 px-3! py-1.5! text-[11px] sm:px-3.5! sm:py-2!"
           onClick={onInvite}
         >
           Invite
