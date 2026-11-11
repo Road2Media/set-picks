@@ -132,8 +132,19 @@ export function isMarketingRewindFooterEnabled() {
 }
 
 /**
- * Footer primary links in header order: each hub, then its children.
- * Rewind is appended only when the build flag is on. It is not a header item.
+ * Child labels the footer does not repeat (#1291).
+ * Header menus still list them. "All tours" is the Tour Stats hub again.
+ */
+const FOOTER_OMITTED_CHILD_LABELS = new Set([
+  'How scoring changed',
+  'Annual 2026',
+  'All tours',
+]);
+
+/**
+ * Compact footer links in header order: each hub, then the children that are
+ * still worth a line. Rewind is appended only when the build flag is on.
+ * It is not a header item.
  *
  * @param {{ rewindEnabled?: boolean }} [options]
  * @returns {Array<{ to: string, label: string, group: string, gated?: boolean }>}
@@ -144,6 +155,7 @@ export function marketingFooterPrimaryLinks({ rewindEnabled = false } = {}) {
   for (const item of MARKETING_PRIMARY_NAV) {
     links.push({ to: item.to, label: item.label, group: item.id });
     for (const child of item.children || []) {
+      if (FOOTER_OMITTED_CHILD_LABELS.has(child.label)) continue;
       links.push({ to: child.to, label: child.label, group: item.id });
     }
   }

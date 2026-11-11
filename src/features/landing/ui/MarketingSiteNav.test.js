@@ -135,23 +135,26 @@ describe('marketing mobile menu markup (#1232)', () => {
   });
 });
 
-describe('marketing footer nav markup (#1232 / #1287)', () => {
-  it('lists every hub and child in the primary footer', () => {
+describe('marketing footer nav markup (#1232 / #1291)', () => {
+  it('lists the compact primary links and drops the duplicate ones', () => {
     const html = footer('/how-it-works');
     for (const href of [
       '/phish-setlist-prediction-game',
       '/how-it-works',
       '/how-scoring-works',
-      '/how-scoring-changed',
       '/phish-iq',
       '/tour-stats',
       '/tour-stats/2026-2027-nye-run',
       '/phish-at-msg',
-      '/tour-stats/2026',
       '/about',
     ]) {
       expect(html).toContain(`href="${href}"`);
     }
+    expect(html).not.toContain('href="/how-scoring-changed"');
+    expect(html).not.toContain('href="/tour-stats/2026"');
+    expect(html).not.toContain('>How scoring changed<');
+    expect(html).not.toContain('>Annual 2026<');
+    expect(html).not.toContain('>All tours<');
     expect(html).not.toContain('/rewind');
     expect(html).not.toContain('Privacy Policy');
     expect(html.toLowerCase()).not.toContain('chair');
@@ -159,54 +162,38 @@ describe('marketing footer nav markup (#1232 / #1287)', () => {
     expect(html.toLowerCase()).not.toContain('methodology');
   });
 
-  it('stacks child links under a heading and folds single links into one column', () => {
+  it('wraps primary links in one centered row', () => {
     const html = footer('/how-it-works');
-    expect(html).toContain('data-footer-column="play"');
-    expect(html).toContain('data-footer-column="tour-stats"');
-    expect(html).toContain('data-footer-column="singles"');
-    expect(html).not.toContain('data-footer-column="phish-iq"');
-    expect(html).not.toContain('data-footer-column="about"');
-    expect(html.indexOf('data-footer-column="play"')).toBeLessThan(
-      html.indexOf('data-footer-column="tour-stats"'),
-    );
-    expect(html.indexOf('data-footer-column="tour-stats"')).toBeLessThan(
-      html.indexOf('data-footer-column="singles"'),
-    );
+    expect(html).toContain('flex-wrap items-center justify-center');
+    expect(html).not.toContain('data-footer-column');
+    expect(html).not.toContain('uppercase');
+    expect(html).not.toContain('flex-col items-start');
 
-    const play = html.match(/<a[^>]*href="\/phish-setlist-prediction-game"[^>]*>/);
-    expect(play?.[0]).toContain('no-underline');
-    expect(play?.[0]).toContain('uppercase');
     const how = html.match(/<a[^>]*href="\/how-it-works"[^>]*>/);
     expect(how?.[0]).toContain('underline');
-    expect(how?.[0]).not.toContain('no-underline');
-    expect(html).toContain('flex-col items-start');
-    expect(html).not.toContain('max-w-xs');
-    expect(html).not.toContain('flex-wrap justify-center');
+    expect(how?.[0]).toContain('aria-current="page"');
 
-    const playColumn = html.slice(
-      html.indexOf('data-footer-column="play"'),
-      html.indexOf('data-footer-column="tour-stats"'),
-    );
-    expect(playColumn).toContain('href="/how-it-works"');
-    expect(playColumn).toContain('href="/how-scoring-works"');
-    expect(playColumn).toContain('href="/how-scoring-changed"');
-    expect(playColumn).not.toContain('href="/phish-iq"');
-
-    const singles = html.slice(html.indexOf('data-footer-column="singles"'));
-    expect(singles).toContain('href="/phish-iq"');
-    expect(singles).toContain('href="/about"');
-    expect(singles.indexOf('href="/phish-iq"')).toBeLessThan(singles.indexOf('href="/about"'));
+    const order = [
+      '/phish-setlist-prediction-game',
+      '/how-it-works',
+      '/how-scoring-works',
+      '/phish-iq',
+      '/tour-stats',
+      '/tour-stats/2026-2027-nye-run',
+      '/phish-at-msg',
+      '/about',
+    ];
+    const indexes = order.map((href) => html.indexOf(`href="${href}"`));
+    expect(indexes.every((index) => index >= 0)).toBe(true);
+    expect(indexes).toEqual([...indexes].sort((a, b) => a - b));
   });
 
-  it('adds Rewind in the singles column only when the flag is on', () => {
+  it('adds Rewind at the end only when the flag is on', () => {
     vi.stubEnv('VITE_ENABLE_REWIND_MODE', 'true');
     const html = footer('/');
-    const singles = html.slice(html.indexOf('data-footer-column="singles"'));
-    expect(singles).toContain('href="/rewind"');
-    expect(singles).toContain('>Rewind<');
-    expect(html.indexOf('data-footer-column="tour-stats"')).toBeLessThan(
-      html.indexOf('href="/rewind"'),
-    );
+    expect(html).toContain('href="/rewind"');
+    expect(html).toContain('>Rewind<');
+    expect(html.indexOf('href="/about"')).toBeLessThan(html.indexOf('href="/rewind"'));
   });
 
   it('keeps legal links on their own row', () => {

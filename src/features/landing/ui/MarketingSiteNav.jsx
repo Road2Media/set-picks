@@ -32,18 +32,8 @@ const CARET_BUTTON_CLASS =
 const MENU_PANEL_CLASS =
   'min-w-56 rounded-xl border border-white/10 bg-brand-bg/95 py-1 shadow-xl shadow-black/40 backdrop-blur-lg';
 
-/** Column title. Not the underlined child-link style, so it reads as a heading. */
-const FOOTER_GROUP_HEADING =
-  'block whitespace-nowrap rounded-xs text-xs font-semibold uppercase leading-4 tracking-wider text-slate-200 no-underline transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue';
-
-const FOOTER_CHILD_LINK = `block whitespace-nowrap text-sm leading-5 ${FOOTER_LINK_ON_DARK}`;
-
-/**
- * Mobile: one left-aligned stack, centered as a block.
- * sm+: content-sized columns with the same gap, top-aligned.
- */
-const FOOTER_COLUMNS_CLASS =
-  'mx-auto flex w-max max-w-full flex-col items-start gap-8 text-left sm:w-full sm:max-w-none sm:flex-row sm:flex-wrap sm:items-start sm:justify-center sm:gap-x-16 sm:gap-y-10';
+/** Wrapped footer link. Nowrap so a label stays on one line when the row wraps. */
+const FOOTER_INLINE_LINK = `whitespace-nowrap text-sm leading-5 ${FOOTER_LINK_ON_DARK}`;
 
 /**
  * Compact primary nav for marketing page headers (#663 / #1232).
@@ -345,27 +335,9 @@ function MarketingMobileHub({ item, pathname, disclosed, onToggle, onNavigate })
 }
 
 /**
- * Hub label in the footer. Same destination as the header, styled as a heading.
- * @param {{ to: string, label: string, pathname: string }} props
- */
-function FooterGroupHeading({ to, label, pathname }) {
-  const current = isMarketingNavHrefCurrent(pathname, to);
-  return (
-    <Link
-      to={to}
-      onClick={scrollMarketingToTop}
-      className={FOOTER_GROUP_HEADING}
-      aria-current={current ? 'page' : undefined}
-    >
-      {label}
-    </Link>
-  );
-}
-
-/**
- * Footer / pre-footer link row (#663 / #948 / #1232 / #1287).
- * Groups with children are columns: a heading, then links stacked under it.
- * Phish IQ, About, and gated Rewind share one column so they are not empty columns.
+ * Compact footer link row (#663 / #948 / #1232 / #1291).
+ * One centered wrap on mobile and desktop. Hubs and the children worth a
+ * second line share the same link style. Legal links stay on their own row.
  * @param {'primary' | 'legal' | 'all'} [variant='all']
  */
 export function MarketingFooterNav({ className = '', variant = 'all' }) {
@@ -375,15 +347,6 @@ export function MarketingFooterNav({ className = '', variant = 'all' }) {
   const primaryLinks = marketingFooterPrimaryLinks({
     rewindEnabled: isMarketingRewindFooterEnabled(),
   });
-  const rewind = primaryLinks.find((link) => link.gated);
-  const grouped = MARKETING_PRIMARY_NAV.filter(marketingNavItemHasCaret);
-  const singleLinks = [
-    ...MARKETING_PRIMARY_NAV.filter((item) => !marketingNavItemHasCaret(item)).map((item) => ({
-      to: item.to,
-      label: item.label,
-    })),
-    ...(rewind ? [{ to: rewind.to, label: rewind.label }] : []),
-  ];
 
   return (
     <nav
@@ -391,44 +354,22 @@ export function MarketingFooterNav({ className = '', variant = 'all' }) {
       className={className}
     >
       {showPrimary ? (
-        <ul className={FOOTER_COLUMNS_CLASS}>
-          {grouped.map((item) => (
-            <li
-              key={item.id}
-              data-footer-column={item.id}
-              className="flex flex-col items-start"
-            >
-              <FooterGroupHeading to={item.to} label={item.label} pathname={pathname} />
-              <ul className="mt-3 flex flex-col items-start gap-2">
-                {item.children.map((child) => {
-                  const childCurrent = isMarketingNavHrefCurrent(pathname, child.to);
-                  return (
-                    <li key={`${child.label}:${child.to}`}>
-                      <Link
-                        to={child.to}
-                        onClick={scrollMarketingToTop}
-                        className={FOOTER_CHILD_LINK}
-                        aria-current={childCurrent ? 'page' : undefined}
-                      >
-                        {child.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </li>
-          ))}
-          {singleLinks.length > 0 ? (
-            <li data-footer-column="singles" className="flex flex-col items-start">
-              <ul className="flex flex-col items-start gap-3">
-                {singleLinks.map((link) => (
-                  <li key={`${link.label}:${link.to}`}>
-                    <FooterGroupHeading to={link.to} label={link.label} pathname={pathname} />
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ) : null}
+        <ul className="mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+          {primaryLinks.map((link) => {
+            const current = isMarketingNavHrefCurrent(pathname, link.to);
+            return (
+              <li key={`${link.label}:${link.to}`}>
+                <Link
+                  to={link.to}
+                  onClick={scrollMarketingToTop}
+                  className={FOOTER_INLINE_LINK}
+                  aria-current={current ? 'page' : undefined}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       ) : null}
       {showLegal ? (
