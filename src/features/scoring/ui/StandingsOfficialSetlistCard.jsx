@@ -32,7 +32,7 @@ const { BUSTOUT_MIN_GAP } = SCORING_RULES;
 
 /** Invisible 4-col grid per row: # | title | gap | bustout — fixed tracks keep columns aligned. */
 const SETLIST_ROW_GRID =
-  'grid grid-cols-[1.5rem_minmax(0,1fr)_4.75rem_4.5rem] items-center gap-x-2 min-h-[1.75rem]';
+  'grid grid-cols-[1.5rem_minmax(0,1fr)_4.75rem_4.5rem] items-center gap-x-2 min-h-7';
 
 function SetSongList({ label, songs, bustoutTitleSet, gapMap }) {
   if (!songs.length) return null;
@@ -178,7 +178,7 @@ export default function StandingsOfficialSetlistCard({
                 className={`rounded-md border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider ${
                   isLive
                     ? 'border-brand-primary/40 bg-brand-primary/15 text-brand-primary'
-                    : 'border-border-subtle bg-surface-inset text-content-secondary'
+                    : 'border-border-subtle/50 bg-surface-inset/72 text-content-secondary'
                 }`}
               >
                 {statusLabel}
@@ -199,7 +199,7 @@ export default function StandingsOfficialSetlistCard({
           />
         </summary>
 
-        <div className="mt-4 space-y-5 border-t border-border-subtle pt-4">
+        <div className="mt-4 space-y-5 border-t border-border-subtle/50 pt-4">
           {grouped.hasSongs ? (
             <div className="space-y-4">
               <SetSongList

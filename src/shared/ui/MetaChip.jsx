@@ -8,7 +8,7 @@ export default function MetaChip({ children, className = '', ...props }) {
   return (
     <span
       className={[
-        'inline-flex items-center whitespace-nowrap rounded-full border border-border-subtle bg-surface-panel px-3 py-1 font-sans text-[10px] font-bold text-content-secondary',
+        'inline-flex items-center whitespace-nowrap rounded-full border border-border-subtle/50 bg-surface-panel/50 px-3 py-1 font-sans text-[10px] font-bold text-content-secondary',
         className,
       ]
         .filter(Boolean)

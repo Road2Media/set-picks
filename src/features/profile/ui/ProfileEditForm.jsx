@@ -1,6 +1,7 @@
 import React from 'react';
 
 import Button from '../../../shared/ui/Button';
+import { Panel } from '../../../shared/ui/Card';
 import Input from '../../../shared/ui/Input';
 import AvatarPicker from './AvatarPicker';
 
@@ -35,10 +36,7 @@ export default function ProfileEditForm({
   showAvatarNewBadge = false,
 }) {
   return (
-    <form
-      onSubmit={onSave}
-      className="space-y-6 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass"
-    >
+    <Panel as="form" onSubmit={onSave} className="space-y-6">
       <AvatarPicker
         value={avatarId}
         onChange={onAvatarChange}
@@ -98,6 +96,6 @@ export default function ProfileEditForm({
           {message.text}
         </div>
       )}
-    </form>
+    </Panel>
   );
 }

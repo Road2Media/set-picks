@@ -455,13 +455,16 @@ export const COMMS_TEMPLATE_REGISTRY = {
         eyebrow: eyebrowWithDate(p.show_date, 'Show recap'),
         title: p.venue_name ? `Recap: ${p.venue_name}` : 'Your show recap',
         paragraphs: [
-          `${handleOf(p)}, here's how your picks for ${placeLine(p) || 'the show'} graded out.`,
+          `${handleOf(p)}, here's how your picks for ${placeLine(p) || 'the show'} scored.`,
           narrative ||
             (p.correct_picks_count != null && p.total_picks_count != null
               ? `You nailed ${p.correct_picks_count} of ${p.total_picks_count} picks.`
               : 'Tap through for the full breakdown.'),
           // Bonus stays on the stats row when the composer already named the bustout.
           !narrative && p.bustout_bonus ? `Bustout bonus: +${p.bustout_bonus}.` : null,
+          typeof p.share_pack?.text === 'string' && p.share_pack.text.trim()
+            ? p.share_pack.text.trim()
+            : null,
         ].filter(Boolean),
         stats: [
           p.show_score != null ? { label: 'Show score', value: p.show_score } : null,

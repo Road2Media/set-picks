@@ -175,6 +175,11 @@ export default [
               message:
                 "Models must not import firebase/app-check directly; place IO in feature api/.",
             },
+            {
+              name: "firebase/remote-config",
+              message:
+                "Models must not import firebase/remote-config directly; place IO in feature api/.",
+            },
           ],
           patterns: [
             {

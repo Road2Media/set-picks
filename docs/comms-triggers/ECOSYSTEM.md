@@ -36,7 +36,7 @@ flowchart TB
   subgraph ORCH["commsDelivery orchestrator"]
     direction TB
     R["Resolve trigger from catalog.json\n(channels, prefKeys, dedupKey, templateId)"]
-    P["Prefs gate\nnotificationPrefs[family]"]
+    P["Prefs gate\nnotificationPrefs.channel.family"]
     D["Dedup\nfcm_notification_log / fixed inbox id"]
     F["Fatigue cap\nmax sends per user / show-day"]
     T["Render via template registry"]
@@ -159,25 +159,40 @@ abbreviated teaser + CTA back into the app.
 
 ## 5. Preferences (gating)
 
-`notificationPrefs` keys map 1:1 to catalog `prefKeys`. Resolved by
-`src/features/notifications/api/notificationPrefsApi.js`:
+Catalog `prefKeys` stay family names. Delivery resolves each family **per
+channel** (#1045 / #513 Phase 3). The client resolver is
+`src/features/notifications/api/notificationPrefsApi.js`. The server mirror is
+`functions/notificationPrefs.js` (`commsDelivery.js` passes the channel).
 
-| Key | Default | Gates |
-|-----|---------|-------|
-| `reminders` | on | picks lock reminder |
-| `results` | on | show recap, score updates, rankings |
-| `nearMiss` | on | close-call nudges |
-| `lifecycle` | on | welcome, tour countdown, picks confirmed, tour engagement |
-| `commercial` | **off (opt‑in)** | Phase 3 sponsor / affiliate slots |
+| Family | Default | Push | In-app | Email |
+|--------|---------|------|--------|-------|
+| `reminders` | on | lock-reminder push | lock-reminder inbox | show-day reminder email is `emailClass: transactional` and does not read this key |
+| `results` | on | graded-show push, including the legacy post-show rollup | recap inbox | recap and rankings email |
+| `nearMiss` | on | legacy close-call push | no current trigger | no current trigger |
+| `lifecycle` | on | welcome, countdown, pick confirmation | same inbox | welcome, countdown, and other tour email |
+| `commercial` | **off (opt-in)** | future sponsor slots | same | same |
 
-Allow‑categories opt out only on an explicit `false`; `commercial` opts in only
-on an explicit `true`. The orchestrator checks the trigger's `prefKeys` before
-any send.
+Resolution for one channel:
 
-**UI (v1.67.0 / #770 / #513):** toggles live on **Preferences**
-(`/dashboard/profile/account`), not Messages. Same keys — cosmetic Push / Email
-grouping only. Per-channel keys (`notificationPrefs.push.lifecycle`, etc.) and
-`commsDelivery.js` changes are **Phase 3 / out of scope**.
+1. `notificationPrefs.<channel>.<family>` when that value is a boolean.
+2. Otherwise the legacy flat `notificationPrefs.<family>` boolean. An existing
+   opt-out still blocks every channel that has not been set on its own.
+3. Otherwise the default. Allow-categories opt out only on `false`.
+   `commercial` opts in only on `true`.
+
+Transactional email still bypasses `prefKeys` and still honors
+`email_suppression`.
+
+**UI (v1.111.0 / #1045):** Preferences (`/dashboard/profile/account`) has three
+groups. Push updates write `notificationPrefs.push.*` (including close calls).
+Messages write `notificationPrefs.inApp.*` for reminders, results, and
+lifecycle. Email updates write `notificationPrefs.email.results` and
+`.email.lifecycle`. There is no email reminders switch and no in-app close-call
+switch, because nothing in those channels reads those keys. Unsubscribe, the
+one-click header, a mailto unsubscribe, and a spam complaint set
+`notificationPrefs.email.lifecycle` and `.email.commercial` to `false` and do
+not write the flat keys. `email_suppression` still pauses every email.
+Re-enable sets `notificationPrefs.email.lifecycle` to `true` only.
 
 ---
 

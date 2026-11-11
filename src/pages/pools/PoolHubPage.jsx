@@ -156,6 +156,7 @@ export default function PoolHubPage({ user }) {
           </h2>
           <PoolHubActiveShow
             showLabel={activeShowLine}
+            showDate={nextShowDate}
             isShowToday={isShowToday}
             isSecured={isSecured}
             isLocked={isLocked}

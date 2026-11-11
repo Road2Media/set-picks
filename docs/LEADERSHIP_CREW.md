@@ -149,6 +149,8 @@ Cite only real GA4 numbers; mark gaps unknown. Draft-only; do not merge or deplo
 | Software Architect | `comms-architect` for delivery review |
 | Reporting Lead / Insights | `comms-analyst` + GA4 MCP for numbers |
 | Data Architect | Optimize `challenge_evidence` (falsify cliffs; MCP follow-ups) |
+| Editor in Chief | Player-facing UI copy sweep. Voice gate on a new marketing page. `content/marketing/voice-guide.md` |
+| Marketing Specialist | New marketing or SEO page. Draft in `content/marketing/`, then landing UI + `seoRoutes.js` |
 
 ---
 
@@ -170,6 +172,7 @@ Do **not** wait for a perfect org before shipping L1 research tools.
 
 | Date | Change |
 |------|--------|
+| 2026-11-10 | Intent router names a player-facing UI copy sweep and a new marketing or SEO page. Skill descriptions carry those phrases so an agent-queue ticket opens them. |
 | 2026-09-25 | Social art is copy-and-replace from named Canva sources. Skills read `content/marketing/social-brand-approach.md` before any Canva call. `generate-design` is not a social layout tool. |
 | 2026-09-03 | SEO Optimize scored pack RACI (#934 / epic #926): GPM accountable, Marketing Specialist responsible, EiC + CDO consulted. Playbook: `docs/SEO_OPTIMIZE_AUTONOMY.md` |
 | 2026-09-03 | #933 E2: allowlisted SEO title/H1 scan (`seo_title_h1_scan`) + refuse list; brief `content/marketing/933-competitor-title-h1-gap-brief.md` |

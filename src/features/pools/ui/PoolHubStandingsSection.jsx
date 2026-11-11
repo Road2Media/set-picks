@@ -77,14 +77,14 @@ export default function PoolHubStandingsSection({
         />
       )}
       {loading ? (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border-subtle bg-surface-panel py-10 font-bold text-content-secondary shadow-inset-glass">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-border-subtle/50 bg-surface-panel/50 py-10 font-bold text-content-secondary shadow-inset-glass">
           <Loader2 className="h-8 w-8 animate-spin text-brand-primary" aria-hidden />
           <span>Loading standings…</span>
         </div>
       ) : (
         <PoolHubLeaderboard members={members} />
       )}
-      <details className="group mt-3 rounded-xl border border-border-subtle bg-surface-glass shadow-inset-glass">
+      <details className="group mt-3 rounded-xl border border-border-subtle/50 bg-surface-glass/32 shadow-inset-glass">
         <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2 text-xs font-bold text-content-secondary transition-colors hover:text-white [&::-webkit-details-marker]:hidden">
           <ChevronDown
             className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180"
@@ -92,16 +92,15 @@ export default function PoolHubStandingsSection({
           />
           About {heading.toLowerCase()}
         </summary>
-        <div className="space-y-2 border-t border-border-muted px-3 py-3 text-xs font-medium leading-relaxed text-content-secondary">
+        <div className="space-y-2 border-t border-border-muted/60 px-3 py-3 text-xs font-medium leading-relaxed text-content-secondary">
           <p>{description}</p>
           <p>
             <span className="text-white/90">Shows</span> is how many nights you submitted picks in
-            this pool after that show was finalized (Finalize and rollup). Nights you skip do not add
-            to your count.
+            this pool that now have a score. Nights you skip do not add to your count.
           </p>
           <p>
             <span className="text-white/90">Wins</span> counts the nights you tied or beat the top
-            score across every graded, non-empty pick for that show. Ties share the win.
+            score for that show. A tie shares the win.
           </p>
         </div>
       </details>
@@ -121,7 +120,7 @@ function ScopeToggle({ scope, onScopeChange, tourAvailable }) {
     <div
       role="tablist"
       aria-label="Standings scope"
-      className="inline-flex overflow-hidden rounded-full border border-border-subtle bg-surface-panel/60"
+      className="inline-flex overflow-hidden rounded-full border border-border-subtle/50 bg-surface-panel/60"
     >
       <button
         type="button"

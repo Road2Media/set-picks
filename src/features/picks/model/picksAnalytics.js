@@ -72,7 +72,7 @@ const SCORECARD_LOCK_STATES = new Set([
   'graded',
 ]);
 
-const SCORECARD_METRICS = new Set(['overlap', 'odds', 'rank']);
+const SCORECARD_METRICS = new Set(['overlap', 'crowd', 'rank']);
 
 /** Scorecard destination opened for a show (#767). */
 export function trackScorecardOpen({ show_date, lock_state } = {}) {
@@ -84,7 +84,8 @@ export function trackScorecardOpen({ show_date, lock_state } = {}) {
 
 /**
  * A Scorecard metric row became visible (#767).
- * `metric` is overlap | odds | rank.
+ * `metric` is overlap | crowd | rank. `odds` was the model-percent impression
+ * and is no longer emitted (#1043).
  */
 export function trackScorecardMetricImpression({ show_date, metric } = {}) {
   ga4Event('scorecard_metric_impression', {

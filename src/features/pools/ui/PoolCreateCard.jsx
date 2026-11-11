@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { createPoolInviteLink } from '../../../shared/lib/createPoolInviteLink';
 import Button from '../../../shared/ui/Button';
-import Card from '../../../shared/ui/Card';
+import { Panel } from '../../../shared/ui/Card';
 import Input from '../../../shared/ui/Input';
 import PoolInviteCodeRow from './PoolInviteCodeRow';
 import PoolInviteShareButton from './PoolInviteShareButton';
@@ -61,8 +61,7 @@ export default function PoolCreateCard({
         : '';
 
   return (
-    <Card variant="default" padding="none" className="overflow-hidden">
-      <div className="p-6">
+    <Panel className="overflow-hidden">
         {errorText ? (
           <div className="mb-4 rounded-xl bg-red-500/10 p-3 text-center text-sm font-bold text-red-400">
             {errorText}
@@ -83,7 +82,7 @@ export default function PoolCreateCard({
               <p className="mt-3 text-xs font-bold uppercase tracking-widest text-content-secondary">
                 Your invite link
               </p>
-              <p className="mt-1 break-all rounded-lg border border-border-subtle bg-surface-field p-3 font-mono text-xs leading-relaxed text-slate-200">
+              <p className="mt-1 break-all rounded-lg border border-border-subtle/50 bg-surface-field p-3 font-mono text-xs leading-relaxed text-slate-200">
                 {inviteUrl || '—'}
               </p>
             </div>
@@ -121,7 +120,6 @@ export default function PoolCreateCard({
             </Button>
           </form>
         )}
-      </div>
-    </Card>
+    </Panel>
   );
 }

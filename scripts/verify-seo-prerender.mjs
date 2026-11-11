@@ -74,6 +74,14 @@ import {
   tourStatsSitemapLastmodMap,
 } from './lib/tourStatsSeoAutoExpand.mjs';
 import { TOUR_STATS_SEO_FACT_SLUGS } from '../src/shared/config/seoRoutes.js';
+import {
+  phishIqJsonLdErrors,
+  quizLeaksInText,
+} from '../src/features/phish-iq/model/phishIqCrawl.js';
+import {
+  buildCatalogQuiz,
+  buildTodaysCatalogQuiz,
+} from './lib/phishIqCrawlQuiz.mjs';
 
 const root = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 
@@ -180,6 +188,21 @@ for (const route of PRERENDER_ROUTES) {
   assertRouteHtml(html, route, `fixture ${route.path}`);
 }
 
+const tourNotesRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-notes');
+assert(tourNotesRoute, 'expected /tour-notes prerender entry (#684)');
+assert(
+  tourNotesRoute.robots === 'noindex, follow',
+  '/tour-notes stays noindex until live notes clear the richness gate (#684)',
+);
+const tourNotesHtml = injectPrerenderHtml(shell, tourNotesRoute);
+assert(tourNotesHtml.includes('noindex, follow'), '/tour-notes prerender must include noindex');
+assert(!tourNotesHtml.includes('officialSetlist'), '/tour-notes prerender must not include a setlist');
+assert(!tourNotesHtml.includes('set_songs'), '/tour-notes prerender must not include set songs');
+assert(
+  tourNotesHtml.includes('Lock six slots'),
+  '/tour-notes prerender must say slot',
+);
+
 const msgRoute = PRERENDER_ROUTES.find((r) => r.path === '/phish-at-msg');
 const msgEnrichment = buildMsgGardenPrerenderEnrichment(null, msgRoute.canonicalUrl);
 const msgHtml = injectPrerenderHtml(shell, msgRoute, msgEnrichment);
@@ -249,6 +272,135 @@ assert(
   'public llms.txt must not keep /tour-stats/msg (#1192)',
 );
 
+const phishIqRoute = PRERENDER_ROUTES.find((r) => r.path === '/phish-iq');
+assert(phishIqRoute, 'expected /phish-iq prerender entry (#1276)');
+const phishIqHtml = injectPrerenderHtml(shell, phishIqRoute);
+assert(
+  phishIqHtml.includes('A free daily Phish quiz'),
+  'Phish IQ prerender must include the intro heading',
+);
+assert(
+  phishIqHtml.includes('a new quiz every day'),
+  'Phish IQ prerender must say a new quiz comes every day',
+);
+assert(
+  phishIqHtml.includes('no sign-in'),
+  'Phish IQ prerender must say play needs no sign-in',
+);
+assert(
+  phishIqHtml.includes('data-seo-phish-iq="faq"'),
+  'Phish IQ prerender must include the FAQ block',
+);
+assert(
+  phishIqHtml.includes('What is Phish IQ?'),
+  'Phish IQ prerender FAQ must ask what it is',
+);
+assert(
+  phishIqHtml.includes('How often is there a new quiz?'),
+  'Phish IQ prerender FAQ must ask how often',
+);
+assert(
+  phishIqHtml.includes('What are the questions about?'),
+  'Phish IQ prerender FAQ must ask what the questions are about',
+);
+assert(
+  !phishIqHtml.includes('Where do the questions come from?'),
+  'Phish IQ prerender must not explain where the questions come from',
+);
+assert(
+  !phishIqHtml.includes('public song counts'),
+  'Phish IQ prerender must not explain the question source',
+);
+assert(
+  !phishIqHtml.includes('six slots you lock'),
+  'Phish IQ prerender must not compare the quiz to locked slots',
+);
+assert(
+  !phishIqHtml.toLowerCase().includes('song row'),
+  'Phish IQ prerender must not say song row',
+);
+assert(
+  phishIqHtml.includes('<a href="https://phish.net">Phish.net</a>'),
+  'Phish IQ prerender must cite Phish.net',
+);
+assert(
+  phishIqHtml.includes('name="twitter:card" content="summary_large_image"'),
+  'Phish IQ prerender must include a Twitter card',
+);
+assert(
+  phishIqHtml.includes('/branding/phish-iq-og.jpg'),
+  'Phish IQ prerender must use the spoiler-free share image',
+);
+assert(
+  existsSync(join(root, 'public', 'branding', 'phish-iq-og.jpg')),
+  'public/branding/phish-iq-og.jpg must exist',
+);
+assert(
+  phishIqHtml.includes('No answers on this card'),
+  'Phish IQ share image alt must say the card has no answers',
+);
+const phishIqJsonMatch = phishIqHtml.match(
+  /<script type="application\/ld\+json" data-seo-prerender="true">([\s\S]*?)<\/script>/,
+);
+assert(phishIqJsonMatch, 'Phish IQ prerender must include JSON-LD');
+const phishIqJson = JSON.parse(phishIqJsonMatch[1]);
+const phishIqJsonErrors = phishIqJsonLdErrors(phishIqJson);
+assert(
+  phishIqJsonErrors.length === 0,
+  `Phish IQ JSON-LD: ${phishIqJsonErrors.join(', ')}`,
+);
+for (const quiz of [buildTodaysCatalogQuiz(new Date()), buildCatalogQuiz('2026-07-04')]) {
+  assert(
+    quiz.questions.length > 0,
+    `Phish IQ crawl check needs a built quiz for ${quiz.date}`,
+  );
+  const leaks = quizLeaksInText(phishIqHtml, quiz);
+  assert(
+    leaks.length === 0,
+    `Phish IQ crawl HTML includes today's quiz (${quiz.date}): ${leaks.slice(0, 3).join(' | ')}`,
+  );
+}
+assert(
+  !phishIqHtml.toLowerCase().includes('chair'),
+  'Phish IQ prerender must say slot, never chair',
+);
+const homeHtmlFixture = injectPrerenderHtml(
+  shell,
+  PRERENDER_ROUTES.find((r) => r.path === '/'),
+);
+const tourHubHtml = injectPrerenderHtml(
+  shell,
+  PRERENDER_ROUTES.find((r) => r.path === '/tour-stats'),
+);
+assert(
+  homeHtmlFixture.includes('href="/phish-iq"'),
+  'home prerender must link to Phish IQ',
+);
+assert(
+  tourHubHtml.includes('href="/phish-iq"'),
+  '/tour-stats prerender must link to Phish IQ',
+);
+assert(
+  msgHtml.includes('href="/phish-iq"'),
+  '/phish-at-msg prerender must link to Phish IQ',
+);
+assert(
+  publicSitemap.includes('https://www.setlistpickem.com/phish-iq'),
+  'public sitemap must list /phish-iq',
+);
+assert(
+  publicLlms.includes('https://www.setlistpickem.com/phish-iq'),
+  'public llms.txt must list /phish-iq',
+);
+assert(
+  publicLlms.includes('Data courtesy of Phish.net'),
+  'public llms.txt must cite Phish.net for Phish IQ',
+);
+assert(
+  !publicLlms.includes('public song counts'),
+  'public llms.txt must not explain the Phish IQ question source',
+);
+
 const annualRoute = PRERENDER_ROUTES.find((r) => r.path === '/tour-stats/2026');
 const annualEnrichment = buildAnnualPrerenderEnrichment({
   indexLoaded: true,
@@ -300,8 +452,16 @@ assert(
   'annual prerender HTML must include most-played songs',
 );
 assert(
-  annualHtml.includes('January 1 counts for 2027'),
-  'annual prerender HTML must state the calendar-year rule',
+  annualHtml.includes('Phish played 3 shows in 2026 across 2 tours, with 1 different song.'),
+  'annual prerender HTML must use the fan summary',
+);
+assert(
+  !annualHtml.includes('song row') && !annualHtml.includes('song-row'),
+  'annual prerender HTML must not say song row',
+);
+assert(
+  !annualHtml.includes('January 1 counts for 2027'),
+  'annual prerender HTML must not explain the calendar-year rule',
 );
 assert(annualHtml.includes('FAQPage'), 'annual prerender JSON-LD must include FAQPage');
 assert(annualHtml.includes('ItemList'), 'annual prerender JSON-LD must include ItemList');

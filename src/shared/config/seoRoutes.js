@@ -12,6 +12,10 @@
  * Scoring point values come from `shared/utils/scoring.js` (plain ESM, no Vite alias).
  */
 import { RANK_TIE_EXPLANATION } from './dashboardVocabulary.js';
+import {
+  PUBLIC_SHOW_NOTES_HUB,
+  publicShowNotesRobots,
+} from './publicShowNotes.js';
 import { SEO_CONFIG } from './seo.js';
 import {
   SCORING_LADDER_V1,
@@ -244,10 +248,33 @@ const MSG_GARDEN_DESCRIPTION =
   'Phish at the Garden: the songs they play most, what opens the night, debuts, long gaps, and New Year\'s Eve.';
 const MSG_GARDEN_URL = `${SEO_CONFIG.siteUrl}${MSG_GARDEN_PATH}`;
 
+/** Public handles-only board for the 100th Garden show (#1147). */
+const HUNDREDTH_SHOW_PATH = '/phish-at-msg/100th';
+const HUNDREDTH_SHOW_TITLE = "Pick the 100th at MSG | Setlist Pick'Em";
+const HUNDREDTH_SHOW_DESCRIPTION =
+  'Public board for Phish at Madison Square Garden on January 2, 2027. Handles, rank, points, and exact slots. No email addresses.';
+const HUNDREDTH_SHOW_URL = `${SEO_CONFIG.siteUrl}${HUNDREDTH_SHOW_PATH}`;
+
+function buildHundredthShowJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebPage',
+        '@id': HUNDREDTH_SHOW_URL,
+        url: HUNDREDTH_SHOW_URL,
+        name: HUNDREDTH_SHOW_TITLE,
+        description: HUNDREDTH_SHOW_DESCRIPTION,
+        isPartOf: { '@id': `${SEO_CONFIG.siteUrl}/#website` },
+      },
+    ],
+  };
+}
+
 /** Annual roll-up (#1141). Not a tour slug. */
 const ANNUAL_2026_TITLE = "2026 Phish Tour Statistics | Setlist Pick'Em";
 const ANNUAL_2026_DESCRIPTION =
-  '2026 Phish tour setlist statistics across every tour that year: shows, unique songs, most-played songs, and bustouts. December 31 counts for 2026. January 1 counts for 2027.';
+  '2026 Phish tour statistics across every tour that year: shows, different songs, most-played songs, and bustouts.';
 const ANNUAL_2026_URL = `${SEO_CONFIG.siteUrl}/tour-stats/2026`;
 /**
  * Static opt-in slugs that always prerender facts (#928).
@@ -678,6 +705,82 @@ function buildHowScoringChangedJsonLd() {
 }
 
 /**
+ * Public Phish IQ crawl copy (#1276, fan language #1286). Evergreen only.
+ * Today's questions, choices, and answer facts stay out of this object.
+ * The Phish.net line is the API courtesy credit, not a source explainer.
+ */
+const PHISH_IQ_PATH = '/phish-iq';
+const PHISH_IQ_TITLE = "Phish IQ | Free Daily Phish Quiz | Setlist Pick'Em";
+const PHISH_IQ_DESCRIPTION =
+  'A free daily Phish quiz. Five questions, a new quiz every day, and no sign-in. The share card shows your score, not the answers.';
+const PHISH_IQ_URL = `${SEO_CONFIG.siteUrl}${PHISH_IQ_PATH}`;
+export const PHISH_IQ_OG_IMAGE = `${SEO_CONFIG.siteUrl}/branding/phish-iq-og.jpg?v=20261110`;
+export const PHISH_IQ_OG_IMAGE_ALT =
+  'Phish IQ, a free daily Phish quiz. Five questions, a new quiz every day. No answers on this card.';
+
+/** Crawlable link from home and tour stats. The header placement stays the #1232 hub. */
+const PHISH_IQ_INTERNAL_LINK_HTML =
+  '    <p data-seo-internal="phish-iq"><a href="/phish-iq">Phish IQ</a> is a free daily Phish quiz. Five questions, a new quiz every day, no sign-in.</p>';
+
+export const PHISH_IQ_FAQ = Object.freeze([
+  {
+    name: 'What is Phish IQ?',
+    text: "Phish IQ is a free daily Phish quiz from Setlist Pick'Em. Five trivia questions, the same quiz for everyone that day, and you can play without an account.",
+  },
+  {
+    name: 'How often is there a new quiz?',
+    text: 'A new quiz comes out every day, at midnight Eastern. Yesterday’s questions are gone.',
+  },
+  {
+    name: 'What are the questions about?',
+    text: 'Phish songs. Debuts, long gaps, which one came first, and the Garden. Everyone gets the same five that day.',
+  },
+  {
+    name: 'Do I need an account?',
+    text: 'No. The quiz is free, and you can play without signing in. Create an account if you want a streak saved after you finish.',
+  },
+]);
+
+function buildPhishIqFaqHtml() {
+  const blocks = PHISH_IQ_FAQ.map(
+    (item) => `    <h3>${item.name}</h3>\n    <p>${item.text}</p>`,
+  ).join('\n');
+  return `    <section data-seo-phish-iq="faq">
+    <h2>About this quiz</h2>
+${blocks}
+    <p>Data courtesy of <a href="https://phish.net">Phish.net</a> / The Mockingbird Foundation.</p>
+  </section>`;
+}
+
+function buildPhishIqJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': ['Quiz', 'WebApplication'],
+        '@id': `${PHISH_IQ_URL}#quiz`,
+        name: 'Phish IQ',
+        url: PHISH_IQ_URL,
+        description: PHISH_IQ_DESCRIPTION,
+        applicationCategory: 'GameApplication',
+        operatingSystem: 'Web',
+        isAccessibleForFree: true,
+        offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+        publisher: { '@id': organizationId },
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: PHISH_IQ_FAQ.map((item) => ({
+          '@type': 'Question',
+          name: item.name,
+          acceptedAnswer: { '@type': 'Answer', text: item.text },
+        })),
+      },
+    ],
+  };
+}
+
+/**
  * @typedef {object} SeoPrerenderRoute
  * @property {string} path - URL path (`/` or `/how-it-works`)
  * @property {string} title
@@ -685,8 +788,21 @@ function buildHowScoringChangedJsonLd() {
  * @property {string} canonicalUrl
  * @property {string} h1
  * @property {string[]} paragraphs - crawler-visible body copy
+ * @property {string} [appendHtml] - extra crawler HTML after the paragraphs
+ * @property {string} [ogImage]
+ * @property {string} [ogImageAlt]
  * @property {() => object} buildJsonLd
  */
+
+function buildTourNotesJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: PUBLIC_SHOW_NOTES_HUB.title,
+    description: PUBLIC_SHOW_NOTES_HUB.description,
+    url: `${SEO_CONFIG.siteUrl}${PUBLIC_SHOW_NOTES_HUB.path}`,
+  };
+}
 
 /** @type {SeoPrerenderRoute[]} */
 export const PRERENDER_ROUTES = [
@@ -701,6 +817,7 @@ export const PRERENDER_ROUTES = [
       "Make picks for tonight's show, watch scores update as songs are played, and compete with your tour crew for the top spot.",
       "Lock It In: predict openers, closers, encore, and a wildcard before the lights go down. Watch It Unfold as scores update live. Claim the Crown in the global pool or private pools with friends. Play and your personal stats build as you rack up points.",
     ],
+    appendHtml: PHISH_IQ_INTERNAL_LINK_HTML,
     buildJsonLd: buildHomeJsonLd,
   },
   {
@@ -756,6 +873,7 @@ export const PRERENDER_ROUTES = [
       'The list updates after every show. Lock a card and your own picks start counting too.',
       'Phish is the band here. One tour at a time, the songs that keep coming back.',
     ],
+    appendHtml: PHISH_IQ_INTERNAL_LINK_HTML,
     buildJsonLd: buildTourStatsHubJsonLd,
   },
   {
@@ -813,15 +931,26 @@ export const PRERENDER_ROUTES = [
     buildJsonLd: buildMsgGardenJsonLdShell,
   },
   {
+    path: HUNDREDTH_SHOW_PATH,
+    title: HUNDREDTH_SHOW_TITLE,
+    description: HUNDREDTH_SHOW_DESCRIPTION,
+    canonicalUrl: HUNDREDTH_SHOW_URL,
+    h1: 'Pick the 100th',
+    paragraphs: [
+      'January 2, 2027 is the 100th Phish performance at Madison Square Garden. Scoring that night is the same as every other show.',
+      'The public board lists handles, rank, points, and exact slots. It does not list email addresses or account fields.',
+      'The board goes up the morning after the show. Call your slots before the lights go down.',
+    ],
+    buildJsonLd: buildHundredthShowJsonLd,
+  },
+  {
     path: '/tour-stats/2026',
     title: ANNUAL_2026_TITLE,
     description: ANNUAL_2026_DESCRIPTION,
     canonicalUrl: ANNUAL_2026_URL,
     h1: '2026 Phish tour statistics',
     paragraphs: [
-      'Every 2026 Phish tour on one page: shows played, unique songs, most-played songs, and bustouts.',
-      'A show counts for the calendar year of its date. December 30 and December 31, 2026 count for 2026. January 1 and January 2, 2027 count for 2027.',
-      'Show counts and song-row totals add the tour pages. A song played on two tours counts once among unique songs, and its plays add up. Not a night-by-night setlist archive.',
+      'Every 2026 Phish tour on one page: the shows, the different songs, the most-played songs, and the bustouts.',
     ],
     buildJsonLd: buildAnnual2026JsonLd,
   },
@@ -856,6 +985,34 @@ export const PRERENDER_ROUTES = [
         title: ABOUT_TITLE,
         description: ABOUT_DESCRIPTION,
       }),
+  },
+  {
+    path: PUBLIC_SHOW_NOTES_HUB.path,
+    title: PUBLIC_SHOW_NOTES_HUB.title,
+    description: PUBLIC_SHOW_NOTES_HUB.description,
+    canonicalUrl: `${SEO_CONFIG.siteUrl}${PUBLIC_SHOW_NOTES_HUB.path}`,
+    h1: PUBLIC_SHOW_NOTES_HUB.h1,
+    robots: publicShowNotesRobots(),
+    paragraphs: PUBLIC_SHOW_NOTES_HUB.paragraphs,
+    buildJsonLd: buildTourNotesJsonLd,
+  },
+  {
+    path: PHISH_IQ_PATH,
+    title: PHISH_IQ_TITLE,
+    description: PHISH_IQ_DESCRIPTION,
+    canonicalUrl: PHISH_IQ_URL,
+    h1: 'A free daily Phish quiz',
+    ogImage: PHISH_IQ_OG_IMAGE,
+    ogImageAlt: PHISH_IQ_OG_IMAGE_ALT,
+    ogImageType: 'image/jpeg',
+    ogImageWidth: '1200',
+    ogImageHeight: '630',
+    paragraphs: [
+      'Phish IQ is a free daily Phish quiz. Five questions, a new quiz every day, and you can play with no sign-in.',
+      'Everyone gets the same five questions that day. Answer them, see how you did, and share the score. The card shows your score, not the answers.',
+    ],
+    appendHtml: buildPhishIqFaqHtml(),
+    buildJsonLd: buildPhishIqJsonLd,
   },
   {
     path: '/privacy',

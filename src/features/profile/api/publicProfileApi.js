@@ -8,6 +8,8 @@ import {
   where,
 } from 'firebase/firestore';
 
+import { DEFAULT_BAND_ID } from '../../../shared/config/bands.js';
+import { bandIdQueryConstraints, rowsForBand } from '../../../shared/config/bandScope.js';
 import { MAX_USER_POOLS_FETCH } from '../../pools';
 import { db } from '../../../shared/lib/firebase';
 import { whenFirebaseReady } from '../../../shared/lib/firebaseAppCheck';
@@ -47,18 +49,22 @@ export async function fetchPublicProfileByHandle(handle) {
 /**
  * Pools that list this uid in `members`.
  */
-export async function fetchPoolsForMember(uid) {
+export async function fetchPoolsForMember(uid, bandId = DEFAULT_BAND_ID) {
   const id = uid?.trim();
   if (!id) return [];
   await whenFirebaseReady();
   const poolsQuery = query(
     collection(db, 'pools'),
     where('members', 'array-contains', id),
+    ...bandIdQueryConstraints(where, bandId),
     limit(MAX_USER_POOLS_FETCH)
   );
   const poolSnapshot = await getDocs(poolsQuery);
-  return poolSnapshot.docs.map((poolDoc) => ({
-    id: poolDoc.id,
-    ...poolDoc.data(),
-  }));
+  return rowsForBand(
+    poolSnapshot.docs.map((poolDoc) => ({
+      id: poolDoc.id,
+      ...poolDoc.data(),
+    })),
+    bandId,
+  );
 }

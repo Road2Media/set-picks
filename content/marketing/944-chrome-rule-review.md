@@ -42,7 +42,7 @@ Do **not** darken About/keyword to match Scoring/Tour stats. Do **not** light-th
 - Single structure for rules math/copy; tokens diverge by surface only.
 - Keep export via `features/scoring/marketing.js` (no dashboard barrel on marketing entry).
 
-**Page shape (target):** Match editorial peers — full-width light main, centered column, light rules presentation (white/soft panel or uncarded prose with accent score chips), not a floating `bg-surface-panel` glass card.
+**Page shape (target):** Match editorial peers — full-width light main, centered column, light rules presentation (white/soft panel or uncarded prose with accent score chips), not a floating `bg-surface-panel/50` glass card.
 
 ---
 
@@ -122,5 +122,5 @@ Issue comment: https://github.com/pat792/set-picks/issues/944#issuecomment-52291
 
 - Light: `HowItWorksPageContent`, `PhishSetlistPredictionGamePageContent`, `AboutPageContent` — `bg-slate-50` + `LINK_ON_LIGHT`
 - Dark product: `PublicTourStatsPanel` — brand shell + `LINK_ON_DARK`
-- Scoring today: `HowScoringWorksPage` + shared `ScoringRulesContent` (`bg-surface-panel`, white type) + `LINK_ON_DARK`; modal reuses same content
+- Scoring today: `HowScoringWorksPage` + shared `ScoringRulesContent` (`bg-surface-panel/50`, white type) + `LINK_ON_DARK`; modal reuses same content
 - Shell: always dark sticky header / footer; main is transparent pass-through

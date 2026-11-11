@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 const btnClass =
-  'flex shrink-0 items-center justify-center rounded-md border border-border-venue/70 bg-surface-panel text-slate-300 transition-colors hover:border-border-venue-strong hover:bg-surface-panel-strong hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg disabled:pointer-events-none disabled:opacity-35';
+  'flex shrink-0 items-center justify-center rounded-md border border-border-venue/70 bg-surface-panel/50 text-slate-300 transition-colors hover:border-border-venue-strong/46 hover:bg-surface-panel-strong/72 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg disabled:pointer-events-none disabled:opacity-35';
 
 /**
  * Prev / next chrome around a scope control (Tour Date, etc.).

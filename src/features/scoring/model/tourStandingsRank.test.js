@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  SHOW_STANDINGS_DESCRIPTION,
-  TOUR_STANDINGS_DESCRIPTION,
-} from '../../../shared/config/dashboardVocabulary';
+import { SHOW_STANDINGS_DESCRIPTION } from '../../../shared/config/dashboardVocabulary';
 import { aggregateTourStandings } from './aggregateTourStandings';
 import { assignTourDisplayRanks, tourStandingsBadge } from './tourStandingsRank';
 
@@ -119,18 +116,10 @@ describe('tourStandingsBadge', () => {
   });
 });
 
-describe('tour standings description', () => {
-  it('states the tie-break cascade', () => {
-    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/exact slots/i);
-    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/correct picks/i);
-    expect(TOUR_STANDINGS_DESCRIPTION).toMatch(/nightly wins/i);
-    expect(TOUR_STANDINGS_DESCRIPTION).not.toMatch(/share a rank/i);
-  });
-
-  it('states the show cascade and skips nightly wins', () => {
-    expect(SHOW_STANDINGS_DESCRIPTION).toMatch(/exact slots/i);
-    expect(SHOW_STANDINGS_DESCRIPTION).toMatch(/correct picks/i);
-    expect(SHOW_STANDINGS_DESCRIPTION).toMatch(/skips nightly wins/i);
+describe('show standings description', () => {
+  it('names the night and skips the ranking essay', () => {
+    expect(SHOW_STANDINGS_DESCRIPTION).toBe('Points from this show.');
     expect(SHOW_STANDINGS_DESCRIPTION).not.toMatch(/chair/i);
+    expect(SHOW_STANDINGS_DESCRIPTION).not.toMatch(/tie/i);
   });
 });

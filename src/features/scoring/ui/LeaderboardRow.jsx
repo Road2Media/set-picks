@@ -1,4 +1,5 @@
 import React from 'react';
+import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import { calculateTotalScore } from '../../../shared/utils/scoring';
 import { StandingsPlayerAvatar } from '../../profile';
@@ -9,7 +10,7 @@ export function rankBadgeClass(rank) {
   if (rank === 2)
     return 'bg-brand-accent-blue/15 text-blue-200 ring-1 ring-brand-accent-blue/35';
   if (rank === 3) return 'bg-orange-900/40 text-orange-200 ring-1 ring-orange-700/40';
-  return 'bg-surface-inset text-slate-300 ring-1 ring-border-muted';
+  return 'bg-surface-inset/72 text-slate-300 ring-1 ring-border-muted/60';
 }
 
 export default function LeaderboardRow({
@@ -36,18 +37,16 @@ export default function LeaderboardRow({
     (typeof p.avatarId === 'string' ? p.avatarId : null);
   const badges = identity?.badges ?? null;
 
-  // Self gets a stronger brand ring so users can locate themselves at
-  // a glance — doubly useful pre-grade when the row is pinned to rank 1.
-  const borderTone = isSelf
-    ? 'border-brand-primary/55 ring-1 ring-brand-primary/35'
-    : isLeaderRow
-    ? 'border-border-venue/55 ring-1 ring-brand-primary/15'
-    : 'border-border-subtle/35';
+  // Self and the leading row are border modifiers on the shared row
+  // shell. A first-place badge stays on the rank chip.
+  const tone = isSelf ? 'self' : isLeaderRow ? 'leader' : 'default';
 
   return (
-    <div
+    <Row
       id={anchorId || undefined}
-      className={`bg-surface-panel rounded-xl border overflow-hidden shadow-inset-glass transition-all scroll-mt-24 md:scroll-mt-28 ${borderTone}`}
+      padding="none"
+      tone={tone}
+      className="overflow-hidden transition-all scroll-mt-24 md:scroll-mt-28"
     >
       <div
         role="button"
@@ -59,7 +58,7 @@ export default function LeaderboardRow({
             onToggle();
           }
         }}
-        className="w-full flex items-center justify-between px-3.5 py-3.5 hover:bg-surface-panel-strong/80 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-t-xl md:px-4 md:py-4"
+        className="w-full flex items-center justify-between px-3.5 py-3.5 hover:bg-surface-panel-strong/80 transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand rounded-t-xl md:px-4 md:py-4"
       >
         <div className="flex items-center gap-3 text-left min-w-0">
           {rank != null ? (
@@ -116,7 +115,7 @@ export default function LeaderboardRow({
       </div>
 
       {isExpanded && (
-        <div className="p-3.5 border-t border-border-subtle/30 bg-surface-inset md:p-4">
+        <div className="p-3.5 border-t border-border-subtle/30 bg-surface-inset/72 md:p-4">
           <ScoreBreakdownGrid
             userPicks={userPicks}
             actualSetlist={actualSetlist}
@@ -124,6 +123,6 @@ export default function LeaderboardRow({
           />
         </div>
       )}
-    </div>
+    </Row>
   );
 }

@@ -27,7 +27,7 @@ export default function ChromeIconButton({
       onClick={onClick}
       aria-label={label}
       className={[
-        'flex shrink-0 items-center justify-center rounded-full border border-border-venue/70 bg-surface-panel text-slate-300 transition-colors hover:border-border-venue-strong hover:bg-surface-panel-strong hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
+        'flex shrink-0 items-center justify-center rounded-full border border-border-venue/70 bg-surface-panel/50 text-slate-300 transition-colors hover:border-border-venue-strong/46 hover:bg-surface-panel-strong/72 hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg',
         sizeClass,
         className,
       ]

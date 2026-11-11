@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ListMusic, Loader2, Pencil, Trophy } from 'lucide-react';
 
+import { HundredthShowCardMark } from '../../hundredth-show';
 import Button from '../../../shared/ui/Button';
 import Card from '../../../shared/ui/Card';
 
@@ -10,6 +11,7 @@ import Card from '../../../shared/ui/Card';
  *
  * @param {Object} props
  * @param {string} props.showLabel — e.g. venue + date line for the next pickable show
+ * @param {string} [props.showDate] — YYYY-MM-DD, for 100th-show branding
  * @param {boolean} props.isShowToday — when next pickable show’s calendar date is today
  * @param {boolean} props.isSecured — defensive: false while loading or on fetch error
  * @param {boolean} props.isLocked — show is not in NEXT pick window (LIVE / PAST / FUTURE)
@@ -19,6 +21,7 @@ import Card from '../../../shared/ui/Card';
  */
 export default function PoolHubActiveShow({
   showLabel,
+  showDate = '',
   isShowToday,
   isSecured,
   isLocked,
@@ -67,8 +70,9 @@ export default function PoolHubActiveShow({
             {eyebrow}
           </p>
           <p className="font-display text-lg font-bold leading-snug text-white md:text-xl">
-            <span className="text-brand-primary">{showLabel}</span>
+            <span className="wrap-break-word text-brand-primary">{showLabel}</span>
           </p>
+          <HundredthShowCardMark showDate={showDate} />
           {picksStatusLoading && !isLocked ? (
             <p className="flex items-center gap-2 text-sm font-bold text-content-secondary">
               <Loader2
@@ -88,7 +92,7 @@ export default function PoolHubActiveShow({
               type="button"
               variant="primary"
               size="md"
-              className="w-full min-w-[12rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-48 sm:w-auto uppercase tracking-widest"
               onClick={() =>
                 navigate('/dashboard/standings', {
                   state: { targetPoolId: poolId },
@@ -100,7 +104,7 @@ export default function PoolHubActiveShow({
             </Button>
           ) : picksStatusLoading ? (
             <div
-              className="flex h-11 w-full min-w-[12rem] items-center justify-center rounded-xl border border-border-subtle bg-surface-field sm:w-auto"
+              className="flex h-11 w-full min-w-48 items-center justify-center rounded-xl border border-border-subtle/50 bg-surface-field sm:w-auto"
               aria-busy="true"
               aria-label="Loading picks status"
             >
@@ -111,7 +115,7 @@ export default function PoolHubActiveShow({
               type="button"
               variant="primary"
               size="md"
-              className="w-full min-w-[12rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-48 sm:w-auto uppercase tracking-widest"
               onClick={() => navigate('/dashboard')}
             >
               <ListMusic className="mr-2 h-5 w-5 shrink-0" aria-hidden />
@@ -122,7 +126,7 @@ export default function PoolHubActiveShow({
               type="button"
               variant="secondary"
               size="md"
-              className="w-full min-w-[12rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-48 sm:w-auto uppercase tracking-widest"
               onClick={() => navigate('/dashboard')}
             >
               <Pencil className="mr-2 h-5 w-5 shrink-0" aria-hidden />

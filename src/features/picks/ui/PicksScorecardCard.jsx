@@ -2,15 +2,13 @@ import React from 'react';
 import { Check, ClipboardList } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { HundredthShowCardMark } from '../../hundredth-show';
 import { StatsRatesDidYouKnow } from '../../feature-discovery';
 import { PICKS_SELF_RECAP_STANDINGS_LINK } from '../../../shared/config/dashboardVocabulary';
 import InfoTooltip, { InfoTooltipProvider } from '../../../shared/ui/InfoTooltip';
 import { SCORE_BREAKDOWN_KIND_LABEL } from '../../../shared/utils/scoring';
 import { formatOverlapLabel } from '../model/computeScorecardOverlap';
 import { scorecardHitChromeSpec } from '../model/mapScorecardSlotGrade';
-import { PICKS_ODDS_HINT } from '../model/picksOddsCopy';
-import { formatOddsPercent } from '../model/selectScorecardOdds';
-import PicksOddsHint from './PicksOddsHint';
 import DashboardJobShell from '../../../shared/ui/DashboardJobShell';
 import {
   SCORECARD_BODY,
@@ -29,13 +27,23 @@ export const SCORECARD_EMPTY_TITLE = 'No picks for this show';
 export const SCORECARD_EMPTY_BODY =
   'Lock a card on Make Picks to see your Scorecard for the selected night.';
 export const SCORECARD_HINT =
-  `${PICKS_ODDS_HINT} At showtime, see how you compare with other pickers and which songs you got right. View Standings for the full leaderboard, live setlist and crowd pulse.`;
+  'After showtime, each slot can show the share of locked cards that include that song, and how many other players picked it in that slot. Hide crowd pulse turns those lines off. View Standings for the full leaderboard, live setlist, and crowd pulse.';
 export const SCORECARD_LOCKED_UNGRADED_COPY =
   'Picks are locked. Rank and points land when the official setlist is posted.';
 export const SCORECARD_GRADED_COPY = 'Show results for the selected night.';
 export const SCORECARD_LOADING_LABEL = 'Loading scorecard';
 export const SCORECARD_RANK_PENDING = 'Rank updates after the setlist is posted.';
-export const SCORECARD_ODDS_HINT = 'Odds';
+export const SCORECARD_CROWD_LABEL = 'Crowd';
+export const SCORECARD_AUDIENCE_LABEL = 'Compare';
+
+/**
+ * @param {string} [audienceName]
+ */
+export function scorecardPoolExcludedCopy(audienceName) {
+  const name = typeof audienceName === 'string' ? audienceName.trim() : '';
+  if (!name) return 'This night does not count for this pool.';
+  return `This night does not count for ${name}.`;
+}
 
 function stateCopy(state) {
   if (state === 'empty') return SCORECARD_EMPTY_BODY;
@@ -63,8 +71,9 @@ function hitStatusLabel(grade) {
 }
 
 /**
- * Global, show-scoped Scorecard (#767). Presentational — data from
- * {@link usePicksScorecard}.
+ * Show-scoped Scorecard (#767 / #1043). Presentational — data from
+ * {@link usePicksScorecard}. Audience is everyone or one pool. Crowd %
+ * replaces model odds.
  *
  * @param {{
  *   isLoading?: boolean,
@@ -75,8 +84,7 @@ function hitStatusLabel(grade) {
  *     label: string,
  *     song: string,
  *     alsoPickedCount: number | null,
- *     playProb: number | null,
- *     oddsUnknown?: boolean,
+ *     crowdShareLabel?: string | null,
  *     grade?: {
  *       kind: string,
  *       points: number,
@@ -85,13 +93,18 @@ function hitStatusLabel(grade) {
  *     } | null,
  *   }>,
  *   showOverlap?: boolean,
- *   showOdds?: boolean,
+ *   showCrowd?: boolean,
  *   showRank?: boolean,
  *   recap?: {
  *     displayRank: number | null,
  *     totalPlayers: number,
  *     totalScore: number | null,
  *   } | null,
+ *   audienceId?: string,
+ *   audienceName?: string,
+ *   audienceOptions?: Array<{ id: string, name: string }>,
+ *   onAudienceChange?: (id: string) => void,
+ *   poolExcludesNight?: boolean,
  *   standingsTo?: string,
  *   makePicksTo?: string,
  *   className?: string,
@@ -100,18 +113,26 @@ function hitStatusLabel(grade) {
 export default function PicksScorecardCard({
   isLoading = false,
   state,
+  showDate = '',
   showLabel = '',
   slots = [],
   showOverlap = false,
-  showOdds = false,
+  showCrowd = false,
   showRank = false,
   recap = null,
+  audienceId = 'global',
+  audienceName = '',
+  audienceOptions = [],
+  onAudienceChange,
+  poolExcludesNight = false,
   standingsTo = '/dashboard/standings',
   makePicksTo = '/dashboard',
   className = '',
 }) {
   const copy = stateCopy(state);
   const playerWord = recap?.totalPlayers === 1 ? 'player' : 'players';
+  const showAudience = audienceOptions.length > 1;
+  const rankAudience = audienceId !== 'global' && audienceName ? audienceName : '';
 
   return (
     <InfoTooltipProvider>
@@ -128,19 +149,31 @@ export default function PicksScorecardCard({
           <ClipboardList className={SCORECARD_EYEBROW_ICON} aria-hidden />
           Scorecard
         </p>
-        {showOdds ? (
-          <PicksOddsHint
-            definition={SCORECARD_HINT}
-            triggerClassName="text-content-secondary hover:text-white"
-          />
-        ) : (
-          <InfoTooltip
-            label="Scorecard"
-            definition={SCORECARD_HINT}
-            triggerClassName="text-content-secondary hover:text-white"
-          />
-        )}
+        <InfoTooltip
+          label="Scorecard"
+          definition={SCORECARD_HINT}
+          triggerClassName="text-content-secondary hover:text-white"
+        />
       </div>
+      <HundredthShowCardMark showDate={showDate} />
+
+      {showAudience ? (
+        <label className="mt-3 flex items-center justify-between gap-3">
+          <span className={SCORECARD_SLOT_LABEL}>{SCORECARD_AUDIENCE_LABEL}</span>
+          <select
+            aria-label="Scorecard audience"
+            value={audienceId}
+            onChange={(event) => onAudienceChange?.(event.target.value)}
+            className="min-w-0 max-w-56 rounded-lg border border-border-subtle/50 bg-surface-panel/50 px-2.5 py-1.5 text-xs font-bold text-white focus:outline-hidden focus:ring-2 focus:ring-brand"
+          >
+            {audienceOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
 
       {isLoading ? (
         <p className={`mt-2 ${SCORECARD_BODY}`}>{SCORECARD_LOADING_LABEL}…</p>
@@ -152,7 +185,7 @@ export default function PicksScorecardCard({
           <p className={`mt-1 ${SCORECARD_BODY}`}>{SCORECARD_EMPTY_BODY}</p>
           <Link
             to={makePicksTo}
-            className="mt-3 inline-flex text-sm font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+            className="mt-3 inline-flex text-sm font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
           >
             Go to Make Picks
           </Link>
@@ -167,17 +200,22 @@ export default function PicksScorecardCard({
 
           {showRank ? (
             <div className="mt-3 border-t border-border-subtle/35 pt-3">
-              {recap?.displayRank != null ? (
+              {poolExcludesNight ? (
+                <p className={SCORECARD_BODY}>{scorecardPoolExcludedCopy(audienceName)}</p>
+              ) : recap?.displayRank != null ? (
                 <p
                   className={SCORECARD_TITLE}
                   aria-label={`Rank ${recap.displayRank} of ${recap.totalPlayers} ${playerWord}${
-                    recap.totalScore != null ? `, ${recap.totalScore} points` : ''
-                  }`}
+                    rankAudience ? ` in ${rankAudience}` : ''
+                  }${recap.totalScore != null ? `, ${recap.totalScore} points` : ''}`}
                 >
                   <span className="tabular-nums">#{recap.displayRank}</span>
                   <span className="font-bold text-content-secondary"> of </span>
                   <span className="tabular-nums">{recap.totalPlayers}</span>
                   <span className="font-bold text-content-secondary"> {playerWord}</span>
+                  {rankAudience ? (
+                    <span className="font-bold text-content-secondary"> in {rankAudience}</span>
+                  ) : null}
                   <span className="mx-1.5 text-content-secondary">·</span>
                   <span className="tabular-nums text-brand-primary">
                     {recap.totalScore != null ? recap.totalScore : '—'}
@@ -191,7 +229,7 @@ export default function PicksScorecardCard({
               )}
               <Link
                 to={standingsTo}
-                className="mt-1.5 inline-flex text-xs font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
+                className="mt-1.5 inline-flex text-xs font-bold text-brand-primary underline-offset-2 hover:text-white hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg"
               >
                 {PICKS_SELF_RECAP_STANDINGS_LINK}
               </Link>
@@ -202,9 +240,7 @@ export default function PicksScorecardCard({
 
           <ul className="mt-3 space-y-2.5">
             {slots.map((slot) => {
-              const odds = showOdds
-                ? formatOddsPercent(slot.playProb, { unknown: slot.oddsUnknown })
-                : null;
+              const crowd = showCrowd ? slot.crowdShareLabel : null;
               const grade = state === 'graded' ? slot.grade : null;
               const chrome = scorecardHitChromeSpec(grade);
               const statusLabel = hitStatusLabel(grade);
@@ -224,7 +260,7 @@ export default function PicksScorecardCard({
                         aria-hidden
                       />
                     ) : null}
-                    <span className="min-w-0 break-words">{slot.song}</span>
+                    <span className="min-w-0 wrap-break-word">{slot.song}</span>
                     {statusLabel ? <span className="sr-only">{statusLabel}</span> : null}
                   </p>
                   {showOverlap ? (
@@ -232,11 +268,11 @@ export default function PicksScorecardCard({
                       {formatOverlapLabel(slot.alsoPickedCount ?? 0)}
                     </p>
                   ) : null}
-                  {odds ? (
+                  {crowd ? (
                     <p className={`mt-1 ${SCORECARD_METRIC}`}>
-                      <span className="text-content-secondary/80">{SCORECARD_ODDS_HINT}</span>
+                      <span className="text-content-secondary/80">{SCORECARD_CROWD_LABEL}</span>
                       {' '}
-                      <span className="tabular-nums text-brand-primary">{odds}</span>
+                      <span className="tabular-nums text-brand-primary">{crowd}</span>
                     </p>
                   ) : null}
                 </li>

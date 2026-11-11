@@ -236,6 +236,36 @@ test("dry run does not call GA4 MP", async () => {
   assert.equal(ga4Calls.length, 0);
 });
 
+test("a channel opt-out skips only that channel", async () => {
+  const db = makeFakeDb();
+  const inApp = recordingWorker("inApp", { ok: true });
+  const push = recordingWorker("push", { ok: true });
+  const email = recordingWorker("email", { ok: true });
+  const userData = {
+    email: "picker@example.com",
+    notificationPrefs: { push: { results: false } },
+  };
+  const spec = getTriggerSpec("annual_wrap");
+  assert.equal(recipientAllowsChannel(userData, spec, "push"), false);
+  assert.equal(recipientAllowsChannel(userData, spec, "inApp"), true);
+  assert.equal(recipientAllowsChannel(userData, spec, "email"), true);
+
+  const summary = await deliverCommsTrigger({
+    db,
+    admin: fakeAdmin,
+    triggerId: "annual_wrap",
+    recipients: [{ uid: "u1", userData, payload: { year: "2026", rank: 2 }, vars: { year: "2026" } }],
+    workers: { inApp, push, email },
+    dryRun: false,
+    sendGa4Delivered: async () => ({ sent: true }),
+  });
+
+  assert.equal(summary.delivered, 1);
+  assert.equal(push.calls.length, 0);
+  assert.equal(inApp.calls.length, 1);
+  assert.equal(email.calls.length, 1);
+});
+
 test("prefs_off skips channel workers for that channel", async () => {
   const db = makeFakeDb();
   const inApp = recordingWorker("inApp");

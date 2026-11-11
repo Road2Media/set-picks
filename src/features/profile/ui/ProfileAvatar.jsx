@@ -28,7 +28,7 @@ export default function ProfileAvatar({
       alt={alt ?? avatar.label}
       width={size === 'lg' ? 80 : size === 'sm' ? 40 : 56}
       height={size === 'lg' ? 80 : size === 'sm' ? 40 : 56}
-      className={`${dim} shrink-0 rounded-2xl border border-border-subtle bg-surface-field object-cover ${className}`.trim()}
+      className={`${dim} shrink-0 rounded-2xl border border-border-subtle/50 bg-surface-field object-cover ${className}`.trim()}
       decoding="async"
     />
   );

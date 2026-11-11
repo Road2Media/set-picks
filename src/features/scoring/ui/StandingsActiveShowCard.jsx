@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ListMusic, Loader2, Pencil, Ticket } from 'lucide-react';
 
+import { HundredthShowCardMark } from '../../hundredth-show';
 import Button from '../../../shared/ui/Button';
 import DashboardJobShell, { DASHBOARD_JOB_ICON } from '../../../shared/ui/DashboardJobShell';
 import {
@@ -23,12 +24,14 @@ import {
  *
  * @param {Object} props
  * @param {string} props.showLabel — venue + date for the selected show
+ * @param {string} [props.showDate] — YYYY-MM-DD, for 100th-show branding
  * @param {boolean} props.isShowToday — selectedDate === today
  * @param {boolean} props.isSecured — user has submitted non-empty picks
  * @param {boolean} [props.picksStatusLoading] — avoids flashing "no picks" before Firestore resolves
  */
 export default function StandingsActiveShowCard({
   showLabel,
+  showDate = '',
   isShowToday,
   isSecured,
   picksStatusLoading = false,
@@ -67,8 +70,9 @@ export default function StandingsActiveShowCard({
             {eyebrow}
           </p>
           {showLabel ? (
-            <p className={`break-words ${STANDINGS_BOX_TITLE}`}>{showLabel}</p>
+            <p className={`wrap-break-word ${STANDINGS_BOX_TITLE}`}>{showLabel}</p>
           ) : null}
+          <HundredthShowCardMark showDate={showDate} />
           {picksStatusLoading ? (
             <p className={`flex items-center gap-2 ${STANDINGS_BOX_BODY}`}>
               <Loader2
@@ -85,7 +89,7 @@ export default function StandingsActiveShowCard({
         <div className="flex shrink-0 flex-col gap-2 sm:items-end">
           {picksStatusLoading ? (
             <div
-              className="flex h-10 w-full min-w-[11rem] items-center justify-center rounded-xl border border-border-subtle bg-surface-field sm:w-auto"
+              className="flex h-10 w-full min-w-44 items-center justify-center rounded-xl border border-border-subtle/50 bg-surface-field sm:w-auto"
               aria-busy="true"
               aria-label="Loading picks status"
             >
@@ -96,7 +100,7 @@ export default function StandingsActiveShowCard({
               type="button"
               variant="primary"
               size="sm"
-              className="w-full min-w-[11rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-44 sm:w-auto uppercase tracking-widest"
               onClick={() => navigate('/dashboard')}
             >
               <ListMusic className="mr-2 h-4 w-4 shrink-0" aria-hidden />
@@ -107,7 +111,7 @@ export default function StandingsActiveShowCard({
               type="button"
               variant="secondary"
               size="sm"
-              className="w-full min-w-[11rem] sm:w-auto uppercase tracking-widest"
+              className="w-full min-w-44 sm:w-auto uppercase tracking-widest"
               onClick={() => navigate('/dashboard')}
             >
               <Pencil className="mr-2 h-4 w-4 shrink-0" aria-hidden />

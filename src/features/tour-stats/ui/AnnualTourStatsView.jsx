@@ -11,7 +11,9 @@ import {
   formatAnnualCount,
   formatAnnualFanDate,
 } from '../model/annualTourStatsFacts';
+import { formatSongNightCount, songListNeedsPlayFootnote } from '../model/songNightCount';
 import { ANNUAL_STANDINGS_PATH } from '../model/rollUpAnnualTourStats';
+import { SongPlayCountMarker, SongPlayCountNote } from './SongPlayCountNote';
 
 /** Public `/tour-stats/2026` (#1141). Presentational only. */
 export default function AnnualTourStatsView({ stats, heading, status }) {
@@ -31,7 +33,7 @@ export default function AnnualTourStatsView({ stats, heading, status }) {
         </h1>
         {status === 'loading' ? (
           <p className="text-base leading-snug text-slate-300">
-            Adding up the {year} tour pages.
+            Adding the {year} shows.
           </p>
         ) : null}
         {status === 'error' ? (
@@ -56,20 +58,21 @@ export default function AnnualTourStatsView({ stats, heading, status }) {
             </h2>
             <ol className="space-y-1.5 text-sm text-slate-200">
               {topSongs.length ? (
-                topSongs.map((row, index) => (
+                topSongs.map((row, index) => {
+                  const count = formatSongNightCount(row);
+                  return (
                   <li key={row.title} className="flex items-baseline justify-between gap-4">
                     <span>
                       <span className="mr-2 text-slate-500">{index + 1}.</span>
                       <span className="font-semibold text-white">{row.title}</span>
                     </span>
                     <span className="shrink-0 text-slate-400">
-                      {formatAnnualCount(row.showAppearances)} nights
-                      {row.timesPlayed > row.showAppearances
-                        ? ` (${formatAnnualCount(row.timesPlayed)} song rows)`
-                        : ''}
+                      {count.label}
+                      {count.showMarker ? <SongPlayCountMarker /> : null}
                     </span>
                   </li>
-                ))
+                  );
+                })
               ) : (
                 <li>None in this count.</li>
               )}
@@ -120,7 +123,7 @@ export default function AnnualTourStatsView({ stats, heading, status }) {
             </ul>
             {stats.unsplitTours.length ? (
               <div className="mt-4 space-y-1.5 text-sm text-slate-300">
-                <h3 className="font-semibold text-white">Not in the totals yet</h3>
+                <h3 className="font-semibold text-white">Separate tour page</h3>
                 <ul className="space-y-1.5">
                   {stats.unsplitTours.map((tour) => (
                     <li key={tour.tourSlug}>
@@ -130,11 +133,6 @@ export default function AnnualTourStatsView({ stats, heading, status }) {
                       >
                         {tour.tourLabel}
                       </Link>
-                      <span className="text-slate-400">
-                        {' '}
-                        · {tour.showDatesInYear.join(', ')} stay in {year}. The tour page
-                        also includes {tour.showDatesOutsideYear.join(', ')}.
-                      </span>
                     </li>
                   ))}
                 </ul>
@@ -142,6 +140,10 @@ export default function AnnualTourStatsView({ stats, heading, status }) {
             ) : null}
           </section>
         </>
+      ) : null}
+
+      {songListNeedsPlayFootnote(topSongs) ? (
+        <SongPlayCountNote className="mb-4 text-sm leading-snug text-slate-400" />
       ) : null}
 
       <p className="text-sm leading-snug text-slate-400">
@@ -168,7 +170,7 @@ export default function AnnualTourStatsView({ stats, heading, status }) {
         </p>
         <AppDocumentAuthLink
           signup
-          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-gradient-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-[0_0_40px_-10px_rgba(45,212,191,0.5)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_-15px_rgba(45,212,191,0.7)] active:translate-y-0 active:scale-[0.98]"
+          className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-linear-to-r from-teal-400 to-teal-500 px-8 py-3.5 text-base font-black text-slate-900 shadow-glow-brand transition-all hover:-translate-y-0.5 hover:shadow-glow-brand-lg active:translate-y-0 active:scale-[0.98]"
         >
           Play the next show
         </AppDocumentAuthLink>

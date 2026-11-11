@@ -149,7 +149,7 @@ Consume the **same aggregates** (don’t re-query ad hoc):
 | Concern | Approach |
 |---------|----------|
 | Read cost | Prefer one `picks where showDate ==` (+ catalog already cached client-side). Avoid N+1 user docs for (5) — batch-get top-K uids only. |
-| Materialize later | Optional `picks_night_stats/{showDate}` at lock or on a short TTL — not required for v1 if N stays ~10–30. |
+| Materialize later | **Deferred (v1.109.0, #694 P3).** Optional `picks_night_stats/{showDate}` at lock or on a short TTL. Not written. The client aggregates already scan `picks` by `showDate`, and no existing lock/rollup step holds the crowd aggregate to copy. Revisit if N grows past the Phase B mid-teens. |
 | Title join | Case-insensitive; catalog missing → omit from gap/vintage, still count in (1)(2). |
 | Privacy | Aggregates only on card/stats; no handles in multi-picker lists. Leaders’ block may show handles of top-K (already public on standings). |
 | Extend report CLI | Add gap top-10 + vintage summary to `picksRollupReport` for offline QA of these candidates. |

@@ -105,13 +105,13 @@ EVENT (Firestore onCreate/onUpdate · scheduler cron · post-grade hook · live-
    | `push` | `functions/fcmMessagingCore.js` | FCM + `private_fcmTokens` |
    | `email` | `functions/commsEmailWorker.js` (**Resend**) | Resend API + delivery log |
 
-4. **Independent fan-out, per-channel prefs** (v1): send to every eligible channel. Eligibility precedence: `notificationPrefs[family]` → channel availability (FCM token / verified email, not suppressed) → dedup → fatigue cap.
+4. **Independent fan-out, per-channel prefs** (#1045): send to every eligible channel. Eligibility precedence: `notificationPrefs.<channel>.<family>` (boolean) → legacy flat `notificationPrefs.<family>` → default → channel availability (FCM token / verified email, not suppressed) → dedup → fatigue cap.
 5. **War Room callable is QA/replay only.** The admin callable (`deliverSphere2026TourRecapInbox` today; `replayComms(triggerId, audienceFilter, dryRun)` going forward) exists for dry-run preview, backfill, and incident replay — **never** as the production trigger.
 
 ### Non-negotiables
 
 - **Idempotency** — shared key `<triggerId>/<uid>:<scope>` recorded in the delivery log (`fcm_notification_log`) and/or a fixed `commsInbox` doc id; same key used as the Resend `idempotencyKey`.
-- **Prefs** — `notificationPrefs.reminders`, `.results`, `.nearMiss`, `.lifecycle` (new), `.commercial` (Phase 3).
+- **Prefs** — family keys `reminders`, `results`, `nearMiss`, `lifecycle`, `commercial`, stored per channel at `notificationPrefs.push`, `.inApp`, and `.email` (#1045). A missing channel boolean still honors the legacy flat key. `commercial` stays opt-in.
 - **Dry run** — the QA/replay callable defaults `dryRun: true`; production event paths run live but are idempotent.
 - **Rollout** — canary uid → cohort % → full audience, by enabling event adapters / schedules (not by manual sends).
 - **Measurement** — log `comms_delivered` server-side with `trigger_id`, `template_id`, `channel`, `variant: control`.

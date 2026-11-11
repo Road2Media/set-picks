@@ -13,7 +13,7 @@
 | Homepage | `https://www.setlistpickem.com/` | Canonical; social scrapers get OG shell via `middleware.js` + `og-home-html.mjs` (**not** Googlebot — see #658) |
 | How it works | `/how-it-works` | In `public/sitemap.xml` |
 | Scoring | `/how-scoring-works` | In `public/sitemap.xml` |
-| Scoring change | `/how-scoring-changed` | In `public/sitemap.xml`. Not in the main nav (#1086). |
+| Scoring change | `/how-scoring-changed` | In `public/sitemap.xml`. Play menu and footer (#1232). Not a top-level header item. |
 | About | `/about` | **v1.56.0 (#941):** origin story; in `public/sitemap.xml` |
 | Keyword landing | `/phish-setlist-prediction-game` | In `public/sitemap.xml` (#660 / #940) |
 | Sitemap | `/sitemap.xml` | Listed in `robots.txt` |
@@ -24,6 +24,7 @@
 | Dashboard | `/dashboard/*` | **Private** — `robots.txt` Disallow; never prerender for crawlers |
 | Tour Insights | `/tour-stats`, `/tour-stats/:slug` | Product `_index` + docs **auto-update** nightly (filter / hub). **SEO prerender** auto-expands `/tour-stats/{slug}` + sitemap/`llms` on the next production build when the thin-page gate passes (**#959** / v1.63.0). Static opt-in seed: Sphere + `2026-summer-tour` in `seoRoutes.js`. **#1144:** `/tour-stats/2026-2027-nye-run` is prerendered before that gate. See §1.1. |
 | Public discovery gate | `sitemap.xml`, `llms.txt` | **#1144:** every indexable public route in `src/shared/config/publicSitemapRoutes.js` (MSG, annual, Rewind, Phish IQ, the NYE run, and the older marketing pages) must be in both files. `npm run build` and `verify:seo-prerender` fail if one is missing. A new static route in `App.jsx` must be added to that list or to the exclusion list. `/phish-picks` stays out (#975). |
+| Phish IQ | `/phish-iq` | **#1276:** prerendered intro, FAQ, and JSON-LD (Quiz, WebApplication, FAQPage). Share image has no answers. Today's questions stay out of the crawl HTML. `llms.txt` cites Phish.net. |
 
 **Search Console:** Prefer a **Domain** property (`setlistpickem.com`) or the **URL-prefix** property for `https://www.setlistpickem.com/`. When inspecting, always use **www** URLs. Apex showing “Page with redirect” is expected and healthy.
 
@@ -133,6 +134,14 @@ Track these weekly in Search Console (Performance → Queries) and spot-check SE
 Public surface: `/tour-stats` + `/tour-stats/:tourSlug` (kebab-case labels from Phish.net calendar ingest). **Aggregates only** — most played, bustouts, gap highlights; never full night setlists. Default tour: **current** (newest `lastShowDate`). Prerender hub + Sphere + **2026 Summer Tour** (`2026-summer-tour`) stay static opt-in; later tours that clear the §1.1 gate auto-prerender on the next production build (#959). Definitions in `/llms.txt` match the public UI: unique = distinct titles this tour; frequency = plays this tour; bustout = 30+ show pre-show gap.
 
 **GEO / LLM brief (#930):** `/llms.txt` restates those three definitions and deep-links the summer slug so agents can cite the live tour page, not only home.
+
+### Show notes (#684) — not indexed yet
+
+| ID | Query | Target path |
+|----|--------|-------------|
+| N1 | `phish show notes` / `phish bustout [show date]` | `/tour-notes`, `/tour-notes/YYYY-MM-DD` |
+
+`noindex, follow` until `PUBLIC_SHOW_NOTES_INDEXABLE` is turned on. Not in the sitemap or `llms.txt`. Do not request indexing. A note names the opener, the encore, and a bustout or a few songs new to that tour. It does not list the set. N1 is not a weekly measurement row until that flag changes.
 
 ### SERP snapshot (2026-08, owner notes)
 

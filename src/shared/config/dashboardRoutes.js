@@ -29,7 +29,18 @@ export const PICKS_CLUSTER_PATHS = Object.freeze({
   lab: '/dashboard/picks/lab',
   scorecard: '/dashboard/picks/scorecard',
   rewind: '/dashboard/rewind',
+  /** Logged-in daily quiz. Child of Picks, not a tertiary segment (#1258). */
   phishIq: '/dashboard/phish-iq',
+});
+
+/**
+ * Old Picks-tab locations for Phish IQ (#1258).
+ * The tertiary href was already `/dashboard/phish-iq` and stays the canonical
+ * route. The nested picks path redirects there so a cluster-shaped bookmark
+ * still opens the quiz.
+ */
+export const PICKS_CLUSTER_LEGACY_PATHS = Object.freeze({
+  phishIq: '/dashboard/picks/phish-iq',
 });
 
 /**
@@ -52,6 +63,12 @@ export const STATS_CLUSTER_PATHS = Object.freeze({
   personal: '/dashboard/stats/personal',
   global: '/dashboard/stats/global',
   band: '/dashboard/stats/band',
+  /**
+   * Show-scoped crowd deep dive (#694 P1). Not a tertiary chip — Personal /
+   * Global / Band stay the tray. Linked from Standings crowd pulse.
+   * Uses the date picker, not the tour picker.
+   */
+  night: '/dashboard/stats/night',
 });
 
 /** Pre-#769 Standings Stats peer; SPA redirect preserves `?tour=`. */
@@ -106,7 +123,24 @@ export function isPicksClusterPath(pathname) {
   if (path === PICKS_CLUSTER_PATHS.scorecard) return true;
   if (path === PICKS_CLUSTER_PATHS.rewind) return true;
   if (path === PICKS_CLUSTER_PATHS.phishIq) return true;
+  if (path === PICKS_CLUSTER_LEGACY_PATHS.phishIq) return true;
   return false;
+}
+
+/**
+ * Redirect target for a retired Picks-tab Phish IQ URL (#1258).
+ * Returns null when `pathname` is already canonical or unrelated.
+ * Preserves `search` (`?` included, same shape as `location.search`).
+ *
+ * @param {string} pathname
+ * @param {string} [search]
+ * @returns {string | null}
+ */
+export function phishIqLegacyRedirect(pathname, search = '') {
+  const path = normalizeDashboardPathname(pathname);
+  if (path !== PICKS_CLUSTER_LEGACY_PATHS.phishIq) return null;
+  const query = typeof search === 'string' ? search : '';
+  return `${PICKS_CLUSTER_PATHS.phishIq}${query}`;
 }
 
 /**
@@ -204,6 +238,30 @@ export function isStatsClusterPath(pathname) {
  * @param {string} pathname
  * @returns {boolean}
  */
+/**
+ * True for the crowd-night deep dive (`/dashboard/stats/night`).
+ * Stats primary stays active. The date picker shows; the tour picker does not.
+ *
+ * @param {string} pathname
+ * @returns {boolean}
+ */
+export function isCrowdNightStatsPath(pathname) {
+  return normalizeDashboardPathname(pathname) === STATS_CLUSTER_PATHS.night;
+}
+
+/**
+ * Standings → crowd night deep dive. Invalid dates omit the query so the
+ * layout date picker keeps its current show.
+ *
+ * @param {string} [showDate]
+ * @returns {string}
+ */
+export function crowdNightStatsHref(showDate) {
+  const date = typeof showDate === 'string' ? showDate.trim() : '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return STATS_CLUSTER_PATHS.night;
+  return `${STATS_CLUSTER_PATHS.night}?showDate=${encodeURIComponent(date)}`;
+}
+
 export function isStatsTourScopedPath(pathname) {
   const path = normalizeDashboardPathname(pathname);
   if (path === STATS_CLUSTER_PATHS.root) return true;

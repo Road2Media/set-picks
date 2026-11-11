@@ -40,7 +40,7 @@ describe('Standings delay banner on a future date (#644)', () => {
       visible: false,
       message: '',
     });
-    expect(html).not.toContain('temporarily stalled');
+    expect(html).not.toContain('running late');
     expect(html).toContain('Results aren');
   });
 });

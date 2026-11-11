@@ -18,7 +18,7 @@ export default function ScoreBreakdownGrid({ userPicks, actualSetlist, maskPickT
           actualSetlist
         );
 
-        let borderStyle = 'border-border-muted bg-surface-inset';
+        let borderStyle = 'border-border-muted/60 bg-surface-inset/72';
         let textColor = 'text-slate-300';
         let markerColor = 'text-content-secondary';
 
@@ -37,7 +37,7 @@ export default function ScoreBreakdownGrid({ userPicks, actualSetlist, maskPickT
             textColor = 'text-blue-400';
             markerColor = 'text-blue-400/90';
           } else if (kind === 'miss') {
-            borderStyle = 'border-border-subtle bg-surface-field';
+            borderStyle = 'border-border-subtle/50 bg-surface-field';
             textColor = 'text-content-secondary';
             markerColor = 'text-content-secondary/90';
           }
@@ -52,7 +52,7 @@ export default function ScoreBreakdownGrid({ userPicks, actualSetlist, maskPickT
             {showMaskedPick ? (
               <>
                 <span
-                  className="text-xs font-bold truncate text-slate-400 blur-sm select-none"
+                  className="text-xs font-bold truncate text-slate-400 blur-xs select-none"
                   aria-hidden="true"
                 >
                   {userGuess}

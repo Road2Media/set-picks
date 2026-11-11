@@ -7,6 +7,14 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Per-band alias (#605). The catalog sync writes this beside song-catalog.json.
+    // Clients keep reading song-catalog.json until a later cutover. Same public
+    // catalog posture. Admin SDK writes; clients cannot.
+    match /song-catalog/phish.json {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Dated catalog archives for prediction backtests (#647). Admin SDK only —
     // do not grant public read (live clients use song-catalog.json).
     match /song-catalog/archive/{fileName} {

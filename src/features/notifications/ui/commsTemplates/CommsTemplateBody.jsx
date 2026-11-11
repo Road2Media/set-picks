@@ -67,7 +67,7 @@ export default function CommsTemplateBody({
           {stats.map((s) => (
             <div
               key={s.label}
-              className="rounded-xl border border-border-muted/45 bg-surface-inset p-3"
+              className="rounded-xl border border-border-muted/45 bg-surface-inset/72 p-3"
             >
               <dt className="text-[10px] font-black uppercase tracking-widest text-content-secondary">
                 {s.label}

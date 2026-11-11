@@ -203,13 +203,13 @@ export default function SongAutocomplete({
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        className="bg-[rgb(var(--surface-field)_/_1)] read-only:!opacity-100"
+        className="bg-[rgb(var(--surface-field)/1)] read-only:opacity-100!"
       />
       
       {isOpen && filteredSongs.length > 0 && (
         <ul
           role="listbox"
-          className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto overflow-x-hidden rounded-xl border-2 border-border-subtle bg-[rgb(var(--surface-field)_/_1)] shadow-inset-glass ring-1 ring-border-glass/30"
+          className="absolute z-50 mt-2 max-h-64 w-full overflow-y-auto overflow-x-hidden rounded-xl border-2 border-border-subtle/50 bg-[rgb(var(--surface-field)/1)] shadow-inset-glass ring-1 ring-border-glass/30"
         >
           {filteredSongs.map((song, index) => {
             const songName = typeof song === 'string' ? song : song.name;
@@ -230,13 +230,13 @@ export default function SongAutocomplete({
                   e.preventDefault();
                   handleSelect(songName);
                 }}
-                className={`flex cursor-pointer flex-col gap-1 border-b border-border-muted/50 p-3 transition-colors last:border-b-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-4 sm:gap-y-1 ${
+                className={`flex cursor-pointer flex-col gap-1 border-b border-border-muted/50 p-3 transition-colors last:border-b-0 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-4 sm:gap-y-1 ${
                   isKeyboardActive
                     ? 'bg-[#1e293b] ring-1 ring-inset ring-brand/50'
                     : 'md:hover:bg-[#1e293b]'
                 }`}
               >
-                <div className="min-w-0 flex-1 break-words text-left text-base font-bold text-slate-200">
+                <div className="min-w-0 flex-1 wrap-break-word text-left text-base font-bold text-slate-200">
                   {songName}
                 </div>
                 

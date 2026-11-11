@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { Panel } from '../../../shared/ui/Card';
 import CommsMessageBody from './CommsMessageBody.jsx';
 import {
   COMMS_TEMPLATE_REGISTRY,
@@ -41,20 +42,21 @@ export default function CommsTemplatePreview() {
                   <h2 className="font-display text-lg font-bold uppercase tracking-tight text-white">
                     {entry?.displayName || templateId}
                   </h2>
-                  <code className="rounded bg-surface-inset px-2 py-0.5 text-xs font-bold text-content-secondary">
+                  <code className="rounded-sm bg-surface-inset/72 px-2 py-0.5 text-xs font-bold text-content-secondary">
                     {templateId}
                   </code>
                   {entry?.triggerId ? (
-                    <code className="rounded bg-surface-inset px-2 py-0.5 text-xs font-bold text-brand-primary">
+                    <code className="rounded-sm bg-surface-inset/72 px-2 py-0.5 text-xs font-bold text-brand-primary">
                       {entry.triggerId}
                     </code>
                   ) : null}
                 </div>
                 <div className="space-y-4">
                   {samples.map((sample, i) => (
-                    <div
+                    <Panel
                       key={`${templateId}-${i}`}
-                      className="overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-inset-glass"
+                      padding="none"
+                      className="overflow-hidden"
                     >
                       <div className="border-b border-border-muted/60 px-5 py-2 text-[10px] font-black uppercase tracking-widest text-content-secondary">
                         {sample.name}
@@ -62,7 +64,7 @@ export default function CommsTemplatePreview() {
                       <div className="px-5 pb-6 pt-4">
                         <CommsMessageBody templateId={templateId} payload={sample.payload} />
                       </div>
-                    </div>
+                    </Panel>
                   ))}
                 </div>
               </section>

@@ -1,8 +1,15 @@
 {
   "schemaVersion": "2.0.0",
-  "updatedAt": "2026-09-09",
+  "updatedAt": "2026-11-09",
   "framework": "TTDMOM",
   "automationTypes": ["automated", "event_triggered"],
+  "notificationPrefs": {
+    "model": "per-channel",
+    "issue": "1045",
+    "channels": ["push", "inApp", "email"],
+    "families": ["reminders", "results", "nearMiss", "lifecycle", "commercial"],
+    "resolution": "For each channel a trigger declares, gate on notificationPrefs.<channel>.<prefKey> when that value is a boolean. Otherwise use the legacy flat notificationPrefs.<prefKey>. Otherwise default: commercial is off until true; every other family is on until false. prefKeys stay family names. A flat opt-out still blocks every channel that has no explicit boolean. Transactional email (emailClass transactional) still bypasses prefKeys and still honors email_suppression."
+  },
   "triggers": [
     {
       "triggerId": "account_welcome",

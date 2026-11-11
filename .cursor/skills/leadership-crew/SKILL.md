@@ -4,7 +4,9 @@ description: >-
   Meta router for Setlist Pick'em Leadership Ops Crew (epic #695). Use when
   invoking C-suite, functional, or bridge leadership roles; Optimize oversight;
   campaign/revenue/BD/affiliate pipelines; or adapting the living org chart.
-  Canon: docs/LEADERSHIP_CREW.md. L0 draft-only.
+  Also the intent router for an agent-queue ticket: a player-facing UI copy
+  sweep, or a new marketing or SEO page. Canon: docs/LEADERSHIP_CREW.md.
+  L0 draft-only.
 ---
 
 # Leadership Crew (router)
@@ -31,6 +33,12 @@ This org **learns**. If ownership is wrong, propose a minimal change (merge role
 | Delivery feasibility | `software-architect` / `chief-technology-officer` |
 | Measurement | `reporting-lead` / `chief-data-officer` |
 | Comms execution | `comms-orchestration-lead` → existing `comms-*` skills |
+| Player-facing UI copy sweep (internal language, tiebreak copy in the app, slot vs chair) | `editor-in-chief` + `content/marketing/voice-guide.md`. If an inbox, push, or email sentence moves, also `comms-drafter`. Then change the strings. Admin screens stay technical. |
+| New marketing or SEO page | `marketing-specialist` → `editor-in-chief`. Draft in `content/marketing/`. Ship the strings in `src/features/landing/ui` and `seoRoutes.js`. Read `.cursor/rules/marketing-editorial-viewport.mdc` and `docs/SEO_GEO_PLAYBOOK.md`. |
+
+The factory picks a skill by matching the ticket to that skill’s `description`. These two rows stay in this description so a UI sweep or a new page opens this router instead of skipping the voice skills.
+
+A ticket that asks to sweep the UI or ship a page is an implementation ticket. Read the skills, then edit. The L0 brief-only stance is for a leadership pack, not for that ticket.
 
 ## Maturity
 
@@ -38,7 +46,7 @@ L0 default — no live scrape/post/BD send/affiliate inject. See maturity ladder
 
 ## Guardrails
 
-Draft-only; `staging` PRs only via execution squad; never merge/deploy; Phase 3 before in-product commercial.
+Leadership packs stay draft-only. An agent-queue ticket that asks to sweep copy or ship a page is executed in a `staging` PR. Never merge or deploy from the leadership role. Phase 3 before in-product commercial.
 
 ## Draft artifacts (required)
 
