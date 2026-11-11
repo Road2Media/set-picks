@@ -2,7 +2,6 @@ import React from 'react';
 
 import {
   NAV_LABEL_MAKE_PICKS,
-  NAV_LABEL_PHISH_IQ,
   NAV_LABEL_PICKS_LAB,
   NAV_LABEL_REWIND,
   NAV_LABEL_SCORECARD,
@@ -17,6 +16,7 @@ export const PICKS_CLUSTER_MOBILE_TOOLS_ROOT_ID = 'picks-cluster-mobile-tools-ro
 /**
  * Mobile-only Picks cluster chrome (#766) — fixed under the context bar.
  * Same Make Picks / Picks Lab / Scorecard segmented control as the in-page desktop tray.
+ * Phish IQ is a Picks child route, not a fourth segment (#1258).
  *
  * @param {{
  *   items: Array<{ to: string, label: string, end?: boolean }>,
@@ -38,7 +38,6 @@ export function buildPicksClusterNavItems(makePicksTo, options = {}) {
     { to: makePicksTo, label: NAV_LABEL_MAKE_PICKS, end: true },
     { to: PICKS_CLUSTER_PATHS.lab, label: NAV_LABEL_PICKS_LAB, end: true },
     { to: PICKS_CLUSTER_PATHS.scorecard, label: NAV_LABEL_SCORECARD, end: true },
-    { to: PICKS_CLUSTER_PATHS.phishIq, label: NAV_LABEL_PHISH_IQ, end: true },
   ];
   if (options.includeRewind) {
     items.push({

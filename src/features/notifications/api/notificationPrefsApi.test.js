@@ -2,11 +2,12 @@ import { describe, it, expect } from 'vitest';
 
 import {
   DEFAULT_NOTIFICATION_PREFS,
+  resolveChannelPref,
   resolveNotificationPrefs,
 } from './notificationPrefsApi.js';
 
 describe('resolveNotificationPrefs', () => {
-  it('returns defaults when notificationPrefs is missing', () => {
+  it('returns per-channel defaults when notificationPrefs is missing', () => {
     expect(resolveNotificationPrefs(null)).toEqual(DEFAULT_NOTIFICATION_PREFS);
     expect(resolveNotificationPrefs(undefined)).toEqual(DEFAULT_NOTIFICATION_PREFS);
     expect(resolveNotificationPrefs({})).toEqual(DEFAULT_NOTIFICATION_PREFS);
@@ -15,48 +16,62 @@ describe('resolveNotificationPrefs', () => {
     );
   });
 
-  it('defaults the allow-categories on, commercial off', () => {
-    expect(DEFAULT_NOTIFICATION_PREFS).toEqual({
-      reminders: true,
-      results: true,
-      nearMiss: true,
-      lifecycle: true,
-      commercial: false,
-    });
+  it('defaults the allow-categories on and commercial off for every channel', () => {
+    for (const channel of ['push', 'inApp', 'email']) {
+      expect(DEFAULT_NOTIFICATION_PREFS[channel]).toEqual({
+        reminders: true,
+        results: true,
+        nearMiss: true,
+        lifecycle: true,
+        commercial: false,
+      });
+    }
   });
 
-  it('treats only explicit false as opt-out for allow-categories', () => {
+  it('applies a flat opt-out to every channel that has no explicit boolean', () => {
     const prefs = resolveNotificationPrefs({
       notificationPrefs: { reminders: false, lifecycle: false },
     });
-    expect(prefs.reminders).toBe(false);
-    expect(prefs.lifecycle).toBe(false);
-    // Untouched keys stay on.
-    expect(prefs.results).toBe(true);
-    expect(prefs.nearMiss).toBe(true);
+    for (const channel of ['push', 'inApp', 'email']) {
+      expect(prefs[channel].reminders).toBe(false);
+      expect(prefs[channel].lifecycle).toBe(false);
+      expect(prefs[channel].results).toBe(true);
+      expect(prefs[channel].nearMiss).toBe(true);
+      expect(prefs[channel].commercial).toBe(false);
+    }
   });
 
-  it('lifecycle is on unless explicitly disabled', () => {
-    expect(resolveNotificationPrefs({ notificationPrefs: { lifecycle: true } }).lifecycle).toBe(
-      true,
-    );
-    expect(resolveNotificationPrefs({ notificationPrefs: { foo: 1 } }).lifecycle).toBe(true);
-    expect(resolveNotificationPrefs({ notificationPrefs: { lifecycle: false } }).lifecycle).toBe(
-      false,
-    );
+  it('lets one channel override the flat key without changing the others', () => {
+    const prefs = resolveNotificationPrefs({
+      notificationPrefs: {
+        lifecycle: false,
+        commercial: true,
+        push: { lifecycle: true },
+        email: { commercial: false },
+      },
+    });
+    expect(prefs.push.lifecycle).toBe(true);
+    expect(prefs.inApp.lifecycle).toBe(false);
+    expect(prefs.email.lifecycle).toBe(false);
+    expect(prefs.push.commercial).toBe(true);
+    expect(prefs.email.commercial).toBe(false);
+    expect(prefs.inApp.commercial).toBe(true);
   });
 
-  it('commercial requires explicit true to opt in (default-deny)', () => {
-    expect(resolveNotificationPrefs({ notificationPrefs: {} }).commercial).toBe(false);
-    expect(resolveNotificationPrefs({ notificationPrefs: { commercial: false } }).commercial).toBe(
-      false,
-    );
-    // Any non-true value stays opted out.
+  it('ignores non-boolean nested values and falls back to the flat key', () => {
     expect(
-      resolveNotificationPrefs({ notificationPrefs: { commercial: 'yes' } }).commercial,
+      resolveChannelPref({ reminders: false, push: { reminders: 'no' } }, 'push', 'reminders'),
     ).toBe(false);
-    expect(resolveNotificationPrefs({ notificationPrefs: { commercial: true } }).commercial).toBe(
-      true,
-    );
+    expect(resolveChannelPref({ email: null, results: false }, 'email', 'results')).toBe(false);
+  });
+
+  it('commercial requires explicit true on the winning value', () => {
+    expect(resolveChannelPref({}, 'push', 'commercial')).toBe(false);
+    expect(resolveChannelPref({ commercial: false }, 'email', 'commercial')).toBe(false);
+    expect(resolveChannelPref({ commercial: 'yes' }, 'inApp', 'commercial')).toBe(false);
+    expect(resolveChannelPref({ commercial: true }, 'inApp', 'commercial')).toBe(true);
+    expect(
+      resolveChannelPref({ commercial: true, push: { commercial: false } }, 'push', 'commercial'),
+    ).toBe(false);
   });
 });

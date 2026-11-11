@@ -17,7 +17,7 @@ export default function FrequencyMeterRow({
   meta,
   count,
   maxCount,
-  barClassName = 'bg-gradient-to-r from-brand-accent-red to-brand-accent-blue',
+  barClassName = 'bg-linear-to-r from-brand-accent-red to-brand-accent-blue',
   titleClassName = 'font-semibold text-white',
   metaClassName = 'font-medium tabular-nums text-content-secondary',
 }) {

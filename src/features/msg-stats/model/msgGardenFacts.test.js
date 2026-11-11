@@ -77,6 +77,7 @@ describe('msg garden snapshot (#1139)', () => {
     );
     expect(html).toContain('href="/login?mode=signup"');
     expect(html).toContain('href="/tour-stats/2026-2027-nye-run"');
+    expect(html).toContain('href="/phish-iq"');
     expect(html).not.toContain('—');
   });
 

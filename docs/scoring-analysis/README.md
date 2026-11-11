@@ -22,6 +22,9 @@ This folder is the durable, repo-backed record of that work.
 | [04-card-combos-and-engagement.md](./04-card-combos-and-engagement.md) | Breadth bonuses, zeros, predictive coupling |
 | [05-scoring-from-scratch.md](./05-scoring-from-scratch.md) | Greenfield scoring proposal |
 | [06-predictive-picker-framework.md](./06-predictive-picker-framework.md) | Recommendation engine + two UX surfaces |
+| [07-backtest-harness.md](./07-backtest-harness.md) | Leakage-safe rolling backtest |
+| [08-recommendation-model.md](./08-recommendation-model.md) | Frozen explainable model |
+| [09-wider-backtest-and-playprob.md](./09-wider-backtest-and-playprob.md) | 3-year window, playProb vs picks, #652 gate (#1002) |
 
 ## Snapshot metadata
 

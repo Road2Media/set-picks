@@ -2,10 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { savePhishIqRecord } from '../api/savePhishIqRecord';
 import { trackPhishIqSignUp } from '../model/phishIqAnalytics';
+import { readPhishIqHistory, recordPhishIqHistory } from '../model/phishIqHistory';
 import {
   clearGuestPhishIqResult,
   consumePhishIqAuthIntent,
   readGuestPhishIqResult,
+  writeGuestPhishIqResult,
 } from '../model/phishIqStorage';
 import { nextPhishIqRecord, normalizePhishIqRecord } from '../model/phishIqStreak';
 import { usePhishIqQuiz } from '../model/usePhishIqQuiz';
@@ -13,7 +15,8 @@ import PhishIqPlay from './PhishIqPlay';
 
 /**
  * Signed-in `/dashboard/phish-iq`. Saves the streak on the user doc and
- * picks up a result played as a guest on `/phish-iq`.
+ * picks up a result played as a guest on `/phish-iq`. The stats panel reads
+ * this browser's day history, which is kept across sign-in.
  *
  * @param {{
  *   user: { uid?: string } | null | undefined,
@@ -23,13 +26,21 @@ import PhishIqPlay from './PhishIqPlay';
 export default function PhishIqAccount({ user, profile }) {
   const { date, quiz, isLoading } = usePhishIqQuiz();
   const saved = useMemo(() => normalizePhishIqRecord(profile?.phishIq), [profile?.phishIq]);
-  const savedToday = saved && saved.lastPlayedDate === date ? saved : null;
-  const guest = useMemo(() => (date ? readGuestPhishIqResult(date) : null), [date]);
-  const seeded = savedToday || (guest ? nextPhishIqRecord(saved, guest) : null);
-  const [record, setRecord] = useState(seeded);
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [saveNote, setSaveNote] = useState('');
   const intentFired = useRef(false);
   const saveKey = useRef('');
+
+  const history = useMemo(() => {
+    if (saved?.lastPlayedDate) {
+      recordPhishIqHistory({
+        date: saved.lastPlayedDate,
+        score: saved.lastScore,
+        marks: saved.lastMarks,
+      });
+    }
+    return readPhishIqHistory();
+  }, [saved, historyVersion]);
 
   useEffect(() => {
     if (!date || intentFired.current) return;
@@ -40,17 +51,25 @@ export default function PhishIqAccount({ user, profile }) {
     }
   }, [date]);
 
+  const guest = useMemo(
+    () => (date ? readGuestPhishIqResult(date) : null),
+    [date, historyVersion],
+  );
+  const savedToday = Boolean(saved && saved.lastPlayedDate === date);
+
   useEffect(() => {
     if (!user?.uid || !date || savedToday || !guest) return;
     const key = `${user.uid}:${date}`;
     if (saveKey.current === key) return;
     saveKey.current = key;
+    recordPhishIqHistory(guest);
     const next = nextPhishIqRecord(saved, guest);
-    setRecord(next);
     let cancel = false;
     savePhishIqRecord(user.uid, next)
       .then(() => {
-        if (!cancel) clearGuestPhishIqResult();
+        if (cancel) return;
+        clearGuestPhishIqResult();
+        setHistoryVersion((version) => version + 1);
       })
       .catch(() => {
         if (cancel) return;
@@ -62,31 +81,34 @@ export default function PhishIqAccount({ user, profile }) {
     };
   }, [user?.uid, date, saved, savedToday, guest]);
 
-  const view = savedToday || record;
-  const played = view
-    ? { date: view.lastPlayedDate, score: view.lastScore, marks: view.lastMarks }
-    : null;
+  const day = date ? history.days[date] : null;
+  const played = day ? { date, score: day.score, marks: day.marks } : null;
 
   async function onFinished(result) {
-    if (!user?.uid) return;
-    const next = nextPhishIqRecord(savedToday || saved, result);
-    setRecord(next);
+    if (!user?.uid || !date) return;
+    saveKey.current = `${user.uid}:${date}`;
+    recordPhishIqHistory(result);
+    // Keep the one-day handoff until the account write lands, so a failed
+    // save can retry on the next visit without playing the quiz again.
+    writeGuestPhishIqResult(result);
+    setHistoryVersion((version) => version + 1);
+    const next = nextPhishIqRecord(saved, result);
     try {
       await savePhishIqRecord(user.uid, next);
       clearGuestPhishIqResult();
     } catch {
+      saveKey.current = '';
       setSaveNote('Could not save your streak. Your score is still on this screen.');
     }
   }
 
   return (
     <PhishIqPlay
+      key={date || 'quiz'}
       quiz={quiz}
       isLoading={isLoading}
-      played={played && played.date === date ? played : null}
-      streak={view?.currentStreak ?? null}
-      bestStreak={view?.bestStreak ?? null}
-      showStreak
+      played={played}
+      historyDays={history.days}
       onFinished={played ? undefined : onFinished}
       saveNote={saveNote}
     />

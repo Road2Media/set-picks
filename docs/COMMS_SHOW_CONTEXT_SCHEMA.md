@@ -44,6 +44,7 @@ Standalone collection (same rationale as `rollup_audit`): do not nest on
 - `functions/commsEventAdapters.js` → `showLevelPayloadFields` + `buildShowRecapEnrichment`
 - Templates: `show-recap`, `tour-rankings-daily` (`setlist_highlight` / `narrative_line`)
 - Composer: `functions/showRecapNarrativeCore.js` weaves `set_flow_summary` + card + night rank into `narrative_line` (#985)
+- Public projection (#684): `functions/publicShowNotes.js` writes `public_show_notes/{showDate}` from this doc. Clients still cannot read `comms_show_context`. The public doc keeps the opener, the encore, a bustout or a short trusted tour-debut list, and set lengths. It does not copy `set_songs`, gap maps, or any player field. Nights that fail that gate are not published.
 
 ## Related
 

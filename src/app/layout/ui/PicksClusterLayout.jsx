@@ -27,6 +27,7 @@ import PicksClusterMobileChrome, {
 
 /**
  * Persistent Picks-cluster sub-navigation (Make Picks / Picks Lab / Scorecard).
+ * Phish IQ stays in this cluster without a tray segment (#1258).
  * Nested routes render via {@link Outlet}.
  * Mobile: tertiary tray portals under the context bar (Profile chrome pattern).
  * Desktop: title + Scoring rules Scale icon + tray in the sticky stack

@@ -181,6 +181,25 @@ describe('comms template registry', () => {
     expect(text).not.toContain('Bustout bonus:');
   });
 
+  it('show_recap hundredth share pack stays handles-only (#1147)', () => {
+    const entry = getCommsTemplateEntry('show-recap');
+    const built = entry.build({
+      handle: 'Fan Handle',
+      show_date: '2027-01-02',
+      venue_name: 'Madison Square Garden',
+      email: 'fan@example.com',
+      share_pack: {
+        text: 'The 100th at MSG. Handles only on the public board.',
+        path: '/phish-at-msg/100th',
+      },
+    });
+    const text = built.paragraphs.join(' ');
+    expect(text).toContain('Handles only');
+    expect(text.toLowerCase()).not.toContain('chair');
+    expect(text).not.toContain('fan@example.com');
+    expect(text).not.toContain('@');
+  });
+
   it('show_recap CTA is honest about standings destination (#551)', () => {
     const entry = getCommsTemplateEntry('show-recap');
     expect(entry.build({}).cta).toEqual({
@@ -232,7 +251,7 @@ describe('comms template registry', () => {
     });
     expect(recap.eyebrow).toBe('10/07/26 · Show recap');
     expect(recap.paragraphs[0]).toBe(
-      "Rivertranced, here's how your picks for Allianz Amphitheater at Riverfront, Richmond, VA graded out.",
+      "Rivertranced, here's how your picks for Allianz Amphitheater at Riverfront, Richmond, VA scored.",
     );
     expect(recap.paragraphs.join(' ')).not.toMatch(/last night|2026-10-07/);
 

@@ -7,7 +7,7 @@ import DashboardTileShell, {
   DASHBOARD_TILE_SHELL,
 } from './DashboardTileShell.jsx';
 
-const JOB_WASHES = ['bg-amber-200/[0.06]', 'bg-brand-primary/[0.06]'];
+const JOB_WASHES = ['bg-amber-200/6', 'bg-brand-primary/6'];
 
 function rootClass(html) {
   const match = html.match(/^<[a-z0-9]+ class="([^"]*)"/);
@@ -37,8 +37,8 @@ describe('DashboardTileShell (#1089)', () => {
         expect(html).not.toContain(wash);
       }
       expect(html).not.toContain('shadow-inset-glass');
-      expect(html).not.toContain('backdrop-blur');
-      expect(html).not.toContain('ring-border-glass');
+      expect(html).not.toContain('backdrop-blur-sm');
+      expect(html).not.toContain('ring-border-glass/25');
     },
   );
 

@@ -18,8 +18,8 @@ export default function IosSafariInstallSteps({
 }) {
   const steps = variant === 'chrome' ? IOS_CHROME_INSTALL_STEPS : IOS_SAFARI_INSTALL_STEPS;
   const listClass = compact
-    ? 'space-y-1.5 rounded-xl border border-border-muted bg-surface-inset p-3 text-xs text-content-secondary'
-    : 'space-y-2 rounded-2xl border border-border-muted bg-surface-inset p-4 text-sm text-content-secondary';
+    ? 'space-y-1.5 rounded-xl border border-border-muted/60 bg-surface-inset/72 p-3 text-xs text-content-secondary'
+    : 'space-y-2 rounded-2xl border border-border-muted/60 bg-surface-inset/72 p-4 text-sm text-content-secondary';
 
   return (
     <ol className={`${listClass} ${className}`.trim()}>

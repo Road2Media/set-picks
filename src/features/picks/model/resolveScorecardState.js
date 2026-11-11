@@ -37,3 +37,14 @@ export function scorecardShowsOverlap(state) {
 export function scorecardShowsRank(state) {
   return state === 'locked_ungraded' || state === 'graded';
 }
+
+/**
+ * Live crowd % on the scorecard (#1043). Same disclosure window as crowd
+ * lean: after showtime only (`LIVE` / `PAST`). An admin lock that is still
+ * `NEXT` does not unlock it. Hide crowd pulse is applied by the caller.
+ *
+ * @param {string | null | undefined} showStatus
+ */
+export function scorecardShowsCrowdShare(showStatus) {
+  return showStatus === 'LIVE' || showStatus === 'PAST';
+}

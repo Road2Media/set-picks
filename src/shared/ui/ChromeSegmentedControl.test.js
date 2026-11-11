@@ -34,6 +34,9 @@ describe('ChromeSegmentedControl (#765 tertiary chrome)', () => {
     expect(html).toContain('uppercase');
     expect(html).toContain('ring-brand-primary/35');
     expect(html).toContain('bg-brand-primary/15');
+    expect(html).toContain('tracking-widest');
+    expect(html).toContain('px-1.5');
+    expect(html).toContain('min-[375px]:px-2');
     expect(html).not.toContain('rounded-full');
     expect(html).toContain('Show');
     expect(html).toContain('Tour');
@@ -86,7 +89,7 @@ describe('ChromeSegmentedControl (#765 tertiary chrome)', () => {
     expect(html).toContain('Bustout');
   });
 
-  it('inset tone keeps the equal-width tray without chrome glass + brand ring', () => {
+  it('inset tone keeps the equal-width tray without chrome glass + brand ring-3', () => {
     const html = renderToStaticMarkup(
       React.createElement(ChromeSegmentedControl, {
         ariaLabel: 'Global ranking board',
@@ -104,7 +107,7 @@ describe('ChromeSegmentedControl (#765 tertiary chrome)', () => {
     expect(html).toContain('role="tablist"');
     expect(count(html, 'flex-1')).toBe(3);
     expect(html).toContain('bg-surface-field');
-    expect(html).toContain('bg-surface-panel-strong');
+    expect(html).toContain('bg-surface-panel-strong/72');
     expect(html).not.toContain('shadow-inset-glass');
     expect(html).not.toContain('ring-brand-primary/35');
     expect(html).not.toContain('bg-brand-primary/15');

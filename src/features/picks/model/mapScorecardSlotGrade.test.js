@@ -74,7 +74,7 @@ describe('mapScorecardSlotGrade', () => {
 });
 
 describe('scorecardHitChromeSpec', () => {
-  it('leaves pre-grade slots unchanged (no check / ring / mute)', () => {
+  it('leaves pre-grade slots unchanged (no check / ring-3 / mute)', () => {
     expect(scorecardHitChromeSpec(null)).toEqual({
       showCheck: false,
       titleTone: 'default',
@@ -85,7 +85,7 @@ describe('scorecardHitChromeSpec', () => {
     });
   });
 
-  it('uses A5 check + primary ring for exact / encore / wildcard hits', () => {
+  it('uses A5 check + primary ring-3 for exact / encore / wildcard hits', () => {
     for (const kind of ['exact_slot', 'encore_exact', 'wildcard_hit']) {
       expect(scorecardHitChromeSpec({ kind, hit: true, bustoutBoost: false })).toEqual({
         showCheck: true,
@@ -109,7 +109,7 @@ describe('scorecardHitChromeSpec', () => {
     });
   });
 
-  it('mutes misses without check or ring', () => {
+  it('mutes misses without check or ring-3', () => {
     expect(scorecardHitChromeSpec({ kind: 'miss', hit: false, bustoutBoost: false })).toEqual({
       showCheck: false,
       titleTone: 'miss',

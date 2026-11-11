@@ -130,7 +130,7 @@ export default function StandingsSelfRecapCard({
           to={routerJump.to}
           aria-label={routerJump.label}
           title={routerJump.label}
-          className={`group/score ${rankPtsWrapClass} rounded underline-offset-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg`}
+          className={`group/score ${rankPtsWrapClass} rounded-sm underline-offset-2 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg`}
         >
           {rankOfTotalCluster}
           {dotSep}
@@ -175,7 +175,7 @@ export default function StandingsSelfRecapCard({
         <a
           href={`#${recap.selfAnchorId}`}
           onClick={onJumpToCard}
-          className="inline-flex items-center gap-1 text-xs font-bold text-slate-200 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg rounded"
+          className="inline-flex items-center gap-1 text-xs font-bold text-slate-200 transition-colors hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-brand-bg rounded-sm"
         >
           <span>{STANDINGS_SELF_RECAP_JUMP_LINK}</span>
           <ChevronDown className="h-3.5 w-3.5 opacity-90" aria-hidden />

@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { DASHBOARD_CARD_TITLE } from '../../../shared/ui/dashboardCardClasses';
 import StatsExpandableSection from './StatsExpandableSection.jsx';
 
-const JOB_WASHES = ['bg-amber-200/[0.06]', 'bg-brand-primary/[0.06]'];
+const JOB_WASHES = ['bg-amber-200/6', 'bg-brand-primary/6'];
 
 describe('StatsExpandableSection (#1089)', () => {
   it('uses the Phase 1 quiet card shell with no label color and no job wash', () => {
@@ -24,7 +24,7 @@ describe('StatsExpandableSection (#1089)', () => {
     expect(html).toContain('border-border-subtle/60');
     expect(html).toContain('bg-surface-panel/40');
     expect(html).not.toContain('shadow-inset-glass');
-    expect(html).not.toContain('backdrop-blur');
+    expect(html).not.toContain('backdrop-blur-sm');
     expect(heading?.[1]).toBe(DASHBOARD_CARD_TITLE);
     expect(heading?.[1]).not.toMatch(/amber|brand-primary|uppercase|tracking-widest/);
     expect(html).toContain('Your stats');

@@ -11,7 +11,7 @@ vi.mock('../../../shared/lib/firebase.js', () => ({
   app: {},
 }));
 
-import { fetchSetlistRaw, isSetlistFetchFailure } from './phishApiClient.js';
+import { fetchSetlistRaw, getProviderClient, isSetlistFetchFailure } from './phishApiClient.js';
 
 function setEnv(values) {
   Object.assign(import.meta.env, values);
@@ -66,6 +66,18 @@ describe('fetchSetlistRaw', () => {
     if (!isSetlistFetchFailure(result)) return;
     expect(result.error.type).toBe('SetlistApiError');
     expect(result.error.message).toContain('Invalid key');
+  });
+
+  it('getProviderClient(phish) uses the same callable fetch', async () => {
+    const payload = { error: false, data: [{ song: 'Tube', set: '1', position: 1 }] };
+    callableMock.mockResolvedValue({ data: payload });
+    const client = getProviderClient('phish');
+
+    expect(client.bandId).toBe('phish');
+    expect(client.providerId).toBe('phishnet');
+    const result = await client.fetchSetlistRaw('2024-07-21');
+    expect(result).toEqual({ ok: true, data: payload });
+    expect(() => getProviderClient('goose')).toThrow(/Unknown bandId: goose/);
   });
 
   it('fails with actionable message when callable flag is off', async () => {

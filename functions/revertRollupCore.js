@@ -22,6 +22,7 @@ const {
 const {
   rebuildGlobalStatsLeaderboardsSafe,
 } = require("./globalStatsLeaderboards");
+const { stampBandId } = require("./bandScope");
 
 const MAX_FIRESTORE_BATCH_WRITES = 500;
 
@@ -93,12 +94,12 @@ async function applyRevertRollupForShow({
 
   if (gradedRows.length === 0) {
     await auditRef.set(
-      {
+      stampBandId({
         lastRevertAt: admin.firestore.FieldValue.serverTimestamp(),
         revertCallerUid: callerUid || null,
         revertPickCount: 0,
         revertNoop: true,
-      },
+      }),
       { merge: true }
     );
     logger?.info?.("revertRollupForShow: noop (no graded picks)", { showDate });
@@ -222,14 +223,15 @@ async function applyRevertRollupForShow({
         const p = op.p;
         const userPicks = p.picks || {};
         const newScore = calculateTotalScore(userPicks, actualSetlist);
-        batch.update(p.ref, {
+        batch.update(p.ref, stampBandId({
           isGraded: false,
           winCredited: false,
           correctSlotsCredited: admin.firestore.FieldValue.delete(),
           bustoutBoostsCredited: admin.firestore.FieldValue.delete(),
           score: newScore,
           gradedAt: admin.firestore.FieldValue.delete(),
-        });
+          bandId: p.bandId,
+        }));
         n += 1;
         continue;
       }
@@ -237,12 +239,12 @@ async function applyRevertRollupForShow({
         queue.shift();
         batch.set(
           auditRef,
-          {
+          stampBandId({
             lastRevertAt: admin.firestore.FieldValue.serverTimestamp(),
             revertCallerUid: callerUid || null,
             revertPickCount: gradedRows.length,
             revertNoop: false,
-          },
+          }),
           { merge: true }
         );
         n += 1;

@@ -20,22 +20,27 @@ Target-night setlist fields are **labels only** (what actually played / slot tru
 
 ## Commands
 
-From repo root (requires `PHISHNET_API_KEY` in `.env` for import):
+From repo root. Phish.net import needs `PHISHNET_API_KEY` in `.env`. `--source=phishin` does not.
 
 ```bash
-# 1) Cache ~2 years of setlists (skips dates already on disk; --force to refresh)
-npm run backtest:import-setlists -- --years=2
+# 1) Cache the #1002 window (3 years, cap 180). Phish.net needs PHISHNET_API_KEY.
+#    Phish.in is the public fallback and writes the same show records.
+npm run backtest:import-setlists -- --years=3 --source=phishin
 
-# Or an explicit window:
+# Or an explicit window on Phish.net:
 npm run backtest:import-setlists -- --from=2024-01-01 --to=2025-12-31
 
-# 2) Run baseline comparison (needs enough cached shows)
+# 2) Baseline comparison on whatever is cached
 npm run backtest:recommendations
+
+# 3) Wide window vs the live 120-show cap, plus pick cards if exported
+npm run backtest:export-picks
+npm run backtest:window
 
 # Optional knobs:
 npm run backtest:recommendations -- --min-train=40 --recent-window=25
 
-# 3) Unit tests (no network)
+# 4) Unit tests (no network)
 npm run test:prediction-backtest
 ```
 
@@ -46,6 +51,8 @@ npm run test:prediction-backtest
 | `data/prediction-backtest/setlists/YYYY-MM-DD.json` | Cached `ShowRecord` (gitignored) |
 | `data/prediction-backtest/import-manifest.json` | Last import summary |
 | `data/prediction-backtest/reports/baseline-backtest-*.{json,md}` | Metrics report |
+| `data/prediction-backtest/reports/window-study.{json,md}` | #1002 window comparison |
+| `data/prediction-backtest/picks/cards.json` | Historical cards for the player comparison (no user ids) |
 
 ## Baselines
 
@@ -63,7 +70,7 @@ These are **slot-agnostic**. #649 adds `combined_explainable` (play × slot affi
 - **slotHit@K** — mean exact hit for s1o/s1c/s2o/s2c/enc in top-K.
 - **Brier** — rank→pseudo-probability calibration (lower better).
 - **zeroScoreRate** — nights where locking the single top-1 song into every slot would still score 0 (harsh proxy; useful for ranking baselines).
-- **top3Conc** — mass of inverse-rank scores in the top 3 (herding / concentration proxy).
+- **top3Conc** — mass of inverse-rank scores in the top 3. This number barely moves between models, because it is built from ranks rather than `playProb`. Use `playProb` top-share and the player comparison in [09-wider-backtest-and-playprob.md](./09-wider-backtest-and-playprob.md) for herding.
 
 ## Layout
 

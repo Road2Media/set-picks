@@ -4,6 +4,7 @@
  */
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getBandConfig } from '../../../shared/config/bands.js';
 import { app } from '../../../shared/lib/firebase.js';
 
 /** @typedef {'NetworkError' | 'HTTPError' | 'JSONParseError' | 'SetlistApiError' | 'ConfigurationError'} SetlistFetchErrorType */
@@ -347,4 +348,30 @@ export async function fetchSetlistRaw(dateString, options = {}) {
     return fetchPhishnetRaw(dateString);
   }
   return fetchPhishinRaw(dateString);
+}
+
+const phishSetlistClient = Object.freeze({
+  bandId: 'phish',
+  providerId: 'phishnet',
+  fetchSetlistRaw,
+});
+
+/**
+ * Admin setlist client for one band. Phase 2 returns the Phish.net client
+ * for `phish` only. The client still honors `VITE_SETLIST_API_SOURCE` and
+ * `forceSource` — this factory only chooses the band.
+ *
+ * @param {string} bandId
+ * @returns {{
+ *   bandId: 'phish',
+ *   providerId: 'phishnet',
+ *   fetchSetlistRaw: typeof fetchSetlistRaw,
+ * }}
+ */
+export function getProviderClient(bandId) {
+  const band = getBandConfig(bandId);
+  if (band.id !== 'phish' || band.providerId !== 'phishnet') {
+    throw new Error(`No setlist provider client for bandId: ${band.id}`);
+  }
+  return phishSetlistClient;
 }

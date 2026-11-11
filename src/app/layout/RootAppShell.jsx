@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import { AdConsentBootstrap } from '../../features/ads/consent';
 import { useAcceptedInviteAttribution } from '../../features/invite';
 import { isDashboardEntryPath } from '../../shared/lib/appBootPath';
 import { usePushNavigationBridge } from '../../shared/lib/usePushNavigationBridge';
@@ -32,8 +33,9 @@ export default function RootAppShell() {
 
   return (
     <>
+      <AdConsentBootstrap />
       <AppBackground />
-      <div className="relative z-[1] min-h-screen">
+      <div className="relative z-1 min-h-screen">
         <div key={transitionKey} className="min-h-screen animate-page-enter">
           <Suspense
             fallback={

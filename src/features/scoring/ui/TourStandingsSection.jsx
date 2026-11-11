@@ -1,10 +1,8 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
-import {
-  TOUR_STANDINGS_DESCRIPTION,
-  TOUR_STANDINGS_HEADING,
-} from '../../../shared/config/dashboardVocabulary';
+import { TOUR_STANDINGS_HEADING } from '../../../shared/config/dashboardVocabulary';
+import { Row } from '../../../shared/ui/Card';
 import PlayerHandleLink from '../../../shared/ui/PlayerHandleLink';
 import { StandingsPlayerAvatar, usePlayerIdentityMap } from '../../profile';
 import { assignTourDisplayRanks, tourStandingsBadge } from '../model/tourStandingsRank';
@@ -20,7 +18,7 @@ const rankBadgeClass = (rank) => {
   if (rank === 2)
     return 'bg-brand-accent-blue/15 text-blue-200 ring-1 ring-brand-accent-blue/35';
   if (rank === 3) return 'bg-orange-900/40 text-orange-200 ring-1 ring-orange-700/40';
-  return 'bg-surface-inset text-slate-300 ring-1 ring-border-muted';
+  return 'bg-surface-inset/72 text-slate-300 ring-1 ring-border-muted/60';
 };
 
 /**
@@ -61,9 +59,9 @@ export default function TourStandingsSection({
   error,
   selfUserId = null,
   heading = TOUR_STANDINGS_HEADING,
-  description = TOUR_STANDINGS_DESCRIPTION,
+  description = '',
   scopeFallback = 'Current tour',
-  emptyMessage = 'No graded picks in this tour yet.',
+  emptyMessage = 'No picks have been scored in this tour yet.',
   errorMessage = "Couldn't load tour standings. Try refreshing.",
   loadingLabel = 'Loading tour standings',
   placeLabelsByRank = null,
@@ -87,9 +85,11 @@ export default function TourStandingsSection({
           <p className={`mt-0.5 ${STANDINGS_BOX_TITLE}`}>
             {scopeLabel}
           </p>
-          <p className={`mt-0.5 ${STANDINGS_BOX_BODY}`}>
-            {description}
-          </p>
+          {description ? (
+            <p className={`mt-0.5 ${STANDINGS_BOX_BODY}`}>
+              {description}
+            </p>
+          ) : null}
         </div>
         {loading ? (
           <Loader2
@@ -100,7 +100,7 @@ export default function TourStandingsSection({
       </div>
 
       {error ? (
-        <p className={`rounded-xl border border-red-900/50 bg-red-900/20 px-3.5 py-3 ${STANDINGS_BOX_BODY} !text-red-200`}>
+        <p className={`rounded-xl border border-red-900/50 bg-red-900/20 px-3.5 py-3 ${STANDINGS_BOX_BODY} text-red-200!`}>
           {errorMessage}
         </p>
       ) : null}
@@ -119,9 +119,10 @@ export default function TourStandingsSection({
             const identity = identities[row.uid] || null;
             const placeLabel = placeLabelsByRank?.[row.rank] || '';
             return (
-              <li
+              <Row
+                as="li"
                 key={row.uid}
-                className="rounded-xl border border-border-subtle/30 bg-surface-panel/80 px-3 py-2"
+                tone={isSelf ? 'self' : 'default'}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -136,7 +137,7 @@ export default function TourStandingsSection({
                     {badge?.tied ? (
                       <span
                         aria-hidden="true"
-                        className="inline-flex shrink-0 items-center rounded-full bg-surface-inset px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-content-secondary ring-1 ring-border-muted"
+                        className="inline-flex shrink-0 items-center rounded-full bg-surface-inset/72 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-content-secondary ring-1 ring-border-muted/60"
                       >
                         Tie
                       </span>
@@ -164,7 +165,7 @@ export default function TourStandingsSection({
                     {placeLabel}
                   </p>
                 ) : null}
-              </li>
+              </Row>
             );
           })}
         </ol>

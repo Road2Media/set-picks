@@ -19,6 +19,19 @@ import {
 } from "./metrics.mjs";
 import { playedKeys } from "./dataset.mjs";
 import { POSITIONAL_SLOTS, normalizeTitle } from "./shared.mjs";
+import {
+  addPairs,
+  countAtLeast,
+  emptyCalibration,
+  finishCalibration,
+  pairsFromRanking,
+  playProbTopShare,
+} from "./calibration.mjs";
+import {
+  HIGH_ODDS_MIN,
+  SAFE_ODDS_MIN,
+  UNSEEN_PLAY_PROB_FLOOR,
+} from "./windowDecision.mjs";
 
 export const BASELINE_NAMES = [
   "global_popularity",
@@ -57,6 +70,7 @@ function exactSlotHitAtKPerSlot(slots, rankedBySlot, k) {
  * @param {import('./features.mjs').ShowRecord[]} historySortedAsc
  * @param {{
  *   minTrainShows?: number,
+ *   maxTrainShows?: number | null,
  *   recentWindow?: number,
  *   baselines?: string[],
  *   includeCombined?: boolean,
@@ -64,9 +78,12 @@ function exactSlotHitAtKPerSlot(slots, rankedBySlot, k) {
  */
 export function runRollingBacktest(historySortedAsc, opts = {}) {
   const minTrainShows = opts.minTrainShows ?? 30;
+  const maxTrainShows = opts.maxTrainShows ?? null;
   const baselines = opts.baselines ?? BASELINE_NAMES;
   const recentWindow = opts.recentWindow ?? 25;
   const includeCombined = opts.includeCombined !== false;
+  const playProbAcc = emptyCalibration();
+  const playProbFloorAcc = emptyCalibration();
 
   /** @type {Record<string, object[]>} */
   const byBaseline = {};
@@ -75,8 +92,11 @@ export function runRollingBacktest(historySortedAsc, opts = {}) {
 
   for (let i = 0; i < historySortedAsc.length; i += 1) {
     const target = historySortedAsc[i];
-    const priors = priorShows(historySortedAsc, target.showDate);
+    let priors = priorShows(historySortedAsc, target.showDate);
     if (priors.length < minTrainShows) continue;
+    if (maxTrainShows && priors.length > maxTrainShows) {
+      priors = priors.slice(priors.length - maxTrainShows);
+    }
 
     const labels = playedKeys(target);
     const slotLabels = target.slots || {};
@@ -141,6 +161,13 @@ export function runRollingBacktest(historySortedAsc, opts = {}) {
       }
       const zeroScore = exactHits + inSetlistHits === 0;
       const overlap = crossSlotOverlap(rankedBySlot, 5);
+      addPairs(playProbAcc, pairsFromRanking(playRanked, labels));
+      addPairs(
+        playProbFloorAcc,
+        pairsFromRanking(playRanked, labels, {
+          unseenFloor: UNSEEN_PLAY_PROB_FLOOR,
+        })
+      );
 
       byBaseline[MODEL_NAME].push({
         showDate: target.showDate,
@@ -154,6 +181,9 @@ export function runRollingBacktest(historySortedAsc, opts = {}) {
         brier,
         zeroScoreRate: zeroScore ? 1 : 0,
         top3Concentration: top3Concentration(playRanked),
+        playProbTop3Share: playProbTopShare(playRanked, 3),
+        songsAtHighOdds: countAtLeast(playRanked, HIGH_ODDS_MIN),
+        songsAtSafeOdds: countAtLeast(playRanked, SAFE_ODDS_MIN),
         crossSlotOverlapAt5: overlap,
       });
     }
@@ -173,14 +203,32 @@ export function runRollingBacktest(historySortedAsc, opts = {}) {
     };
   }
 
+  const combinedNights = byBaseline[MODEL_NAME] || [];
+  const meanOf = (key) => {
+    const vals = combinedNights
+      .map((row) => row[key])
+      .filter((v) => Number.isFinite(v));
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
+  };
+
   return {
     generatedAt: new Date().toISOString(),
     minTrainShows,
+    maxTrainShows,
     recentWindow,
     modelVersion: includeCombined ? MODEL_VERSION : null,
     historyShows: historySortedAsc.length,
     evaluatedNights: Object.values(byBaseline)[0]?.length ?? 0,
     summary,
+    playProbCalibration: includeCombined
+      ? {
+          scored: finishCalibration(playProbAcc),
+          withUnseenFloor: finishCalibration(playProbFloorAcc),
+          meanPlayProbTop3Share: meanOf("playProbTop3Share"),
+          meanSongsAtHighOdds: meanOf("songsAtHighOdds"),
+          meanSongsAtSafeOdds: meanOf("songsAtSafeOdds"),
+        }
+      : null,
     nights: byBaseline,
   };
 }

@@ -20,7 +20,10 @@ describe('resolveRouteGroup', () => {
     expect(resolveRouteGroup('/how-scoring-changed')).toBe('marketing');
     expect(resolveRouteGroup('/phish-setlist-prediction-game')).toBe('marketing');
     expect(resolveRouteGroup('/about')).toBe('marketing');
+    expect(resolveRouteGroup('/tour-notes')).toBe('marketing');
+    expect(resolveRouteGroup('/tour-notes/2026-08-01')).toBe('marketing');
     expect(resolveRouteGroup('/phish-at-msg')).toBe('marketing');
+    expect(resolveRouteGroup('/phish-at-msg/100th')).toBe('marketing');
     expect(resolveRouteGroup('/tour-stats')).toBe('tour_stats');
     expect(resolveRouteGroup('/tour-stats/song/foo')).toBe('tour_stats');
     expect(resolveRouteGroup('/embed/stats')).toBe('embed');

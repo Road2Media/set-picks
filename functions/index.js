@@ -4,6 +4,7 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret, defineString } = require("firebase-functions/params");
 const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
+const { stampBandId } = require("./bandScope");
 const {
   syncPhishnetShowCalendarToFirestore,
 } = require("./phishnetShowCalendar");
@@ -31,6 +32,8 @@ const {
   scheduledCandidateShowDates,
   timeZoneForShowDate,
 } = require("./phishnetLiveSetlistAutomation");
+const { resolveProviderDispatches } = require("./providers/dispatch");
+const { ProviderRequestError } = require("./providers/phishnet");
 const {
   applyLiveSetlistServiceStatusCommand,
   deliverLiveSetlistOpsAlert,
@@ -85,6 +88,7 @@ const { createCommsEmailWorker, buildResendClient } = require("./commsEmailWorke
 const { getTriggerSpec } = require("./commsCatalog");
 const { tourCountdownDeliveryPlan } = require("./commsTemplates");
 const { refreshPublicTourStats } = require("./publicTourStats");
+const { refreshPublicShowNotes } = require("./publicShowNotes");
 const {
   assertRewindAdmin,
   assertRewindPlayer,
@@ -123,6 +127,17 @@ const {
 } = require("./commsEventAdapters");
 
 const phishnetApiKey = defineSecret("PHISHNET_API_KEY");
+
+/**
+ * Bands registered for this process, with secret material copied onto
+ * `providerArgs.apiKey`. Phase 2 is Phish / phishnet only. Call only from a
+ * handler that binds `PHISHNET_API_KEY`.
+ */
+function listProviderDispatches() {
+  return resolveProviderDispatches({
+    PHISHNET_API_KEY: phishnetApiKey.value(),
+  });
+}
 // Resend transactional/marketing email (epic #441 / #442). Stored in Cloud Secret
 // Manager; surfaced to bound functions as process.env.RESEND_API_KEY.
 const resendApiKey = defineSecret("RESEND_API_KEY");
@@ -232,7 +247,7 @@ async function recomputeLiveScoresForShow(showDate, actualSetlistFromWrite = nul
     afterScores.set(pickDoc.id, score);
 
     // Live scoring only: do not set gradedAt here (pool season uses isGraded from rollup).
-    const update = { score };
+    const update = stampBandId({ score, bandId: pickData.bandId });
     if (pickData.isGraded !== true) {
       update.gradedAt = admin.firestore.FieldValue.delete();
     }
@@ -1614,13 +1629,25 @@ exports.scheduledPhishnetLiveSetlistPoll = onSchedule(
     secrets: [phishnetApiKey, ...commsDeliverySecrets],
   },
   async () => {
-    const key = phishnetApiKey.value();
-    if (!key || !String(key).trim()) {
-      logger.error(
-        "scheduledPhishnetLiveSetlistPoll: PHISHNET_API_KEY missing; skip poll."
-      );
-      return null;
+    for (const call of listProviderDispatches()) {
+      if (call.band.providerId !== "phishnet") continue;
+      const key = call.providerArgs.apiKey;
+      if (!key) {
+        logger.error(
+          "scheduledPhishnetLiveSetlistPoll: PHISHNET_API_KEY missing; skip poll."
+        );
+        return null;
+      }
+      return runScheduledPhishnetLiveSetlistPoll(key);
     }
+    logger.error(
+      "scheduledPhishnetLiveSetlistPoll: PHISHNET_API_KEY missing; skip poll."
+    );
+    return null;
+  }
+);
+
+async function runScheduledPhishnetLiveSetlistPoll(key) {
     const now = new Date();
     const calSnap = await db.collection("show_calendar").doc("snapshot").get();
     const calendarShows = parseShowCalendarSnapshotToShows(
@@ -1674,8 +1701,7 @@ exports.scheduledPhishnetLiveSetlistPoll = onSchedule(
       durationMs: Date.now() - started,
     });
     return null;
-  }
-);
+}
 
 exports.setLiveSetlistAutomationState = onCall(
   {
@@ -1694,7 +1720,7 @@ exports.setLiveSetlistAutomationState = onCall(
       .collection("live_setlist_automation")
       .doc(showDate)
       .set(
-        {
+        stampBandId({
           showDate,
           enabled,
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1705,7 +1731,7 @@ exports.setLiveSetlistAutomationState = onCall(
           pausedBy: enabled
             ? admin.firestore.FieldValue.delete()
             : request.auth.token?.email ?? null,
-        },
+        }),
         { merge: true }
       );
     return { ok: true, showDate, enabled };
@@ -1721,8 +1747,13 @@ exports.pollLiveSetlistNow = onCall(
   },
   async (request) => {
     assertAdminClaim(request);
-    const key = phishnetApiKey.value();
-    if (!key || !String(key).trim()) {
+    let key = "";
+    for (const call of listProviderDispatches()) {
+      if (call.band.providerId !== "phishnet") continue;
+      key = call.providerArgs.apiKey;
+      break;
+    }
+    if (!key) {
       throw new HttpsError(
         "failed-precondition",
         "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
@@ -1856,71 +1887,62 @@ exports.getPhishnetSetlist = onCall(
         );
       }
 
-      const key = phishnetApiKey.value();
-      if (!key || !String(key).trim()) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
-        );
-      }
-
-      const url = `https://api.phish.net/v5/setlists/showdate/${encodeURIComponent(
-        showDate.trim()
-      )}.json?apikey=${encodeURIComponent(String(key).trim())}`;
-
-      let res;
-      try {
-        res = await fetch(url, { headers: { Accept: "application/json" } });
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "Network error to Phish.net";
-        // Use `unavailable` (not `internal`) so the client SDK forwards the message; `internal` is redacted.
-        throw new HttpsError("unavailable", msg);
-      }
-
-      let bodyText;
-      try {
-        bodyText = await res.text();
-      } catch (e) {
-        throw new HttpsError(
-          "unavailable",
-          "Failed to read Phish.net response."
-        );
-      }
-
-      if (!res.ok) {
-        throw new HttpsError(
-          "failed-precondition",
-          `Phish.net HTTP ${res.status}: ${bodyText.slice(0, 240)}`
-        );
-      }
-
       let data;
-      try {
-        data = JSON.parse(bodyText);
-      } catch {
-        throw new HttpsError(
-          "failed-precondition",
-          "Phish.net returned non-JSON."
-        );
+      for (const call of listProviderDispatches()) {
+        if (call.band.providerId !== "phishnet") continue;
+        const key = call.providerArgs.apiKey;
+        if (!key) {
+          throw new HttpsError(
+            "failed-precondition",
+            "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
+          );
+        }
+        try {
+          data = await call.provider.fetchSetlistForDate(
+            showDate.trim(),
+            call.providerArgs
+          );
+        } catch (error) {
+          if (error instanceof ProviderRequestError) {
+            if (error.kind === "network") {
+              const cause = error.cause;
+              const msg =
+                cause instanceof Error
+                  ? cause.message
+                  : "Network error to Phish.net";
+              // Use `unavailable` (not `internal`) so the client SDK forwards the message; `internal` is redacted.
+              throw new HttpsError("unavailable", msg);
+            }
+            if (error.kind === "read") {
+              throw new HttpsError(
+                "unavailable",
+                "Failed to read Phish.net response."
+              );
+            }
+            if (error.kind === "http") {
+              throw new HttpsError(
+                "failed-precondition",
+                `Phish.net HTTP ${error.status}: ${String(error.bodyText || "").slice(0, 240)}`
+              );
+            }
+            if (error.kind === "json") {
+              throw new HttpsError(
+                "failed-precondition",
+                "Phish.net returned non-JSON."
+              );
+            }
+            if (error.kind === "envelope") {
+              throw new HttpsError("failed-precondition", error.message);
+            }
+          }
+          throw error;
+        }
+        return data;
       }
-
-      // Phish.net: success is `error: false`, `0`, or `"0"`; numeric ≥1 (e.g. 2) = invalid key, etc.
-      const apiErr = data && typeof data === "object" ? data.error : undefined;
-      const phishNetOk =
-        apiErr === undefined ||
-        apiErr === null ||
-        apiErr === false ||
-        apiErr === 0 ||
-        apiErr === "0";
-      if (!phishNetOk) {
-        const apiMsg =
-          typeof data.error_message === "string"
-            ? data.error_message
-            : "Phish.net API error.";
-        throw new HttpsError("failed-precondition", apiMsg);
-      }
-
-      return data;
+      throw new HttpsError(
+        "failed-precondition",
+        "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
+      );
     } catch (e) {
       if (e instanceof HttpsError) {
         throw e;
@@ -1964,8 +1986,13 @@ exports.backfillBustoutsForShows = onCall(
   async (request) => {
     assertAdminClaim(request);
 
-    const key = phishnetApiKey.value();
-    if (!key || !String(key).trim()) {
+    let key = "";
+    for (const call of listProviderDispatches()) {
+      if (call.band.providerId !== "phishnet") continue;
+      key = call.providerArgs.apiKey;
+      break;
+    }
+    if (!key) {
       throw new HttpsError(
         "failed-precondition",
         "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
@@ -2022,23 +2049,26 @@ exports.scheduledPhishnetShowCalendar = onSchedule(
     secrets: [phishnetApiKey],
   },
   async () => {
-    const key = phishnetApiKey.value();
-    if (!key || !String(key).trim()) {
-      logger.error(
-        "scheduledPhishnetShowCalendar: PHISHNET_API_KEY missing; skip sync."
-      );
-      return null;
-    }
-    await syncPhishnetShowCalendarToFirestore(db, String(key).trim(), {
-      logger,
-    });
-    try {
-      await refreshPublicTourStats(db, {
+    for (const call of listProviderDispatches()) {
+      if (call.band.providerId !== "phishnet") continue;
+      const key = call.providerArgs.apiKey;
+      if (!key) {
+        logger.error(
+          "scheduledPhishnetShowCalendar: PHISHNET_API_KEY missing; skip sync."
+        );
+        return null;
+      }
+      await syncPhishnetShowCalendarToFirestore(db, key, {
         logger,
-        phishnetApiKey: String(key).trim(),
       });
-    } catch (err) {
-      logger.error("scheduledPhishnetShowCalendar: public tour stats refresh failed", err);
+      try {
+        await refreshPublicTourStats(db, {
+          logger,
+          phishnetApiKey: key,
+        });
+      } catch (err) {
+        logger.error("scheduledPhishnetShowCalendar: public tour stats refresh failed", err);
+      }
     }
     return null;
   }
@@ -2058,8 +2088,13 @@ exports.refreshPhishnetShowCalendar = onCall(
     try {
       assertAdminClaim(request);
 
-      const key = phishnetApiKey.value();
-      if (!key || !String(key).trim()) {
+      let key = "";
+      for (const call of listProviderDispatches()) {
+        if (call.band.providerId !== "phishnet") continue;
+        key = call.providerArgs.apiKey;
+        break;
+      }
+      if (!key) {
         throw new HttpsError(
           "failed-precondition",
           "Phish.net API key is not configured (set secret PHISHNET_API_KEY)."
@@ -2068,14 +2103,14 @@ exports.refreshPhishnetShowCalendar = onCall(
 
       const result = await syncPhishnetShowCalendarToFirestore(
         db,
-        String(key).trim(),
+        key,
         { logger }
       );
       let publicTourStats = null;
       try {
         publicTourStats = await refreshPublicTourStats(db, {
           logger,
-          phishnetApiKey: String(key).trim(),
+          phishnetApiKey: key,
         });
       } catch (err) {
         logger.error("refreshPhishnetShowCalendar: public tour stats refresh failed", err);
@@ -2215,6 +2250,54 @@ exports.refreshPublicTourStats = onCall(
 );
 
 /**
+ * Admin-only rebuild of public show notes from `comms_show_context` (#684).
+ * Does not open that collection to clients. Nights that fail the richness
+ * gate are deleted from `public_show_notes`.
+ */
+exports.refreshPublicShowNotes = onCall(
+  {
+    region: PHISHNET_FUNCTIONS_REGION,
+    invoker: "public",
+    enforceAppCheck: false,
+    timeoutSeconds: 120,
+    memory: "512MiB",
+  },
+  async (request) => {
+    try {
+      assertAdminClaim(request);
+      const result = await refreshPublicShowNotes(db, { logger });
+      return { ok: true, ...result };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      const msg = e instanceof Error ? e.message : String(e);
+      logger.error("refreshPublicShowNotes unexpected error", msg, e);
+      throw new HttpsError(
+        "failed-precondition",
+        `refreshPublicShowNotes failed: ${msg}`
+      );
+    }
+  }
+);
+
+/**
+ * Nightly public show notes, after tour stats (07:30) and global boards (08:00).
+ * Separate from the tour-stats job so a long Phish.net pass cannot eat this write.
+ */
+exports.scheduledPublicShowNotesRefresh = onSchedule(
+  {
+    schedule: "15 8 * * *",
+    timeZone: "America/New_York",
+    region: PHISHNET_FUNCTIONS_REGION,
+    timeoutSeconds: 120,
+    memory: "512MiB",
+  },
+  async () => {
+    await refreshPublicShowNotes(db, { logger });
+    return null;
+  }
+);
+
+/**
  * Nightly aggregate-only MSG Garden stats (#1139).
  * Runs after tour stats (07:30) and global boards (08:00).
  * Fetches Phish.net venue 157, discards the raw rows, writes public_venue_stats/msg.
@@ -2284,44 +2367,44 @@ exports.scheduledPhishnetSongCatalog = onSchedule(
   },
   async () => {
     const started = Date.now();
-    const key = phishnetApiKey.value();
-    if (!key || !String(key).trim()) {
-      emitSongCatalogSync(logger, {
-        ok: false,
-        trigger: "schedule",
-        reason: "missing_api_key",
-        songCount: 0,
-        durationMs: Date.now() - started,
-        archivePath: null,
-        detail: "PHISHNET_API_KEY missing; skip sync.",
-      });
-      return null;
-    }
-    try {
-      const result = await syncPhishnetSongCatalogToStorage(
-        String(key).trim(),
-        { logger }
-      );
-      emitSongCatalogSync(logger, {
-        ok: true,
-        trigger: "schedule",
-        reason: "uploaded",
-        songCount: result.songCount,
-        durationMs: Date.now() - started,
-        archivePath: result.archivePath ?? null,
-        detail: "uploaded",
-      });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      emitSongCatalogSync(logger, {
-        ok: false,
-        trigger: "schedule",
-        reason: "exception",
-        songCount: 0,
-        durationMs: Date.now() - started,
-        archivePath: null,
-        detail: msg,
-      });
+    for (const call of listProviderDispatches()) {
+      if (call.band.providerId !== "phishnet") continue;
+      const key = call.providerArgs.apiKey;
+      if (!key) {
+        emitSongCatalogSync(logger, {
+          ok: false,
+          trigger: "schedule",
+          reason: "missing_api_key",
+          songCount: 0,
+          durationMs: Date.now() - started,
+          archivePath: null,
+          detail: "PHISHNET_API_KEY missing; skip sync.",
+        });
+        return null;
+      }
+      try {
+        const result = await syncPhishnetSongCatalogToStorage(key, { logger });
+        emitSongCatalogSync(logger, {
+          ok: true,
+          trigger: "schedule",
+          reason: "uploaded",
+          songCount: result.songCount,
+          durationMs: Date.now() - started,
+          archivePath: result.archivePath ?? null,
+          detail: "uploaded",
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        emitSongCatalogSync(logger, {
+          ok: false,
+          trigger: "schedule",
+          reason: "exception",
+          songCount: 0,
+          durationMs: Date.now() - started,
+          archivePath: null,
+          detail: msg,
+        });
+      }
     }
     return null;
   }
@@ -2371,8 +2454,13 @@ exports.refreshPhishnetSongCatalog = onCall(
     try {
       assertAdminClaim(request);
 
-      const key = phishnetApiKey.value();
-      if (!key || !String(key).trim()) {
+      let key = "";
+      for (const call of listProviderDispatches()) {
+        if (call.band.providerId !== "phishnet") continue;
+        key = call.providerArgs.apiKey;
+        break;
+      }
+      if (!key) {
         emitSongCatalogSync(logger, {
           ok: false,
           trigger: "admin",
@@ -2388,10 +2476,7 @@ exports.refreshPhishnetSongCatalog = onCall(
         );
       }
 
-      const result = await syncPhishnetSongCatalogToStorage(
-        String(key).trim(),
-        { logger }
-      );
+      const result = await syncPhishnetSongCatalogToStorage(key, { logger });
       emitSongCatalogSync(logger, {
         ok: true,
         trigger: "admin",

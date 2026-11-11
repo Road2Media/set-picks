@@ -52,7 +52,7 @@ export default function HowScoringChangedContent() {
   const rows = scoringLadderComparisonRows();
 
   return (
-    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-sm ring-1 ring-slate-900/5 md:p-8">
+    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-6 shadow-xs ring-1 ring-slate-900/5 md:p-8">
       <p className={BODY}>
         If you&apos;ve been playing Setlist Pick&apos;em, two things are changing: how some picks
         are scored, and how we rank players who finish with the same points.
@@ -118,19 +118,19 @@ export default function HowScoringChangedContent() {
         card in four dropped by 5. Nobody who scored fell to zero. The season lead held.
       </p>
       <p className={`mt-4 ${BODY}`}>
-        439 graded cards across 34 shows, from April 16 through October 6, 2026. 324 cards
-        unchanged. 113 dropped by 5. 2 dropped by 10. The mean moved from 12.2 to 10.8, and the
+        439 scored cards across 34 shows, from April 16 through October 6, 2026. 324 cards
+        unchanged. 113 dropped by 5. 2 dropped by 10. The average moved from 12.2 to 10.8, and the
         median from 10 to 5, because many nights were exactly one wildcard hit. Zeros stayed at
         111. Those nights were not re-scored.
       </p>
-      <div className="mt-6" aria-label="Cards in each score bucket, then and on this ladder">
+      <div className="mt-6" aria-label="Cards in each score range, then and on this ladder">
         <div className={`mb-2 flex justify-end gap-4 ${MARKETING_EDITORIAL_TYPE_META} font-semibold text-slate-500`}>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2 w-4 rounded-sm bg-slate-400" aria-hidden="true" />
+            <span className="inline-block h-2 w-4 rounded-xs bg-slate-400" aria-hidden="true" />
             Then
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block h-2 w-4 rounded-sm bg-teal-700" aria-hidden="true" />
+            <span className="inline-block h-2 w-4 rounded-xs bg-teal-700" aria-hidden="true" />
             This ladder
           </span>
         </div>
@@ -165,7 +165,7 @@ export default function HowScoringChangedContent() {
       <h2 className={H2}>When two players have the same points</h2>
       <p className={BODY}>
         We no longer share a rank. No more two people both in 1st, with 3rd next. The player who
-        wins the next check gets the higher place.
+        wins the next comparison gets the higher place.
       </p>
       <ol className={`mt-4 list-decimal space-y-3 pl-5 ${BODY}`}>
         <li>
@@ -178,13 +178,13 @@ export default function HowScoringChangedContent() {
         </li>
         <li>On a tour or the year, if that&apos;s still tied, who won more nights.</li>
         <li>
-          If every one of those is still tied, we use your handle so the order stays put when you
-          refresh. Your handle is only a last resort. It does not decide ranks on its own.
+          If every one of those is still tied, handle order keeps the list steady. Your handle is
+          only a last resort. It does not decide ranks on its own.
         </li>
       </ol>
       <p className={`mt-4 ${BODY}`}>
-        On a single show, we skip nightly wins and go to your handle if exacts and correct picks
-        are still tied.
+        On a single show, nightly wins are not part of the order. If exact slots and correct picks
+        are still tied, handle order is the last step.
       </p>
       <p className={`mt-4 ${BODY}`}>
         If two people have the same points and the same number of exacts, the player who got more

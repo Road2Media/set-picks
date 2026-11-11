@@ -26,7 +26,7 @@ export default function RewindReveal({ reveal }) {
         {(reveal.slots || []).map((slot) => (
           <li
             key={slot.id}
-            className="rounded-xl border border-border-muted/40 bg-surface-inset px-3 py-2"
+            className="rounded-xl border border-border-muted/40 bg-surface-inset/72 px-3 py-2"
           >
             <p className="text-[11px] font-bold uppercase tracking-widest text-content-secondary">
               {slot.label}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Inbox } from 'lucide-react';
 
+import { Panel } from '../../../shared/ui/Card';
 import { logCommsCtaClick, logCommsDismissed, logCommsOpened } from '../../comms';
 import { useCommsInbox } from '../model/commsInboxContext.jsx';
 import { idsToMarkReadOnInboxToggle } from '../model/commsInboxMarkRead.js';
@@ -107,7 +108,7 @@ function InboxSectionList({
           }}
           aria-expanded={isGroupOpen}
           aria-controls={`${headingId}-panel`}
-          className="flex w-full items-center justify-between gap-2 text-left text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          className="flex w-full items-center justify-between gap-2 text-left text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary"
         >
           {headingRow}
           <ChevronDown
@@ -132,9 +133,11 @@ function InboxSectionList({
             const confirmingDelete = confirmDeleteId === m.id;
 
             return (
-              <li
+              <Panel
+                as="li"
                 key={m.id}
-                className="overflow-hidden rounded-3xl border border-border-subtle bg-surface-panel shadow-inset-glass"
+                padding="none"
+                className="overflow-hidden"
               >
                 <button
                   type="button"
@@ -142,7 +145,7 @@ function InboxSectionList({
                   aria-expanded={isOpen}
                   aria-controls={panelId}
                   onClick={() => onToggle(m.id, !isOpen)}
-                  className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.04] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel"
+                  className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-white/4 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-panel"
                 >
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="flex flex-wrap items-center gap-2">
@@ -182,7 +185,7 @@ function InboxSectionList({
                       <button
                         type="button"
                         onClick={() => onToggle(m.id, false)}
-                        className="rounded-lg border border-border-muted bg-surface-inset px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white"
+                        className="rounded-lg border border-border-muted/60 bg-surface-inset/72 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white"
                       >
                         Collapse
                       </button>
@@ -190,7 +193,7 @@ function InboxSectionList({
                         <button
                           type="button"
                           onClick={() => onArchive(m.id)}
-                          className="rounded-lg border border-border-muted bg-surface-inset px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white"
+                          className="rounded-lg border border-border-muted/60 bg-surface-inset/72 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white"
                         >
                           Archive
                         </button>
@@ -200,7 +203,7 @@ function InboxSectionList({
                           <button
                             type="button"
                             onClick={onDeleteCancel}
-                            className="rounded-lg border border-border-muted bg-surface-inset px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white"
+                            className="rounded-lg border border-border-muted/60 bg-surface-inset/72 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-brand-primary/40 hover:text-white"
                           >
                             Cancel
                           </button>
@@ -216,7 +219,7 @@ function InboxSectionList({
                         <button
                           type="button"
                           onClick={() => onDeleteRequest(m.id)}
-                          className="rounded-lg border border-border-muted bg-surface-inset px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-red-400/40 hover:text-red-200"
+                          className="rounded-lg border border-border-muted/60 bg-surface-inset/72 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-content-secondary transition-colors hover:border-red-400/40 hover:text-red-200"
                         >
                           Delete
                         </button>
@@ -224,7 +227,7 @@ function InboxSectionList({
                     </div>
                   </div>
                 ) : null}
-              </li>
+              </Panel>
             );
           })}
         </ul>
@@ -344,10 +347,7 @@ export default function CommsInboxSection() {
   const emptyInbox = messages.length === 0;
 
   return (
-    <section
-      className="mb-10 rounded-3xl border border-border-subtle bg-surface-panel/60 p-5 shadow-inset-glass"
-      aria-labelledby="comms-inbox-heading"
-    >
+    <Panel as="section" className="mb-10" aria-labelledby="comms-inbox-heading">
       <button
         type="button"
         onClick={() => {
@@ -360,7 +360,7 @@ export default function CommsInboxSection() {
         }}
         aria-expanded={isSectionOpen}
         aria-controls="comms-inbox-panel"
-        className="flex w-full items-start gap-3 text-left transition-colors hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+        className="flex w-full items-start gap-3 text-left transition-colors hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-primary"
       >
         <span className="min-w-0 flex-1">
           <span
@@ -395,13 +395,16 @@ export default function CommsInboxSection() {
           ) : error ? (
             <p className="text-sm font-bold text-amber-300">{error}</p>
           ) : emptyInbox ? (
-            <div className="flex flex-col items-center gap-3 rounded-3xl border border-border-subtle bg-surface-panel px-6 py-10 text-center shadow-inset-glass">
+            <Panel
+              padding="none"
+              className="flex flex-col items-center gap-3 px-6 py-10 text-center"
+            >
               <Inbox className="h-10 w-10 text-content-secondary" aria-hidden />
               <p className="max-w-sm text-sm font-bold leading-relaxed text-content-secondary">
                 No messages yet. New scoring updates, nightly recaps, and important announcements
                 will appear here as soon as they are available.
               </p>
-            </div>
+            </Panel>
           ) : (
             <div className="space-y-8">
               <InboxSectionList
@@ -459,6 +462,6 @@ export default function CommsInboxSection() {
           )}
         </div>
       ) : null}
-    </section>
+    </Panel>
   );
 }

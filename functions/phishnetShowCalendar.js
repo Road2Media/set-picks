@@ -12,6 +12,14 @@ const {
   fetchOfficialPhishSchedule,
 } = require("./phishOfficialSchedule");
 const { stampPreservedEdition } = require("./calendarEdition");
+const {
+  GENERIC_TOUR,
+  buildVenueLine,
+  fetchShowsForYear: fetchShowsPayload,
+  normalizeShows,
+  responseOk: phishNetResponseOk,
+} = require("./providers/phishnet");
+const { phishProviderArgs } = require("./providers/registry");
 
 const MONTHS = [
   "Jan",
@@ -62,79 +70,7 @@ function formatRunTourLabel(firstYmd, lastYmd) {
   return `${MONTHS[f.m - 1]} ${f.d}, ${f.y} – ${MONTHS[l.m - 1]} ${l.d}, ${l.y}`;
 }
 
-const GENERIC_TOUR = "Not Part of a Tour";
 const MAX_GAP_DAYS = 14;
-const DEFAULT_SHOW_TIME_ZONE = "America/Los_Angeles";
-
-const US_STATE_TIME_ZONES = {
-  AL: "America/Chicago",
-  AK: "America/Anchorage",
-  AZ: "America/Phoenix",
-  AR: "America/Chicago",
-  CA: "America/Los_Angeles",
-  CO: "America/Denver",
-  CT: "America/New_York",
-  DE: "America/New_York",
-  FL: "America/New_York",
-  GA: "America/New_York",
-  HI: "Pacific/Honolulu",
-  IA: "America/Chicago",
-  ID: "America/Denver",
-  IL: "America/Chicago",
-  IN: "America/Indiana/Indianapolis",
-  KS: "America/Chicago",
-  KY: "America/New_York",
-  LA: "America/Chicago",
-  MA: "America/New_York",
-  MD: "America/New_York",
-  ME: "America/New_York",
-  MI: "America/Detroit",
-  MN: "America/Chicago",
-  MO: "America/Chicago",
-  MS: "America/Chicago",
-  MT: "America/Denver",
-  NC: "America/New_York",
-  ND: "America/Chicago",
-  NE: "America/Chicago",
-  NH: "America/New_York",
-  NJ: "America/New_York",
-  NM: "America/Denver",
-  NV: "America/Los_Angeles",
-  NY: "America/New_York",
-  OH: "America/New_York",
-  OK: "America/Chicago",
-  OR: "America/Los_Angeles",
-  PA: "America/New_York",
-  RI: "America/New_York",
-  SC: "America/New_York",
-  SD: "America/Chicago",
-  TN: "America/Chicago",
-  TX: "America/Chicago",
-  UT: "America/Denver",
-  VA: "America/New_York",
-  VT: "America/New_York",
-  WA: "America/Los_Angeles",
-  WI: "America/Chicago",
-  WV: "America/New_York",
-  WY: "America/Denver",
-  DC: "America/New_York",
-};
-
-const CANADA_PROVINCE_TIME_ZONES = {
-  AB: "America/Edmonton",
-  BC: "America/Vancouver",
-  MB: "America/Winnipeg",
-  NB: "America/Moncton",
-  NL: "America/St_Johns",
-  NS: "America/Halifax",
-  NT: "America/Yellowknife",
-  NU: "America/Iqaluit",
-  ON: "America/Toronto",
-  PE: "America/Halifax",
-  QC: "America/Toronto",
-  SK: "America/Regina",
-  YT: "America/Whitehorse",
-};
 
 /**
  * Friendly optgroup titles for Phish.net **"Not Part of a Tour"** clusters only.
@@ -422,99 +358,18 @@ function mergeToursWithSnapshotPreservation(
 }
 
 /**
- * @param {Record<string, unknown>} row
- * @returns {string}
- */
-function buildVenueLine(row) {
-  const venue = String(row.venue ?? "").trim();
-  const city = String(row.city ?? "").trim();
-  const state = String(row.state ?? "").trim();
-  const country = String(row.country ?? "").trim();
-
-  const parts = [];
-  if (venue) parts.push(venue);
-  if (city) parts.push(city);
-  if (state) parts.push(state);
-  else if (country && country.toUpperCase() !== "USA") parts.push(country);
-  return parts.join(", ") || venue || city || "TBA";
-}
-
-function deriveTimeZoneFromLocationParts({ state, country, city, venue }) {
-  const stateCode = String(state ?? "").trim().toUpperCase();
-  if (US_STATE_TIME_ZONES[stateCode]) return US_STATE_TIME_ZONES[stateCode];
-  if (CANADA_PROVINCE_TIME_ZONES[stateCode]) {
-    return CANADA_PROVINCE_TIME_ZONES[stateCode];
-  }
-
-  const merged = [venue, city, state, country].join(" ").toLowerCase();
-  if (/\bcancun\b|\bmexico\b|\bquintana roo\b/.test(merged)) {
-    return "America/Cancun";
-  }
-  if (/\blondon\b|\bengland\b|\buk\b|\bunited kingdom\b/.test(merged)) {
-    return "Europe/London";
-  }
-
-  return DEFAULT_SHOW_TIME_ZONE;
-}
-
-function phishNetResponseOk(data) {
-  const apiErr = data && typeof data === "object" ? data.error : undefined;
-  return (
-    apiErr === undefined ||
-    apiErr === null ||
-    apiErr === false ||
-    apiErr === 0 ||
-    apiErr === "0"
-  );
-}
-
-/**
+ * Year rows from the phishnet provider. Same array `fetchAllShowsNormalized`
+ * combined before this move. The provider returns the envelope and does not
+ * filter; this wrapper still returns `data` (or `[]`).
+ *
  * @param {string} year
  * @param {string} apiKey
  * @returns {Promise<Record<string, unknown>[]>}
  */
 async function fetchShowsForYear(year, apiKey) {
-  const url = `https://api.phish.net/v5/shows/showyear/${encodeURIComponent(
-    year
-  )}.json?order_by=showdate&apikey=${encodeURIComponent(apiKey.trim())}`;
-
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  const bodyText = await res.text();
-  let data;
-  try {
-    data = JSON.parse(bodyText);
-  } catch {
-    throw new Error(`Phish.net shows/showyear/${year}: non-JSON body.`);
-  }
-  if (!res.ok) {
-    throw new Error(
-      `Phish.net shows/showyear/${year}: HTTP ${res.status} ${bodyText.slice(0, 200)}`
-    );
-  }
-  if (!phishNetResponseOk(data)) {
-    const msg =
-      typeof data.error_message === "string"
-        ? data.error_message
-        : "Phish.net API error.";
-    throw new Error(`Phish.net shows/showyear/${year}: ${msg}`);
-  }
-  const rows = data?.data;
+  const payload = await fetchShowsPayload(year, phishProviderArgs(apiKey));
+  const rows = payload && typeof payload === "object" ? payload.data : undefined;
   return Array.isArray(rows) ? rows : [];
-}
-
-/**
- * @param {Record<string, unknown>} row
- * @returns {string}
- */
-function buildCityLine(row) {
-  const city = String(row.city ?? "").trim();
-  const state = String(row.state ?? "").trim();
-  const country = String(row.country ?? "").trim();
-  if (city && state) return `${city}, ${state}`;
-  if (city && country && country.toUpperCase() !== "USA") {
-    return `${city}, ${country}`;
-  }
-  return city;
 }
 
 /**
@@ -522,28 +377,7 @@ function buildCityLine(row) {
  * @returns {{ date: string, venue: string, city: string, tour_name: string, timeZone: string }[]}
  */
 function normalizePhishShows(rawRows) {
-  /** @type {Map<string, { date: string, venue: string, city: string, tour_name: string, timeZone: string }>} */
-  const byDate = new Map();
-
-  for (const row of rawRows) {
-    if (!row || typeof row !== "object") continue;
-    if (Number(row.artistid) !== 1) continue;
-    if (row.exclude_from_stats) continue;
-    const date = String(row.showdate ?? "").trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-    const venue = buildVenueLine(row);
-    const city = buildCityLine(row);
-    const tour_name = String(row.tour_name ?? "").trim() || GENERIC_TOUR;
-    const timeZone = deriveTimeZoneFromLocationParts({
-      state: row.state,
-      country: row.country,
-      city: row.city,
-      venue,
-    });
-    byDate.set(date, { date, venue, city, tour_name, timeZone });
-  }
-
-  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return normalizeShows(rawRows, phishProviderArgs());
 }
 
 /**

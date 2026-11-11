@@ -10,7 +10,7 @@ import {
 /**
  * Inline SVG stays vector on mobile WebKit; `<img src=".svg">` is often rasterized (soft/grainy),
  * especially with CSS filters. Avoid box-shadow on the aspect frame — it traces the rectangular
- * box and reads as a “border” around transparent letter areas (unlike drop-shadow on an img).
+ * box and reads as a “border” around transparent letter areas (unlike drop-shadow-sm on an img).
  *
  * Crop (replaces former img `object-cover` / `object-position`):
  * - Mobile: `xMidYMin slice` ≈ `object-top`

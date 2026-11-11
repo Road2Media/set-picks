@@ -2,7 +2,7 @@ import React from 'react';
 import { Check, ChevronRight, CircleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import Card from '../../../shared/ui/Card';
+import { Row } from '../../../shared/ui/Card';
 import StatusBadge from '../../../shared/ui/StatusBadge';
 import PoolInviteCodeRow from './PoolInviteCodeRow';
 import PoolInviteShareButton from './PoolInviteShareButton';
@@ -15,7 +15,7 @@ export default function PoolCard({
   const memberCount = pool?.members?.length ?? 0;
 
   return (
-    <Card as="article" variant="frosted" padding="md">
+    <Row as="article">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -59,6 +59,6 @@ export default function PoolCard({
           />
         </div>
       </div>
-    </Card>
+    </Row>
   );
 }

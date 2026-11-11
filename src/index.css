@@ -1,24 +1,109 @@
-@import './shared/ui/marketingEditorialViewport.css';
+@import './shared/ui/marketingEditorialViewport.css' layer(base);
 
-@font-face {
-  font-family: 'Inter';
-  src: url('/fonts/inter/InterVariable.woff2') format('woff2');
-  font-weight: 100 900;
-  font-style: normal;
-  font-display: swap;
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
+
+/*
+  Device chrome (#705). Not breakpoints: v4 breakpoints are min-width only,
+  and these queries also test height. `desk` and `mob` are complements
+  (the 0.02px seam keeps them from both matching). `short` compacts the
+  mobile header and does not overlap `desk`. `md:` stays width reflow.
+  Keep the query strings aligned with `useDashboardDeskMedia.js`.
+*/
+@custom-variant desk (@media (min-width: 768px) and (min-height: 480px));
+@custom-variant short (@media (max-height: 479.98px));
+/* Comma-separated queries do not survive the shorthand form. */
+@custom-variant mob {
+  @media (max-width: 767.98px), (max-height: 479.98px) {
+    @slot;
+  }
 }
 
-@font-face {
-  font-family: 'Space Grotesk';
-  src: url('/fonts/space-grotesk/SpaceGrotesk-VariableFont_wght.woff2') format('woff2');
-  font-weight: 300 700;
-  font-style: normal;
-  font-display: swap;
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  /* v3 preflight used gray-400 placeholders and a pointer cursor on buttons. */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tour section headers in show date <select> (optgroup labels — gold; support varies slightly by browser/OS) */
+
+@utility splash-gradient-text {
+  /**
+   * Gradient headline/wordmark: solid fallback when background-clip:text is unsupported
+   * or fails in constrained renderers (e.g. some WRS snapshots).
+   */
+  color: #ffffff;
+  background-image: linear-gradient(to right, #ef4444, #3b82f6);
+
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+/*
+  These are element selectors, not utilities. The upgrade tool folded them
+  into `@utility` and the optgroup color stopped matching
+  `select.show-date-select optgroup.tour-optgroup`.
+*/
+@layer components {
+  select.show-date-select optgroup.tour-optgroup {
+    color: #d4af37;
+    font-weight: 800;
+    font-style: italic;
+  }
+
+  select.show-date-select optgroup.tour-optgroup option {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-style: normal;
+    white-space: nowrap;
+  }
+}
+
+@layer base {
+  @font-face {
+    font-family: 'Inter';
+    src: url('/fonts/inter/InterVariable.woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Space Grotesk';
+    src: url('/fonts/space-grotesk/SpaceGrotesk-VariableFont_wght.woff2')
+      format('woff2');
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+  }
+}
 
 @layer base {
   :root {
@@ -35,13 +120,19 @@
     --surface-panel-strong: 42 52 78;
     --surface-inset: 26 32 52;
     --surface-field: 15 23 42;
+    /* House promo wash. Muted violet, not rank gold and not brand teal (#121). */
+    --surface-sponsored: 72 48 96;
 
     /* Helper / meta copy (warm slate, ~Tailwind slate-300) */
     --content-secondary: 203 213 225;
+    /* House promo eyebrow. Light lilac on the sponsored wash (#121). */
+    --content-sponsored: 232 220 242;
 
     --border-glass: 148 163 184;
     --border-subtle: 51 65 85;
     --border-muted: 71 85 105;
+    /* House promo edge. Distinct from quiet slate and from teal CTAs (#121). */
+    --border-sponsored: 186 160 214;
     --border-venue: 45 212 191;
     --border-venue-strong: 45 212 191;
   }
@@ -84,38 +175,5 @@
     background: rgb(var(--brand-primary) / 0.38);
     border: 2px solid transparent;
     background-clip: padding-box;
-  }
-}
-
-/* Tour section headers in show date <select> (optgroup labels — gold; support varies slightly by browser/OS) */
-@layer components {
-  /**
-   * Gradient headline/wordmark: solid fallback when background-clip:text is unsupported
-   * or fails in constrained renderers (e.g. some WRS snapshots).
-   */
-  .splash-gradient-text {
-    color: #ffffff;
-    background-image: linear-gradient(to right, #ef4444, #3b82f6);
-  }
-
-  @supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    .splash-gradient-text {
-      color: transparent;
-      -webkit-background-clip: text;
-      background-clip: text;
-    }
-  }
-
-  select.show-date-select optgroup.tour-optgroup {
-    color: #d4af37;
-    font-weight: 800;
-    font-style: italic;
-  }
-
-  select.show-date-select optgroup.tour-optgroup option {
-    color: #e2e8f0;
-    font-weight: 600;
-    font-style: normal;
-    white-space: nowrap;
   }
 }

@@ -28,9 +28,13 @@ const PublicTourStatsPage = lazy(
 const MsgGardenStatsPage = lazy(
   () => import('../pages/marketing/MsgGardenStatsPage'),
 );
+const HundredthShowPage = lazy(
+  () => import('../pages/marketing/HundredthShowPage'),
+);
 const AnnualTourStatsPage = lazy(
   () => import('../pages/marketing/AnnualTourStatsPage'),
 );
+const TourNotesPage = lazy(() => import('../pages/marketing/TourNotesPage'));
 const RewindResultsPage = lazy(() => import('../pages/marketing/RewindResultsPage'));
 const PhishIqPage = lazy(() => import('../pages/marketing/PhishIqPage'));
 const StatsEmbedPage = lazy(() => import('../pages/marketing/StatsEmbedPage'));
@@ -173,6 +177,14 @@ export default function MarketingApp() {
           }
         />
         <Route
+          path="/phish-at-msg/100th"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <HundredthShowPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="/tour-stats/msg"
           element={<Navigate to="/phish-at-msg" replace />}
         />
@@ -189,6 +201,22 @@ export default function MarketingApp() {
           element={
             <Suspense fallback={<MarketingRouteFallback />}>
               <PublicTourStatsPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tour-notes"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <TourNotesPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/tour-notes/:showDate"
+          element={
+            <Suspense fallback={<MarketingRouteFallback />}>
+              <TourNotesPage />
             </Suspense>
           }
         />

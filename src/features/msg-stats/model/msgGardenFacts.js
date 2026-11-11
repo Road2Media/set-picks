@@ -191,6 +191,7 @@ ${bustouts}
     <p data-seo-msg-stats="nye">${escapeHtml(nye)}</p>
     <p data-seo-msg-stats="credit">${escapeHtml('Data courtesy of ')}<a href="https://phish.net">Phish.net</a> / The Mockingbird Foundation.</p>
     <p data-seo-msg-stats="nye-run"><a href="${NYE_RUN_PATH}">New Year's Run at MSG</a></p>
+    <p data-seo-msg-stats="phish-iq"><a href="/phish-iq">Phish IQ</a> is a free daily Phish quiz. Five questions, a new quiz every day, no sign-in.</p>
     <p data-seo-msg-stats="cta"><a href="/login?mode=signup">Lock New Year's Run picks</a></p>`;
 }
 

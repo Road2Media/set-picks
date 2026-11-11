@@ -20,36 +20,23 @@ const { deliverCommsInbox } = require("./commsInboxWorker");
 const { deliverCommsPush } = require("./commsPushWorker");
 const { sendCommsDeliveredEvent } = require("./commsGa4Measurement");
 const { sanitizeFactLabel } = require("./commsFactLabel");
+const { prefAllows } = require("./notificationPrefs");
 
 const DEDUP_COLLECTION = "fcm_notification_log";
 const DEFAULT_FATIGUE_CAP = 2; // max comms per user per delivery run (FRAMEWORK §OPTIMIZE)
 
 /**
- * Resolve a single notification preference, mirroring the client resolver in
- * `src/features/notifications/api/notificationPrefsApi.js`:
- *  - `commercial` is default-deny (explicit `true` to opt in)
- *  - everything else is default-allow (explicit `false` to opt out)
- *
- * @param {Record<string, any> | null | undefined} userData
- * @param {string} key
- * @returns {boolean}
- */
-function prefAllows(userData, key) {
-  const prefs = userData?.notificationPrefs;
-  const raw = prefs && typeof prefs === "object" ? prefs[key] : undefined;
-  if (key === "commercial") return raw === true;
-  return raw !== false;
-}
-
-/**
- * A recipient is eligible only if every `prefKey` the trigger declares allows it.
+ * A recipient is eligible only if every `prefKey` the trigger declares allows
+ * this channel. `channel` is `push`, `inApp`, or `email`. Omit it to read the
+ * legacy flat key only.
  *
  * @param {Record<string, any> | null | undefined} userData
  * @param {string[]} prefKeys
+ * @param {string} [channel]
  */
-function recipientAllowsTrigger(userData, prefKeys) {
+function recipientAllowsTrigger(userData, prefKeys, channel) {
   if (!Array.isArray(prefKeys) || prefKeys.length === 0) return true;
-  return prefKeys.every((key) => prefAllows(userData, key));
+  return prefKeys.every((key) => prefAllows(userData, key, channel));
 }
 
 /**
@@ -65,7 +52,7 @@ function recipientAllowsChannel(userData, spec, channel) {
   if (channel === "email" && emailClass === "transactional") {
     return true;
   }
-  return recipientAllowsTrigger(userData, spec.prefKeys);
+  return recipientAllowsTrigger(userData, spec.prefKeys, channel);
 }
 
 /**

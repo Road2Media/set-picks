@@ -147,7 +147,8 @@ test("spam complaint suppresses and opts user out", async () => {
   assert.equal(result.handled, true);
   const { isEmailSuppressed } = require("./commsEmailSuppression");
   assert.equal(await isEmailSuppressed(db, "spam@example.com"), true);
-  assert.equal(db._users.get("u1")["notificationPrefs.lifecycle"], false);
+  assert.equal(db._users.get("u1")["notificationPrefs.email.lifecycle"], false);
+  assert.equal(db._users.get("u1")["notificationPrefs.email.commercial"], false);
 });
 
 test("email.opened persists engagement from tags; duplicate delivery is a no-op", async () => {

@@ -1,10 +1,12 @@
 import {
-  fetchSetlistRaw,
+  getProviderClient,
   isSetlistFetchFailure,
   mapParsedSetlistToLegacySaveShape,
   parseSetlist,
   SetlistParseError,
 } from '../../admin-setlist-config/index.js';
+
+const phishSetlistClient = getProviderClient('phish');
 import { FORM_FIELDS } from '../../../shared/data/gameConfig.js';
 
 const gameConfig = { FORM_FIELDS };
@@ -39,7 +41,7 @@ function formatSetlistFetchLayerError(err) {
  * @returns {Promise<{ ok: true, setlistData: Record<string, string>, officialSetlist: string[], encoreSongs: string[], bustouts: string[], songGaps: Record<string, number> } | { ok: false, error: string }>}
  */
 export async function fetchAndMapExternalSetlist(showDate, slotFields) {
-  const rawResult = await fetchSetlistRaw(showDate);
+  const rawResult = await phishSetlistClient.fetchSetlistRaw(showDate);
   if (isSetlistFetchFailure(rawResult)) {
     return { ok: false, error: formatSetlistFetchLayerError(rawResult.error) };
   }
@@ -76,7 +78,9 @@ export async function fetchAndMapExternalSetlist(showDate, slotFields) {
  * @returns {Promise<{ ok: true, bustouts: string[], songGaps: Record<string, number> } | { ok: false, error: string }>}
  */
 export async function fetchBustoutsFromPhishnet(showDate, slotFields) {
-  const rawResult = await fetchSetlistRaw(showDate, { forceSource: 'phishnet' });
+  const rawResult = await phishSetlistClient.fetchSetlistRaw(showDate, {
+    forceSource: 'phishnet',
+  });
   if (isSetlistFetchFailure(rawResult)) {
     return { ok: false, error: formatSetlistFetchLayerError(rawResult.error) };
   }

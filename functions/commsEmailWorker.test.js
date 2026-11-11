@@ -318,13 +318,16 @@ test("branded HTML body omits the redundant plain-text app link (button already 
   assert.match(html, /Open Setlist Pick(?:&#39;|&apos;)em/, "the CTA button is still present");
 });
 
-test("formatWordmarkAttachmentForResendApi uses REST snake_case inline_content_id", () => {
+test("formatWordmarkAttachmentForResendApi uses REST content_id (Resend SDK 6)", () => {
   const { buildEmailWordmarkResendAttachment, formatWordmarkAttachmentForResendApi } = require("./comms/emailBranding.cjs");
   const sdk = buildEmailWordmarkResendAttachment();
+  assert.equal(sdk.contentId, "email-gradient-wordmark");
+  assert.ok(!("inlineContentId" in sdk), "SDK 6 ignores inlineContentId");
   const rest = formatWordmarkAttachmentForResendApi(sdk);
-  assert.equal(rest.inline_content_id, "email-gradient-wordmark");
+  assert.equal(rest.content_id, "email-gradient-wordmark");
   assert.equal(rest.content_type, "image/png");
-  assert.ok(!("inlineContentId" in rest), "REST payload must not use SDK camelCase");
+  assert.ok(!("contentId" in rest), "REST payload must not use SDK camelCase");
+  assert.ok(!("inline_content_id" in rest), "SDK 6 posts content_id, not inline_content_id");
 });
 
 test("production branded shell never uses data: or cid: URIs", () => {

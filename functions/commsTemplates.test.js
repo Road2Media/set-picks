@@ -448,7 +448,7 @@ test("other comms drop storage dates from sentences (#1124)", async () => {
   });
   assert.match(
     recap.email.text,
-    /here's how your picks for Allianz Amphitheater at Riverfront, Richmond, VA graded out/,
+    /here's how your picks for Allianz Amphitheater at Riverfront, Richmond, VA scored/,
   );
   assert.doesNotMatch(recap.email.text, /2026-10-07/);
   assert.doesNotMatch(recap.email.text, /last night/);

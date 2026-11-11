@@ -4,6 +4,7 @@ import {
   BRAND_SPLASH_HEADER_VINYL_MARK_SRC,
   brandSplashHeaderVinylMarkImgClassNames,
 } from '../../../shared/config/branding';
+import { PHISH_NET_FOOTER_ATTRIBUTION } from '../../../shared/config/phishLiveSource';
 import {
   MARKETING_HEADER_HEIGHT,
   MARKETING_PAGE_GUTTER_X,
@@ -30,12 +31,12 @@ export default function MarketingPageShell({ children }) {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-transparent text-white">
-      <header className={`sticky top-0 z-50 flex items-center border-b border-white/5 bg-brand-bg/80 backdrop-blur-lg ${MARKETING_HEADER_HEIGHT}`}>
+      <header className={`sticky top-0 z-50 flex items-center overflow-visible border-b border-white/5 bg-brand-bg/80 backdrop-blur-lg ${MARKETING_HEADER_HEIGHT}`}>
         <div className={`relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 sm:gap-4 ${MARKETING_PAGE_GUTTER_X}`}>
           <a
             href="/"
             aria-label="Setlist Pick 'Em — back to home"
-            className="flex shrink-0 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
+            className="flex shrink-0 items-center gap-2 rounded-md outline-hidden focus-visible:ring-2 focus-visible:ring-brand-accent-blue"
           >
             <img
               src={BRAND_SPLASH_HEADER_VINYL_MARK_SRC}
@@ -61,27 +62,24 @@ export default function MarketingPageShell({ children }) {
         </div>
       </header>
       {leaving ? <MarketingAuthLeaveOverlay message={leaveMessage} /> : null}
-      <main className="w-full flex-1">{children}</main>
+      <main className="w-full">{children}</main>
 
-      <div className={`relative z-10 pb-4 pt-10 ${MARKETING_PAGE_GUTTER_X}`}>
+      <footer className={`relative z-10 border-t border-slate-800/60 bg-transparent py-4 text-center text-xs font-medium leading-relaxed text-slate-500 sm:py-5 ${MARKETING_PAGE_GUTTER_X}`}>
         <MarketingFooterNav variant="primary" />
-      </div>
-
-      <footer className={`relative z-10 border-t border-slate-800/60 bg-transparent py-6 text-center text-xs font-medium leading-relaxed text-slate-500 ${MARKETING_PAGE_GUTTER_X}`}>
-        <p>&copy; {new Date().getFullYear()} Road2 Media, LLC. All rights reserved.</p>
+        <p className="mt-3">&copy; {new Date().getFullYear()} Road2 Media, LLC. All rights reserved.</p>
         <p className="mt-1">
           Song and setlist data provided by{' '}
           <a
-            href="https://phish.net"
+            href={PHISH_NET_FOOTER_ATTRIBUTION.href}
             target="_blank"
             rel="noopener noreferrer"
             className="text-slate-400 underline decoration-slate-600 underline-offset-2 transition-colors hover:text-slate-200 hover:decoration-slate-400"
           >
-            The Mockingbird Foundation / Phish.Net
+            {PHISH_NET_FOOTER_ATTRIBUTION.text}
           </a>
           .
         </p>
-        <MarketingFooterNav variant="legal" className="mt-3" />
+        <MarketingFooterNav variant="legal" className="mt-2" />
       </footer>
     </div>
   );

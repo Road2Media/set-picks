@@ -66,7 +66,7 @@ export default function AvatarPicker({
               aria-label={avatar.label}
               disabled={disabled}
               onClick={() => onChange(avatar.id)}
-              className={`rounded-2xl p-1 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
+              className={`rounded-2xl p-1 transition focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary ${
                 selected
                   ? 'bg-brand-primary/20 ring-2 ring-brand-primary'
                   : 'hover:bg-surface-field'
