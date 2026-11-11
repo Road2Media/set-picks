@@ -1,23 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import Button from '../../../shared/ui/Button';
 import { MARKETING_PAGE_GUTTER_X } from '../../../shared/ui/marketingEditorialChrome';
 import { LINK_ON_DARK } from '../../../shared/ui/surfaceLinkStyles';
-
-/** Shared type for splash bottom peer links (#947). */
-const SPLASH_BOTTOM_LINK = `text-sm ${LINK_ON_DARK}`;
 
 export default function SplashAboutSection({
   sectionRef,
   headingRef,
-  onGetStartedClick,
-  onAuthCtaIntent,
 }) {
   return (
     <section
       ref={sectionRef}
-      className="relative z-10 w-full bg-transparent py-20 md:py-24 lg:py-32"
+      className="relative z-10 w-full bg-transparent pt-20 pb-6 md:pt-24 md:pb-8 lg:pt-32 lg:pb-10"
     >
       <div className={`mx-auto w-full max-w-5xl ${MARKETING_PAGE_GUTTER_X}`}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-16 items-start">
@@ -56,36 +50,6 @@ export default function SplashAboutSection({
             </div>
           </div>
         </div>
-
-        <nav
-          className="mt-16 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 border-t border-slate-800 pt-8 lg:justify-end"
-          aria-label="Jump to How it works, tour stats, or create an account"
-        >
-          <Link to="/how-it-works" className={SPLASH_BOTTOM_LINK}>
-            How it works
-          </Link>
-          <span className="select-none text-sm text-slate-600" aria-hidden>
-            ·
-          </span>
-          <Link to="/tour-stats" className={SPLASH_BOTTOM_LINK}>
-            Tour stats
-          </Link>
-          <span className="select-none text-sm text-slate-600" aria-hidden>
-            ·
-          </span>
-          <Button
-            variant="link"
-            size="none"
-            type="button"
-            onClick={onGetStartedClick}
-            onPointerEnter={onAuthCtaIntent}
-            onFocus={onAuthCtaIntent}
-            onPointerDown={onAuthCtaIntent}
-            className={SPLASH_BOTTOM_LINK}
-          >
-            Get started
-          </Button>
-        </nav>
       </div>
     </section>
   );

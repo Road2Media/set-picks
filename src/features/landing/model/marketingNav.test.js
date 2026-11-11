@@ -86,6 +86,19 @@ describe('marketing primary nav (#1232)', () => {
     expect(isMarketingRewindFooterEnabled()).toBe(false);
   });
 
+  it('keeps the footer to hubs plus the links fans still need (#1291)', () => {
+    expect(marketingFooterPrimaryLinks().map((link) => link.label)).toEqual([
+      'Play',
+      'How it works',
+      'Scoring',
+      'Phish IQ',
+      'Tour Stats',
+      "New Year's Run",
+      'Phish at MSG',
+      'About',
+    ]);
+  });
+
   it('keeps /rewind out of the primary nav', () => {
     const hrefs = MARKETING_PRIMARY_NAV.flatMap((item) => [
       item.to,

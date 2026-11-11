@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.127.4] — 2026-11-11
+
+### Fixed
+- **Compact marketing footer (#1291)** — The home-page link row (How it works, Tour stats, Get started) is gone. Join in the header already covers Get started, and the footer still links to How it works and Tour Stats. Footer links wrap on one centered row on a phone and on a desktop, instead of a column per page. How scoring changed, Annual 2026, and All tours stay in the header menus. All tours was the same page as Tour Stats. The copyright line, the Phish.net / Mockingbird Foundation credit, and Privacy, Terms, and Contact stay.
+
 ## [1.127.3] — 2026-11-10
 
 ### Fixed

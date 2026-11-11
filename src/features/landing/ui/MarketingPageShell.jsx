@@ -62,14 +62,11 @@ export default function MarketingPageShell({ children }) {
         </div>
       </header>
       {leaving ? <MarketingAuthLeaveOverlay message={leaveMessage} /> : null}
-      <main className="w-full flex-1">{children}</main>
+      <main className="w-full">{children}</main>
 
-      <div className={`relative z-10 pb-4 pt-10 ${MARKETING_PAGE_GUTTER_X}`}>
+      <footer className={`relative z-10 border-t border-slate-800/60 bg-transparent py-4 text-center text-xs font-medium leading-relaxed text-slate-500 sm:py-5 ${MARKETING_PAGE_GUTTER_X}`}>
         <MarketingFooterNav variant="primary" />
-      </div>
-
-      <footer className={`relative z-10 border-t border-slate-800/60 bg-transparent py-6 text-center text-xs font-medium leading-relaxed text-slate-500 ${MARKETING_PAGE_GUTTER_X}`}>
-        <p>&copy; {new Date().getFullYear()} Road2 Media, LLC. All rights reserved.</p>
+        <p className="mt-3">&copy; {new Date().getFullYear()} Road2 Media, LLC. All rights reserved.</p>
         <p className="mt-1">
           Song and setlist data provided by{' '}
           <a
@@ -82,7 +79,7 @@ export default function MarketingPageShell({ children }) {
           </a>
           .
         </p>
-        <MarketingFooterNav variant="legal" className="mt-3" />
+        <MarketingFooterNav variant="legal" className="mt-2" />
       </footer>
     </div>
   );

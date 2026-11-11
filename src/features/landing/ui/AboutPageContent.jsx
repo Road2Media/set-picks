@@ -6,7 +6,6 @@ import {
   MARKETING_EDITORIAL_BODY,
   MARKETING_EDITORIAL_COLUMN,
   MARKETING_EDITORIAL_H1,
-  MARKETING_EDITORIAL_META,
   MARKETING_EDITORIAL_TYPE_LEDE,
 } from '../../../shared/ui/marketingEditorialChrome';
 import { LINK_ON_LIGHT } from '../../../shared/ui/surfaceLinkStyles';
@@ -92,27 +91,6 @@ export default function AboutPageContent() {
             Get started
           </AppDocumentAuthLink>
         </div>
-
-        <nav
-          className={`mt-10 flex flex-wrap items-center justify-center gap-x-2 gap-y-2 ${MARKETING_EDITORIAL_META}`}
-          aria-label="How it works, tour stats, or create an account"
-        >
-          <Link to="/how-it-works" className={LINK_ON_LIGHT}>
-            How it works
-          </Link>
-          <span className="mx-2 select-none text-slate-400" aria-hidden>
-            ·
-          </span>
-          <Link to="/tour-stats" className={LINK_ON_LIGHT}>
-            Tour stats
-          </Link>
-          <span className="mx-2 select-none text-slate-400" aria-hidden>
-            ·
-          </span>
-          <AppDocumentAuthLink signup className={LINK_ON_LIGHT}>
-            Get started
-          </AppDocumentAuthLink>
-        </nav>
       </div>
     </article>
   );
