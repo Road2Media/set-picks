@@ -151,17 +151,11 @@ Consequences:
 - Don't claim "telemetry didn't fire" based on the preview URL alone.
   Preview is production; the console line is suppressed by design.
 
-## §10 `.cursorrules` §9 — agent-authored issues need `[SKIP-PRD]`
+## §10 Follow-up issues are ordinary issue bodies
 
 If during QA you have to file a follow-up issue (e.g. for a regression
-that's scope-creep for this PR), the body MUST:
-
-- Start with `[SKIP-PRD]` on its first non-empty line.
-- Carry labels `skip-prd` AND `cursor-authored`.
-
-Otherwise `.github/workflows/gemini-pm.yml` rewrites the body into a
-full Gemini PRD and pings the PR author. See
-`docs/GITHUB_AUTOMATION_CONTEXT.md` for the complete rationale.
+that's scope-creep for this PR), write the body from the current code
+and the acceptance criteria. Nothing rewrites that body on open.
 
 ## §11 `DashboardRoute` → `useSongCatalog` coupling (open follow-up)
 

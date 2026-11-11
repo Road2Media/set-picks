@@ -325,8 +325,7 @@ async function main() {
     source,
   });
 
-  const body = `[SKIP-PRD]\n\n${report}`;
-  console.log(body);
+  console.log(report);
 
   const summary = summarizeChecks(checks);
   console.error(

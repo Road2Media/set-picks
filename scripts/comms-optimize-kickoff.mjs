@@ -107,9 +107,7 @@ function main() {
       { cwd: root, encoding: "utf8" },
     );
     if (qa.status === 0 || qa.status === 2) {
-      const qaBody = String(qa.stdout || "")
-        .replace(/^\[SKIP-PRD\]\s*/i, "")
-        .trim();
+      const qaBody = String(qa.stdout || "").trim();
       body = `${body.trim()}\n\n---\n\n${qaBody}\n`;
     } else {
       const raw = String(qa.stderr || "")

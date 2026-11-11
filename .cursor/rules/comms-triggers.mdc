@@ -13,7 +13,7 @@ When editing `docs/comms-triggers/`:
 3. **Status values** — `shipped` | `in_progress` | `planned` | `deprecated` | `phase3` only.
 4. **templateId link** — Every non-system trigger references a registry id or documents `inline-*` legacy path.
 5. **No copy in catalog** — Trigger Specs describe behavior, not message text.
-6. **GitHub** — New P0/P1 triggers get a `[SKIP-PRD]` issue under epic #272.
+6. **GitHub** — New P0/P1 triggers get an issue under epic #272.
 7. **Framework alignment** — Phase and priority must match `FRAMEWORK.md` launch waves.
 8. **Invoke triggers skill** — Follow `.cursor/skills/comms-triggers/SKILL.md` for proposals.
 

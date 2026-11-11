@@ -7,7 +7,7 @@
 
 Machine-readable fan-intent IDs live in **[`query-registry.json`](./query-registry.json)**. Optimize packs and GSC pulls must key off those IDs — do not invent parallel Markdown tables.
 
-**#932 (E1)** automates last-7d GSC + GA4 organic → a `[SKIP-PRD]` SEO Optimize **facts** pack on #926.  
+**#932 (E1)** automates last-7d GSC + GA4 organic → an SEO Optimize **facts** pack on #926.  
 **#934 (E3)** is the agent-driven scored loop on top of that pack (`DRAFT_PR` / `REQUEST_INDEX` / `OFFSITE_SHARE` / `WAIT_EVIDENCE` / `NOOP`). Copy-paste prompt + template: [`docs/SEO_OPTIMIZE_AUTONOMY.md`](../SEO_OPTIMIZE_AUTONOMY.md). No weekly Action opens PRs.
 
 ```bash
@@ -20,7 +20,7 @@ npm run seo:gsc-weekly-snapshot -- --write
 npm run seo:gsc-weekly-snapshot -- --write --post   # comment on #926
 ```
 
-Workflow: `.github/workflows/seo-gsc-weekly-schedule.yml` (`workflow_dispatch` + Monday cron). Posts only when live credentials exist; otherwise SKIP (fork-safe). Secrets and human SA steps: playbook §4 + `docs/GITHUB_AUTOMATION_CONTEXT.md`. Manual GSC UI pulls remain valid if the secret is not set yet.
+Workflow: `.github/workflows/seo-gsc-weekly-schedule.yml` (`workflow_dispatch` + Monday cron). Posts only when live credentials exist; otherwise SKIP (fork-safe). Secrets and human SA steps: playbook §4. Manual GSC UI pulls remain valid if the secret is not set yet.
 
 ## Policy (do not violate)
 

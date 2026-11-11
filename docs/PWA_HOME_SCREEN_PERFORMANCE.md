@@ -83,7 +83,7 @@ handles the skip-waiting protocol, with no interference.
 
 ## Next steps / follow-up issues to create
 
-### [SKIP-PRD] Issue: Precache app shell with Workbox via vite-plugin-pwa
+### Issue: Precache app shell with Workbox via vite-plugin-pwa
 
 **Goal:** Cache `index.html` + critical JS/CSS chunks in the FCM service worker so repeat home-screen
 opens are instant even on a slow or offline connection.
@@ -100,7 +100,7 @@ opens are instant even on a slow or offline connection.
 - FCM background push still works (integration test or manual smoke test).
 - Lighthouse repeat-visit LCP improves vs baseline on throttled mobile profile.
 
-### [SKIP-PRD] Issue: Baseline Lighthouse metrics (regression gate)
+### Issue: Baseline Lighthouse metrics (regression gate)
 
 Capture and commit Lighthouse scores for the production URL under a throttled mobile profile
 before the Workbox precache sprint so any regression is detectable in CI.
@@ -123,7 +123,3 @@ before the Workbox precache sprint so any regression is detectable in CI.
 - `public/firebase-messaging-sw.js` — messaging + skip-waiting worker
 - `vite.config.js` — build / chunks
 - `vercel.json` — headers
-
-## Links
-
-- Internal automation note: agent-authored GitHub issues should start with **`[SKIP-PRD]`** so `.github/workflows/gemini-pm.yml` does not overwrite the body (`docs/GITHUB_AUTOMATION_CONTEXT.md`).

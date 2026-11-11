@@ -283,6 +283,6 @@ report precisely what's off. Hedged answers create more work than
   perf epic #239, each with a concrete remediation. Read this before
   interpreting ambiguous Network-tab screenshots.
 
-Together with `.cursorrules` and `docs/GITHUB_AUTOMATION_CONTEXT.md`,
+Together with `.cursorrules`,
 these three files are the complete reference surface for PR QA work on
 this repo.

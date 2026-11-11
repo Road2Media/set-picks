@@ -70,7 +70,7 @@ The release pull request lists security updates that landed in the release. When
 
 ## Failing majors
 
-A major whose required checks fail stays open. `.github/workflows/dependabot-auto-merge.yml` opens or reuses one issue labeled `agent-queue`, `p3`, `dependencies`, and `skip-prd`. The title is `chore(deps): migrate <pkg> major (Dependabot #N)`. The body links the pull request and includes `<!-- dependabot-major-migration pr:N -->`, which is how a later run reuses the issue. The queue does the migration on a branch that supersedes the Dependabot pull request.
+A major whose required checks fail stays open. `.github/workflows/dependabot-auto-merge.yml` opens or reuses one issue labeled `agent-queue`, `p3`, and `dependencies`. The title is `chore(deps): migrate <pkg> major (Dependabot #N)`. The body links the pull request and includes `<!-- dependabot-major-migration pr:N -->`, which is how a later run reuses the issue. The queue does the migration on a branch that supersedes the Dependabot pull request.
 
 A later green run can still auto-merge. Close the migration issue if that happens.
 

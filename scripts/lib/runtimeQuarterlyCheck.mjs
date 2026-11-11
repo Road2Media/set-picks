@@ -10,7 +10,7 @@
 import { readFileSync } from "node:fs";
 
 export const RUNTIME_CHECK_MARKER = "<!-- runtime-quarterly-check -->";
-export const RUNTIME_CHECK_LABELS = ["agent-queue", "p3", "dependencies", "skip-prd"];
+export const RUNTIME_CHECK_LABELS = ["agent-queue", "p3", "dependencies"];
 
 /**
  * @param {Date} date
@@ -53,8 +53,6 @@ export function buildRuntimeQuarterlyIssue(input) {
   const quarter = quarterLabel(now);
   const ciNode = input?.ciNode || "20";
   const lines = [
-    "[SKIP-PRD]",
-    "",
     RUNTIME_CHECK_MARKER,
     "",
     `Quarterly Node and Vercel runtime check for ${quarter}.`,

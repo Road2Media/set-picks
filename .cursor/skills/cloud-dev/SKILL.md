@@ -296,8 +296,9 @@ Scripts live in root `package.json`; **`functions/package.json` forwards the sam
   previews without user help. Use `npm run build && npm run qa:chunks`
   (localhost) instead.
 - **Base branch for PRs is `staging`**, not `main`.
-- **`[SKIP-PRD]`** must be the first line of agent-authored GitHub issue
-  bodies to prevent the Gemini PM workflow from overwriting them.
+
+2026-11-10 (#1163): the Gemini PRD workflow is gone. Issue bodies are
+written from the current code. There is no `[SKIP-PRD]` prefix.
 
 ## 9 — Keeping this skill current
 

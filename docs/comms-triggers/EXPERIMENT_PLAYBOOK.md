@@ -9,7 +9,7 @@ Before launching an experiment:
 1. Trigger is `shipped` with ≥ 2 weeks of `comms_delivered` data
 2. GA4 dimensions from [MEASUREMENT_PLAN.md](./MEASUREMENT_PLAN.md) registered
 3. Primary metric defined in TRIGGER_CATALOG row
-4. `[SKIP-PRD]` GitHub issue documents hypothesis and success criteria
+4. GitHub issue documents hypothesis and success criteria
 
 ## Variant assignment
 

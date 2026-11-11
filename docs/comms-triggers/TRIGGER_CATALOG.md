@@ -700,5 +700,5 @@ These shipped implementations are covered by the v1 trigger set above. Keep the 
 1. Update both this file **and** `catalog.json` in the same PR.
 2. Link `templateId` in `src/features/comms/registry.js` when a template ships.
 3. Add GA4 events per [MEASUREMENT_PLAN.md](./MEASUREMENT_PLAN.md).
-4. File `[SKIP-PRD]` GitHub issue under epic #272 for each new P0/P1 trigger.
+4. File a GitHub issue under epic #272 for each new P0/P1 trigger.
 5. Invoke comms squad skills for copy changes, implementation, or analysis.

@@ -7,7 +7,7 @@
 import { extractDependencyNames } from "./dependabotAutoMergePolicy.mjs";
 
 export const MAJOR_MIGRATION_MARKER_PREFIX = "<!-- dependabot-major-migration pr:";
-export const MAJOR_MIGRATION_LABELS = ["agent-queue", "p3", "dependencies", "skip-prd"];
+export const MAJOR_MIGRATION_LABELS = ["agent-queue", "p3", "dependencies"];
 
 /**
  * @param {number | string} number
@@ -33,8 +33,6 @@ export function buildMajorMigrationIssue(input) {
   const short = label.length > 80 ? `${label.slice(0, 77)}...` : label;
   const marker = majorMigrationMarker(number);
   const lines = [
-    "[SKIP-PRD]",
-    "",
     marker,
     "",
     `Dependabot #${number} is a major update that failed required checks. It stays open and was not merged.`,

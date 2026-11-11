@@ -40,8 +40,8 @@ Using docs/SEO_OPTIMIZE_AUTONOMY.md, docs/SEO_GEO_PLAYBOOK.md §4,
 docs/seo/query-registry.json, and the latest SEO Optimize facts pack on #926
 (or npm run seo:gsc-weekly-snapshot -- --fixture if no live pack exists),
 run SEO Optimize for goal query_coverage covering the last 7 complete days.
-Produce the scored PM review pack template, post it on GitHub issue #926
-with [SKIP-PRD] as the first line, open a draft PR to staging only if a
+Produce the scored PM review pack template, post it on GitHub issue #926,
+open a draft PR to staging only if a
 low-risk seoRoutes / FAQ / llms / H2 change is justified by GSC or
 public_tour_stats facts, and never merge or deploy. Do not scrape
 Google/Bing SERP HTML. Do not add /phish-picks. Aggregates only on
@@ -74,7 +74,7 @@ Swap `query_coverage` / window as needed. First E3 pack: this playbook’s examp
 |------|----------|
 | Pull last-7d GSC registry + top new queries | Open draft PRs or merge |
 | Optional GA4 organic landings (`/tour-stats*` + keyword page) | Deploy, reindex, or request indexing |
-| Post a `[SKIP-PRD]` **facts** pack on #926 when `GSC_SERVICE_ACCOUNT_JSON` is set | Scrape SERP HTML or competitor pages |
+| Post a **facts** pack on #926 when `GSC_SERVICE_ACCOUNT_JSON` is set | Scrape SERP HTML or competitor pages |
 | SKIP (exit 0) when the secret is unset | Run this E3 scored loop itself |
 
 **Human / Cloud Agent step after each facts pack:** run the copy-paste prompt above (or Leadership `optimize` with `optimize_for` from this table). Post the finished **scored pack** as a follow-up comment on #926.
@@ -202,8 +202,6 @@ When the live calendar label changes (new tour with newest `lastShowDate` on `pu
 Agents **must** use this shape as a **follow-up** comment on #926 (facts pack from E1 stays as-is):
 
 ```markdown
-[SKIP-PRD]
-
 ## SEO Optimize scored pack — <YYYY-MM-DD> (goal: <optimize_for>)
 
 **Epic:** #926 · **Playbook:** `docs/SEO_OPTIMIZE_AUTONOMY.md`  
@@ -262,8 +260,6 @@ Visual / chat only. Do **not** scrape SERP HTML. Record citation of a www URL or
 First E3 cycle. **No live GSC pack on #926 yet** (E1 Action SKIPs until a human adds `GSC_SERVICE_ACCOUNT_JSON`). Numbers below are from the committed fixture (`scripts/seo/fixtures/weekly-snapshot.fixture.json`). Competitor gaps come from `content/marketing/933-competitor-title-h1-gap-brief.md` (#993). **No `DRAFT_PR` opened.**
 
 ```markdown
-[SKIP-PRD]
-
 ## SEO Optimize scored pack — 2026-09-03 (goal: query_coverage)
 
 **Epic:** #926 · **Playbook:** `docs/SEO_OPTIMIZE_AUTONOMY.md`  
