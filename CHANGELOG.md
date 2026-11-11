@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.127.6] — 2026-11-11
+
+### Fixed
+- **Phish IQ wording and play cutoffs (#1297)** — The longest-without question asks "Which of these songs has gone the longest without being played?" The fact line is "Phish has not played {song} for {N} shows." and N uses a thousands separator. Catalog questions, answers and distractors, use songs with 3 or more plays. Longest-without questions use songs with 10 or more plays. A song that debuted within the last year is exempt. One-time songs such as I've Turned Bad stay out of the choices. The other question templates were already plain fan language and stay as they are.
+
 ## [1.127.5] — 2026-11-11
 
 ### Changed

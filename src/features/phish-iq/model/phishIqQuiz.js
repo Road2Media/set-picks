@@ -1,16 +1,32 @@
 /**
- * Daily Phish IQ questions (#1143).
+ * Daily Phish IQ questions (#1143, wording and play cutoffs #1297).
  *
  * Same inputs and the same America/New_York date always produce the same five
- * questions. Facts come from the song catalog (debut year, gap, play count)
- * and from aggregate Madison Square Garden counts already published in the
- * app (opener frequencies, announced-show count). Each question's `fact` is a
- * sentence built only from that question's `trace` (the same catalog or
- * snapshot fields). No show review, no jam note, and no night's setlist.
+ * questions. Facts come from the song catalog (debut year, time since the last
+ * play, play count) and from aggregate Madison Square Garden counts already
+ * published in the app (opener frequencies, announced-show count). Catalog
+ * questions use songs with 3 or more plays. Longest-without questions use
+ * songs with 10 or more. A song that debuted within the year before the quiz
+ * date is exempt. Question prompts stay in plain fan language, 12 words or
+ * fewer, with no internal "gap" wording and no double negative. Each
+ * question's `fact` is a sentence built only from that question's `trace`.
+ * No show review, no jam note, and no night's setlist.
  */
 
 export const PHISH_IQ_QUESTION_COUNT = 5;
 export const PHISH_IQ_TIME_ZONE = 'America/New_York';
+/** Catalog questions (debut, order, play count, longest-without). */
+export const PHISH_IQ_MIN_CATALOG_PLAYS = 3;
+/** "Which song has gone the longest without being played?" */
+export const PHISH_IQ_MIN_LONGEST_WITHOUT_PLAYS = 10;
+
+export const PHISH_IQ_PROMPTS = Object.freeze({
+  which_came_first: 'Which of these songs debuted first?',
+  longer_gap: 'Which of these songs has gone the longest without being played?',
+  play_count: 'Which of these songs has Phish played the most times?',
+  opener: 'Which of these songs has opened the most shows at MSG?',
+  announced_count: 'How many upcoming shows has Phish announced at the Garden?',
+});
 
 const TYPE_ORDER = Object.freeze([
   'debut_year',
@@ -152,7 +168,7 @@ function parseCount(raw) {
  * @param {unknown[]} list
  */
 function normalizeSongs(list) {
-  /** @type {{ name: string, total: number | null, gap: number | null, debutYear: number | null }[]} */
+  /** @type {{ name: string, total: number | null, gap: number | null, debut: unknown, debutYear: number | null }[]} */
   const named = [];
   for (const raw of Array.isArray(list) ? list : []) {
     if (!raw || typeof raw !== 'object') continue;
@@ -163,6 +179,7 @@ function normalizeSongs(list) {
       name,
       total: parseCount(record.total),
       gap: parseCount(record.gap),
+      debut: record.debut,
       debutYear: debutYearFromQuizCatalog(record.debut),
     });
   }
@@ -253,9 +270,77 @@ function shuffledChoices(rng, choices) {
  * @param {string} plural
  * @returns {string}
  */
+function formatCount(value) {
+  return Math.trunc(value).toLocaleString('en-US');
+}
+
 function counted(value, singular, plural) {
   const n = Math.trunc(value);
-  return `${n} ${n === 1 ? singular : plural}`;
+  return `${formatCount(n)} ${n === 1 ? singular : plural}`;
+}
+
+/**
+ * Same calendar day one year earlier. Feb 29 rolls back to Feb 28.
+ *
+ * @param {string} iso
+ * @returns {string}
+ */
+function isoDateYearsBefore(iso, years) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return '';
+  const year = Number(match[1]) - years;
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  if (utc.getUTCMonth() !== month - 1) {
+    return new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+  }
+  return utc.toISOString().slice(0, 10);
+}
+
+/**
+ * @param {unknown} debut
+ * @returns {string}
+ */
+function debutIsoDate(debut) {
+  if (typeof debut !== 'string') return '';
+  const match = debut.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : '';
+}
+
+/**
+ * True when the song debuted on or after the same calendar day one year
+ * before the quiz date, and not after that date. A year with no month counts
+ * only for the quiz year: an earlier year may be more than twelve months ago.
+ *
+ * @param {unknown} debut
+ * @param {string} quizDate
+ * @returns {boolean}
+ */
+export function debutedWithinLastYear(debut, quizDate) {
+  if (typeof quizDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(quizDate)) return false;
+  const iso = debutIsoDate(debut);
+  if (iso) {
+    if (iso > quizDate) return false;
+    return iso >= isoDateYearsBefore(quizDate, 1);
+  }
+  const year = debutYearFromQuizCatalog(debut);
+  if (year == null) return false;
+  return year === Number(quizDate.slice(0, 4));
+}
+
+/**
+ * Recent debuts skip the play cutoff. Everyone else needs `minPlays`.
+ *
+ * @param {{ total: number | null, debut?: unknown }} song
+ * @param {number} minPlays
+ * @param {string} quizDate
+ * @returns {boolean}
+ */
+export function clearsPlayCutoff(song, minPlays, quizDate) {
+  if (!song) return false;
+  if (debutedWithinLastYear(song.debut, quizDate)) return true;
+  return typeof song.total === 'number' && song.total >= minPlays;
 }
 
 /**
@@ -343,9 +428,14 @@ function openSongs(songs, blocked, predicate) {
  * @param {() => number} rng
  * @param {ReturnType<typeof normalizeSongs>} songs
  * @param {Set<string>} blocked
+ * @param {string} quizDate
  */
-function buildDebutYear(rng, songs, blocked) {
-  const pool = openSongs(songs, blocked, (song) => song.debutYear != null);
+function buildDebutYear(rng, songs, blocked, quizDate) {
+  const pool = openSongs(
+    songs,
+    blocked,
+    (song) => song.debutYear != null && clearsPlayCutoff(song, PHISH_IQ_MIN_CATALOG_PLAYS, quizDate),
+  );
   const years = [...new Set(pool.map((song) => song.debutYear))];
   if (years.length < 4) return null;
   const picked = drawMany(rng, pool, 1);
@@ -375,9 +465,14 @@ function buildDebutYear(rng, songs, blocked) {
  * @param {() => number} rng
  * @param {ReturnType<typeof normalizeSongs>} songs
  * @param {Set<string>} blocked
+ * @param {string} quizDate
  */
-function buildWhichCameFirst(rng, songs, blocked) {
-  const pool = openSongs(songs, blocked, (song) => song.debutYear != null);
+function buildWhichCameFirst(rng, songs, blocked, quizDate) {
+  const pool = openSongs(
+    songs,
+    blocked,
+    (song) => song.debutYear != null && clearsPlayCutoff(song, PHISH_IQ_MIN_CATALOG_PLAYS, quizDate),
+  );
   const picked = drawMany(rng, pool, 4);
   if (!picked) return null;
   const earliest = Math.min(...picked.map((song) => /** @type {number} */ (song.debutYear)));
@@ -388,7 +483,7 @@ function buildWhichCameFirst(rng, songs, blocked) {
   const answerId = `song:${winner.name}`;
   return makeQuestion({
     type: 'which_came_first',
-    prompt: 'Which of these songs debuted first?',
+    prompt: PHISH_IQ_PROMPTS.which_came_first,
     choices: shuffledChoices(
       rng,
       picked.map((song) => ({ id: `song:${song.name}`, label: song.name })),
@@ -403,11 +498,16 @@ function buildWhichCameFirst(rng, songs, blocked) {
  * @param {ReturnType<typeof normalizeSongs>} songs
  * @param {Set<string>} blocked
  * @param {'gap' | 'total'} field
+ * @param {string} quizDate
  */
-function buildExtreme(rng, songs, blocked, field) {
+function buildExtreme(rng, songs, blocked, field, quizDate) {
+  const minPlays = field === 'gap' ? PHISH_IQ_MIN_LONGEST_WITHOUT_PLAYS : PHISH_IQ_MIN_CATALOG_PLAYS;
   const pool = openSongs(songs, blocked, (song) => {
     const value = song[field];
-    return typeof value === 'number' && (field === 'gap' || value > 0);
+    if (typeof value !== 'number') return false;
+    if (field === 'total' && value < 1) return false;
+    if (field === 'gap' && value < 0) return false;
+    return clearsPlayCutoff(song, minPlays, quizDate);
   });
   const picked = drawMany(rng, pool, 4);
   if (!picked) return null;
@@ -420,9 +520,7 @@ function buildExtreme(rng, songs, blocked, field) {
   const gapQuestion = field === 'gap';
   return makeQuestion({
     type: gapQuestion ? 'longer_gap' : 'play_count',
-    prompt: gapQuestion
-      ? 'Which of these songs has Phish not played for the most shows?'
-      : 'Which of these songs has Phish played the most times?',
+    prompt: gapQuestion ? PHISH_IQ_PROMPTS.longer_gap : PHISH_IQ_PROMPTS.play_count,
     choices: shuffledChoices(
       rng,
       picked.map((song) => ({ id: `song:${song.name}`, label: song.name })),
@@ -445,7 +543,7 @@ function buildOpener(rng, openers) {
   const answerId = `song:${choices[0].title}`;
   return makeQuestion({
     type: 'opener',
-    prompt: 'Which of these songs has opened the most shows at MSG?',
+    prompt: PHISH_IQ_PROMPTS.opener,
     choices: shuffledChoices(
       rng,
       choices.map((row) => ({ id: `song:${row.title}`, label: row.title })),
@@ -481,7 +579,7 @@ function buildAnnouncedCount(rng, upcomingDates) {
   const answerId = `count:${count}`;
   return makeQuestion({
     type: 'announced_count',
-    prompt: 'How many upcoming shows has Phish announced at the Garden?',
+    prompt: PHISH_IQ_PROMPTS.announced_count,
     choices: shuffledChoices(rng, [
       { id: answerId, label: String(count) },
       ...picked.map((value) => ({ id: `count:${value}`, label: String(value) })),
@@ -517,10 +615,10 @@ export function buildDailyQuiz(input) {
    * @param {string} type
    */
   function buildOne(type) {
-    if (type === 'debut_year') return buildDebutYear(rng, songs, blocked);
-    if (type === 'which_came_first') return buildWhichCameFirst(rng, songs, blocked);
-    if (type === 'longer_gap') return buildExtreme(rng, songs, blocked, 'gap');
-    if (type === 'play_count') return buildExtreme(rng, songs, blocked, 'total');
+    if (type === 'debut_year') return buildDebutYear(rng, songs, blocked, date);
+    if (type === 'which_came_first') return buildWhichCameFirst(rng, songs, blocked, date);
+    if (type === 'longer_gap') return buildExtreme(rng, songs, blocked, 'gap', date);
+    if (type === 'play_count') return buildExtreme(rng, songs, blocked, 'total', date);
     if (type === 'opener') return buildOpener(rng, openers);
     if (type === 'announced_count') return buildAnnouncedCount(rng, upcomingDates);
     return null;
@@ -554,6 +652,26 @@ export function buildDailyQuiz(input) {
 }
 
 /**
+ * Every choice is a catalog song that clears `minPlays` (or a recent debut).
+ *
+ * @param {{ choices: { id: string }[] }} question
+ * @param {ReturnType<typeof normalizeSongs>} songs
+ * @param {number} minPlays
+ * @param {string} quizDate
+ * @returns {ReturnType<typeof normalizeSongs> | null}
+ */
+function eligibleChoiceSongs(question, songs, minPlays, quizDate) {
+  /** @type {ReturnType<typeof normalizeSongs>} */
+  const named = [];
+  for (const choice of question.choices) {
+    const song = songs.find((row) => `song:${row.name}` === choice.id);
+    if (!song || !clearsPlayCutoff(song, minPlays, quizDate)) return null;
+    named.push(song);
+  }
+  return named;
+}
+
+/**
  * @param {ReturnType<typeof buildDailyQuiz>} quiz
  * @param {{ songs?: unknown[], openers?: unknown[], upcomingDates?: unknown[] }} input
  */
@@ -562,6 +680,7 @@ export function quizAnswersTraceToSource(quiz, input) {
   const openers = normalizeOpeners(input?.openers);
   const upcomingCount = normalizeDates(input?.upcomingDates).length;
   if (!quiz || quiz.questions.length !== PHISH_IQ_QUESTION_COUNT) return false;
+  const quizDate = typeof quiz.date === 'string' ? quiz.date : '';
 
   return quiz.questions.every((question) => {
     const choiceIds = new Set(question.choices.map((choice) => choice.id));
@@ -570,23 +689,29 @@ export function quizAnswersTraceToSource(quiz, input) {
     if (question.fact !== factSentenceFromTrace(trace) || !question.fact) return false;
     if (trace.kind === 'catalog-debut' || trace.kind === 'catalog-debut-order') {
       const song = songs.find((row) => row.name === trace.song);
-      return Boolean(song && song.debutYear === trace.year);
+      if (!song || song.debutYear !== trace.year) return false;
+      if (!clearsPlayCutoff(song, PHISH_IQ_MIN_CATALOG_PLAYS, quizDate)) return false;
+      if (trace.kind === 'catalog-debut') return true;
+      return Boolean(eligibleChoiceSongs(question, songs, PHISH_IQ_MIN_CATALOG_PLAYS, quizDate));
     }
     if (trace.kind === 'catalog-gap') {
       const song = songs.find((row) => row.name === trace.song);
       if (!song || song.gap !== trace.gap) return false;
-      const named = question.choices
-        .map((choice) => songs.find((row) => `song:${row.name}` === choice.id))
-        .filter(Boolean);
+      const named = eligibleChoiceSongs(
+        question,
+        songs,
+        PHISH_IQ_MIN_LONGEST_WITHOUT_PLAYS,
+        quizDate,
+      );
+      if (!named) return false;
       const best = Math.max(...named.map((row) => /** @type {number} */ (row.gap)));
       return song.gap === best;
     }
     if (trace.kind === 'catalog-total') {
       const song = songs.find((row) => row.name === trace.song);
       if (!song || song.total !== trace.total) return false;
-      const named = question.choices
-        .map((choice) => songs.find((row) => `song:${row.name}` === choice.id))
-        .filter(Boolean);
+      const named = eligibleChoiceSongs(question, songs, PHISH_IQ_MIN_CATALOG_PLAYS, quizDate);
+      if (!named) return false;
       const best = Math.max(...named.map((row) => /** @type {number} */ (row.total)));
       return song.total === best;
     }
