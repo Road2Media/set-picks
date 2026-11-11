@@ -27,7 +27,11 @@ The current Content-Security-Policy is report-only and does not list `fundingcho
 
 ## What players can do today
 
-Account → Preferences includes **Ad preferences** (`/dashboard/profile/account#ad-preferences`). The same link is on the privacy and terms pages. The section is the reopen control. There is no partner window, because no partner script is loaded.
+Account → Preferences does not show **Ad preferences** while ads are off. The section mounts only when Remote Config `ads_enabled` is true. That is the switch a house promo needs before it can render. `programmatic_ads_enabled`, the CMP env, and the provider env do not open the section on their own, because a programmatic unit stays empty while `ads_enabled` is false. The in-app default is false, so the section is not on the page.
+
+Privacy and Terms do not link to it. The sentences to put back when ads go live are in `docs/ads/LAUNCH_COPY.md`.
+
+When the section is on the page, it is the reopen control at `/dashboard/profile/account#ad-preferences`. There is no partner window, because no partner script is loaded.
 
 - **Keep third-party ads off.** Default. Stored as `denied` once the player selects it. An advertising script cannot load.
 - **Allow third-party ads later.** Stored as `granted` on this browser. Nothing loads from that choice while the CMP config is off.
@@ -100,6 +104,6 @@ The live game uses Phish.net. Phish.net's terms allow advertising on a free site
 3. In Vercel, set `VITE_CMP_PROVIDER` to `google-funding-choices` and `VITE_CMP_SITE_ID` to that id for the environment you mean. Rebuild. Leave both unset until you want the script.
 4. Ship the `vercel.json` header change from `docs/ADS_CSP_SPIKE.md` in the same release, or the script is only a report-only finding until CSP is enforced, and it is blocked after that.
 5. Leave `public/ads.txt` without a seller line until the same account has a publisher id you are ready to authorize (#422).
-6. Confirm in a private window that the tag is absent while the variables are unset, and that Account → Preferences still shows Ad preferences.
+6. Confirm in a private window that the tag is absent while the variables are unset, and that Account → Preferences does not show Ad preferences while `ads_enabled` is false.
 
 Do not change Remote Config, Firestore, or GA4 as part of that setup. House promos keep the kill switch in the Remote Config runbook.

@@ -8,6 +8,11 @@ Public API is declared in [`docs/API.md`](docs/API.md).
 
 ---
 
+## [1.127.5] — 2026-11-11
+
+### Changed
+- **Ad preferences stay off until ads are on (#1294)** — Account → Preferences does not show Ad preferences while ads are off. The section appears when ads are enabled. Privacy and Terms use the same ad sentences as `main`. The sentences that name house promos, third-party ads being off, and ad preferences are saved in `docs/ads/LAUNCH_COPY.md` for when ads go live. `public/ads.txt` still authorizes no sellers.
+
 ## [1.127.4] — 2026-11-11
 
 ### Fixed

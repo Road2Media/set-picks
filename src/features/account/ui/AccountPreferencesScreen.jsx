@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-import { AdPreferencesSection } from '../../ads/consent';
+import { AdPreferencesSection, useAdPreferencesVisible } from '../../ads/consent';
 import { AD_PREFERENCES_HREF } from '../../ads/adPreferencesPath';
 import { useSignOut } from '../../auth';
 import { HideCrowdPulsePreference } from '../../crowd-picks/preference';
@@ -24,6 +24,7 @@ import DeleteAccountSection from './DeleteAccountSection';
  */
 export default function AccountPreferencesScreen({ user }) {
   const signOut = useSignOut();
+  const showAdPreferences = useAdPreferencesVisible();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const focusPush =
@@ -97,7 +98,7 @@ export default function AccountPreferencesScreen({ user }) {
         />
       </div>
 
-      <AdPreferencesSection />
+      {showAdPreferences ? <AdPreferencesSection /> : null}
 
       {installed ? (
         <p className="mt-8 rounded-2xl border border-border-muted/60 bg-surface-inset/40 px-4 py-3 text-xs font-bold leading-relaxed text-content-secondary">
@@ -123,13 +124,17 @@ export default function AccountPreferencesScreen({ user }) {
             >
               Terms
             </Link>
-            <span aria-hidden>&middot;</span>
-            <Link
-              to={AD_PREFERENCES_HREF}
-              className="underline decoration-border-muted/60 underline-offset-2 transition-colors hover:text-white"
-            >
-              Ad preferences
-            </Link>
+            {showAdPreferences ? (
+              <>
+                <span aria-hidden>&middot;</span>
+                <Link
+                  to={AD_PREFERENCES_HREF}
+                  className="underline decoration-border-muted/60 underline-offset-2 transition-colors hover:text-white"
+                >
+                  Ad preferences
+                </Link>
+              </>
+            ) : null}
             <span aria-hidden>&middot;</span>
             <a
               href={PUBLIC_SUPPORT_MAILTO}
