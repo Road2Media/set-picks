@@ -44,38 +44,57 @@ describe('ads consent contract', () => {
     expect(bootstrap).not.toContain('loadFirebaseRemoteConfig');
   });
 
-  it('links Ad preferences from account, the legal pages, and the legal door', () => {
+  it('hides Ad preferences on the legal pages until the launch copy is restored', () => {
     expect(account).toContain('AdPreferencesSection');
-    expect(account).toContain('AD_PREFERENCES_HREF');
-    expect(legalLayout).toContain('AD_PREFERENCES_HREF');
+    expect(account).toContain('useAdPreferencesVisible');
+    expect(account).toContain('showAdPreferences');
     expect(AD_PREFERENCES_HREF).toBe('/dashboard/profile/account#ad-preferences');
-    expect(legalBoot).toContain('AD_PREFERENCES_HREF');
-    expect(privacy).toContain(AD_PREFERENCES_HREF);
-    expect(privacy).toContain('**Last updated:** November 10, 2026');
-    expect(terms).toContain('**Last updated:** November 10, 2026');
-    expect(read('src/features/legal/ui/PrivacyPolicyContent.jsx')).toContain('November 10, 2026');
-    expect(read('src/features/legal/ui/TermsOfServiceContent.jsx')).toContain('November 10, 2026');
+    expect(legalLayout).not.toContain('AD_PREFERENCES_HREF');
+    expect(legalLayout).not.toContain('Ad preferences');
+    expect(legalBoot).not.toContain('AD_PREFERENCES_HREF');
+    expect(legalBoot).not.toContain('Ad preferences');
+    expect(privacy).not.toContain(AD_PREFERENCES_HREF);
+    expect(privacy).toContain('**Last updated:** November 9, 2026');
+    expect(terms).toContain('**Last updated:** September 22, 2026');
+    expect(read('src/features/legal/ui/PrivacyPolicyContent.jsx')).toContain('November 9, 2026');
+    expect(read('src/features/legal/ui/TermsOfServiceContent.jsx')).toContain('September 22, 2026');
+    expect(privacy).toContain(
+      'The public board for the January 2, 2027 show at Madison Square Garden',
+    );
 
     const privacyHtml = buildLegalBootDocumentHtml('/privacy', { rootDir: root });
     const termsHtml = buildLegalBootDocumentHtml('/terms', { rootDir: root });
-    expect(privacyHtml).toContain(`href="${AD_PREFERENCES_HREF}"`);
-    expect(privacyHtml).toContain('We do not load a third-party advertising script.');
-    expect(privacyHtml).not.toContain('we may collect or allow third-party ad networks');
-    expect(termsHtml).toContain('None are on the site today.');
-    expect(termsHtml).toContain(`href="${AD_PREFERENCES_HREF}"`);
+    expect(privacyHtml).not.toContain(`href="${AD_PREFERENCES_HREF}"`);
+    expect(privacyHtml).not.toContain('Ad preferences');
+    expect(privacyHtml).toContain('we may collect or allow third-party ad networks');
+    expect(termsHtml).not.toContain(`href="${AD_PREFERENCES_HREF}"`);
+    expect(termsHtml).not.toContain('Ad preferences');
+    expect(termsHtml).toContain(
+      'you agree to the display of such advertisements and promotional content',
+    );
+    expect(termsHtml).not.toContain('None are on the site today.');
+
+    const launch = read('docs/ads/LAUNCH_COPY.md');
+    expect(launch).toContain('We do not load a third-party advertising script.');
+    expect(launch).toContain('None are on the site today.');
+    expect(launch).toContain('House promos');
+    expect(launch).toContain(AD_PREFERENCES_HREF);
   });
 
-  it('does not claim a live ad network in the legal copy', () => {
-    expect(privacy).not.toMatch(/we may collect or allow third-party ad networks/i);
-    expect(privacy).not.toMatch(/Deliver, measure, and optimize third-party advertisements/);
-    expect(privacy).not.toMatch(/In the future, third-party advertising partners/);
-    expect(privacy).toMatch(/do not load a third-party advertising script/i);
-    expect(privacy).toMatch(/Advertising partners:\*\* None/);
+  it('keeps the ad sentences that are already on main', () => {
+    expect(privacy).toMatch(/Advertising Identifiers/);
+    expect(privacy).toMatch(/we may collect or allow third-party ad networks/);
+    expect(privacy).toMatch(/Deliver, measure, and optimize third-party advertisements/);
+    expect(privacy).toMatch(/Advertising Partners/);
+    expect(privacy).toMatch(/In the future, third-party advertising partners/);
     expect(privacy).toMatch(/IDFA/);
     expect(privacy).toMatch(/GAID/);
-    expect(privacy).toMatch(/are not collected/);
-    expect(terms).toMatch(/None are on the site today/);
-    expect(terms).not.toMatch(/you agree to the display of such advertisements and promotional content/);
+    expect(privacy).not.toMatch(/do not load a third-party advertising script/i);
+    expect(privacy).not.toMatch(/Advertising partners:\*\* None/);
+    expect(privacy).not.toMatch(/House promos/);
+    expect(terms).toMatch(/you agree to the display of such advertisements and promotional content/);
+    expect(terms).not.toMatch(/None are on the site today/);
+    expect(terms).not.toMatch(/house promo/i);
   });
 
   it('publishes ads.txt with no seller records and no app-ads.txt', () => {
