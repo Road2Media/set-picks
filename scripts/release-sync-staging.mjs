@@ -56,6 +56,21 @@ function run(cmd, args, opts = {}) {
 }
 
 run("git", ["config", "--unset-all", "http.https://github.com/.extraheader"], { allowFailure: true });
+
+// Squash releases do not share ancestry with staging, so GitHub's pull request
+// diff counts every change since the last shared commit (hundreds of files).
+// If main's tree already equals staging's tree there is nothing to sync, so do
+// not open a pull request that would only show that inflated diff.
+const stagingFetch = run("git", ["fetch", remote, "staging"], { allowFailure: true });
+if (stagingFetch.status === 0) {
+  const mainTree = run("git", ["rev-parse", "HEAD^{tree}"]).stdout.trim();
+  const stagingTree = run("git", ["rev-parse", "FETCH_HEAD^{tree}"]).stdout.trim();
+  if (mainTree && mainTree === stagingTree) {
+    console.log("release-sync: staging already has the same files as main. No sync pull request needed.");
+    process.exit(0);
+  }
+}
+
 run("git", ["push", remote, `HEAD:refs/heads/${branch}`]);
 
 const [owner] = repo.split("/");
@@ -90,6 +105,14 @@ const created = spawnSync(
     branch,
     "--title",
     `chore: sync Release v${version} back to staging`,
+    // Labels the checks need on the first run (verify reads them from the
+    // opening event, so adding them later needs a close and reopen).
+    "--label",
+    "needs-human",
+    "--label",
+    "allow-global",
+    "--label",
+    "skip-version-bump",
     "--body",
     [
       `Syncs \`main\` after Release v${version} back onto \`staging\`.`,

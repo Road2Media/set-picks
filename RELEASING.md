@@ -105,7 +105,7 @@ This is the same Actions secret name foco-pets and road2media use. This pull req
 `release-publish` uses it only when it is set:
 
 - Tag push and `gh release create` use `SYNC_BOT_TOKEN` instead of the default workflow token. A release created by the workflow token does not start other workflows, so `close-shipped-issues` would not run.
-- `scripts/release-sync-staging.mjs` pushes `release-sync/vX.Y.Z` and opens the staging sync pull request with that token. Checkout stays on the job token with `persist-credentials: false`, so git does not send a second `Authorization` header.
+- `scripts/release-sync-staging.mjs` pushes `release-sync/vX.Y.Z` and opens the staging sync pull request with that token. Checkout stays on the job token with `persist-credentials: false`, so git does not send a second `Authorization` header. The script skips the pull request when main's files already match staging (squash releases share no history with staging, so GitHub would show a huge diff). When it does open one, it adds `needs-human`, `allow-global`, and `skip-version-bump` so `scope-guard` and `verify` pass on the first run.
 
 When the secret is unset, the publish step warns and uses the workflow token. The sync step skips. Add the secret, then re-run **release-publish** only if that version is not already published. If the tag was already created by the workflow token, dispatch **Close shipped issues** for that tag instead of moving the tag.
 
