@@ -74,7 +74,7 @@ describe('editorial viewport tokens (#968)', () => {
 
   it('does not regress splash hero 100svh (#837)', () => {
     const hero = readSrc('src/features/landing/ui/SplashHeroSection.jsx');
-    expect(hero).toContain('min-h-[100svh]');
+    expect(hero).toContain('min-h-svh');
     expect(hero).not.toMatch(/PageStage|100dvh/);
   });
 });

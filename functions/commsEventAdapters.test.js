@@ -1010,6 +1010,69 @@ test("tour_recap fan-out carries the edition campaignId (#1035)", async () => {
   assert.deepEqual(calls, [{ triggerId: "tour_recap", campaignId: "2026-summer" }]);
 });
 
+test("hundredth show_recap does not send again once the process is sent (#1147)", async () => {
+  const prev = process.env.COMMS_EVENT_ADAPTERS_ENABLED;
+  process.env.COMMS_EVENT_ADAPTERS_ENABLED = "true";
+  /** @type {Map<string, object>} */
+  const ledger = new Map([
+    ["show_recap:2027-01-02", { status: "sent", triggerId: "show_recap", scope: "2027-01-02" }],
+  ]);
+  let deliverCalls = 0;
+  const db = {
+    collection(name) {
+      if (name === "comms_process_state") {
+        return {
+          doc(id) {
+            return {
+              async get() {
+                const data = ledger.get(id);
+                return { exists: Boolean(data), data: () => data || null };
+              },
+              async set() {
+                throw new Error("second hundredth recap must not write");
+              },
+            };
+          },
+        };
+      }
+      throw new Error(`unexpected read ${name}`);
+    },
+  };
+  const picksSnap = {
+    empty: false,
+    docs: [
+      {
+        id: "2027-01-02_u1",
+        data: () => ({
+          userId: "u1",
+          email: "fan@example.com",
+          handle: "Fan",
+          picks: { s1o: "Tweezer" },
+        }),
+      },
+    ],
+  };
+  const admin = { firestore: { FieldValue: { serverTimestamp: () => "TS" } } };
+  try {
+    const skipped = await deliverPostRollupComms({
+      db,
+      admin,
+      showDate: "2027-01-02",
+      picksSnap,
+      newScoresById: new Map([["2027-01-02_u1", 40]]),
+      tourKey: null,
+      showDatesByTour: [],
+      logger: { info() {}, warn() {} },
+    });
+    assert.equal(skipped.recapSummary.skipped, "process_terminal");
+    assert.equal(deliverCalls, 0);
+    assert.equal(JSON.stringify(skipped).includes("fan@example.com"), false);
+  } finally {
+    if (prev === undefined) delete process.env.COMMS_EVENT_ADAPTERS_ENABLED;
+    else process.env.COMMS_EVENT_ADAPTERS_ENABLED = prev;
+  }
+});
+
 test("re-rollup of an archive show does not start show_recap (#1035)", async () => {
   const prev = process.env.COMMS_EVENT_ADAPTERS_ENABLED;
   process.env.COMMS_EVENT_ADAPTERS_ENABLED = "true";

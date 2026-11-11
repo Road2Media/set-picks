@@ -100,7 +100,7 @@ export default function TourWrapBlock({ wrap }) {
         <button
           type="button"
           onClick={onShare}
-          className="inline-flex w-fit items-center justify-center rounded-xl border px-3 py-1.5 text-sm font-bold transition-colors hover:bg-teal-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+          className="inline-flex w-fit items-center justify-center rounded-xl border px-3 py-1.5 text-sm font-bold transition-colors hover:bg-teal-400/10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-teal-300"
           style={{
             borderColor: TOUR_WRAP_COLORS.accent,
             color: TOUR_WRAP_COLORS.accent,

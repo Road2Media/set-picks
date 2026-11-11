@@ -29,13 +29,14 @@ export function useNotificationPrefs() {
   }, [uid]);
 
   const setField = useCallback(
-    async (key, value) => {
+    async (channel, family, value) => {
       if (!uid) return;
       if (typeof value !== 'boolean') return;
+      if (channel !== 'push' && channel !== 'inApp' && channel !== 'email') return;
       setIsSaving(true);
       setError('');
       try {
-        await mergeNotificationPrefs(uid, { [key]: value });
+        await mergeNotificationPrefs(uid, { [channel]: { [family]: value } });
       } catch (e) {
         console.error(e);
         setError('Could not save preference. Try again.');

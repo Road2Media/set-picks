@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** September 22, 2026
+**Last updated:** November 9, 2026
 
 Setlist Pick 'Em ("the App") is operated by Road2 Media, LLC ("we," "us," or "our"). This policy explains what information we collect, why we collect it, and how you can manage it.
 
@@ -11,6 +11,8 @@ When you create an account we store the email address you sign up with (or that 
 
 ### Gameplay data
 We store the pick selections you make for each show, your pool memberships, and the scores calculated from official setlists. This data powers leaderboards, standings, and your public profile.
+
+The public board for the January 2, 2027 show at Madison Square Garden lists display handles, rank, points, and exact slots. It does not list email addresses, account ids, or other account fields.
 
 ### Device and usage data
 - **Analytics:** We use Google Analytics 4 to understand how people use the App (page views, feature engagement, general demographics). GA4 may set cookies on your browser. You can opt out via your browser settings or a GA opt-out extension.

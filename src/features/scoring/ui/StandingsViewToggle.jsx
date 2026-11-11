@@ -14,8 +14,8 @@ const OPTIONS = [
  * Primary IA toggle for Standings (#255 / #769 / #1110) — Show / Tour / Year / Pools.
  *
  * One {@link ChromeSegmentedControl} tray on mobile and desktop (#765).
- * Parents own placement: {@link StandingsMobileFixedChrome} (mobile portal) vs
- * {@link StandingsStickyChrome} (desktop sticky-stack portal). Stats stays on the
+ * {@link StandingsChrome} is the single mount: mobile tools band below `desk`,
+ * desktop sticky tray on `desk`, one tablist in the DOM. Stats stays on the
  * Stats primary (#769) — do not put it back on this tray.
  *
  * State + navigation lives in {@link useStandingsView} /

@@ -16,6 +16,53 @@ service cloud.firestore {
     }
 
     /**
+     * Phase 1 bandId (#605). Tolerant until the backfill in
+     * `scripts/migrate-phish-to-bandid.mjs` is verified AND production
+     * clients are writing the field.
+     *
+     * `bandIdRequired()` stays false in this release. Missing bandId still
+     * reads and still writes, so documents that predate the field and cached
+     * clients that omit it keep working. A present value must be `phish`
+     * (the only registered band). Two different non-empty values cannot
+     * replace each other.
+     *
+     * Follow-up, after the backfill counts check out: set `bandIdRequired()`
+     * to true. That rejects a missing bandId on create and update (including
+     * a full setDoc that would clear it). Update the rules tests that expect
+     * a missing bandId to succeed. Do not flip this in the same deploy as
+     * the first client that writes the field.
+     *
+     * `live_setlist_automation` and `rollup_audit` stay client-write denied.
+     * Admin SDK writes bypass rules; those writers stamp bandId in code.
+     */
+    function bandIdRequired() {
+      return false;
+    }
+
+    function bandIdIsPhishOrAbsent(value) {
+      return value == '' || value == 'phish';
+    }
+
+    function bandIdOnCreateOk() {
+      let next = request.resource.data.get('bandId', '');
+      return bandIdRequired()
+        ? next == 'phish'
+        : bandIdIsPhishOrAbsent(next);
+    }
+
+    function bandIdOnUpdateOk() {
+      let next = request.resource.data.get('bandId', '');
+      let prior = resource.data.get('bandId', '');
+      return bandIdRequired()
+        ? (next == 'phish' && (prior == '' || prior == 'phish'))
+        : (
+          bandIdIsPhishOrAbsent(next)
+          && bandIdIsPhishOrAbsent(prior)
+          && (prior == '' || next == '' || prior == next)
+        );
+    }
+
+    /**
      * Badge awards and accepted-invite counts are server-owned (#1115).
      * Admin SDK bypasses these rules. Client creates must omit the fields.
      * Client updates must leave them unchanged, including admin-claim clients.
@@ -61,10 +108,16 @@ service cloud.firestore {
 
     function isPoolSelfJoin() {
       return isPoolMembersSelfJoin()
+        && bandIdOnUpdateOk()
         && (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'bandId'])
           || (
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberJoinedAt'])
+            && isPoolSelfJoinMembershipTimestamp()
+          )
+          || (
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberJoinedAt', 'bandId'])
             && isPoolSelfJoinMembershipTimestamp()
           )
         );
@@ -73,10 +126,11 @@ service cloud.firestore {
     match /pools/{poolId} {
       allow read: if signedIn();
       allow create: if signedIn()
+        && bandIdOnCreateOk()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.members is list
         && request.auth.uid in request.resource.data.members;
-      allow update: if signedIn() && resource.data.ownerId == request.auth.uid
+      allow update: if signedIn() && resource.data.ownerId == request.auth.uid && bandIdOnUpdateOk()
         || isPoolSelfJoin();
       allow delete: if signedIn() && resource.data.ownerId == request.auth.uid;
     }
@@ -147,8 +201,10 @@ service cloud.firestore {
     match /picks/{pickId} {
       allow read: if signedIn();
       allow create: if signedIn()
+        && bandIdOnCreateOk()
         && request.resource.data.userId == request.auth.uid;
       allow update: if signedIn()
+        && bandIdOnUpdateOk()
         && (
           (
             resource.data.userId == request.auth.uid
@@ -168,7 +224,9 @@ service cloud.firestore {
      */
     match /official_setlists/{showDate} {
       allow read: if signedIn();
-      allow write: if isAdmin();
+      allow create: if isAdmin() && bandIdOnCreateOk();
+      allow update: if isAdmin() && bandIdOnUpdateOk();
+      allow delete: if isAdmin();
     }
 
     /**
@@ -249,11 +307,32 @@ service cloud.firestore {
     }
 
     /**
+     * Public show notes (#684). Written by Cloud Functions from
+     * `comms_show_context`. Show-level facts only: opener, encore, bustout
+     * or tour debut. Never a full setlist and never a player result.
+     * Clients may read; no client writes. The source collection stays closed.
+     */
+    match /public_show_notes/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    /**
      * Aggregate-only MSG Garden stats for /tour-stats/msg (#1139).
      * Written by Cloud Functions Admin SDK. Never full setlists.
      * Clients may read; no client writes.
      */
     match /public_venue_stats/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    /**
+     * Handles-only board for one show (#1147). Written by Cloud Functions
+     * after rollup of 2027-01-02, or by the dry-run script for a past date.
+     * Rows are rank, handle, points, and exact slots. No client writes.
+     */
+    match /public_night_boards/{showDate} {
       allow read: if true;
       allow write: if false;
     }

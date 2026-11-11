@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { PHISH_NET_FOOTER_ATTRIBUTION } from '../../../shared/config/phishLiveSource';
+import { MARKETING_PAGE_GUTTER_X } from '../../../shared/ui/marketingEditorialChrome';
 import useSplashDocumentScrollPadding from '../model/useSplashDocumentScrollPadding';
 import { MarketingFooterNav } from './MarketingSiteNav';
 import SplashAboutSection from './SplashAboutSection';
@@ -33,7 +35,7 @@ export default function SplashPageShell({
       />
 
       <div className="relative flex min-h-screen w-full flex-col bg-transparent text-white">
-        <main className="relative w-full flex-1 overflow-x-hidden">
+        <main className="relative w-full overflow-x-hidden">
           <SplashHeroSection
             onPlayNowClick={onOpenSignUp}
             onAuthCtaIntent={onAuthCtaIntent}
@@ -47,33 +49,27 @@ export default function SplashPageShell({
           <SplashAboutSection
             sectionRef={aboutSectionRef}
             headingRef={aboutHeadingRef}
-            onGetStartedClick={onOpenSignUp}
-            onAuthCtaIntent={onAuthCtaIntent}
           />
         </main>
 
-        {/* Primary site links above the legal footer rule (#948). */}
-        <div className="relative z-10 px-4 pb-4 pt-6 sm:px-6 lg:px-8">
+        <footer className={`relative z-10 border-t border-slate-800/60 bg-transparent py-4 text-center text-xs font-medium leading-relaxed text-slate-500 sm:py-5 ${MARKETING_PAGE_GUTTER_X}`}>
           <MarketingFooterNav variant="primary" />
-        </div>
-
-        <footer className="relative z-10 border-t border-slate-800/60 bg-transparent px-4 py-6 text-center text-xs font-medium leading-relaxed text-slate-500 sm:px-6 lg:px-8">
-          <p>
+          <p className="mt-3">
             &copy; {new Date().getFullYear()} Road2 Media, LLC. All rights reserved.
           </p>
           <p className="mt-1">
             Song and setlist data provided by{' '}
             <a
-              href="https://phish.net"
+              href={PHISH_NET_FOOTER_ATTRIBUTION.href}
               target="_blank"
               rel="noopener noreferrer"
               className="text-slate-400 underline decoration-slate-600 underline-offset-2 transition-colors hover:text-slate-200 hover:decoration-slate-400"
             >
-              The Mockingbird Foundation / Phish.Net
+              {PHISH_NET_FOOTER_ATTRIBUTION.text}
             </a>
             .
           </p>
-          <MarketingFooterNav variant="legal" className="mt-3" />
+          <MarketingFooterNav variant="legal" className="mt-2" />
         </footer>
 
         {children}

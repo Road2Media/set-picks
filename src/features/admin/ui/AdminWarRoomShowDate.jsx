@@ -34,7 +34,7 @@ export default function AdminWarRoomShowDate({
         : 'fallback 7:30 PM (ticket time unknown)';
 
   return (
-    <div className="rounded-xl border border-border-subtle bg-[rgb(var(--surface-field)_/_0.35)] px-4 py-3 ring-1 ring-border-glass/20">
+    <div className="rounded-xl border border-border-subtle/50 bg-[rgb(var(--surface-field)/0.35)] px-4 py-3 ring-1 ring-border-glass/20">
       <div className="flex items-start gap-2">
         <CalendarRange className="mt-0.5 h-4 w-4 shrink-0 text-content-secondary" aria-hidden />
         <div className="min-w-0 flex-1 space-y-1">
@@ -54,7 +54,7 @@ export default function AdminWarRoomShowDate({
             value={value}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
-            className="mt-2 w-full max-w-[14rem] rounded-xl border-2 border-border-subtle bg-surface-field px-3 py-2 text-sm font-bold text-content-primary outline-none focus:border-brand-primary disabled:opacity-50"
+            className="mt-2 w-full max-w-56 rounded-xl border-2 border-border-subtle/50 bg-surface-field px-3 py-2 text-sm font-bold text-content-primary outline-hidden focus:border-brand-primary disabled:opacity-50"
           />
           <p className="text-[11px] font-bold leading-relaxed text-content-secondary">
             Picks lock: <span className="text-content-primary">{lockTimeLabel}</span>{' '}

@@ -29,7 +29,7 @@ describe('OfficialPickSlotsGrid', () => {
         },
       }),
     );
-    expect(html).toContain('break-words');
+    expect(html).toContain('wrap-break-word');
     expect(html).not.toContain('truncate');
   });
 

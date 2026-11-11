@@ -1,5 +1,6 @@
 import { doc, updateDoc } from 'firebase/firestore';
 
+import { stampBandId } from '../../../shared/config/bandScope.js';
 import { db } from '../../../shared/lib/firebase';
 import { ymdInTimeZone } from '../../../shared/utils/dateUtils';
 
@@ -118,7 +119,10 @@ export async function updatePoolNameApi(poolId, newName) {
   if (trimmed.length > POOL_NAME_MAX_LENGTH) {
     throw new Error(`Pool name must be at most ${POOL_NAME_MAX_LENGTH} characters.`);
   }
-  await updateDoc(doc(db, 'pools', poolId.trim()), { name: trimmed });
+  await updateDoc(
+    doc(db, 'pools', poolId.trim()),
+    stampBandId({ name: trimmed }),
+  );
 }
 
 /**
@@ -130,5 +134,5 @@ export async function updatePoolStatusApi(poolId, status) {
   if (status !== 'active' && status !== 'archived') {
     throw new Error('Invalid pool status.');
   }
-  await updateDoc(doc(db, 'pools', poolId.trim()), { status });
+  await updateDoc(doc(db, 'pools', poolId.trim()), stampBandId({ status }));
 }

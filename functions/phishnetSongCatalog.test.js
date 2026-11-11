@@ -5,6 +5,8 @@ const {
   isPhishNetPayloadOk,
   catalogArchiveObjectPath,
   CATALOG_ARCHIVE_PREFIX,
+  CATALOG_STORAGE_PATH,
+  CATALOG_BAND_ALIAS_PATH,
 } = require("./phishnetSongCatalog.js");
 
 test("isPhishNetPayloadOk accepts error:false", () => {
@@ -98,3 +100,10 @@ test(
     assert.equal(outPartial.last, "—");
   }
 );
+
+test("song catalog alias is a second object and does not replace the live path", () => {
+  assert.equal(CATALOG_STORAGE_PATH, "song-catalog.json");
+  assert.equal(CATALOG_BAND_ALIAS_PATH, "song-catalog/phish.json");
+  assert.notEqual(CATALOG_BAND_ALIAS_PATH, CATALOG_STORAGE_PATH);
+  assert.equal(CATALOG_BAND_ALIAS_PATH.startsWith(CATALOG_ARCHIVE_PREFIX), false);
+});

@@ -42,13 +42,15 @@ Deep link — 2026 Summer Tour setlist statistics: https://www.setlistpickem.com
 
 Phish at Madison Square Garden: the songs they play most, what opens the night, the debuts, the long waits between visits, and New Year's Eve. Phish has played Madison Square Garden 96 times over an incredible 32 years, from December 30, 1994 through July 29, 2026. July 29, 2026 was the band’s 96th performance at MSG, capping a 5-show run that transported us back to the 90’s, complete with cut-off tees and vacuum antics. This New Year’s run, Phish returns to the Garden for 4 nights, ending with their 100th performance at the venue on January 2, 2027. https://www.setlistpickem.com/phish-at-msg
 
-2026 annual roll-up: every 2026 Phish tour on one page (shows, unique songs, most-played songs, bustouts). A show counts for the calendar year of its date. December 30 and December 31, 2026 count for 2026. January 1 and January 2, 2027 count for 2027. Show counts and song-row totals add the tour pages. A song on two tours counts once. Not a setlist archive. https://www.setlistpickem.com/tour-stats/2026
+2026 Phish tours on one page: shows, different songs, most-played songs, and bustouts. Songs played more than once in a show are counted toward total times played, per phish.net. Our stats count the nights a song was performed separately from the total times it was played. https://www.setlistpickem.com/tour-stats/2026
 
 New Year's Run 2026-2027 at Madison Square Garden: December 30, December 31, January 1, and January 2. January 2, 2027 is the 100th performance at the Garden. The page lists those four shows and links to phish.com. It does not list a night's setlist. Create a NYE pool from that page. https://www.setlistpickem.com/tour-stats/2026-2027-nye-run
 
+Pick the 100th: the public board for January 2, 2027 at Madison Square Garden. Handles, rank, points, and exact slots. No email addresses. https://www.setlistpickem.com/phish-at-msg/100th
+
 Rewind results: how many players locked a past show and how many hit each slot. No setlist. https://www.setlistpickem.com/rewind
 
-Phish IQ: five Phish questions a day. The share card shows a score, not the answers. No setlist. https://www.setlistpickem.com/phish-iq
+Phish IQ: a free daily Phish quiz. Five questions, a new quiz every day, no sign-in. Share your score. The answers stay off the card. Data courtesy of Phish.net. https://www.setlistpickem.com/phish-iq
 
 Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.com/tour-stats
 
@@ -62,6 +64,7 @@ Hub (Tour Insights / Phish tour setlist statistics): https://www.setlistpickem.c
 - 2026 Sphere tour statistics: https://www.setlistpickem.com/tour-stats/2026-sphere
 - 2026 Summer Tour setlist statistics: https://www.setlistpickem.com/tour-stats/2026-summer-tour
 - Phish at MSG: https://www.setlistpickem.com/phish-at-msg
+- Pick the 100th at MSG: https://www.setlistpickem.com/phish-at-msg/100th
 - 2026 Phish tour statistics: https://www.setlistpickem.com/tour-stats/2026
 - New Year's Run 2026-2027 at MSG: https://www.setlistpickem.com/tour-stats/2026-2027-nye-run
 - Rewind results: https://www.setlistpickem.com/rewind

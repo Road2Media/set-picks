@@ -145,7 +145,7 @@ export function usePoolAdminControls(poolId, user, pool, { navigate, onReloadPoo
       return {
         title: 'Archive this pool?',
         message:
-          'Archived pools disappear from your pool list and new players cannot join. Historical pick data stays in Firestore.',
+          'Archived pools disappear from your pool list and new players cannot join. Past picks stay on the record.',
         confirmLabel: 'Archive pool',
         confirmVariant: 'danger',
         onConfirm: handleConfirmArchive,

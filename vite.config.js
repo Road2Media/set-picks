@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -166,6 +166,69 @@ function loginFormShellHtmlPlugin() {
   };
 }
 
+/**
+ * Vite 8 does not treat in-repo `.cjs` as a JS module (`knownJsSrcRE` skips
+ * `.cjs`). The dev server then serves `functions/pointsTieRanking.cjs?import`
+ * as a raw script, and the browser rejects
+ * `export { COMPARATORS } from '…cjs'` — the dashboard white-screens.
+ * The production build still converts that file. The same gap applies to
+ * `functions/hundredthShowBoard.cjs` (#1147). This serve-only load hook
+ * wraps those sources as ESM named exports so dev matches the build.
+ */
+function pointsTieRankingDevEsmPlugin() {
+  /** @type {Record<string, string[]>} */
+  const files = {
+    '/functions/pointsTieRanking.cjs': [
+      'RANK_POLICIES',
+      'LIVE_RANK_POLICY',
+      'SURFACES',
+      'COMPARATORS',
+      'comparatorsForSurface',
+      'rankScoredRows',
+      'readPoints',
+      'readHandle',
+    ],
+    '/functions/hundredthShowBoard.cjs': [
+      'HUNDREDTH_SHOW_DATE',
+      'HUNDREDTH_SHOW_PATH',
+      'HUNDREDTH_SHOW_VENUE',
+      'HUNDREDTH_SHOW_CITY',
+      'PUBLIC_NIGHT_BOARDS',
+      'DRY_RUN_SAMPLE_ROWS',
+      'HUNDREDTH_EMPTY_BOARD_COPY',
+      'HUNDREDTH_DRY_RUN_COPY',
+      'resolveHundredthShowDate',
+      'isHundredthShowDate',
+      'hundredthShowCardMark',
+      'projectPublicNightBoard',
+      'projectPublicNightRow',
+    ],
+  };
+  return {
+    name: 'points-tie-ranking-dev-esm',
+    apply: 'serve',
+    enforce: 'pre',
+    load(id) {
+      const clean = id.split('?')[0].replace(/\\/g, '/');
+      const match = Object.keys(files).find((suffix) => clean.endsWith(suffix));
+      if (!match) return null;
+      const source = readFileSync(clean, 'utf8');
+      const names = files[match].join(',\n  ');
+      return {
+        code: `const module = { exports: {} };
+const exports = module.exports;
+${source}
+export {
+  ${names}
+};
+export default module.exports;
+`,
+        map: null,
+      };
+    },
+  };
+}
+
 function appDocumentDevMiddleware() {
   return {
     name: 'app-document-dev-middleware',
@@ -236,7 +299,12 @@ function manualChunks(id) {
 
 export default defineConfig({
   base: '/',
-  plugins: [react(), loginFormShellHtmlPlugin(), appDocumentDevMiddleware()],
+  plugins: [
+    pointsTieRankingDevEsmPlugin(),
+    react(),
+    loginFormShellHtmlPlugin(),
+    appDocumentDevMiddleware(),
+  ],
   test: {
     environment: 'node',
     include: ['src/**/*.test.js', 'api/**/*.test.js', 'comms/**/*.test.js'],

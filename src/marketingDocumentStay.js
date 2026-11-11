@@ -10,6 +10,7 @@
 export function shouldStayOnMarketingDocument(pathname) {
   if (typeof pathname !== 'string' || !pathname) return false;
   if (pathname === '/tour-stats' || pathname.startsWith('/tour-stats/')) return true;
+  if (pathname === '/tour-notes' || pathname.startsWith('/tour-notes/')) return true;
   if (pathname === '/phish-at-msg' || pathname.startsWith('/phish-at-msg/')) return true;
   if (pathname === '/phish-iq' || pathname.startsWith('/phish-iq/')) return true;
   if (pathname === '/rewind' || pathname.startsWith('/rewind/')) return true;

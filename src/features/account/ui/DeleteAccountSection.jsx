@@ -29,7 +29,7 @@ export default function DeleteAccountSection() {
             setExpanded(true);
             clearError();
           }}
-          className="text-xs font-medium text-content-secondary/80 underline decoration-border-muted underline-offset-4 transition-colors hover:text-red-300"
+          className="text-xs font-medium text-content-secondary/80 underline decoration-border-muted/60 underline-offset-4 transition-colors hover:text-red-300"
         >
           Delete account…
         </button>
@@ -55,7 +55,7 @@ export default function DeleteAccountSection() {
             <label className="flex cursor-pointer items-start gap-3 text-sm leading-snug text-content-secondary">
               <input
                 type="checkbox"
-                className="mt-1 h-4 w-4 shrink-0 rounded border-red-500/50 bg-surface-field text-red-500 focus-visible:ring-2 focus-visible:ring-red-400"
+                className="mt-1 h-4 w-4 shrink-0 rounded-sm border-red-500/50 bg-surface-field text-red-500 focus-visible:ring-2 focus-visible:ring-red-400"
                 checked={ack}
                 onChange={(e) => {
                   setAck(e.target.checked);
@@ -86,7 +86,7 @@ export default function DeleteAccountSection() {
                   setPhrase(e.target.value);
                   clearError();
                 }}
-                className="mt-2 w-full rounded-xl border-2 border-border-subtle bg-surface-field px-4 py-3 text-sm text-white placeholder:text-content-secondary/60 focus:border-red-400/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400/40"
+                className="mt-2 w-full rounded-xl border-2 border-border-subtle/50 bg-surface-field px-4 py-3 text-sm text-white placeholder:text-content-secondary/60 focus:border-red-400/60 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-red-400/40"
                 placeholder={DELETE_ACCOUNT_CONFIRMATION_PHRASE}
                 disabled={isDeleting}
               />
@@ -103,7 +103,7 @@ export default function DeleteAccountSection() {
                 type="button"
                 variant="glass"
                 size="sm"
-                className="w-full border-border-subtle sm:w-auto"
+                className="w-full border-border-subtle/50 sm:w-auto"
                 disabled={isDeleting}
                 onClick={() => {
                   setExpanded(false);

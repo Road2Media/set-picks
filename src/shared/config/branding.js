@@ -19,7 +19,7 @@ export const BRAND_HERO_WORDMARK_SRC = BRAND_GRADIENT_WORDMARK_SRC;
  * #837: laptop/desktop uses a shorter frame + tighter max-width so header→copy isn’t crushed.
  */
 export const brandHeroWordmarkAspectFrameClassNames =
-  'mx-auto block aspect-[16/5] w-[100vw] max-w-none overflow-hidden sm:aspect-[6/1] sm:w-full sm:max-w-[min(90vw,40rem)] md:max-w-[min(88vw,46rem)] lg:aspect-[5/1] lg:max-w-[min(86vw,54rem)] xl:max-w-[min(84vw,62rem)]';
+  'mx-auto block aspect-16/5 w-screen max-w-none overflow-hidden sm:aspect-6/1 sm:w-full sm:max-w-[min(90vw,40rem)] md:max-w-[min(88vw,46rem)] lg:aspect-5/1 lg:max-w-[min(86vw,54rem)] xl:max-w-[min(84vw,62rem)]';
 
 /**
  * Hero `<img>` classes (legacy). Prefer {@link brandHeroWordmarkSvgClassNames} + inline SVG —
@@ -37,11 +37,11 @@ export const brandHeroWordmarkSvgClassNames =
   'block h-full w-full min-h-0';
 
 /**
- * Mobile “1.2×” via **layout width** (`120vw` + `-ml-[10vw]`) so the graphic scales as vector paint,
+ * Mobile “1.2×” via **layout width** (`120vw` + `ml-[-10vw]`) so the graphic scales as vector paint,
  * not `transform: scale()` (compositor can soften on iOS). `sm:` restores contained width.
  */
 export const brandHeroWordmarkScaleWrapperClassNames =
-  'block w-full overflow-visible max-sm:w-[120vw] max-sm:max-w-none max-sm:-ml-[10vw] motion-reduce:max-sm:w-full motion-reduce:max-sm:ml-0 sm:ml-0 sm:w-full';
+  'block w-full overflow-visible max-sm:w-[120vw] max-sm:max-w-none max-sm:ml-[-10vw] motion-reduce:max-sm:w-full motion-reduce:max-sm:ml-0 sm:ml-0 sm:w-full';
 
 /**
  * Per-surface img `className` tokens. Contexts differ in bar height and horizontal budget,
@@ -53,19 +53,19 @@ export const brandWordmarkImgClassNames = {
    */
   /** Heights absorb former wrapper scale (1.28 / 1.18) so we avoid transform blur on device. */
   splashHeader:
-    'block h-[5.05rem] w-auto max-w-[calc(100vw_-_8.5rem)] object-contain object-left sm:h-[4.55rem] sm:max-w-[min(54vw,360px)]',
+    'block h-[5.05rem] w-auto max-w-[calc(100vw-8.5rem)] object-contain object-left sm:h-[4.55rem] sm:max-w-[min(54vw,360px)]',
   /**
    * Desktop sidebar: width-led (`w-full h-auto`) so the ~2.5:1 crop uses the full column; fixed
    * height + object-contain was capping width and made the lockup tiny vs nav labels.
    */
   dashboardSidebar:
-    'block h-auto w-full max-w-full object-contain object-center md:max-h-[15.75rem]',
+    'block h-auto w-full max-w-full object-contain object-center md:max-h-63',
   /**
    * Post-login mobile bar: compact height like pre–`scale()` chrome; lockup sized with `h-*` only
    * (no wrapper transform — avoids iOS raster blur).
    */
   dashboardMobileBar:
-    'block h-[3.95rem] w-auto max-w-[calc(100vw_-_7rem)] object-contain object-left sm:h-[4.05rem] sm:max-w-[min(68vw,380px)]',
+    'block h-[3.95rem] w-auto max-w-[calc(100vw-7rem)] object-contain object-left sm:h-[4.05rem] sm:max-w-[min(68vw,380px)]',
 };
 
 /** Post-auth app chrome uses the square vinyl mark (left in app, centered in sidebar). */
@@ -76,10 +76,10 @@ export const brandAppChromeMarkImgClassNames = {
 
 /** Inline SVG chrome: same box as {@link brandWordmarkImgClassNames} minus `object-*` (img-only). */
 export const brandWordmarkChromeSplashHeaderClassNames =
-  'block h-[5.05rem] w-auto max-w-[calc(100vw_-_8.5rem)] sm:h-[4.55rem] sm:max-w-[min(54vw,360px)]';
+  'block h-[5.05rem] w-auto max-w-[calc(100vw-8.5rem)] sm:h-[4.55rem] sm:max-w-[min(54vw,360px)]';
 
 export const brandWordmarkChromeDashboardMobileBarClassNames =
-  'block h-[3.95rem] w-auto max-w-[calc(100vw_-_7rem)] sm:h-[4.05rem] sm:max-w-[min(68vw,380px)]';
+  'block h-[3.95rem] w-auto max-w-[calc(100vw-7rem)] sm:h-[4.05rem] sm:max-w-[min(68vw,380px)]';
 
 /**
  * No `scale()` — img `h-*` carries size (sharper on WebKit).
@@ -124,7 +124,7 @@ export const brandWordmarkBarRowDashboardExtrasClassNames =
  * (Former ad-hoc `max-sm:-translate-x-*` lives here when we reintroduce it.)
  */
 export const brandWordmarkSplashHeaderLeadingClassNames =
-  'inline-flex min-w-0 items-center justify-start justify-self-start overflow-visible pl-0 pr-1 text-left outline-none transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm sm:shrink-0 sm:justify-self-auto sm:pr-2';
+  'inline-flex min-w-0 items-center justify-start justify-self-start overflow-visible pl-0 pr-1 text-left outline-hidden transition-opacity hover:opacity-80 focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xs sm:shrink-0 sm:justify-self-auto sm:pr-2';
 
 /** Leading cell: dashboard mobile H1 + link — micro nudge for vinyl square vs safe area (#174). */
 export const brandWordmarkDashboardMobileLeadingClassNames =

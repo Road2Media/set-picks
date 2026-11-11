@@ -9,7 +9,7 @@ The typography utilizes a two-font system: **Space Grotesk** for high-impact, st
 **Key Characteristics:**
 - **Neon Teal** (`#2dd4bf`) as the primary interactive accent, often paired with a custom neon drop-shadow glow (`shadow-glow-brand`).
 - **Two-font system**: `Space Grotesk` (Display) and `Inter` (Sans/Body).
-- **Glass Surfaces**: Cards and inputs use translucent backgrounds (`bg-surface-panel`) with subtle inset borders.
+- **Glass Surfaces**: Cards and inputs use translucent backgrounds (`bg-surface-panel/50`) with subtle inset borders.
 - **Differentiated Buttons**: Primary action buttons use rounded rectangles, while secondary filters use full pill shapes.
 - **Gradients**: The main brand wordmark utilizes a red-to-blue gradient (`#ef4444` to `#3b82f6`). The **in-app and splash chrome wordmark** is delivered as an **SVG image** (not the `text-display-brand-bar` utility alone). See **§7 Brand wordmark & asset storage** for paths and sizing.
 
@@ -36,8 +36,9 @@ Implemented as CSS variables in `src/index.css` and mapped in `tailwind.config.j
 - **Panel Strong (`surface-panel-strong`)**: Elevated rows, modals, gradient starts (~`rgb(42 52 78 / 0.72)` effective).
 - **Inset (`surface-inset`)**: Nested wells inside panels.
 - **Field (`surface-field`)**: Form inputs and song slots (`#0f172a` channel).
+- **Sponsored (`surface-sponsored`, `border-sponsored`, `content-sponsored`)**: Filled house-promo cards only (#121). A muted violet wash and edge so the unit does not blend into quiet standings chrome. Not a CTA color and not rank gold. The empty proportion shell stays on the quiet panel.
 
-**Hero dashboard cards** (e.g. Pool Hub “Game status”, Picks form): use `Card` **`variant="venue"`** — `border-brand-primary/30`, gradient `from-surface-panel-strong to-brand-bg-deep`, `shadow-glow-brand` + inset glass (see [`Card.jsx`](../src/shared/ui/Card.jsx)).
+**Hero dashboard cards** (e.g. Pool Hub “Game status”, Picks form): use `Card` **`variant="venue"`** — `border-brand-primary/30`, gradient `from-surface-panel-strong/72 to-brand-bg-deep`, `shadow-glow-brand` + inset glass (see [`Card.jsx`](../src/shared/ui/Card.jsx)).
 
 ### Content (secondary copy)
 
@@ -61,7 +62,7 @@ As each **menu tab** (Standings, Picks, Pools, Profile, etc.) gains more **card 
 | Tier | Role | Examples (non-exhaustive) | Guardrails |
 |------|------|---------------------------|------------|
 | **Primary** | Money path, scores, main CTA | `brand-primary`, `shadow-glow-brand` | One dominant teal action per dense viewport when possible. |
-| **Secondary** | Labels, helpers, inactive meta | `text-content-secondary`, `border-border-subtle` | Default for uppercase eyebrows and hint copy. |
+| **Secondary** | Labels, helpers, inactive meta | `text-content-secondary`, `border-border-subtle/50` | Default for uppercase eyebrows and hint copy. |
 | **Tertiary** | **Card identity / wayfinding** — “this slice is different from its neighbor” without competing with CTAs | Muted violet/slate/blue **borders or text** at low saturation; optional **named** ring (e.g. recap card) | Must not read as “click me” like primary teal; avoid amber/gold except true 1st-place badges. |
 | **Quaternary+** | Rare emphasis inside a tertiary card (badges, inline status) | Chip fills, icon tint | Prefer **semantic names** in code (`status-live`, `recap-border`) even if mapped to Tailwind for now; **promote to `index.css` + `tailwind.config.js`** once the same pairing appears in **two or more** tabs or features. |
 
@@ -105,8 +106,8 @@ As each **menu tab** (Standings, Picks, Pools, Profile, etc.) gains more **card 
 ### Filters & Chips
 - **Role:** Toggling data, switching views (e.g., the "Compare" pool filters like "Everyone").
 - **Shape:** Full Pill (`rounded-full`).
-- **Style (Inactive):** `bg-surface-panel` with no border or a transparent border.
-- **Style (Active):** Slightly lighter indigo fill (`bg-surface-panel-strong`) with a visible indigo/slate border (`border-border-subtle`). Do not use teal here to avoid competing with CTAs.
+- **Style (Inactive):** `bg-surface-panel/50` with no border or a transparent border.
+- **Style (Active):** Slightly lighter indigo fill (`bg-surface-panel-strong/72`) with a visible indigo/slate border (`border-border-subtle/50`). Do not use teal here to avoid competing with CTAs.
 
 ### Navigation Tabs (Segmented Controls)
 - **Role:** Switching major container views (e.g., "Join Pool" vs "Create Pool").
@@ -114,7 +115,7 @@ As each **menu tab** (Standings, Picks, Pools, Profile, etc.) gains more **card 
 
 ### Form Inputs & Pick Slots
 - **Shape:** `rounded-lg` or `rounded-xl`.
-- **Inactive:** `bg-surface-field` with `border border-border-subtle` (keep it dark and muted).
+- **Inactive:** `bg-surface-field` with `border border-border-subtle/50` (keep it dark and muted).
 - **Focus/Active:** Change border or ring to `brand-primary` (`ring-brand` or `border-brand-primary`) to guide the user's eye. Do not use random blue/indigo borders.
 
 ### Cards (three tiers — `Card` variants)
@@ -122,10 +123,10 @@ As each **menu tab** (Standings, Picks, Pools, Profile, etc.) gains more **card 
 | Tier | `Card` variant | Use when |
 |------|----------------|----------|
 | **Quiet** | `default`, `solid`, `panel` | Dense lists, nested shells, subtle chrome — muted border, no teal edge. |
-| **Middle (frosted)** | `frosted` | Dashboard list cards (e.g. pool rows): **`border-brand-primary/30`**, `bg-surface-panel`, **`backdrop-blur-md` / `backdrop-blur-xl`**, `shadow-inset-glass` — glassmorphism without hero glow. |
+| **Middle (frosted)** | `frosted` | Detail cards that are not one person or one pool: **`border-brand-primary/30`**, `bg-surface-panel/50`, **`backdrop-blur-md` / `backdrop-blur-xl`**, `shadow-inset-glass` — glassmorphism without hero glow. A pool in a list is a **row**, not this tier. |
 | **Hero** | `venue` | Primary task blocks (Picks form, Pool Hub game status): teal border + **gradient** into `brand-bg-deep` + **`shadow-glow-brand`**. |
 
-Legacy copy for quiet cards: **Background** `bg-surface-panel`, **Border** `border-border-subtle`, **Radius** `rounded-xl` / `rounded-2xl`, **Depth** `shadow-inset-glass`.
+Legacy copy for quiet cards: **Background** `bg-surface-panel/50`, **Border** `border-border-subtle/50`, **Radius** `rounded-xl` / `rounded-2xl`, **Depth** `shadow-inset-glass`.
 
 ### Standings column and free-standing Picks notices (#1088)
 
@@ -135,9 +136,10 @@ These are one family. The box is the sponsor card (`DashboardJobShell`): `rounde
 |-----|------|-------|-------|
 | **You** | `bg-amber-200/[0.06]` | `text-amber-200/90` | Your rank, scorecard |
 | **The night** | `bg-brand-primary/[0.06]` | `text-brand-primary` | Tonight's show, winner, official setlist, crowd pulse, Picks Lab |
-| **Quiet** | none | `text-content-secondary/70` when a label exists | Sponsor, invite, empty states, waiting, too early, picks lock reminder, picks locked, the stats tip |
+| **Sponsored** | `bg-surface-sponsored/55` plus `border-border-sponsored/80` | `text-content-sponsored` | Filled house promo (`SponsorSlot` when a creative is present). Logo tile is 56px (`h-14`) |
+| **Quiet** | none | `text-content-secondary/70` when a label exists | Invite, empty states, waiting, too early, picks lock reminder, picks locked, the stats tip, the empty sponsor proportion shell |
 
-Scores stay teal on every card. The Invite button stays teal; the invite box does not. The dev gallery at `/card-shell-preview` is the visual spec (production redirects home). The picks form and the one-line lock note inside it stay the heavier hero and do not use this shell. Tonight's show on Standings uses the night shell.
+Scores stay teal on every card. The Invite button stays teal; the invite box does not. A filled house promo uses the sponsored wash so it does not read as another quiet card. The dev gallery at `/card-shell-preview` is the visual spec (production redirects home). The picks form and the one-line lock note inside it stay the heavier hero and do not use this shell. Tonight's show on Standings uses the night shell.
 
 ### Stat tiles (#1089)
 
@@ -149,7 +151,31 @@ The Phase 1 washes stay on cards. `bg-amber-200/[0.06]` (you) and `bg-brand-prim
 
 Personal stats expandable sections use the Phase 1 card (`DashboardJobShell` tone `none`): the same box, no label color, and no job wash.
 
-Use a card when the module is free-standing on Standings or Picks. Use a tile when the metric is one cell in a stat grid. Use a panel for a settings or profile block.
+Use a card when the module is free-standing on Standings or Picks. Use a tile when the metric is one cell in a stat grid. Use a panel for a settings or profile block. Use a row for one person or one pool in a list.
+
+### Settings panels and list rows (#1090)
+
+These are not Standings cards. They do not use the you / the night / quiet washes (`bg-amber-200/[0.06]`, `bg-brand-primary/[0.06]`), the teal hero edge, or the stat-tile header band.
+
+| Job | Shell | Box |
+|-----|--------|-----|
+| **Panel** | `Panel` in [`Card.jsx`](../src/shared/ui/Card.jsx) | `rounded-3xl`, `border-border-subtle/50`, `bg-surface-panel/50`, `shadow-inset-glass`, `p-6` |
+| **Row** | `Row` in the same file | `rounded-xl`, `border-border-subtle/45`, `bg-surface-panel/50`, `shadow-inset-glass`, the same padding as a dashboard card (`px-3.5 py-3.5`, `md:px-4 md:py-4`) |
+
+**Panel** is a settings or profile block: account security, profile edit, profile stats, badge shelf, top picks, public profile, notification prefs, inbox, the install card, admin forms, and pool join / create.
+
+**Row** is one person or one pool in a list: pool rows, show leaderboard rows, global ranking rows, tour ranking rows, pool hub leaderboard rows, and invite chooser options.
+
+A self row (`tone="self"`) and a leading show row (`tone="leader"`) are border modifiers on that same shell. A first-place mark stays on the rank chip. Neither modifier is a new shell, and neither picks up the amber or teal wash.
+
+Decision tree for a new box:
+
+1. Free-standing module on Standings or Picks → card (`DashboardJobShell`).
+2. One cell in a stat grid → tile (`DashboardTileShell`).
+3. Settings or profile block → panel (`Panel`).
+4. One person or one pool in a list → row (`Row`).
+
+A new screen under `src/features` or `src/pages` does not paste its own `rounded-*` border. `scripts/verify-dashboard-ui-tokens.mjs` fails when a hand-built card border shows up outside these shells. Buttons, inputs, chips, and the existing grandfathered boxes stay as they are. The `/card-shell-preview` gallery remains the Phase 1 card spec.
 
 ## 5. Depth & Elevation (Glows over Shadows)
 
@@ -204,14 +230,16 @@ Do **not** hardcode `/branding/…` paths in components; import from **`shared/c
 - **Brand wordmark (img):** import `BRAND_WORDMARK_SRC`, `brandWordmarkImgClassNames`, and the matching scale wrapper from `src/shared/config/branding.js` — do not duplicate `/branding/…` paths in feature or layout files.
 - **Background:** `bg-brand-bg`
 - **Tertiary slice (conceptual):** differentiate stacked cards with border/ring + `text-content-secondary` eyebrows first; add a dedicated token only after the pattern repeats (see **§2 Tertiary+ accents**).
-- **Standard Card:** `bg-surface-panel border border-border-subtle rounded-xl`
-- **Frosted list card:** `Card` `variant="frosted"` — teal border + blur + inset glass. Not a stat tile.
+- **Standard Card:** `bg-surface-panel/50 border border-border-subtle/50 rounded-xl`
+- **Frosted detail card:** `Card` `variant="frosted"` — teal border + blur + inset glass. Not a stat tile and not a list row.
 - **Stat tile:** `DashboardTileShell` — quiet sponsor box plus a header band (teal, amber, blue, or emerald). No Phase 1 wash. No per-stat border on the outer box. A grid metric is a tile; a free-standing Standings or Picks module is a card.
+- **Settings panel:** `Panel` — `rounded-3xl`, `border-border-subtle/50`, `bg-surface-panel/50`, inset glass, `p-6`. No Phase 1 wash.
+- **List row:** `Row` — `rounded-xl`, `border-border-subtle/45`, `bg-surface-panel/50`, inset glass, dashboard-card padding. Self and leader are border modifiers. First place stays on the rank chip. No Phase 1 wash.
 - **Primary Text:** `text-white font-sans`
 - **Page Heading:** `text-display-page font-display font-bold text-white`
 - **Primary Button (CTA):** `bg-brand-primary text-brand-bg-deep rounded-xl font-bold px-6 py-3 hover:bg-brand-primary-strong shadow-glow-brand`
-- **Filter Pill (Active):** `bg-surface-panel-strong border border-border-muted rounded-full px-4 py-1 text-sm`
+- **Filter Pill (Active):** `bg-surface-panel-strong/72 border border-border-muted/60 rounded-full px-4 py-1 text-sm`
 
 ### Example Component Prompts
-- *"Create a leaderboard row: Use `bg-surface-panel` with a `border-border-subtle` and `rounded-xl`. The user's rank should be in a small box. If the rank is 1, use the gold badge styling. The score text should be `text-brand-primary font-bold`."*
+- *"Create a leaderboard row: Use `Row` from `src/shared/ui/Card.jsx`. The player's rank should be in a small box. If the rank is 1, use the gold badge styling on that chip, not a new shell. A self row uses `tone="self"`. The score text should be `text-brand-primary font-bold`."*
 - *"Build a show card: `bg-brand-bg` container. Title should be `font-display text-display-md text-white`. Add a primary CTA rounded-rectangle button using `bg-brand-primary`."*

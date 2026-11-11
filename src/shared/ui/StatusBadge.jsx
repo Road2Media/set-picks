@@ -6,7 +6,7 @@ const variantStyles = {
   warning:
     'border border-amber-500/40 bg-amber-500/10 text-amber-400',
   neutral:
-    'border border-border-muted bg-surface-inset text-slate-400',
+    'border border-border-muted/60 bg-surface-inset/72 text-slate-400',
 };
 
 /**

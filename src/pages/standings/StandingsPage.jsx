@@ -1,53 +1,32 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
 
+import {
+  AdPlacement,
+  AD_SLOT_STANDINGS_INLINE,
+  ProgrammaticAdPlacement,
+  AD_SLOT_PROGRAMMATIC_STANDINGS,
+} from '../../features/ads';
 import { InviteChooserSheet } from '../../features/invite';
 import {
+  StandingsChrome,
   StandingsInvitePromo,
-  StandingsMobileFixedChrome,
   StandingsShowOrPoolView,
-  StandingsSponsorPreview,
-  StandingsStickyChrome,
   StandingsTourView,
   StandingsYearView,
   useStandingsScreen,
 } from '../../features/scoring';
-import {
-  useDashboardDesktopPageChromePortal,
-  useDashboardMobileChromePortal,
-} from '../../shared/hooks/useDashboardMobileChromePortal';
-import { SponsorSlot } from '../../shared/ui';
 
 export default function StandingsPage({ selectedDate, onSelectShowDate }) {
   const screen = useStandingsScreen(selectedDate, { onSelectShowDate });
   const invite = screen.inviteChooser;
-  const mobileChromeRoot = useDashboardMobileChromePortal();
-  const desktopChromeRoot = useDashboardDesktopPageChromePortal();
-
-  const mobileFixedChrome = (
-    <StandingsMobileFixedChrome
-      view={screen.view}
-      onChange={screen.setView}
-      onOpenScoringRules={screen.openScoringRules}
-    />
-  );
 
   return (
     <div className="w-full">
-      {mobileChromeRoot
-        ? createPortal(mobileFixedChrome, mobileChromeRoot)
-        : null}
-
-      {desktopChromeRoot
-        ? createPortal(
-            <StandingsStickyChrome
-              view={screen.view}
-              onChange={screen.setView}
-              onOpenScoringRules={screen.openScoringRules}
-            />,
-            desktopChromeRoot,
-          )
-        : null}
+      <StandingsChrome
+        view={screen.view}
+        onChange={screen.setView}
+        onOpenScoringRules={screen.openScoringRules}
+      />
 
       <InviteChooserSheet
         open={invite.open}
@@ -72,12 +51,13 @@ export default function StandingsPage({ selectedDate, onSelectShowDate }) {
         />
 
         {/*
-          Ads epic #419 Phase 1 seam — no-op unless VITE_ENABLE_SPONSOR_SLOTS.
-          Filled house-promo mock for local layout QA (#609); #121 replaces this.
+          Existing Standings seam (#609). Filled only when Remote Config
+          returns a creative (#121). Empty in production until ads_enabled.
+          The programmatic slot under it stays null unless env, Remote Config,
+          and consent all allow EthicalAds (#422). House creative wins.
         */}
-        <SponsorSlot slotId="dashboard-standings-top" className="mb-3">
-          <StandingsSponsorPreview onCtaClick={invite.openChooser} />
-        </SponsorSlot>
+        <AdPlacement slotId={AD_SLOT_STANDINGS_INLINE} className="mb-3" />
+        <ProgrammaticAdPlacement slotId={AD_SLOT_PROGRAMMATIC_STANDINGS} className="mb-3" />
 
         {screen.view === 'tour' ? (
           <StandingsTourView

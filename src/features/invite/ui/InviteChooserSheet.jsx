@@ -4,6 +4,7 @@ import { ChevronLeft, Share2, Users, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import Button from '../../../shared/ui/Button';
+import { Row } from '../../../shared/ui/Card';
 import FilterPill from '../../../shared/ui/FilterPill';
 
 /**
@@ -51,12 +52,12 @@ export default function InviteChooserSheet({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-100 flex items-end justify-center p-0 sm:items-center sm:p-4"
       role="presentation"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-xs"
         aria-label="Close invite options"
         onClick={onClose}
       />
@@ -64,14 +65,14 @@ export default function InviteChooserSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="invite-chooser-heading"
-        className="relative z-10 flex max-h-[min(90vh,calc(100dvh-env(safe-area-inset-bottom,0px)))] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border-subtle bg-surface-panel-strong shadow-inset-glass ring-1 ring-white/10 sm:max-h-[90vh] sm:rounded-2xl"
+        className="relative z-10 flex max-h-[min(90vh,calc(100dvh-env(safe-area-inset-bottom,0px)))] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-border-subtle/50 bg-surface-panel-strong/72 shadow-inset-glass ring-1 ring-white/10 sm:max-h-[90vh] sm:rounded-2xl"
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border-muted bg-surface-panel-strong px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border-muted/60 bg-surface-panel-strong/72 px-3 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
           {isPoolStep ? (
             <button
               type="button"
               onClick={onBackToChoose}
-              className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-panel hover:text-white"
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-panel/50 hover:text-white"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden />
               Back
@@ -82,7 +83,7 @@ export default function InviteChooserSheet({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center justify-center rounded-lg p-2 text-slate-300 transition-colors hover:bg-surface-panel hover:text-white"
+            className="inline-flex items-center justify-center rounded-lg p-2 text-slate-300 transition-colors hover:bg-surface-panel/50 hover:text-white"
             aria-label="Close"
           >
             <X className="h-5 w-5" aria-hidden />
@@ -104,11 +105,12 @@ export default function InviteChooserSheet({
 
           {isChooseStep ? (
             <div className="mt-6 flex flex-col gap-3">
-              <button
+              <Row
+                as="button"
                 type="button"
                 onClick={onShareSiteInvite}
                 disabled={!hasHandle || sharing}
-                className="flex w-full items-start gap-3 rounded-2xl border border-border-subtle bg-surface-panel/80 p-4 text-left transition-colors hover:border-brand-primary/40 hover:bg-surface-panel disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-start gap-3 text-left transition-colors hover:border-brand-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/15 text-brand-primary">
                   <Share2 className="h-5 w-5" aria-hidden />
@@ -123,13 +125,14 @@ export default function InviteChooserSheet({
                       : 'Set your handle on Profile before sharing a site invite.'}
                   </span>
                 </span>
-              </button>
+              </Row>
 
-              <button
+              <Row
+                as="button"
                 type="button"
                 onClick={onGoToPoolStep}
                 disabled={sharing}
-                className="flex w-full items-start gap-3 rounded-2xl border border-border-subtle bg-surface-panel/80 p-4 text-left transition-colors hover:border-brand-primary/40 hover:bg-surface-panel disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-start gap-3 text-left transition-colors hover:border-brand-primary/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <span className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/15 text-brand-primary">
                   <Users className="h-5 w-5" aria-hidden />
@@ -144,14 +147,14 @@ export default function InviteChooserSheet({
                       : 'Select one of your pools and send an invite link from your handle.'}
                   </span>
                 </span>
-              </button>
+              </Row>
             </div>
           ) : null}
 
           {isPoolStep ? (
             <div className="mt-6">
               {!hasPools ? (
-                <div className="rounded-2xl border border-border-subtle bg-surface-panel/60 p-4 text-center">
+                <div className="rounded-2xl border border-border-subtle/50 bg-surface-panel/60 p-4 text-center">
                   <p className="mb-3 text-sm font-bold text-content-secondary">
                     You aren&apos;t in any pools yet.
                   </p>

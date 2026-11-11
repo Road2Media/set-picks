@@ -45,7 +45,7 @@ export default function LoginApp() {
     <>
       <AppBackground />
       <LoginFocusPark />
-      <div className="relative z-[1] min-h-screen">
+      <div className="relative z-1 min-h-screen">
         <Suspense fallback={<LoginFormShellFallback />}>
           <Routes>
             <Route path="/login" element={<LoginPage />} />

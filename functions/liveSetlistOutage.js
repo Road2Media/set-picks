@@ -23,7 +23,7 @@ const OPS_FROM = "Setlist Pick'em <updates@setlistpickem.com>";
 /** Approved player copy. Keep in sync with `src/features/scoring/model/liveSetlistServiceStatus.js`. */
 const PLAYER_STATUS_MESSAGES = {
   phishnet_stalled:
-    "Live setlist updates are delayed. Our Phish.net connection is temporarily stalled, so songs and scores may update more slowly than normal.",
+    "Live setlist updates are running late, so songs and scores may come in more slowly than usual.",
 };
 
 /**

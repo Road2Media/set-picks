@@ -32,7 +32,10 @@ export const NAV_LABEL_SCORECARD = 'Scorecard';
 /** Picks-cluster tertiary: Rewind (`/dashboard/rewind`). Hidden unless the build flag is on (#1142). */
 export const NAV_LABEL_REWIND = 'Rewind';
 
-/** Picks-cluster tertiary: Phish IQ (`/dashboard/phish-iq`). Daily quiz (#1143). */
+/**
+ * Phish IQ (`/dashboard/phish-iq`). Daily quiz (#1143).
+ * Nested under the Picks primary. Not a tertiary segment (#1258).
+ */
 export const NAV_LABEL_PHISH_IQ = 'Phish IQ';
 
 /** Pools list tab + context + desktop H1 (`/dashboard/pools`) */
@@ -64,7 +67,8 @@ export const NAV_LABEL_ACCOUNT = 'Account';
 
 /**
  * Preferences tertiary (`/dashboard/profile/account`) — security, logout, legal,
- * install/PWA, and notification prefs. Path stays `PROFILE_CLUSTER_PATHS.account`.
+ * install/PWA, notification prefs, and Hide crowd pulse. Path stays
+ * `PROFILE_CLUSTER_PATHS.account`.
  */
 export const NAV_LABEL_PREFERENCES = 'Preferences';
 
@@ -126,26 +130,22 @@ export const SHOW_STANDINGS_PHRASE = 'Show standings';
 /** Desktop H1 for `/dashboard/standings` matches {@link NAV_LABEL_STANDINGS} (nav + context bar). */
 export const SHOW_STANDINGS_EYEBROW = SHOW_STANDINGS_PHRASE;
 
-/**
- * One-night board (#1218 / #1219). Nightly wins are not a step here.
- * Tour and year boards use {@link TOUR_STANDINGS_DESCRIPTION}.
- */
-export const SHOW_STANDINGS_DESCRIPTION =
-  'One night. When points match, more exact slots rank higher, then more correct picks. A handle only keeps the order. A single show skips nightly wins.';
+/** One-night board. Scope only. Ranking rules live on how scoring works. */
+export const SHOW_STANDINGS_DESCRIPTION = 'Points from this show.';
 
 /**
  * Rules modal, `/how-scoring-works`, and the `/how-scoring-changed` crawler
  * paragraph. Ranking is live now. The scoring ladder on that page stays dated.
  */
 export const RANK_TIE_EXPLANATION =
-  'When points match, the board does not share a rank. More exact slots rank higher, then more correct picks. On a tour or the year, nightly wins come next. A handle only keeps the order. A single show skips nightly wins.';
+  'When two players finish with the same points, the higher place goes to more exact slots, then more correct picks. On a tour or the year, more nightly wins come next. If those are still tied, handle order keeps the list steady. A single show does not use nightly wins.';
 
 /**
- * Winner banner when more than one player hit the top score. The nightly win
- * is still shared. The board rank is the cascade.
+ * Winner banner when more than one player hit the top score. They share the
+ * nightly win. The list still has an order.
  */
 export const TOP_SCORE_SHARED_WIN_NOTE =
-  'Same top score, so each of them gets a nightly win. The board does not share a rank: more exact slots, then more correct picks, then handle.';
+  'Same top score, so each of them gets a nightly win. The list still orders them by exact slots, then correct picks.';
 
 /**
  * Cumulative "across every finalized show" leaderboard heading. Canonical
@@ -153,20 +153,19 @@ export const TOP_SCORE_SHARED_WIN_NOTE =
  */
 export const ALL_TIME_STANDINGS_HEADING = 'All-time standings';
 export const ALL_TIME_STANDINGS_DESCRIPTION =
-  'Running totals across every graded show — points, wins, and shows played (not just tonight).';
+  'Running totals across every scored show: points, wins, and shows played (not just tonight).';
 
 /** Pool-scoped alias of {@link ALL_TIME_STANDINGS_HEADING} for pool details. */
 export const POOL_ALL_TIME_STANDINGS_HEADING = ALL_TIME_STANDINGS_HEADING;
 export const POOL_ALL_TIME_STANDINGS_DESCRIPTION =
-  'Running totals in this pool — points, wins, and shows played across every graded show.';
+  'Running totals in this pool: points, wins, and shows played across every scored show.';
 
 /**
  * Tour-scoped cumulative leaderboard heading. Scope comes from
  * `show_calendar.showDatesByTour` at runtime. See #148 / #219.
  */
+/** Tour board heading. The section has no description. */
 export const TOUR_STANDINGS_HEADING = 'Tour standings';
-export const TOUR_STANDINGS_DESCRIPTION =
-  'Running totals for this tour across every graded show. When points match, more exact slots rank higher, then more correct picks, then more nightly wins. A handle only keeps the order when those are still tied.';
 
 /**
  * Calendar-year leaderboard on Standings (#1110). Scope is the calendar year
@@ -174,8 +173,7 @@ export const TOUR_STANDINGS_DESCRIPTION =
  * Global only — a pool-scoped year view is later.
  */
 export const YEAR_STANDINGS_HEADING = 'Year standings';
-export const YEAR_STANDINGS_DESCRIPTION =
-  'Running totals for this calendar year across every graded show. When points match, more exact slots rank higher, then more correct picks, then more nightly wins. A handle only keeps the order when those are still tied.';
+export const YEAR_STANDINGS_DESCRIPTION = 'Running totals for this calendar year.';
 
 /**
  * Year-end celebration on the annual board (#1112). The opening line matches
@@ -198,7 +196,7 @@ export function yearEndCelebrationHeadline(year) {
 /** Pool-scoped alias of {@link TOUR_STANDINGS_HEADING} for pool details. */
 export const POOL_TOUR_STANDINGS_HEADING = TOUR_STANDINGS_HEADING;
 export const POOL_TOUR_STANDINGS_DESCRIPTION =
-  'Running totals in this pool for the current tour — points, wins, and shows played across every graded show in this tour.';
+  'Running totals in this pool for the current tour: points, wins, and shows played.';
 
 /**
  * Legacy alias retained so existing call sites don't churn while we migrate
@@ -215,8 +213,8 @@ export const LEADING_THIS_SHOW = 'Leading this show';
 /**
  * Standings banner for everyone at the top score (#218). One player is
  * "Tonight's winner". More than one is "Tonight's top score": they share the
- * nightly win, and {@link TOP_SCORE_SHARED_WIN_NOTE} says the board does not
- * share a rank.
+ * nightly win, and {@link TOP_SCORE_SHARED_WIN_NOTE} says the list still has
+ * an order.
  */
 export const TONIGHTS_WINNER_SINGULAR = "Tonight's winner";
 export const TONIGHTS_TOP_SCORE = "Tonight's top score";
@@ -257,8 +255,7 @@ export const STANDINGS_PICK_PRIVACY_INFO_LABEL = 'About hidden picks';
 /**
  * Shared showtime-blur explanation for Standings leaderboard info tooltip.
  */
-export const SHOWTIME_SONG_BLUR_TOOLTIP =
-  'To improve competition, song names and data stay blurred until showtime.';
+export const SHOWTIME_SONG_BLUR_TOOLTIP = 'Song names stay hidden until showtime.';
 
 /** Standings leaderboard tooltip. */
 export const STANDINGS_PICK_PRIVACY_TOOLTIP = SHOWTIME_SONG_BLUR_TOOLTIP;
@@ -270,11 +267,11 @@ export const STANDINGS_SELF_RECAP_EYEBROW = 'Your rank';
 export const STANDINGS_SELF_RECAP_JUMP_LINK = 'Jump to your score card';
 
 /**
- * Shown under the recap when the official setlist exists but share is gated
- * until every non-empty pick for the show has been finalized (`isGraded`).
+ * Shown under the recap when the official setlist exists but share waits
+ * until every pick for the show has a score.
  */
 export const STANDINGS_SHARE_AFTER_FINALIZE_INLINE =
-  'Share unlocks after this show is fully finalized (every submitted pick graded).';
+  'You can share this once every pick for the show has a score.';
 
 /** Picks tab self-recap: link to global standings for the same show date. */
 export const PICKS_SELF_RECAP_STANDINGS_LINK = 'View standings';

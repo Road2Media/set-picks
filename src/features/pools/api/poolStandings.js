@@ -1,5 +1,7 @@
 import { doc, getDoc } from 'firebase/firestore';
 
+import { DEFAULT_BAND_ID } from '../../../shared/config/bands.js';
+import { docBelongsToBand } from '../../../shared/config/bandScope.js';
 import { db } from '../../../shared/lib/firebase';
 import { GAME_LAUNCH_SHOW_DATE } from '../../../shared/config/gameLaunch';
 import { pickCountsTowardSeason } from '../../../shared/utils/showAggregation';
@@ -132,6 +134,7 @@ export function aggregatePoolStandings(memberIds, picks, globalMaxByShow) {
  *   scope?: 'all-time' | 'tour',
  *   standingsScope?: string | null,
  *   memberJoinedAt?: Record<string, string> | null,
+ *   bandId?: string,
  * }} [options]
  * @returns {Promise<Map<string, PoolStandingsRow>>}
  */
@@ -146,6 +149,7 @@ export async function loadPoolStandings(
     scope = 'all-time',
     standingsScope = null,
     memberJoinedAt = null,
+    bandId = DEFAULT_BAND_ID,
   } = options;
 
   const pid = poolId?.trim();
@@ -211,6 +215,7 @@ export async function loadPoolStandings(
       const { showDate, userId } = slice[j];
       if (!snap.exists()) continue;
       const data = snap.data() || {};
+      if (!docBelongsToBand(data, bandId)) continue;
       if (
         !pickDataCountsForPool(data, pid, {
           standingsScope,

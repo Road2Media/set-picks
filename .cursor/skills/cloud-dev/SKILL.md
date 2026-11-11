@@ -1,12 +1,25 @@
 ---
 name: cloud-dev
-description: Starter skill for Cloud agents working on this codebase. Covers environment setup, dev server, auth, feature-flag-style config, the full CI verify matrix, Firestore rules tests, Cloud Functions tests, QA runners, and common testing workflows organized by codebase area. Use when starting any implementation task, debugging session, or when you need to know how to run, build, or test this project.
+description: Starter skill for Cloud agents working on this codebase. Covers environment setup, dev server, auth, feature-flag-style config, the full CI verify matrix, Firestore rules tests, Cloud Functions tests, QA runners, and common testing workflows organized by codebase area. Use when starting any implementation task, debugging session, or when you need to know how to run, build, or test this project. On an agent-queue ticket, open the intent router in leadership-crew before editing, including a player-facing UI copy sweep or a new marketing page.
 ---
 
 # Cloud Agent Dev & Test Skill
 
 Quick-reference for Cloud agents. Assumes a fresh VM with Node 20+ and
 npm available.
+
+## 0 — Skill from the ticket
+
+The factory matches a ticket to a skill `description`, then you open that
+file. `.cursor/skills/leadership-crew/SKILL.md` is the intent table. Two
+rows that otherwise get skipped:
+
+| Ticket | Open before editing |
+|--------|---------------------|
+| Player-facing UI copy sweep | `editor-in-chief` and `content/marketing/voice-guide.md`. Add `comms-drafter` when an inbox, push, or email sentence changes. Admin screens stay technical. Player copy says slot, never chair. |
+| New marketing or SEO page | `marketing-specialist`, then `editor-in-chief`. Draft in `content/marketing/`. Ship strings in landing UI and `seoRoutes.js`. Read the editorial viewport rule and `docs/SEO_GEO_PLAYBOOK.md`. |
+
+`npm run verify:marketing-voice` when the diff touches marketing prose.
 
 ## 1 — Bootstrap
 
@@ -83,9 +96,36 @@ Runtime behavior is controlled by **Vite env vars**:
 | `VITE_SONG_CATALOG_URL` | Override CDN URL for song catalog JSON |
 | `VITE_GA_MEASUREMENT_ID` | GA4 measurement ID; leave unset locally to avoid polluting analytics |
 | `VITE_FCM_VAPID_KEY` | FCM web-push VAPID key; optional for local dev |
+| `VITE_PROGRAMMATIC_ADS_PROVIDER` | Programmatic proof of concept. The only accepted value is `ethicalads`. Omit to load nothing (default). |
+| `VITE_ETHICALADS_PUBLISHER` | EthicalAds publisher slug. Omit to load nothing. A URL is rejected. Both this and `VITE_PROGRAMMATIC_ADS_PROVIDER` have to be valid, and consent plus Remote Config still have to allow the script. |
 
 To "toggle a feature," set or unset these in `.env` and restart the dev
 server.
+
+House promos are the exception. They come from Firebase Remote Config
+(`ads_enabled` and per-slot JSON), not from a Vite flag.
+`VITE_ENABLE_SPONSOR_SLOTS=true` only shows the empty proportion shell.
+Local dev sends custom signal `release_channel=development`, so a staging
+or production condition does not fill the unit on localhost. The in-app
+default stays off. Do not change Remote Config from a pull request.
+Operator steps: `docs/ADS_REMOTE_CONFIG_RUNBOOK.md`.
+
+Advertising consent is also off unless both `VITE_CMP_PROVIDER` and
+`VITE_CMP_SITE_ID` are set. The only provider value is
+`google-funding-choices`. Leave them unset. No consent script loads, and
+`useAdConsent()` keeps third-party ad scripts blocked. GA4, Auth, and
+Firestore are not gated by that choice. Operator steps:
+`docs/ADS_CONSENT_RUNBOOK.md`.
+
+Programmatic fill is also off unless both `VITE_PROGRAMMATIC_ADS_PROVIDER`
+and `VITE_ETHICALADS_PUBLISHER` are set, and consent plus Remote Config
+`ads_enabled` and `programmatic_ads_enabled` allow it. The only provider
+value is `ethicalads`. Leave them unset. No EthicalAds script loads.
+Decision: `docs/ADS_PROGRAMMATIC_DECISION.md`.
+
+(2026-11-10: house-promo channel signal and the 60 second fetch floor.
+2026-11-10: CMP env stays unset; Funding Choices does not load.
+2026-11-10: EthicalAds env stays unset; no programmatic script loads.)
 
 ## 3 — CI verify matrix (run before every push)
 
@@ -200,8 +240,9 @@ features.
 When adding or modifying `/dashboard/*` routes:
 
 1. Update `src/app/layout/model/dashboardPageMeta.js`.
-2. Update `isActive` logic in `src/app/layout/DashboardLayout.jsx` if
-   the new route is a child of an existing tab.
+2. Update `isDashboardNavItemActive` in `src/app/layout/model/dashboardNav.js`
+   if the new route is a child of an existing tab. Sidebar and bottom tabs
+   both use that helper (`DashboardNavItem`).
 3. Add a test case in `scripts/verify-dashboard-meta.mjs`.
 4. Run `npm run verify:dashboard-meta`.
 5. Consult `docs/DASHBOARD_IA.md` for canonical vocabulary.

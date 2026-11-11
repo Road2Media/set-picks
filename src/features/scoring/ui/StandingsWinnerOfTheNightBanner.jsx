@@ -146,7 +146,7 @@ export default function StandingsWinnerOfTheNightBanner({
               <PlayerHandleLink
                 userId={playerUserId}
                 handle={handle}
-                className="!text-white hover:!text-white"
+                className="text-white! hover:text-white!"
               />
             </Fragment>
           );

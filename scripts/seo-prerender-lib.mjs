@@ -180,13 +180,17 @@ function buildCrawlerBody(route, factsHtml = '', leadHtml = '') {
     .join('\n');
   const factsBlock = factsHtml ? `\n${factsHtml}` : '';
   const leadBlock = leadHtml ? `\n${leadHtml}\n` : '';
+  const extra =
+    typeof route.appendHtml === 'string' && route.appendHtml.trim()
+      ? `\n${route.appendHtml}`
+      : '';
   // Thin top progress bar + crawler main: content visible while JS loads.
   // createRoot replaces the whole #root once React mounts.
   return `${buildMarketingBootShellMarkup()}
 <!--seo-prerender:${escapeHtml(route.path)}-->
   <main data-seo-prerender="true">
     <h1>${escapeHtml(route.h1)}</h1>${leadBlock}
-${paras}${factsBlock}
+${paras}${factsBlock}${extra}
   </main>`;
 }
 
@@ -213,9 +217,13 @@ function injectRootBody(html, bodyInner) {
  */
 export function injectPrerenderHtml(shellHtml, route, enrichment = {}) {
   let html = shellHtml;
-  const ogImage = enrichment.ogImage || SEO_CONFIG.ogImageUrl;
+  const ogImage = enrichment.ogImage || route.ogImage || SEO_CONFIG.ogImageUrl;
+  const ogImageAlt = enrichment.ogImageAlt || route.ogImageAlt || '';
   html = upsertTitle(html, route.title);
   html = upsertMetaByName(html, 'description', route.description);
+  if (typeof route.robots === 'string' && route.robots.trim()) {
+    html = upsertMetaByName(html, 'robots', route.robots.trim());
+  }
   html = upsertMetaByName(html, 'author', SEO_CONFIG.publisherName);
   html = upsertMetaByProperty(html, 'og:site_name', SEO_CONFIG.siteName);
   html = upsertMetaByProperty(html, 'og:type', 'website');
@@ -224,8 +232,17 @@ export function injectPrerenderHtml(shellHtml, route, enrichment = {}) {
   html = upsertMetaByProperty(html, 'og:url', route.canonicalUrl);
   html = upsertMetaByProperty(html, 'og:image', ogImage);
   html = upsertMetaByProperty(html, 'og:image:secure_url', ogImage);
-  if (enrichment.ogImageAlt) {
-    html = upsertMetaByProperty(html, 'og:image:alt', enrichment.ogImageAlt);
+  if (ogImageAlt) {
+    html = upsertMetaByProperty(html, 'og:image:alt', ogImageAlt);
+  }
+  if (route.ogImageType) {
+    html = upsertMetaByProperty(html, 'og:image:type', route.ogImageType);
+  }
+  if (route.ogImageWidth) {
+    html = upsertMetaByProperty(html, 'og:image:width', String(route.ogImageWidth));
+  }
+  if (route.ogImageHeight) {
+    html = upsertMetaByProperty(html, 'og:image:height', String(route.ogImageHeight));
   }
   html = upsertMetaByName(html, 'twitter:card', 'summary_large_image');
   html = upsertMetaByName(html, 'twitter:title', route.title);

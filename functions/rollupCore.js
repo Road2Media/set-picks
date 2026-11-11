@@ -39,7 +39,9 @@ const {
   CLOSE_CALL_MAX_GAP,
 } = require("./postShowRollupPush");
 const { deliverPostRollupComms } = require("./commsEventAdapters");
+const { publishHundredthNightBoard } = require("./hundredthShowPublish.cjs");
 const { awardBadgesForUsers } = require("./badgeAwards");
+const { stampBandId } = require("./bandScope");
 const { freezeRankSnapshotsAfterShow } = require("./badgeSnapshotJobs");
 const {
   rebuildGlobalStatsLeaderboardsSafe,
@@ -245,13 +247,14 @@ async function runRollupForShow({
       }
     }
 
-    const pickUpdate = {
+    const pickUpdate = stampBandId({
       score: newScore,
       isGraded: true,
       winCredited: plan.newIsWin,
       correctSlotsCredited: plan.newCorrectSlots,
       bustoutBoostsCredited: plan.newBustoutBoosts,
-    };
+      bandId: pickData.bandId,
+    });
     if (plan.isFirstGrade) {
       pickUpdate.gradedAt = admin.firestore.FieldValue.serverTimestamp();
     }
@@ -363,6 +366,19 @@ async function runRollupForShow({
     logger?.warn?.("runRollupForShow.comms failed", { showDate, trigger, msg });
   }
 
+  try {
+    await publishHundredthNightBoard({
+      db,
+      showDate,
+      pickDocs: picksSnap.docs,
+      scoresByPickId: newScoresById,
+      actualSetlist,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    logger?.warn?.("runRollupForShow.hundredthBoard failed", { showDate, trigger, msg });
+  }
+
   if (processedUserIds.size > 0) {
     try {
       await awardBadgesForUsers({
@@ -462,7 +478,7 @@ async function writeRollupAuditDoc({
       .collection("rollup_audit")
       .doc(showDate)
       .set(
-        {
+        stampBandId({
           lastRolledUpAt: admin.firestore.FieldValue.serverTimestamp(),
           processedPicks,
           skippedPicks,
@@ -471,7 +487,7 @@ async function writeRollupAuditDoc({
           trigger: trigger || "manual",
           ...timingExtras,
           ...tourExtras,
-        },
+        }),
         { merge: true }
       );
   } catch (e) {

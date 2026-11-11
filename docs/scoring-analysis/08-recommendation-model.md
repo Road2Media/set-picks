@@ -23,13 +23,13 @@ Frozen explainable play × slot model used by the offline harness and (later) `#
 ## Go / no-go
 
 ```bash
-npm run backtest:import-setlists -- --years=2
-npm run backtest:recommendations
+npm run backtest:import-setlists -- --years=3 --source=phishin
+npm run backtest:window
 ```
 
-PASS when `combined_explainable` meets or beats each baseline on **slotHit@5** or **recall@10**. Exit code `2` on FAIL.
+PASS when `combined_explainable` meets or beats each baseline on **slotHit@5** or **recall@10**. Exit code `2` on FAIL for `npm run backtest:recommendations`.
 
-Weights live in `scripts/prediction-backtest/lib/model.mjs` (`MODEL_WEIGHTS`) **and** the production CJS port `functions/pickRecommendationsModel.js` (keep in sync). Bump `MODEL_VERSION` when weights change and re-run the harness.
+Weights live in `scripts/prediction-backtest/lib/model.mjs` (`MODEL_WEIGHTS`) **and** the production CJS port `functions/pickRecommendationsModel.js` (keep in sync). Bump `MODEL_VERSION` when weights change and re-run the harness. The #1002 window did not change weights. See [09-wider-backtest-and-playprob.md](./09-wider-backtest-and-playprob.md).
 
 ## Empirical freeze note (2026-07-22)
 
@@ -43,6 +43,10 @@ On a 41-show 2024 cache (`minTrain=15`, 26 eval nights), `v0.1.0-explainable` **
 | **combined_explainable** | **0.186** | **0.185** | **0.31** |
 
 Re-run on a wider window before Wave 3; bump `MODEL_VERSION` if weights change.
+
+## Wider window (2026-11-10, #1002)
+
+On 134 shows and 94 scored nights, `v0.1.1-explainable` still passes the gate above. Recall@10 is 0.150 and slot hit@5 is 0.199. The published `playProb` is not a frequency: Brier 0.185 versus 0.061 for a flat 6.5% guess. Weights stay at `v0.1.1-explainable`. Full tables and the #652 call are in [09-wider-backtest-and-playprob.md](./09-wider-backtest-and-playprob.md).
 
 ## Explanations
 

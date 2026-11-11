@@ -280,7 +280,7 @@ function LoginSignUpPanel({
           type="checkbox"
           checked={legalAccepted}
           onChange={(e) => setLegalAccepted(e.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border-slate-500 bg-surface-panel text-brand-primary focus-visible:ring-2 focus-visible:ring-brand"
+          className="mt-1 h-4 w-4 shrink-0 rounded-sm border-slate-500 bg-surface-panel/50 text-brand-primary focus-visible:ring-2 focus-visible:ring-brand"
           aria-describedby={
             fieldsLocked && !notice.text
               ? 'signup-legal-hint signup-legal-gate-hint'

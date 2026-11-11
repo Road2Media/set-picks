@@ -6,7 +6,7 @@ import FilterPill from '../../../shared/ui/FilterPill';
 import PageTitle from '../../../shared/ui/PageTitle';
 
 const responsivePoolPillLayout =
-  'overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible md:whitespace-normal';
+  'overflow-x-auto whitespace-nowrap scrollbar-none [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible md:whitespace-normal';
 
 /**
  * Pool sub-selector for the Pools pill on `/dashboard/standings` (#255).
@@ -34,7 +34,7 @@ export default function StandingsPoolPicker({
     return (
       <div
         className={[
-          'mb-4 rounded-xl border border-border-subtle bg-surface-panel/60 px-3.5 py-3.5 text-center shadow-inset-glass md:px-4 md:py-4',
+          'mb-4 rounded-xl border border-border-subtle/50 bg-surface-panel/60 px-3.5 py-3.5 text-center shadow-inset-glass md:px-4 md:py-4',
           className,
         ]
           .filter(Boolean)

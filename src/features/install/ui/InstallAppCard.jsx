@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Download, Share2 } from 'lucide-react';
 
+import { Panel } from '../../../shared/ui/Card';
 import { getInstallLeadCopy, resolveInstallCopyBranch } from '../model/installCopy';
 import { useInstallPrompt } from '../model/useInstallPrompt';
 import IosInstallScreenshotGallery from './IosInstallScreenshotGallery.jsx';
@@ -33,7 +34,7 @@ export default function InstallAppCard() {
   if (isInstalled) return null;
 
   return (
-    <section className="mt-8 rounded-3xl border border-border-subtle bg-surface-panel p-6 shadow-inset-glass">
+    <Panel as="section" className="mt-8">
       <h3 className="text-sm font-black uppercase tracking-widest text-content-secondary">
         {lead.eyebrow}
       </h3>
@@ -58,7 +59,7 @@ export default function InstallAppCard() {
           <button
             type="button"
             onClick={showIosGuide ? closeIosGuide : openIosGuide}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle bg-surface-field py-3.5 text-sm font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle/50 bg-surface-field py-3.5 text-sm font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel/50"
           >
             <Share2 className="h-4 w-4 shrink-0" aria-hidden />
             {showIosGuide ? 'Hide Safari steps' : 'Show Safari steps'}
@@ -74,7 +75,7 @@ export default function InstallAppCard() {
           <button
             type="button"
             onClick={dismissIos}
-            className="mt-3 text-xs font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted underline-offset-4 transition-colors hover:text-white"
+            className="mt-3 text-xs font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted/60 underline-offset-4 transition-colors hover:text-white"
           >
             Don&apos;t show this again
           </button>
@@ -86,7 +87,7 @@ export default function InstallAppCard() {
           <button
             type="button"
             onClick={showIosGuide ? closeIosGuide : openIosGuide}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle bg-surface-field py-3.5 text-sm font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-border-subtle/50 bg-surface-field py-3.5 text-sm font-black uppercase tracking-widest text-white transition-colors hover:border-brand-primary/50 hover:bg-surface-panel/50"
           >
             <Share2 className="h-4 w-4 shrink-0" aria-hidden />
             {showIosGuide ? 'Hide Chrome steps' : 'Show Chrome steps'}
@@ -101,7 +102,7 @@ export default function InstallAppCard() {
           <button
             type="button"
             onClick={dismissIos}
-            className="mt-3 text-xs font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted underline-offset-4 transition-colors hover:text-white"
+            className="mt-3 text-xs font-black uppercase tracking-widest text-content-secondary underline decoration-border-muted/60 underline-offset-4 transition-colors hover:text-white"
           >
             Don&apos;t show this again
           </button>
@@ -109,10 +110,10 @@ export default function InstallAppCard() {
       ) : null}
 
       {!canPrompt && !shouldShowIosFlow && !shouldShowIosNonSafariFlow ? (
-        <p className="mt-4 rounded-2xl border border-border-muted bg-surface-inset p-4 text-sm leading-relaxed text-content-secondary">
+        <p className="mt-4 rounded-2xl border border-border-muted/60 bg-surface-inset/72 p-4 text-sm leading-relaxed text-content-secondary">
           {lead.body}
         </p>
       ) : null}
-    </section>
+    </Panel>
   );
 }

@@ -5,7 +5,7 @@ Versioned Storage JSON for the upcoming show’s slot-aware song recommendations
 ## Publish path
 
 1. Resolve upcoming show from `show_calendar/snapshot` via `getNextShow`.
-2. Load priors: private Phish.net history window (`pick-recommendations/history/window.json`, ~1y) **merged** with `official_setlists` docs (`showDate < targetDate`; Firestore wins on date ties).
+2. Load priors: private Phish.net history window (`pick-recommendations/history/window.json`, ~1y) **merged** with `official_setlists` docs (`showDate < targetDate`; Firestore wins on date ties). The #1002 backtest tried a 3-year cache and a 120-show cap on the same weights. The cap matched the longer cache, so this publish path stays at 1 year / 120 shows. See `docs/scoring-analysis/09-wider-backtest-and-playprob.md`.
 3. Rank with `v0.1.1-explainable` (`functions/pickRecommendationsModel.js`).
 4. Write live **`pick-recommendations.json`** (+ optional private archive).
 
@@ -48,7 +48,7 @@ First-time ops: run `refreshPickRecommendationHistory` (or local Admin SDK sync)
 }
 ```
 
-`playProbBySong` (**v1.68.0+ / #767**) is show-wide `playProb` for every song in the history window (normalized title keys). Scorecard uses it so every pick on the card can show model odds. Lab still reads `slots` top-K only.
+`playProbBySong` (**v1.68.0+ / #767**) is show-wide `playProb` for every song in the history window (normalized title keys). Make Picks and the Make Picks crowd-helper Odds chip use it. Lab still reads `slots` top-K only. Scorecard stopped reading this file in **v1.110.0 / #1043** and shows live crowd % after showtime instead.
 
 Model methodology: `docs/scoring-analysis/08-recommendation-model.md`.
 
